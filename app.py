@@ -43,12 +43,12 @@ def get_user_info(code):
     return userinfo_resp.json()
 
 # Auth check
-query_params = st.experimental_get_query_params()
+query_params = st.query_params
 if "code" in query_params:
-    code = query_params["code"][0]
+    code = query_params["code"]
     user_info = get_user_info(code)
     st.session_state["user"] = user_info
-    st.experimental_set_query_params()
+    st.query_params.clear()
 
 if "user" not in st.session_state:
     show_login_button()
