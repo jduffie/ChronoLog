@@ -11,7 +11,7 @@ from urllib.parse import urlencode
 AUTH0_DOMAIN = st.secrets["auth0"]["domain"]
 CLIENT_ID = st.secrets["auth0"]["client_id"]
 CLIENT_SECRET = st.secrets["auth0"]["client_secret"]
-REDIRECT_URI = "https://<your-app>.streamlit.app"
+REDIRECT_URI = st.secrets["auth0"].get("redirect_uri", "http://localhost:8501")
 AUTH0_BASE_URL = f"https://{AUTH0_DOMAIN}"
 
 def show_login_button():

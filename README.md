@@ -1,98 +1,70 @@
 
-# Xero Streamlit App
+# ChronoLog - Garmin Xero Data Processor
 
-This is a multi-user Streamlit app that allows users to log in with Google (via Auth0), upload Garmin Xero Chronograph Excel files, store structured data in Supabase, and preserve the original uploads.
-
----
+A multi-user Streamlit app for processing Garmin Xero Chronograph data. Users authenticate with Google via Auth0, upload Excel files, and store structured ballistics data in Supabase.
 
 ## 🔐 Authentication
 
-- Users log in via **Google** using **Auth0**
-- Uploaded files are stored in **Supabase Storage**
-- Parsed session and measurement data is saved to **Supabase PostgreSQL**
+- Google OAuth via Auth0
+- File storage in Supabase Storage
+- Structured data in Supabase PostgreSQL
 
----
+## 🛠 Setup
 
-## ✅ Verify Your Supabase Configuration
-
-To verify your Supabase credentials and storage setup, use the included `verify_supabase.py` script.
-
-### 🛠 Prerequisites
-
+### Prerequisites
 - Python 3.8+
-- Required packages:
-  ```bash
-  pip install supabase gotrue postgrest-py realtime-py storage3
-  ```
+- Supabase account with service role key
+- Auth0 account configured for Google OAuth
 
----
-
-## 🔑 Using 1Password CLI for Secrets
-
-If you store your Supabase Service Role Key in **1Password**, follow these steps:
-
-### Step-by-step:
-
-1. **Sign in to 1Password**:
-   ```bash
-   op account add --address https://my.1password.com --email johnduffie91@gmail.com
-   eval $(op signin)
-   ```
-
-2. **Export your Supabase key from 1Password**:
-   ```bash
-   export SUPABASE_SERVICE_ROLE_KEY=$(op item get "Supabase - ChronoLog" --vault "Private" --field "service_role secret")
-   ```
-
-3. **Run the script**:
-   ```bash
-   python verify_supabase.py
-   ```
-
-This will:
-- Test your database connection to the `sessions` table
-- Upload and delete a dummy file in the `uploads` bucket
-
----
-
-## 🔧 Project Files
-
-- `app.py` – Main Streamlit app
-- `.streamlit/secrets.toml` – Configuration template for Auth0 and Supabase
-- `requirements.txt` – Python package requirements
-- `verify_supabase.py` – Utility script to test Supabase access
-
----
-
-## 📦 Deployment
-
-See detailed deployment instructions in the [Deployment Guide](#).
-
-
----
-
-## 🧪 Setting Up a Virtual Environment
-
-To avoid dependency conflicts, set up a Python virtual environment:
-
-### macOS / Linux:
+### Environment Setup
+#### Dependencies and Virtual Env
 ```bash
 python3 -m venv venv
-source venv/bin/activate
-```
-
-### Windows:
-```bash
-python -m venv venv
-venv\Scripts\activate
-```
-
-### Then install dependencies:
-```bash
+source venv/bin/activate  # macOS/Linux
 pip install -r requirements.txt
 ```
 
-You're now ready to run:
+#### Test Supabase Configuration
+
 ```bash
+# Set environment variable
+export SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 python verify_supabase.py
 ```
+
+##### Using 1Password CLI
+If you store credentials in 1Password:
+```bash
+# Add account (one-time setup)
+op account add --address https://my.1password.com --email johnduffie91@gmail.com
+
+      source venv/bin/activate
+      op account add --address https://my.1password.com --email johnduffie91@gmail.com
+      eval $(op signin --account my.1password.com)
+      export SUPABASE_SERVICE_ROLE_KEY=$(op item get "Supabase - ChronoLog" --vault "Private" --field "service_role secret")
+      python verify_supabase.py
+```
+
+
+
+## 🚀 Running the Application
+
+### Start the Streamlit App
+```bash
+streamlit run app.py
+```
+
+## 📁 Project Structure
+
+- `app.py` – Main Streamlit application
+- `verify_supabase.py` – Database/storage connectivity test
+- `.streamlit/secrets.toml` – Auth0 and Supabase configuration
+- `requirements.txt` – Python dependencies
+
+## 📊 Data Processing
+
+The app processes Garmin Xero Excel files by:
+1. Extracting bullet metadata (type, grain weight)
+2. Parsing shot data (velocity, energy, power factor)
+3. Storing sessions and measurements in separate tables
+4. Preserving original files in user-specific directories
