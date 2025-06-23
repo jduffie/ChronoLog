@@ -26,6 +26,7 @@ pip install -r requirements.txt
 
 #### Test Supabase Configuration
 
+##### Test Access to Supabase
 ```bash
 # Set environment variable
 export SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
@@ -44,6 +45,28 @@ op account add --address https://my.1password.com --email johnduffie91@gmail.com
       export SUPABASE_SERVICE_ROLE_KEY=$(op item get "Supabase - ChronoLog" --vault "Private" --field "service_role secret")
       python verify_supabase.py
 ```
+
+#### Download All Files from Supabase Storage
+
+```bash
+# Set environment variable
+export SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+python download_uploads.py
+```
+
+##### Using 1Password CLI
+If you store credentials in 1Password:
+```bash
+# Add account (one-time setup)
+op account add --address https://my.1password.com --email johnduffie91@gmail.com
+
+source venv/bin/activate
+eval $(op signin --account my.1password.com)
+export SUPABASE_SERVICE_ROLE_KEY=$(op item get "Supabase - ChronoLog" --vault "Private" --field "service_role secret")
+python download_uploads.py
+```
+
+This creates a timestamped `downloads_YYYYMMDD_HHMMSS/` directory with all uploaded files.
 
 
 

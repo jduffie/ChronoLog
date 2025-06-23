@@ -13,6 +13,9 @@ develop-eggs/
 dist/
 downloads/
 eggs/
+
+# Downloaded files from Supabase
+downloads_*/
 .eggs/
 lib/
 lib64/
