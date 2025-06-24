@@ -16,6 +16,7 @@ CREATE TABLE sessions (
     session_timestamp TIMESTAMPTZ,
     uploaded_at TIMESTAMPTZ DEFAULT NOW(),
     file_path TEXT,
+    location_id UUID REFERENCES locations(id),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -53,7 +54,9 @@ CREATE TABLE locations (
 -- Create indexes for better performance
 CREATE INDEX idx_sessions_user_email ON sessions(user_email);
 CREATE INDEX idx_sessions_uploaded_at ON sessions(uploaded_at);
+CREATE INDEX idx_sessions_location_id ON sessions(location_id);
 CREATE INDEX idx_measurements_session_id ON measurements(session_id);
 CREATE INDEX idx_measurements_shot_number ON measurements(shot_number);
 CREATE INDEX idx_locations_user_email ON locations(user_email);
 CREATE INDEX idx_locations_name ON locations(name);
+CREATE INDEX idx_locations_status ON locations(status);

@@ -126,6 +126,7 @@ def create_tables(supabase):
         session_timestamp TIMESTAMPTZ,
         uploaded_at TIMESTAMPTZ DEFAULT NOW(),
         file_path TEXT,
+        location_id UUID REFERENCES locations(id),
         created_at TIMESTAMPTZ DEFAULT NOW()
     );
     """
@@ -169,6 +170,7 @@ def create_tables(supabase):
     indexes_sql = [
         "CREATE INDEX idx_sessions_user_email ON sessions(user_email);",
         "CREATE INDEX idx_sessions_uploaded_at ON sessions(uploaded_at);",
+        "CREATE INDEX idx_sessions_location_id ON sessions(location_id);",
         "CREATE INDEX idx_measurements_session_id ON measurements(session_id);",
         "CREATE INDEX idx_measurements_shot_number ON measurements(shot_number);",
         "CREATE INDEX idx_locations_user_email ON locations(user_email);",

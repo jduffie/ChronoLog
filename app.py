@@ -173,10 +173,10 @@ with tab3:
             if selected_session_display:
                 selected_session = session_options[selected_session_display]
                 
-                # Display session metadata
-                st.subheader("Session Metadata")
+                # Session Details Section
+                st.subheader("Session Details")
                 
-                # Prepare metadata values
+                # Prepare session details values
                 if 'session_timestamp' in selected_session and selected_session['session_timestamp']:
                     session_dt = pd.to_datetime(selected_session['session_timestamp'])
                     datetime_value = session_dt.strftime('%Y-%m-%d %H:%M:%S')
@@ -184,15 +184,93 @@ with tab3:
                     upload_dt = pd.to_datetime(selected_session['uploaded_at'])
                     datetime_value = f"{upload_dt.strftime('%Y-%m-%d %H:%M:%S')} (upload)"
                 
-                # Create metadata table
-                metadata_df = pd.DataFrame({
+                # Create session details table
+                session_details_df = pd.DataFrame({
                     'Date/Time': [datetime_value],
                     'Bullet Type': [selected_session['bullet_type']],
                     'Bullet Weight': [f"{selected_session['bullet_grain']} gr"],
                     'Sheet Name': [selected_session['sheet_name']]
                 })
                 
-                st.dataframe(metadata_df, use_container_width=True, hide_index=True)
+                st.dataframe(session_details_df, use_container_width=True, hide_index=True)
+                
+                # Session Location Section
+                st.subheader("Session Location")
+                
+                # Get locations for dropdown (only ACTIVE locations)
+                try:
+                    locations_response = supabase.table("locations").select("*").eq("status", "ACTIVE").execute()
+                    active_locations = locations_response.data
+                except:
+                    active_locations = []
+                
+                # Location dropdown
+                location_options = ["None"] + [f"{loc['name']}" for loc in active_locations]
+                location_ids = [None] + [loc['id'] for loc in active_locations]
+                
+                # Find current location index
+                current_location_index = 0
+                if selected_session.get('location_id'):
+                    try:
+                        current_location_index = location_ids.index(selected_session['location_id'])
+                    except ValueError:
+                        current_location_index = 0
+                
+                selected_location = st.selectbox(
+                    "Location:",
+                    options=location_options,
+                    index=current_location_index,
+                    help="Select the shooting location for this session"
+                )
+                
+                # Update location if changed
+                if selected_location != "None":
+                    selected_location_id = location_ids[location_options.index(selected_location)]
+                    if selected_location_id != selected_session.get('location_id'):
+                        try:
+                            supabase.table("sessions").update({"location_id": selected_location_id}).eq("id", selected_session['id']).execute()
+                            st.success(f"Location updated to: {selected_location}")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Failed to update location: {e}")
+                elif selected_session.get('location_id'):
+                    # User selected "None" but session had a location - clear it
+                    try:
+                        supabase.table("sessions").update({"location_id": None}).eq("id", selected_session['id']).execute()
+                        st.success("Location cleared")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Failed to clear location: {e}")
+                
+                # Get current location details for display
+                if selected_session.get('location_id'):
+                    # Get full location details from database
+                    try:
+                        location_response = supabase.table("locations").select("*").eq("id", selected_session['location_id']).execute()
+                        if location_response.data:
+                            current_location = location_response.data[0]
+                            
+                            # Create location details table
+                            location_df = pd.DataFrame({
+                                'Name': [current_location['name']],
+                                'Altitude (ft)': [current_location['altitude']],
+                                'Azimuth (°)': [current_location['azimuth']],
+                                'Latitude': [f"{current_location['latitude']:.6f}" if current_location['latitude'] else ""],
+                                'Longitude': [f"{current_location['longitude']:.6f}" if current_location['longitude'] else ""]
+                            })
+                            
+                            st.dataframe(location_df, use_container_width=True, hide_index=True)
+                            
+                            # Add Google Maps link if available
+                            if current_location.get('google_maps_link'):
+                                st.markdown(f"📍 [View on Google Maps]({current_location['google_maps_link']})")
+                        
+                        else:
+                            st.info("Location details not found")
+                    except Exception as e:
+                        st.error(f"Error loading location details: {e}")
+                else:
+                    st.info("No location assigned to this session")
                 
                 # Get measurement count and statistics
                 measurements_response = supabase.table("measurements").select("*").eq("session_id", selected_session['id']).execute()
