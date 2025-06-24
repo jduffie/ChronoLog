@@ -4,6 +4,7 @@
 -- Drop existing tables if they exist
 DROP TABLE IF EXISTS measurements CASCADE;
 DROP TABLE IF EXISTS sessions CASCADE;
+DROP TABLE IF EXISTS locations_draft CASCADE;
 DROP TABLE IF EXISTS locations CASCADE;
 
 -- Create sessions table
@@ -36,8 +37,21 @@ CREATE TABLE measurements (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Create locations table
+-- Create locations table (global read access for all users)
 CREATE TABLE locations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    altitude NUMERIC,
+    azimuth NUMERIC,
+    latitude NUMERIC(10, 8),
+    longitude NUMERIC(11, 8),
+    google_maps_link TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Create locations_draft table for new location requests
+CREATE TABLE locations_draft (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_email TEXT NOT NULL,
     name TEXT NOT NULL,
@@ -46,7 +60,6 @@ CREATE TABLE locations (
     latitude NUMERIC(10, 8),
     longitude NUMERIC(11, 8),
     google_maps_link TEXT,
-    status TEXT DEFAULT 'ACTIVE',
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -57,6 +70,6 @@ CREATE INDEX idx_sessions_uploaded_at ON sessions(uploaded_at);
 CREATE INDEX idx_sessions_location_id ON sessions(location_id);
 CREATE INDEX idx_measurements_session_id ON measurements(session_id);
 CREATE INDEX idx_measurements_shot_number ON measurements(shot_number);
-CREATE INDEX idx_locations_user_email ON locations(user_email);
 CREATE INDEX idx_locations_name ON locations(name);
-CREATE INDEX idx_locations_status ON locations(status);
+CREATE INDEX idx_locations_draft_user_email ON locations_draft(user_email);
+CREATE INDEX idx_locations_draft_name ON locations_draft(name);

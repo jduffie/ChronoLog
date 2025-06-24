@@ -163,18 +163,17 @@ with tab3:
                 display_name = f"{session_time} - {session['bullet_type']} ({session['bullet_grain']}gr) - {session['sheet_name']}"
                 session_options[display_name] = session
             
-            # Session selection
+            # Make session selection more prominent
+            st.markdown("### Select Session to View")
             selected_session_display = st.selectbox(
-                "Select:",
+                "Sessions:",
                 options=list(session_options.keys()),
-                help="Sessions are ordered by upload time (newest first)"
+                help="Sessions are ordered by upload time (newest first)",
+                key="session_selector"
             )
             
             if selected_session_display:
                 selected_session = session_options[selected_session_display]
-                
-                # Session Details Section
-                st.subheader("Session Details")
                 
                 # Prepare session details values
                 if 'session_timestamp' in selected_session and selected_session['session_timestamp']:
@@ -194,12 +193,12 @@ with tab3:
                 
                 st.dataframe(session_details_df, use_container_width=True, hide_index=True)
                 
-                # Session Location Section
-                st.subheader("Session Location")
+                # Location Section
+                st.subheader("Location")
                 
-                # Get locations for dropdown (only ACTIVE locations)
+                # Get locations for dropdown (all approved locations)
                 try:
-                    locations_response = supabase.table("locations").select("*").eq("status", "ACTIVE").execute()
+                    locations_response = supabase.table("locations").select("*").execute()
                     active_locations = locations_response.data
                 except:
                     active_locations = []
@@ -463,68 +462,74 @@ with tab4:
     
     # Display locations table first
     try:
-        # Get all locations (show ACTIVE ones to all users, show PENDING ones only to the requester)
+        # Get all approved locations (global read access)
         locations_response = supabase.table("locations").select("*").execute()
-        all_locations = locations_response.data
+        approved_locations = locations_response.data
         
-        if all_locations:
-            # Filter locations for display
-            display_locations = []
-            for loc in all_locations:
-                if loc.get('status') == 'ACTIVE':
-                    display_locations.append(loc)
-                elif loc.get('status') == 'PENDING' and loc.get('user_email') == user['email']:
-                    display_locations.append(loc)
+        # Get user's draft location requests
+        draft_locations_response = supabase.table("locations_draft").select("*").eq("user_email", user["email"]).execute()
+        user_draft_locations = draft_locations_response.data
+        
+        # Combine for display
+        all_display_locations = []
+        
+        # Add approved locations (marked as ACTIVE)
+        for loc in approved_locations or []:
+            loc['status'] = 'ACTIVE'
+            all_display_locations.append(loc)
+        
+        # Add user's draft locations (marked as PENDING)
+        for loc in user_draft_locations or []:
+            loc['status'] = 'PENDING'
+            all_display_locations.append(loc)
+        
+        if all_display_locations:
+            # Add headers first
+            col1, col2, col3, col4, col5, col6 = st.columns([3, 2, 2, 2, 2, 2])
+            with col1:
+                st.markdown("**Name**")
+            with col2:
+                st.markdown("**Status**")
+            with col3:
+                st.markdown("**Altitude (ft)**")
+            with col4:
+                st.markdown("**Azimuth (°)**")
+            with col5:
+                st.markdown("**Latitude**")
+            with col6:
+                st.markdown("**Longitude**")
             
-            if display_locations:
-                # Add headers first
+            st.markdown("---")
+            
+            # Create a row for each location with clickable name
+            for i, location in enumerate(all_display_locations):
+                status = location.get('status', 'UNKNOWN')
+                status_emoji = "🟢" if status == "ACTIVE" else "🟡" if status == "PENDING" else "🔴"
+                
                 col1, col2, col3, col4, col5, col6 = st.columns([3, 2, 2, 2, 2, 2])
+                
                 with col1:
-                    st.markdown("**Name**")
+                    if location.get('google_maps_link'):
+                        st.markdown(f"[{location['name']}]({location['google_maps_link']})")
+                    else:
+                        st.write(location['name'])
+                
                 with col2:
-                    st.markdown("**Status**")
+                    st.write(f"{status_emoji} {status}")
+                
                 with col3:
-                    st.markdown("**Altitude (ft)**")
+                    st.write(f"{location['altitude']}")
+                
                 with col4:
-                    st.markdown("**Azimuth (°)**")
+                    st.write(f"{location['azimuth']}")
+                
                 with col5:
-                    st.markdown("**Latitude**")
+                    st.write(f"{location['latitude']:.6f}" if location['latitude'] else "")
+                
                 with col6:
-                    st.markdown("**Longitude**")
-                
-                st.markdown("---")
-                
-                # Create a row for each location with clickable name
-                for i, location in enumerate(display_locations):
-                    status = location.get('status', 'UNKNOWN')
-                    status_emoji = "🟢" if status == "ACTIVE" else "🟡" if status == "PENDING" else "🔴"
-                    
-                    col1, col2, col3, col4, col5, col6 = st.columns([3, 2, 2, 2, 2, 2])
-                    
-                    with col1:
-                        if location.get('google_maps_link'):
-                            st.markdown(f"[{location['name']}]({location['google_maps_link']})")
-                        else:
-                            st.write(location['name'])
-                    
-                    with col2:
-                        st.write(f"{status_emoji} {status}")
-                    
-                    with col3:
-                        st.write(f"{location['altitude']}")
-                    
-                    with col4:
-                        st.write(f"{location['azimuth']}")
-                    
-                    with col5:
-                        st.write(f"{location['latitude']:.6f}" if location['latitude'] else "")
-                    
-                    with col6:
-                        st.write(f"{location['longitude']:.6f}" if location['longitude'] else "")
-            else:
-                st.info("No locations available. Submit a request to add a new location!")
+                    st.write(f"{location['longitude']:.6f}" if location['longitude'] else "")
         else:
-            st.info("No locations found. Be the first to request a location!")
+            st.info("No locations available. Submit a request to add a new location!")
             
     except Exception as e:
         st.error(f"Error loading locations: {e}")
@@ -608,7 +613,7 @@ with tab4:
                     # Generate Google Maps link
                     google_maps_link = f"https://maps.google.com/?q={latitude},{longitude}"
                     
-                    # Create location record with PENDING status
+                    # Create location request record
                     location_data = {
                         "user_email": user["email"],
                         "name": location_name.strip(),
@@ -616,12 +621,11 @@ with tab4:
                         "azimuth": azimuth,
                         "latitude": latitude,
                         "longitude": longitude,
-                        "google_maps_link": google_maps_link,
-                        "status": "PENDING"
+                        "google_maps_link": google_maps_link
                     }
                     
-                    # Insert into database
-                    supabase.table("locations").insert(location_data).execute()
+                    # Insert into locations_draft table
+                    supabase.table("locations_draft").insert(location_data).execute()
                     
                     st.success("✅ Location request submitted successfully!")
                     st.info("📋 Your location request is pending approval and will be reviewed by administrators.")
