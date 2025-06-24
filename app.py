@@ -470,43 +470,28 @@ with tab4:
         draft_locations_response = supabase.table("locations_draft").select("*").eq("user_email", user["email"]).execute()
         user_draft_locations = draft_locations_response.data
         
-        # Combine for display
-        all_display_locations = []
-        
-        # Add approved locations (marked as ACTIVE)
-        for loc in approved_locations or []:
-            loc['status'] = 'ACTIVE'
-            all_display_locations.append(loc)
-        
-        # Add user's draft locations (marked as PENDING)
-        for loc in user_draft_locations or []:
-            loc['status'] = 'PENDING'
-            all_display_locations.append(loc)
-        
-        if all_display_locations:
+        # Display approved locations first
+        if approved_locations:
+            st.subheader("📍 Available Locations")
+            
             # Add headers first
-            col1, col2, col3, col4, col5, col6 = st.columns([3, 2, 2, 2, 2, 2])
+            col1, col2, col3, col4, col5 = st.columns([4, 2, 2, 2, 2])
             with col1:
                 st.markdown("**Name**")
             with col2:
-                st.markdown("**Status**")
-            with col3:
                 st.markdown("**Altitude (ft)**")
-            with col4:
+            with col3:
                 st.markdown("**Azimuth (°)**")
-            with col5:
+            with col4:
                 st.markdown("**Latitude**")
-            with col6:
+            with col5:
                 st.markdown("**Longitude**")
             
             st.markdown("---")
             
-            # Create a row for each location with clickable name
-            for i, location in enumerate(all_display_locations):
-                status = location.get('status', 'UNKNOWN')
-                status_emoji = "🟢" if status == "ACTIVE" else "🟡" if status == "PENDING" else "🔴"
-                
-                col1, col2, col3, col4, col5, col6 = st.columns([3, 2, 2, 2, 2, 2])
+            # Create a row for each approved location
+            for i, location in enumerate(approved_locations):
+                col1, col2, col3, col4, col5 = st.columns([4, 2, 2, 2, 2])
                 
                 with col1:
                     if location.get('google_maps_link'):
@@ -515,20 +500,60 @@ with tab4:
                         st.write(location['name'])
                 
                 with col2:
-                    st.write(f"{status_emoji} {status}")
-                
-                with col3:
                     st.write(f"{location['altitude']}")
                 
-                with col4:
+                with col3:
                     st.write(f"{location['azimuth']}")
                 
-                with col5:
+                with col4:
                     st.write(f"{location['latitude']:.6f}" if location['latitude'] else "")
                 
-                with col6:
+                with col5:
                     st.write(f"{location['longitude']:.6f}" if location['longitude'] else "")
-        else:
+        
+        # Display user's draft location requests
+        if user_draft_locations:
+            st.subheader("🟡 Your Pending Requests")
+            
+            # Add headers first
+            col1, col2, col3, col4, col5 = st.columns([4, 2, 2, 2, 2])
+            with col1:
+                st.markdown("**Name**")
+            with col2:
+                st.markdown("**Altitude (ft)**")
+            with col3:
+                st.markdown("**Azimuth (°)**")
+            with col4:
+                st.markdown("**Latitude**")
+            with col5:
+                st.markdown("**Longitude**")
+            
+            st.markdown("---")
+            
+            # Create a row for each draft location
+            for i, location in enumerate(user_draft_locations):
+                col1, col2, col3, col4, col5 = st.columns([4, 2, 2, 2, 2])
+                
+                with col1:
+                    if location.get('google_maps_link'):
+                        st.markdown(f"🟡 [{location['name']}]({location['google_maps_link']})")
+                    else:
+                        st.write(f"🟡 {location['name']}")
+                
+                with col2:
+                    st.write(f"{location['altitude']}")
+                
+                with col3:
+                    st.write(f"{location['azimuth']}")
+                
+                with col4:
+                    st.write(f"{location['latitude']:.6f}" if location['latitude'] else "")
+                
+                with col5:
+                    st.write(f"{location['longitude']:.6f}" if location['longitude'] else "")
+        
+        # Show message if no locations at all
+        if not approved_locations and not user_draft_locations:
             st.info("No locations available. Submit a request to add a new location!")
             
     except Exception as e:
