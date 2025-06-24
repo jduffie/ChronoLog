@@ -98,7 +98,7 @@ def delete_all_files(supabase):
         print(f"❌ Error during file deletion: {e}")
 
 def drop_tables(supabase):
-    tables_to_drop = ["measurements", "sessions"]
+    tables_to_drop = ["measurements", "sessions", "locations"]
     
     for table in tables_to_drop:
         try:
@@ -148,12 +148,32 @@ def create_tables(supabase):
     );
     """
     
+    # Create locations table
+    locations_sql = """
+    CREATE TABLE locations (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_email TEXT NOT NULL,
+        name TEXT NOT NULL,
+        altitude NUMERIC,
+        azimuth NUMERIC,
+        latitude NUMERIC(10, 8),
+        longitude NUMERIC(11, 8),
+        google_maps_link TEXT,
+        status TEXT DEFAULT 'ACTIVE',
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    """
+    
     # Create indexes for better performance
     indexes_sql = [
         "CREATE INDEX idx_sessions_user_email ON sessions(user_email);",
         "CREATE INDEX idx_sessions_uploaded_at ON sessions(uploaded_at);",
         "CREATE INDEX idx_measurements_session_id ON measurements(session_id);",
-        "CREATE INDEX idx_measurements_shot_number ON measurements(shot_number);"
+        "CREATE INDEX idx_measurements_shot_number ON measurements(shot_number);",
+        "CREATE INDEX idx_locations_user_email ON locations(user_email);",
+        "CREATE INDEX idx_locations_name ON locations(name);",
+        "CREATE INDEX idx_locations_status ON locations(status);"
     ]
     
     try:
@@ -164,6 +184,10 @@ def create_tables(supabase):
         print("  🏗️  Creating measurements table...")
         supabase.rpc("execute_sql", {"sql": measurements_sql}).execute()
         print("  ✅ Created measurements table")
+        
+        print("  🏗️  Creating locations table...")
+        supabase.rpc("execute_sql", {"sql": locations_sql}).execute()
+        print("  ✅ Created locations table")
         
         print("  🏗️  Creating indexes...")
         for idx_sql in indexes_sql:
@@ -180,6 +204,8 @@ def create_tables(supabase):
         print(sessions_sql)
         print("\n--- Measurements Table ---")
         print(measurements_sql)
+        print("\n--- Locations Table ---")
+        print(locations_sql)
         print("\n--- Indexes ---")
         for idx_sql in indexes_sql:
             print(idx_sql)

@@ -8,6 +8,9 @@ import requests
 from urllib.parse import urlencode
 import math
 
+# Set wide layout for more space - must be first Streamlit command
+st.set_page_config(layout="wide")
+
 # Auth0 settings
 AUTH0_DOMAIN = st.secrets["auth0"]["domain"]
 CLIENT_ID = st.secrets["auth0"]["client_id"]
@@ -65,7 +68,7 @@ bucket = st.secrets["supabase"]["bucket"]
 supabase = create_client(url, key)
 
 # Main app tabs
-tab1, tab2, tab3 = st.tabs(["Upload Files", "My Files", "View Session"])
+tab1, tab2, tab3, tab4 = st.tabs(["Upload Files", "My Files", "View Session", "Locations"])
 
 with tab2:
     st.header("📁 My Uploaded Files")
@@ -141,7 +144,7 @@ with tab2:
         st.error(f"Error loading your files: {e}")
 
 with tab3:
-    st.header("🎯 View Session")
+    st.header("View Session")
     
     try:
         # Get user's sessions for selection
@@ -162,7 +165,7 @@ with tab3:
             
             # Session selection
             selected_session_display = st.selectbox(
-                "📅 Select a session by date and time:",
+                "Select:",
                 options=list(session_options.keys()),
                 help="Sessions are ordered by upload time (newest first)"
             )
@@ -171,26 +174,25 @@ with tab3:
                 selected_session = session_options[selected_session_display]
                 
                 # Display session metadata
-                st.subheader("📊 Session Metadata")
+                st.subheader("Session Metadata")
                 
-                col1, col2 = st.columns(2)
+                # Prepare metadata values
+                if 'session_timestamp' in selected_session and selected_session['session_timestamp']:
+                    session_dt = pd.to_datetime(selected_session['session_timestamp'])
+                    datetime_value = session_dt.strftime('%Y-%m-%d %H:%M:%S')
+                else:
+                    upload_dt = pd.to_datetime(selected_session['uploaded_at'])
+                    datetime_value = f"{upload_dt.strftime('%Y-%m-%d %H:%M:%S')} (upload)"
                 
-                with col1:
-                    # Show session timestamp if available
-                    if 'session_timestamp' in selected_session and selected_session['session_timestamp']:
-                        session_dt = pd.to_datetime(selected_session['session_timestamp'])
-                        st.metric("🎯 Session Date", session_dt.strftime('%Y-%m-%d'))
-                        st.metric("🕐 Session Time", session_dt.strftime('%H:%M:%S'))
-                    else:
-                        st.metric("📅 Upload Date", pd.to_datetime(selected_session['uploaded_at']).strftime('%Y-%m-%d'))
-                        st.metric("⏰ Upload Time", pd.to_datetime(selected_session['uploaded_at']).strftime('%H:%M:%S'))
-                    st.metric("🔫 Bullet Type", selected_session['bullet_type'])
+                # Create metadata table
+                metadata_df = pd.DataFrame({
+                    'Date/Time': [datetime_value],
+                    'Bullet Type': [selected_session['bullet_type']],
+                    'Bullet Weight': [f"{selected_session['bullet_grain']} gr"],
+                    'Sheet Name': [selected_session['sheet_name']]
+                })
                 
-                with col2:
-                    st.metric("⚖️ Bullet Weight", f"{selected_session['bullet_grain']} gr")
-                    with st.container():
-                        st.write("📄 **Sheet Name**")
-                        st.write(f"<small>{selected_session['sheet_name']}</small>", unsafe_allow_html=True)
+                st.dataframe(metadata_df, use_container_width=True, hide_index=True)
                 
                 # Get measurement count and statistics
                 measurements_response = supabase.table("measurements").select("*").eq("session_id", selected_session['id']).execute()
@@ -200,29 +202,27 @@ with tab3:
                     df = pd.DataFrame(measurements)
                     
                     # Statistics
-                    st.subheader("📈 Session Statistics")
+                    st.subheader("Session Statistics")
                     
-                    col1, col2, col3, col4 = st.columns(4)
+                    # Calculate statistics
+                    avg_velocity = df['speed_fps'].mean()
+                    std_velocity = df['speed_fps'].std()
+                    max_velocity = df['speed_fps'].max()
+                    min_velocity = df['speed_fps'].min()
+                    velocity_spread = max_velocity - min_velocity if not pd.isna(max_velocity) and not pd.isna(min_velocity) else None
                     
-                    with col1:
-                        st.metric("🔢 Total Shots", len(measurements))
+                    # Create statistics table
+                    statistics_df = pd.DataFrame({
+                        'Total Shots': [len(measurements)],
+                        'Avg Velocity (fps)': [f"{avg_velocity:.1f}" if not pd.isna(avg_velocity) else "N/A"],
+                        'Std Deviation (fps)': [f"{std_velocity:.1f}" if not pd.isna(std_velocity) else "N/A"],
+                        'Velocity Spread (fps)': [f"{velocity_spread:.1f}" if velocity_spread is not None else "N/A"]
+                    })
                     
-                    with col2:
-                        avg_velocity = df['speed_fps'].mean()
-                        st.metric("📊 Avg Velocity", f"{avg_velocity:.1f} fps" if not pd.isna(avg_velocity) else "N/A")
-                    
-                    with col3:
-                        std_velocity = df['speed_fps'].std()
-                        st.metric("📏 Std Deviation", f"{std_velocity:.1f} fps" if not pd.isna(std_velocity) else "N/A")
-                    
-                    with col4:
-                        max_velocity = df['speed_fps'].max()
-                        min_velocity = df['speed_fps'].min()
-                        velocity_spread = max_velocity - min_velocity if not pd.isna(max_velocity) and not pd.isna(min_velocity) else None
-                        st.metric("📐 Velocity Spread", f"{velocity_spread:.1f} fps" if velocity_spread is not None else "N/A")
+                    st.dataframe(statistics_df, use_container_width=True, hide_index=True)
                     
                     # Display measurement data table
-                    st.subheader("📋 Measurement Data")
+                    st.subheader("Measurement Data")
                     
                     # Reorder columns for better display
                     display_columns = ['shot_number', 'speed_fps', 'delta_avg_fps', 'ke_ft_lb', 'power_factor', 'time_local']
@@ -246,136 +246,311 @@ with tab3:
 
 with tab1:
     st.header("📤 Upload Garmin Xero File")
+    
+    # Upload and parse Excel
+    uploaded_file = st.file_uploader("Upload Garmin Xero Excel File", type=["xlsx"])
+    if uploaded_file:
+        file_bytes = uploaded_file.getvalue()
+        file_name = f"{user['email']}/{uploaded_file.name}"
+        supabase.storage.from_(bucket).upload(file_name, file_bytes, {"content-type": uploaded_file.type})
 
-# Upload and parse Excel
-uploaded_file = st.file_uploader("Upload Garmin Xero Excel File", type=["xlsx"])
-if uploaded_file:
-    file_bytes = uploaded_file.getvalue()
-    file_name = f"{user['email']}/{uploaded_file.name}"
-    supabase.storage.from_(bucket).upload(file_name, file_bytes, {"content-type": uploaded_file.type})
+        xls = pd.ExcelFile(uploaded_file)
+        for sheet in xls.sheet_names:
+            df = pd.read_excel(xls, sheet_name=sheet, header=None)
+            bullet_meta = df.iloc[0, 0]
+            parts = bullet_meta.split(",")
+            bullet_type = parts[0].strip()
+            bullet_grain = float(parts[1].strip().replace("gr", "")) if len(parts) > 1 else None
 
-    xls = pd.ExcelFile(uploaded_file)
-    for sheet in xls.sheet_names:
-        df = pd.read_excel(xls, sheet_name=sheet, header=None)
-        bullet_meta = df.iloc[0, 0]
-        parts = bullet_meta.split(",")
-        bullet_type = parts[0].strip()
-        bullet_grain = float(parts[1].strip().replace("gr", "")) if len(parts) > 1 else None
-
-        header_row = 1
-        data = df.iloc[header_row+1:].dropna(subset=[1])
-        data.columns = df.iloc[header_row]
-        
-        # Extract session timestamp from the DATE cell at the bottom of the sheet
-        session_timestamp = None
-        try:
-            # Look for the date in the last few rows of the sheet
-            for i in range(len(df) - 1, max(len(df) - 10, 0), -1):
-                for col in range(df.shape[1]):
-                    cell_value = df.iloc[i, col]
-                    if pd.notna(cell_value):
-                        cell_str = str(cell_value).strip()
-                        # Look for date patterns like "May 26, 2025 at 11:01 AM"
-                        if " at " in cell_str and any(month in cell_str for month in ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]):
-                            try:
-                                # Parse the date string
-                                parsed_date = pd.to_datetime(cell_str)
-                                session_timestamp = parsed_date.isoformat()
-                                break
-                            except:
-                                continue
-                if session_timestamp:
-                    break
-        except:
-            pass
-        
-        # Fall back to current date if we couldn't extract from sheet
-        if not session_timestamp:
-            session_timestamp = datetime.now(timezone.utc).isoformat()
-
-        # Helper function to safely convert to float, returning None for NaN/invalid values
-        def safe_float(value):
-            try:
-                if pd.isna(value) or value == '' or value is None:
-                    return None
-                float_val = float(value)
-                if math.isnan(float_val):
-                    return None
-                return float_val
-            except (ValueError, TypeError):
-                return None
-
-        # Helper function to safely convert to int
-        def safe_int(value):
-            try:
-                if pd.isna(value) or value == '' or value is None:
-                    return None
-                return int(float(value))  # Convert via float first to handle "1.0" format
-            except (ValueError, TypeError):
-                return None
-
-        session_id = str(uuid.uuid4())
-        supabase.table("sessions").insert({
-            "id": session_id,
-            "user_email": user["email"],
-            "sheet_name": sheet,
-            "bullet_type": bullet_type,
-            "bullet_grain": bullet_grain,
-            "session_timestamp": session_timestamp,
-            "uploaded_at": datetime.now(timezone.utc).isoformat(),
-            "file_path": file_name
-        }).execute()
-
-        valid_measurements = 0
-        skipped_measurements = 0
-
-        for _, row in data.iterrows():
-            # Validate required fields
-            shot_number = safe_int(row.get("#"))
-            speed_fps = safe_float(row.get("Speed (FPS)"))
+            header_row = 1
+            data = df.iloc[header_row+1:].dropna(subset=[1])
+            data.columns = df.iloc[header_row]
             
-            # Skip rows without essential data
-            if shot_number is None or speed_fps is None:
-                skipped_measurements += 1
-                continue
-
+            # Extract session timestamp from the DATE cell at the bottom of the sheet
+            session_timestamp = None
             try:
-                # Clean time string to remove non-breaking spaces and other Unicode issues
-                def clean_time_string(time_value):
-                    if pd.isna(time_value) or time_value is None:
+                # Look for the date in the last few rows of the sheet
+                for i in range(len(df) - 1, max(len(df) - 10, 0), -1):
+                    for col in range(df.shape[1]):
+                        cell_value = df.iloc[i, col]
+                        if pd.notna(cell_value):
+                            cell_str = str(cell_value).strip()
+                            # Look for date patterns like "May 26, 2025 at 11:01 AM"
+                            if " at " in cell_str and any(month in cell_str for month in ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]):
+                                try:
+                                    # Parse the date string
+                                    parsed_date = pd.to_datetime(cell_str)
+                                    session_timestamp = parsed_date.isoformat()
+                                    break
+                                except:
+                                    continue
+                    if session_timestamp:
+                        break
+            except:
+                pass
+            
+            # Fall back to current date if we couldn't extract from sheet
+            if not session_timestamp:
+                session_timestamp = datetime.now(timezone.utc).isoformat()
+
+            # Helper function to safely convert to float, returning None for NaN/invalid values
+            def safe_float(value):
+                try:
+                    if pd.isna(value) or value == '' or value is None:
                         return None
-                    time_str = str(time_value)
-                    # Replace non-breaking space and other Unicode spaces with regular space
-                    time_str = time_str.replace('\u202f', ' ')  # Non-breaking thin space
-                    time_str = time_str.replace('\u00a0', ' ')  # Non-breaking space
-                    time_str = time_str.replace('\u2009', ' ')  # Thin space
-                    time_str = time_str.strip()
-                    return time_str if time_str else None
+                    float_val = float(value)
+                    if math.isnan(float_val):
+                        return None
+                    return float_val
+                except (ValueError, TypeError):
+                    return None
 
-                measurement_data = {
-                    "session_id": session_id,
-                    "shot_number": shot_number,
-                    "speed_fps": speed_fps,
-                    "delta_avg_fps": safe_float(row.get("Δ AVG (FPS)")),
-                    "ke_ft_lb": safe_float(row.get("KE (FT-LB)")),
-                    "power_factor": safe_float(row.get("Power Factor (kgr⋅ft/s)")),
-                    "time_local": clean_time_string(row.get("Time")),
-                    "clean_bore": bool(row.get("Clean Bore")) if "Clean Bore" in row and not pd.isna(row.get("Clean Bore")) else None,
-                    "cold_bore": bool(row.get("Cold Bore")) if "Cold Bore" in row and not pd.isna(row.get("Cold Bore")) else None,
-                    "shot_notes": str(row.get("Shot Notes")) if "Shot Notes" in row and not pd.isna(row.get("Shot Notes")) else None
-                }
-                
-                supabase.table("measurements").insert(measurement_data).execute()
-                valid_measurements += 1
-                
-            except Exception as e:
-                st.warning(f"Skipped row {shot_number}: {e}")
-                skipped_measurements += 1
+            # Helper function to safely convert to int
+            def safe_int(value):
+                try:
+                    if pd.isna(value) or value == '' or value is None:
+                        return None
+                    return int(float(value))  # Convert via float first to handle "1.0" format
+                except (ValueError, TypeError):
+                    return None
 
-        # Show upload summary
-        if skipped_measurements > 0:
-            st.warning(f"⚠️ Processed {valid_measurements} measurements, skipped {skipped_measurements} rows with missing data")
+            session_id = str(uuid.uuid4())
+            supabase.table("sessions").insert({
+                "id": session_id,
+                "user_email": user["email"],
+                "sheet_name": sheet,
+                "bullet_type": bullet_type,
+                "bullet_grain": bullet_grain,
+                "session_timestamp": session_timestamp,
+                "uploaded_at": datetime.now(timezone.utc).isoformat(),
+                "file_path": file_name
+            }).execute()
+
+            valid_measurements = 0
+            skipped_measurements = 0
+
+            for _, row in data.iterrows():
+                # Validate required fields
+                shot_number = safe_int(row.get("#"))
+                speed_fps = safe_float(row.get("Speed (FPS)"))
+                
+                # Skip rows without essential data
+                if shot_number is None or speed_fps is None:
+                    skipped_measurements += 1
+                    continue
+
+                try:
+                    # Clean time string to remove non-breaking spaces and other Unicode issues
+                    def clean_time_string(time_value):
+                        if pd.isna(time_value) or time_value is None:
+                            return None
+                        time_str = str(time_value)
+                        # Replace non-breaking space and other Unicode spaces with regular space
+                        time_str = time_str.replace('\u202f', ' ')  # Non-breaking thin space
+                        time_str = time_str.replace('\u00a0', ' ')  # Non-breaking space
+                        time_str = time_str.replace('\u2009', ' ')  # Thin space
+                        time_str = time_str.strip()
+                        return time_str if time_str else None
+
+                    measurement_data = {
+                        "session_id": session_id,
+                        "shot_number": shot_number,
+                        "speed_fps": speed_fps,
+                        "delta_avg_fps": safe_float(row.get("Δ AVG (FPS)")),
+                        "ke_ft_lb": safe_float(row.get("KE (FT-LB)")),
+                        "power_factor": safe_float(row.get("Power Factor (kgr⋅ft/s)")),
+                        "time_local": clean_time_string(row.get("Time")),
+                        "clean_bore": bool(row.get("Clean Bore")) if "Clean Bore" in row and not pd.isna(row.get("Clean Bore")) else None,
+                        "cold_bore": bool(row.get("Cold Bore")) if "Cold Bore" in row and not pd.isna(row.get("Cold Bore")) else None,
+                        "shot_notes": str(row.get("Shot Notes")) if "Shot Notes" in row and not pd.isna(row.get("Shot Notes")) else None
+                    }
+                    
+                    supabase.table("measurements").insert(measurement_data).execute()
+                    valid_measurements += 1
+                    
+                except Exception as e:
+                    st.warning(f"Skipped row {shot_number}: {e}")
+                    skipped_measurements += 1
+
+            # Show upload summary
+            if skipped_measurements > 0:
+                st.warning(f"⚠️ Processed {valid_measurements} measurements, skipped {skipped_measurements} rows with missing data")
+            else:
+                st.success(f"✅ Successfully processed {valid_measurements} measurements")
+
+        st.success("Upload complete!")
+
+with tab4:
+    st.header("Locations")
+    
+    # Display locations table first
+    try:
+        # Get all locations (show ACTIVE ones to all users, show PENDING ones only to the requester)
+        locations_response = supabase.table("locations").select("*").execute()
+        all_locations = locations_response.data
+        
+        if all_locations:
+            # Filter locations for display
+            display_locations = []
+            for loc in all_locations:
+                if loc.get('status') == 'ACTIVE':
+                    display_locations.append(loc)
+                elif loc.get('status') == 'PENDING' and loc.get('user_email') == user['email']:
+                    display_locations.append(loc)
+            
+            if display_locations:
+                # Add headers first
+                col1, col2, col3, col4, col5, col6 = st.columns([3, 2, 2, 2, 2, 2])
+                with col1:
+                    st.markdown("**Name**")
+                with col2:
+                    st.markdown("**Status**")
+                with col3:
+                    st.markdown("**Altitude (ft)**")
+                with col4:
+                    st.markdown("**Azimuth (°)**")
+                with col5:
+                    st.markdown("**Latitude**")
+                with col6:
+                    st.markdown("**Longitude**")
+                
+                st.markdown("---")
+                
+                # Create a row for each location with clickable name
+                for i, location in enumerate(display_locations):
+                    status = location.get('status', 'UNKNOWN')
+                    status_emoji = "🟢" if status == "ACTIVE" else "🟡" if status == "PENDING" else "🔴"
+                    
+                    col1, col2, col3, col4, col5, col6 = st.columns([3, 2, 2, 2, 2, 2])
+                    
+                    with col1:
+                        if location.get('google_maps_link'):
+                            st.markdown(f"[{location['name']}]({location['google_maps_link']})")
+                        else:
+                            st.write(location['name'])
+                    
+                    with col2:
+                        st.write(f"{status_emoji} {status}")
+                    
+                    with col3:
+                        st.write(f"{location['altitude']}")
+                    
+                    with col4:
+                        st.write(f"{location['azimuth']}")
+                    
+                    with col5:
+                        st.write(f"{location['latitude']:.6f}" if location['latitude'] else "")
+                    
+                    with col6:
+                        st.write(f"{location['longitude']:.6f}" if location['longitude'] else "")
+            else:
+                st.info("No locations available. Submit a request to add a new location!")
         else:
-            st.success(f"✅ Successfully processed {valid_measurements} measurements")
-
-    st.success("Upload complete!")
+            st.info("No locations found. Be the first to request a location!")
+            
+    except Exception as e:
+        st.error(f"Error loading locations: {e}")
+    
+    # Add some spacing
+    st.markdown("---")
+    
+    # Location request form below the table - left-aligned with fixed width
+    form_col, _ = st.columns([400, 1])
+    
+    with form_col:
+        st.subheader("📋 Request New Location")
+        
+        with st.form("location_request_form"):
+            st.write("Fill in all fields to request a new location:")
+            
+            # Location name with max 45 characters
+            location_name = st.text_input(
+                "Location Name *",
+                placeholder="e.g., Frontline Defense - 1000yd",
+                help="Descriptive name for the shooting location",
+                max_chars=45
+            )
+            
+            # Create two rows for number inputs
+            col_alt, col_az = st.columns(2)
+            
+            with col_alt:
+                altitude = st.number_input(
+                    "Altitude (ft) *",
+                    min_value=0.0,
+                    max_value=20000.0,
+                    step=1.0,
+                    help="Elevation above sea level in feet"
+                )
+            
+            with col_az:
+                azimuth = st.number_input(
+                    "Azimuth (°) *",
+                    min_value=0.0,
+                    max_value=360.0,
+                    step=0.1,
+                    help="Shooting direction in degrees (0-360)"
+                )
+            
+            col_lat, col_lon = st.columns(2)
+            
+            with col_lat:
+                latitude = st.number_input(
+                    "Latitude *",
+                    min_value=-90.0,
+                    max_value=90.0,
+                    step=0.000001,
+                    format="%.6f",
+                    help="Latitude in decimal degrees"
+                )
+            
+            with col_lon:
+                longitude = st.number_input(
+                    "Longitude *",
+                    min_value=-180.0,
+                    max_value=180.0,
+                    step=0.000001,
+                    format="%.6f",
+                    help="Longitude in decimal degrees"
+                )
+            
+            # Submit button
+            submitted = st.form_submit_button("📍 Submit Location Request", type="primary")
+        
+        if submitted:
+            # Validate required fields
+            if not location_name or not location_name.strip():
+                st.error("❌ Location name is required")
+            elif altitude <= 0:
+                st.error("❌ Altitude must be greater than 0")
+            elif latitude == 0.0 and longitude == 0.0:
+                st.error("❌ Please provide valid coordinates")
+            else:
+                try:
+                    # Generate Google Maps link
+                    google_maps_link = f"https://maps.google.com/?q={latitude},{longitude}"
+                    
+                    # Create location record with PENDING status
+                    location_data = {
+                        "user_email": user["email"],
+                        "name": location_name.strip(),
+                        "altitude": altitude,
+                        "azimuth": azimuth,
+                        "latitude": latitude,
+                        "longitude": longitude,
+                        "google_maps_link": google_maps_link,
+                        "status": "PENDING"
+                    }
+                    
+                    # Insert into database
+                    supabase.table("locations").insert(location_data).execute()
+                    
+                    st.success("✅ Location request submitted successfully!")
+                    st.info("📋 Your location request is pending approval and will be reviewed by administrators.")
+                    st.info(f"📍 [View on Google Maps]({google_maps_link})")
+                    
+                    # Rerun to clear the form
+                    st.rerun()
+                    
+                except Exception as e:
+                    st.error(f"❌ Failed to submit location request: {e}")

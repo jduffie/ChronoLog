@@ -1,0 +1,59 @@
+-- ChronoLog Database Schema
+-- Run this in Supabase SQL Editor
+
+-- Drop existing tables if they exist
+DROP TABLE IF EXISTS measurements CASCADE;
+DROP TABLE IF EXISTS sessions CASCADE;
+DROP TABLE IF EXISTS locations CASCADE;
+
+-- Create sessions table
+CREATE TABLE sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_email TEXT NOT NULL,
+    sheet_name TEXT NOT NULL,
+    bullet_type TEXT NOT NULL,
+    bullet_grain NUMERIC,
+    session_timestamp TIMESTAMPTZ,
+    uploaded_at TIMESTAMPTZ DEFAULT NOW(),
+    file_path TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Create measurements table
+CREATE TABLE measurements (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id UUID REFERENCES sessions(id) ON DELETE CASCADE,
+    shot_number INTEGER,
+    speed_fps NUMERIC,
+    delta_avg_fps NUMERIC,
+    ke_ft_lb NUMERIC,
+    power_factor NUMERIC,
+    time_local TEXT,
+    clean_bore BOOLEAN,
+    cold_bore BOOLEAN,
+    shot_notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Create locations table
+CREATE TABLE locations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_email TEXT NOT NULL,
+    name TEXT NOT NULL,
+    altitude NUMERIC,
+    azimuth NUMERIC,
+    latitude NUMERIC(10, 8),
+    longitude NUMERIC(11, 8),
+    google_maps_link TEXT,
+    status TEXT DEFAULT 'ACTIVE',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Create indexes for better performance
+CREATE INDEX idx_sessions_user_email ON sessions(user_email);
+CREATE INDEX idx_sessions_uploaded_at ON sessions(uploaded_at);
+CREATE INDEX idx_measurements_session_id ON measurements(session_id);
+CREATE INDEX idx_measurements_shot_number ON measurements(shot_number);
+CREATE INDEX idx_locations_user_email ON locations(user_email);
+CREATE INDEX idx_locations_name ON locations(name);
