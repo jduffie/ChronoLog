@@ -65,107 +65,184 @@ bucket = st.secrets["supabase"]["bucket"]
 supabase = create_client(url, key)
 
 # Main app tabs
-tab1, tab2 = st.tabs(["Upload Files", "My Files"])
+tab1, tab2, tab3 = st.tabs(["Upload Files", "My Files", "View Session"])
 
 with tab2:
     st.header("📁 My Uploaded Files")
     
     try:
-        # Get user's sessions from database
-        sessions_response = supabase.table("sessions").select("*").eq("user_email", user["email"]).order("uploaded_at", desc=True).execute()
-        sessions = sessions_response.data
+        # Get files directly from storage
+        files_list = supabase.storage.from_(bucket).list(f"{user['email']}")
         
-        if sessions:
-            st.write(f"You have uploaded {len(sessions)} file(s):")
+        if files_list:
+            st.write(f"You have {len(files_list)} file(s) in storage:")
             
-            for session in sessions:
-                with st.expander(f"📄 {session['file_path'].split('/')[-1]} - {session['bullet_type']} ({session['bullet_grain']}gr)"):
-                    col1, col2 = st.columns(2)
+            for file_item in files_list:
+                if file_item.get('name'):
+                    file_path = f"{user['email']}/{file_item['name']}"
                     
-                    with col1:
-                        st.write(f"**Uploaded:** {pd.to_datetime(session['uploaded_at']).strftime('%Y-%m-%d %H:%M')}")
-                        st.write(f"**Sheet:** {session['sheet_name']}")
-                        st.write(f"**Bullet Type:** {session['bullet_type']}")
-                        st.write(f"**Bullet Weight:** {session['bullet_grain']}gr")
-                    
-                    with col2:
-                        # Get measurement count for this session
-                        measurements_response = supabase.table("measurements").select("*", count="exact").eq("session_id", session['id']).execute()
-                        measurement_count = measurements_response.count
-                        st.write(f"**Shots Recorded:** {measurement_count}")
+                    with st.expander(f"📄 {file_item['name']}"):
+                        col1, col2 = st.columns(2)
                         
-                        # Download button for original file
-                        if st.button("📥 Download Original File", key=f"download_{session['id']}"):
-                            try:
-                                file_data = supabase.storage.from_(bucket).download(session['file_path'])
-                                st.download_button(
-                                    label="💾 Save File",
-                                    data=file_data,
-                                    file_name=session['file_path'].split('/')[-1],
-                                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                                    key=f"save_{session['id']}"
-                                )
-                            except Exception as e:
-                                st.error(f"Error downloading file: {e}")
+                        with col1:
+                            if 'created_at' in file_item:
+                                st.write(f"**Uploaded:** {pd.to_datetime(file_item['created_at']).strftime('%Y-%m-%d %H:%M')}")
+                            if 'metadata' in file_item and file_item['metadata']:
+                                if 'size' in file_item['metadata']:
+                                    size_mb = file_item['metadata']['size'] / (1024 * 1024)
+                                    st.write(f"**Size:** {size_mb:.2f} MB")
                         
-                        # Delete button with confirmation
-                        if st.button("🗑️ Delete File", key=f"delete_{session['id']}", type="secondary"):
-                            st.session_state[f"confirm_delete_{session['id']}"] = True
-                        
-                        # Show confirmation dialog
-                        if st.session_state.get(f"confirm_delete_{session['id']}", False):
-                            st.warning("⚠️ Are you sure you want to delete this file? This action cannot be undone!")
-                            col_yes, col_no = st.columns(2)
+                        with col2:
+                            # Download button for file
+                            if st.button("📥 Download File", key=f"download_file_{file_item['name']}"):
+                                try:
+                                    file_data = supabase.storage.from_(bucket).download(file_path)
+                                    st.download_button(
+                                        label="💾 Save File",
+                                        data=file_data,
+                                        file_name=file_item['name'],
+                                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                        key=f"save_file_{file_item['name']}"
+                                    )
+                                except Exception as e:
+                                    st.error(f"Error downloading file: {e}")
                             
-                            with col_yes:
-                                if st.button("✅ Yes, Delete", key=f"confirm_yes_{session['id']}", type="primary"):
-                                    try:
-                                        # Delete measurements first (foreign key constraint)
-                                        supabase.table("measurements").delete().eq("session_id", session['id']).execute()
-                                        
-                                        # Delete session record
-                                        supabase.table("sessions").delete().eq("id", session['id']).execute()
-                                        
-                                        # Delete file from storage
-                                        supabase.storage.from_(bucket).remove([session['file_path']])
-                                        
-                                        # Clear confirmation state and rerun
-                                        del st.session_state[f"confirm_delete_{session['id']}"]
-                                        st.success("File deleted successfully!")
+                            # Delete button with confirmation
+                            if st.button("🗑️ Delete File", key=f"delete_file_{file_item['name']}", type="secondary"):
+                                st.session_state[f"confirm_delete_file_{file_item['name']}"] = True
+                            
+                            # Show confirmation dialog
+                            if st.session_state.get(f"confirm_delete_file_{file_item['name']}", False):
+                                st.warning("⚠️ Are you sure you want to delete this file? This action cannot be undone!")
+                                col_yes, col_no = st.columns(2)
+                                
+                                with col_yes:
+                                    if st.button("✅ Yes, Delete", key=f"confirm_yes_file_{file_item['name']}", type="primary"):
+                                        try:
+                                            # Only delete file from storage
+                                            supabase.storage.from_(bucket).remove([file_path])
+                                            
+                                            # Clear confirmation state and rerun
+                                            del st.session_state[f"confirm_delete_file_{file_item['name']}"]
+                                            st.success("File deleted successfully!")
+                                            st.rerun()
+                                            
+                                        except Exception as e:
+                                            st.error(f"Error deleting file: {e}")
+                                
+                                with col_no:
+                                    if st.button("❌ Cancel", key=f"confirm_no_file_{file_item['name']}"):
+                                        del st.session_state[f"confirm_delete_file_{file_item['name']}"]
                                         st.rerun()
-                                        
-                                    except Exception as e:
-                                        st.error(f"Error deleting file: {e}")
-                            
-                            with col_no:
-                                if st.button("❌ Cancel", key=f"confirm_no_{session['id']}"):
-                                    del st.session_state[f"confirm_delete_{session['id']}"]
-                                    st.rerun()
-                    
-                    # Show measurement data
-                    if st.checkbox(f"Show measurement data", key=f"show_data_{session['id']}"):
-                        measurements_response = supabase.table("measurements").select("*").eq("session_id", session['id']).order("shot_number").execute()
-                        measurements = measurements_response.data
-                        
-                        if measurements:
-                            df = pd.DataFrame(measurements)
-                            # Reorder columns for better display
-                            display_columns = ['shot_number', 'speed_fps', 'delta_avg_fps', 'ke_ft_lb', 'power_factor', 'time_local']
-                            if 'clean_bore' in df.columns:
-                                display_columns.append('clean_bore')
-                            if 'cold_bore' in df.columns:
-                                display_columns.append('cold_bore')
-                            if 'shot_notes' in df.columns:
-                                display_columns.append('shot_notes')
-                            
-                            # Only show columns that exist
-                            display_columns = [col for col in display_columns if col in df.columns]
-                            st.dataframe(df[display_columns], use_container_width=True)
         else:
             st.info("No files uploaded yet. Use the 'Upload Files' tab to get started!")
             
     except Exception as e:
         st.error(f"Error loading your files: {e}")
+
+with tab3:
+    st.header("🎯 View Session")
+    
+    try:
+        # Get user's sessions for selection
+        sessions_response = supabase.table("sessions").select("*").eq("user_email", user["email"]).order("uploaded_at", desc=True).execute()
+        sessions = sessions_response.data
+        
+        if sessions:
+            # Create session options for selectbox
+            session_options = {}
+            for session in sessions:
+                # Use session_timestamp if available, otherwise fall back to uploaded_at
+                if 'session_timestamp' in session and session['session_timestamp']:
+                    session_time = pd.to_datetime(session['session_timestamp']).strftime('%Y-%m-%d %H:%M')
+                else:
+                    session_time = pd.to_datetime(session['uploaded_at']).strftime('%Y-%m-%d %H:%M')
+                display_name = f"{session_time} - {session['bullet_type']} ({session['bullet_grain']}gr) - {session['sheet_name']}"
+                session_options[display_name] = session
+            
+            # Session selection
+            selected_session_display = st.selectbox(
+                "📅 Select a session by date and time:",
+                options=list(session_options.keys()),
+                help="Sessions are ordered by upload time (newest first)"
+            )
+            
+            if selected_session_display:
+                selected_session = session_options[selected_session_display]
+                
+                # Display session metadata
+                st.subheader("📊 Session Metadata")
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    # Show session timestamp if available
+                    if 'session_timestamp' in selected_session and selected_session['session_timestamp']:
+                        session_dt = pd.to_datetime(selected_session['session_timestamp'])
+                        st.metric("🎯 Session Date", session_dt.strftime('%Y-%m-%d'))
+                        st.metric("🕐 Session Time", session_dt.strftime('%H:%M:%S'))
+                    else:
+                        st.metric("📅 Upload Date", pd.to_datetime(selected_session['uploaded_at']).strftime('%Y-%m-%d'))
+                        st.metric("⏰ Upload Time", pd.to_datetime(selected_session['uploaded_at']).strftime('%H:%M:%S'))
+                    st.metric("🔫 Bullet Type", selected_session['bullet_type'])
+                
+                with col2:
+                    st.metric("⚖️ Bullet Weight", f"{selected_session['bullet_grain']} gr")
+                    with st.container():
+                        st.write("📄 **Sheet Name**")
+                        st.write(f"<small>{selected_session['sheet_name']}</small>", unsafe_allow_html=True)
+                
+                # Get measurement count and statistics
+                measurements_response = supabase.table("measurements").select("*").eq("session_id", selected_session['id']).execute()
+                measurements = measurements_response.data
+                
+                if measurements:
+                    df = pd.DataFrame(measurements)
+                    
+                    # Statistics
+                    st.subheader("📈 Session Statistics")
+                    
+                    col1, col2, col3, col4 = st.columns(4)
+                    
+                    with col1:
+                        st.metric("🔢 Total Shots", len(measurements))
+                    
+                    with col2:
+                        avg_velocity = df['speed_fps'].mean()
+                        st.metric("📊 Avg Velocity", f"{avg_velocity:.1f} fps" if not pd.isna(avg_velocity) else "N/A")
+                    
+                    with col3:
+                        std_velocity = df['speed_fps'].std()
+                        st.metric("📏 Std Deviation", f"{std_velocity:.1f} fps" if not pd.isna(std_velocity) else "N/A")
+                    
+                    with col4:
+                        max_velocity = df['speed_fps'].max()
+                        min_velocity = df['speed_fps'].min()
+                        velocity_spread = max_velocity - min_velocity if not pd.isna(max_velocity) and not pd.isna(min_velocity) else None
+                        st.metric("📐 Velocity Spread", f"{velocity_spread:.1f} fps" if velocity_spread is not None else "N/A")
+                    
+                    # Display measurement data table
+                    st.subheader("📋 Measurement Data")
+                    
+                    # Reorder columns for better display
+                    display_columns = ['shot_number', 'speed_fps', 'delta_avg_fps', 'ke_ft_lb', 'power_factor', 'time_local']
+                    if 'clean_bore' in df.columns:
+                        display_columns.append('clean_bore')
+                    if 'cold_bore' in df.columns:
+                        display_columns.append('cold_bore')
+                    if 'shot_notes' in df.columns:
+                        display_columns.append('shot_notes')
+                    
+                    # Only show columns that exist
+                    display_columns = [col for col in display_columns if col in df.columns]
+                    st.dataframe(df[display_columns], use_container_width=True)
+                else:
+                    st.warning("No measurement data found for this session.")
+        else:
+            st.info("No sessions found. Upload a file first to create sessions.")
+            
+    except Exception as e:
+        st.error(f"Error loading sessions: {e}")
 
 with tab1:
     st.header("📤 Upload Garmin Xero File")
@@ -188,6 +265,33 @@ if uploaded_file:
         header_row = 1
         data = df.iloc[header_row+1:].dropna(subset=[1])
         data.columns = df.iloc[header_row]
+        
+        # Extract session timestamp from the DATE cell at the bottom of the sheet
+        session_timestamp = None
+        try:
+            # Look for the date in the last few rows of the sheet
+            for i in range(len(df) - 1, max(len(df) - 10, 0), -1):
+                for col in range(df.shape[1]):
+                    cell_value = df.iloc[i, col]
+                    if pd.notna(cell_value):
+                        cell_str = str(cell_value).strip()
+                        # Look for date patterns like "May 26, 2025 at 11:01 AM"
+                        if " at " in cell_str and any(month in cell_str for month in ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]):
+                            try:
+                                # Parse the date string
+                                parsed_date = pd.to_datetime(cell_str)
+                                session_timestamp = parsed_date.isoformat()
+                                break
+                            except:
+                                continue
+                if session_timestamp:
+                    break
+        except:
+            pass
+        
+        # Fall back to current date if we couldn't extract from sheet
+        if not session_timestamp:
+            session_timestamp = datetime.now(timezone.utc).isoformat()
 
         # Helper function to safely convert to float, returning None for NaN/invalid values
         def safe_float(value):
@@ -217,6 +321,7 @@ if uploaded_file:
             "sheet_name": sheet,
             "bullet_type": bullet_type,
             "bullet_grain": bullet_grain,
+            "session_timestamp": session_timestamp,
             "uploaded_at": datetime.now(timezone.utc).isoformat(),
             "file_path": file_name
         }).execute()
