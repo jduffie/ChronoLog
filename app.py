@@ -68,7 +68,7 @@ bucket = st.secrets["supabase"]["bucket"]
 supabase = create_client(url, key)
 
 # Main app tabs
-tab1, tab2, tab3, tab4 = st.tabs(["Upload Files", "My Files", "View Session", "Locations"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["Upload Files", "My Files", "View Session", "Sessions", "Locations"])
 
 with tab2:
     st.header("📁 My Uploaded Files")
@@ -458,6 +458,105 @@ with tab1:
         st.success("Upload complete!")
 
 with tab4:
+    st.header("📊 Sessions")
+    
+    try:
+        # Get user's sessions with location info
+        sessions_response = supabase.table("sessions").select("*").eq("user_email", user["email"]).order("session_timestamp", desc=True).execute()
+        sessions = sessions_response.data
+        
+        if sessions:
+            # Get all locations for lookup
+            locations_response = supabase.table("locations").select("*").execute()
+            locations_dict = {loc['id']: loc for loc in locations_response.data} if locations_response.data else {}
+            
+            # Process sessions with aggregated measurement data
+            session_summaries = []
+            
+            for session in sessions:
+                # Get measurements for this session
+                measurements_response = supabase.table("measurements").select("*").eq("session_id", session['id']).execute()
+                measurements = measurements_response.data
+                
+                # Prepare session timestamp
+                if session.get('session_timestamp'):
+                    session_dt = pd.to_datetime(session['session_timestamp'])
+                    session_date = session_dt.strftime('%Y-%m-%d')
+                    session_time = session_dt.strftime('%H:%M')
+                else:
+                    upload_dt = pd.to_datetime(session['uploaded_at'])
+                    session_date = upload_dt.strftime('%Y-%m-%d')
+                    session_time = upload_dt.strftime('%H:%M')
+                
+                # Get location name
+                location_name = "Not assigned"
+                if session.get('location_id') and session['location_id'] in locations_dict:
+                    location_name = locations_dict[session['location_id']]['name']
+                
+                # Calculate statistics from measurements
+                shot_count = len(measurements) if measurements else 0
+                avg_velocity = std_velocity = velocity_spread = "N/A"
+                
+                if measurements and shot_count > 0:
+                    speeds = [m['speed_fps'] for m in measurements if m.get('speed_fps') is not None]
+                    if speeds:
+                        avg_velocity = f"{sum(speeds) / len(speeds):.1f}"
+                        if len(speeds) > 1:
+                            mean_speed = sum(speeds) / len(speeds)
+                            variance = sum((x - mean_speed) ** 2 for x in speeds) / len(speeds)
+                            std_velocity = f"{variance ** 0.5:.1f}"
+                            velocity_spread = f"{max(speeds) - min(speeds):.1f}"
+                        else:
+                            std_velocity = "0.0"
+                            velocity_spread = "0.0"
+                
+                session_summaries.append({
+                    'Date': session_date,
+                    'Time': session_time,
+                    'Bullet Type': session['bullet_type'],
+                    'Bullet Weight (gr)': session['bullet_grain'],
+                    'Location': location_name,
+                    'Shot Count': shot_count,
+                    'Avg Velocity (fps)': avg_velocity,
+                    'Std Dev (fps)': std_velocity,
+                    'Velocity Spread (fps)': velocity_spread,
+                    'Sheet Name': session['sheet_name']
+                })
+            
+            # Create DataFrame and display
+            if session_summaries:
+                sessions_df = pd.DataFrame(session_summaries)
+                
+                st.markdown("### Session Summary")
+                st.write(f"Total sessions: {len(sessions)}")
+                
+                # Display the sessions table
+                st.dataframe(
+                    sessions_df,
+                    use_container_width=True,
+                    hide_index=True,
+                    column_config={
+                        'Date': st.column_config.DateColumn('Date'),
+                        'Time': st.column_config.TextColumn('Time'),
+                        'Bullet Type': st.column_config.TextColumn('Bullet Type'),
+                        'Bullet Weight (gr)': st.column_config.NumberColumn('Bullet Weight (gr)', format="%.1f"),
+                        'Location': st.column_config.TextColumn('Location'),
+                        'Shot Count': st.column_config.NumberColumn('Shot Count'),
+                        'Avg Velocity (fps)': st.column_config.TextColumn('Avg Velocity (fps)'),
+                        'Std Dev (fps)': st.column_config.TextColumn('Std Dev (fps)'),
+                        'Velocity Spread (fps)': st.column_config.TextColumn('Velocity Spread (fps)'),
+                        'Sheet Name': st.column_config.TextColumn('Sheet Name')
+                    }
+                )
+            else:
+                st.info("No sessions found.")
+        else:
+            st.info("No sessions found. Upload files first to create sessions.")
+            
+    except Exception as e:
+        st.error(f"Error loading sessions: {e}")
+
+with tab5:
     st.header("Locations")
     
     # Display locations table first
