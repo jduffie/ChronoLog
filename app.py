@@ -193,6 +193,46 @@ with tab3:
                 
                 st.dataframe(session_details_df, use_container_width=True, hide_index=True)
                 
+                # Add DELETE SESSION button
+                col1, col2 = st.columns([1, 4])
+                with col1:
+                    if st.button("🗑️ DELETE SESSION", type="secondary", key=f"delete_session_{selected_session['id']}"):
+                        st.session_state[f"confirm_delete_session_{selected_session['id']}"] = True
+                
+                # Show confirmation dialog
+                if st.session_state.get(f"confirm_delete_session_{selected_session['id']}", False):
+                    st.warning("⚠️ Are you sure you want to delete this entire session? This will permanently delete all measurements and cannot be undone!")
+                    col_yes, col_no = st.columns(2)
+                    
+                    with col_yes:
+                        if st.button("✅ Yes, Delete Session", key=f"confirm_yes_session_{selected_session['id']}", type="primary"):
+                            try:
+                                # Security: Verify session belongs to current user before deletion
+                                session_check = supabase.table("sessions").select("id").eq("id", selected_session['id']).eq("user_email", user["email"]).execute()
+                                
+                                if not session_check.data:
+                                    st.error("❌ Session not found or access denied")
+                                else:
+                                    # Delete all measurements for this session (CASCADE should handle this, but being explicit)
+                                    supabase.table("measurements").delete().eq("session_id", selected_session['id']).execute()
+                                    
+                                    # Delete the session
+                                    supabase.table("sessions").delete().eq("id", selected_session['id']).eq("user_email", user["email"]).execute()
+                                    
+                                    # Clear confirmation state
+                                    del st.session_state[f"confirm_delete_session_{selected_session['id']}"]
+                                    
+                                    st.success("✅ Session deleted successfully!")
+                                    st.rerun()
+                                
+                            except Exception as e:
+                                st.error(f"❌ Error deleting session: {e}")
+                    
+                    with col_no:
+                        if st.button("❌ Cancel", key=f"confirm_no_session_{selected_session['id']}"):
+                            del st.session_state[f"confirm_delete_session_{selected_session['id']}"]
+                            st.rerun()
+                
                 # Location Section
                 st.subheader("Location")
                 
@@ -369,6 +409,13 @@ with tab1:
             # Fall back to current date if we couldn't extract from sheet
             if not session_timestamp:
                 session_timestamp = datetime.now(timezone.utc).isoformat()
+
+            # Check if a session already exists at this date/time for this user
+            existing_session_response = supabase.table("sessions").select("id").eq("user_email", user["email"]).eq("session_timestamp", session_timestamp).execute()
+            
+            if existing_session_response.data:
+                st.warning(f"⚠️ Session already exists for {pd.to_datetime(session_timestamp).strftime('%Y-%m-%d %H:%M')} - skipping sheet '{sheet}'")
+                continue
 
             # Helper function to safely convert to float, returning None for NaN/invalid values
             def safe_float(value):
