@@ -13,6 +13,7 @@ A multi-user Streamlit app for processing Garmin Xero Chronograph data. Users au
 
 ### Prerequisites
 - Python 3.8+
+- Streamlit
 - Supabase account with service role key
 - Auth0 account configured for Google OAuth
 
@@ -103,6 +104,7 @@ The script will prompt for confirmation by requiring you to type `RESET EVERYTHI
 
 ### Start the Streamlit App
 ```bash
+source venv/bin/activate
 streamlit run app.py
 ```
 

@@ -4,3 +4,6 @@ pandas
 openpyxl
 requests
 supabase
+folium
+streamlit-folium
+geopy
