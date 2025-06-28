@@ -86,7 +86,38 @@ if len(st.session_state.points) == 2 and len(st.session_state.elevations) == 2:
     table_data["Azimuth (°)"][0] = f"{azimuth:.2f}"
     table_data["Elevation Angle (°)"][0] = f"{elevation_angle:.2f}"
 
-st.table(pd.DataFrame(table_data))
+# Create HTML table based on test.html format
+html_table = """
+<table style="width:100%; border-collapse: collapse;" border="1">
+    <tr>
+        <th colspan="3" style="text-align:center;">Start</th>
+        <th colspan="3" style="text-align:center;"></th>
+        <th colspan="3" style="text-align:center;">End</th>
+    </tr>
+    <tr>
+        <th>Latitude</th><th>Longitude</th><th>Altitude</th>
+        <th>Range</th><th>Azimuth</th><th>Elevation</th>
+        <th>Latitude</th><th>Longitude</th><th>Altitude</th>
+    </tr>
+    <tr>
+        <td>{start_lat}</td><td>{start_lon}</td><td>{start_alt}</td>
+        <td>{range}</td><td>{azimuth}</td><td>{elevation}</td>
+        <td>{end_lat}</td><td>{end_lon}</td><td>{end_alt}</td>
+    </tr>
+</table>
+""".format(
+    start_lat=table_data["Start Latitude"][0],
+    start_lon=table_data["Start Longitude"][0], 
+    start_alt=table_data["Start Altitude (ft)"][0],
+    range=table_data["Distance (m)"][0],
+    azimuth=table_data["Azimuth (°)"][0],
+    elevation=table_data["Elevation Angle (°)"][0],
+    end_lat=table_data["End Latitude"][0],
+    end_lon=table_data["End Longitude"][0],
+    end_alt=table_data["End Altitude (ft)"][0]
+)
+
+st.markdown(html_table, unsafe_allow_html=True)
 cursor_css = """
 <style>
     .leaflet-container {
@@ -129,9 +160,6 @@ if click_info:
             click_info["last_clicked"]["lat"],
             click_info["last_clicked"]["lng"]
         ]
-        st.info(f":lat {latlon[0]:.2f} ")
-        st.info(f":lon {latlon[1]:.2f} ")
-
         if len(st.session_state.points) < 2:
             st.session_state.points.append(latlon)
             st.rerun()
