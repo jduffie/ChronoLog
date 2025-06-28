@@ -208,6 +208,15 @@ for i, point in enumerate(st.session_state.points):
         icon=folium.Icon(color=color)
     ).add_to(m)
 
+if len(st.session_state.points) == 2:
+    # Draw a line between the two points
+    folium.PolyLine(
+        st.session_state.points,
+        color="yellow",
+        weight=3,
+        opacity=0.8
+    ).add_to(m)
+
 map_info = st_folium(m, width=700, height=500)
 display_map_events(map_info)
 
