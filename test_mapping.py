@@ -49,7 +49,8 @@ table_data = {
     "End Longitude": [""],
     "End Altitude (ft)": [""],
     "Distance (m)": [""],
-    "Azimuth (°)": [""]
+    "Azimuth (°)": [""],
+    "Elevation Angle (°)": [""]
 }
 
 if len(st.session_state.points) >= 1 and len(st.session_state.elevations) >= 1:
@@ -72,11 +73,18 @@ if len(st.session_state.points) == 2 and len(st.session_state.elevations) == 2:
         return (math.degrees(initial_bearing) + 360) % 360
 
     azimuth = calculate_bearing(p1, p2)
+    
+    # Calculate elevation angle
+    elevation_diff_ft = st.session_state.elevations[1] - st.session_state.elevations[0]
+    elevation_diff_m = elevation_diff_ft * 0.3048  # Convert feet to meters
+    elevation_angle = math.degrees(math.atan2(elevation_diff_m, distance_m))
+    
     table_data["End Latitude"][0] = f"{p2[0]:.6f}"
     table_data["End Longitude"][0] = f"{p2[1]:.6f}"
     table_data["End Altitude (ft)"][0] = f"{st.session_state.elevations[1]:.1f}"
     table_data["Distance (m)"][0] = f"{distance_m:.2f}"
     table_data["Azimuth (°)"][0] = f"{azimuth:.2f}"
+    table_data["Elevation Angle (°)"][0] = f"{elevation_angle:.2f}"
 
 st.table(pd.DataFrame(table_data))
 cursor_css = """
