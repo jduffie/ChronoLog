@@ -7,20 +7,44 @@ from branca.element import MacroElement
 from jinja2 import Template
 import pandas as pd
 import requests
+from folium.plugins import LocateControl
+from folium.plugins import Geocoder
+from branca.element import MacroElement
+from jinja2 import Template
 
-st.title("Select Two Points to Compute Azimuth and Distance")
+
+
+prev_session_state = dict(st.session_state)
+
+# log the current session_state
+# print("Session State:", st.session_state)
+filtered = {k: v for k, v in st.session_state.items() if v is not None}
+if filtered:
+    print("Starting State:", st.session_state)
+    print("")
+
+st.title("Select Two Points to Collect Altitude, Range, Azimuth, and Elevation")
+
+def display_map_events(map_info):
+    """Show only non-null events from map_info."""
+    if not map_info:
+        return
+    filtered = {k: v for k, v in map_info.items() if v is not None}
+    if filtered:
+        print("Map event data:", filtered)
+        print("")
 
 # Function to get elevation from Open Elevation API
 def get_elevation(lat, lng):
-    """Get elevation in feet from Open Elevation API"""
+    """Get elevation in meters from Open Elevation API"""
     try:
         url = f"https://api.open-elevation.com/api/v1/lookup?locations={lat},{lng}"
         response = requests.get(url, timeout=10)
         response.raise_for_status()
         data = response.json()
         elevation_m = data['results'][0]['elevation']
-        elevation_ft = elevation_m * 3.28084  # Convert meters to feet
-        return elevation_ft
+        # elevation_ft = elevation_m * 3.28084  # Convert meters to feet
+        return elevation_m
     except Exception as e:
         st.warning(f"Could not fetch elevation data: {e}")
         return 0.0
@@ -28,40 +52,45 @@ def get_elevation(lat, lng):
 # Initialize session state
 if "points" not in st.session_state:
     st.session_state.points = []
-if "elevations" not in st.session_state:
-    st.session_state.elevations = []
+if "elevations_m" not in st.session_state:
+    st.session_state.elevations_m = []
+if "map_center" not in st.session_state:
+    st.session_state.map_center = [36.222278, -78.051833]  # Default: 36°13'20.2"N 78°03'06.6"W
+if "zoom_level" not in st.session_state:
+    st.session_state.zoom_level = 13
+
 
 # Display elevation fetching status
-if len(st.session_state.points) > 0 and len(st.session_state.elevations) < len(st.session_state.points):
+if len(st.session_state.points) > 0 and len(st.session_state.elevations_m) < len(st.session_state.points):
     with st.spinner("Fetching elevation data..."):
-        # Fetch missing elevations
-        for i in range(len(st.session_state.elevations), len(st.session_state.points)):
+        # Fetch missing elevations_m
+        for i in range(len(st.session_state.elevations_m), len(st.session_state.points)):
             point = st.session_state.points[i]
-            elevation = get_elevation(point[0], point[1])
-            st.session_state.elevations.append(elevation)
+            elevation_m = get_elevation(point[0], point[1])
+            st.session_state.elevations_m.append(elevation_m)
 
 # Pre-fill table with empty or partial data
 table_data = {
     "Start Latitude": [""],
     "Start Longitude": [""],
-    "Start Altitude (ft)": [""],
+    "Start Altitude (m)": [""],
     "End Latitude": [""],
     "End Longitude": [""],
-    "End Altitude (ft)": [""],
+    "End Altitude (m)": [""],
     "Distance (m)": [""],
     "Azimuth (°)": [""],
     "Elevation Angle (°)": [""]
 }
 
-if len(st.session_state.points) >= 1 and len(st.session_state.elevations) >= 1:
+if len(st.session_state.points) >= 1 and len(st.session_state.elevations_m) >= 1:
     p1 = st.session_state.points[0]
     table_data["Start Latitude"][0] = f"{p1[0]:.6f}"
     table_data["Start Longitude"][0] = f"{p1[1]:.6f}"
-    table_data["Start Altitude (ft)"][0] = f"{st.session_state.elevations[0]:.1f}"
+    table_data["Start Altitude (m)"][0] = f"{st.session_state.elevations_m[0]:.1f}"
 
-if len(st.session_state.points) == 2 and len(st.session_state.elevations) == 2:
+if len(st.session_state.points) == 2 and len(st.session_state.elevations_m) == 2:
     p2 = st.session_state.points[1]
-    distance_m = geodesic(p1, p2).meters
+    distance_m = geodesic(p1, p2).m
 
     def calculate_bearing(pointA, pointB):
         lat1, lon1 = math.radians(pointA[0]), math.radians(pointA[1])
@@ -73,31 +102,34 @@ if len(st.session_state.points) == 2 and len(st.session_state.elevations) == 2:
         return (math.degrees(initial_bearing) + 360) % 360
 
     azimuth = calculate_bearing(p1, p2)
-    
+
     # Calculate elevation angle
-    elevation_diff_ft = st.session_state.elevations[1] - st.session_state.elevations[0]
-    elevation_diff_m = elevation_diff_ft * 0.3048  # Convert feet to meters
+    elevation_diff_m = st.session_state.elevations_m[1] - st.session_state.elevations_m[0]
     elevation_angle = math.degrees(math.atan2(elevation_diff_m, distance_m))
-    
+
     table_data["End Latitude"][0] = f"{p2[0]:.6f}"
     table_data["End Longitude"][0] = f"{p2[1]:.6f}"
-    table_data["End Altitude (ft)"][0] = f"{st.session_state.elevations[1]:.1f}"
+    table_data["End Altitude (m)"][0] = f"{st.session_state.elevations_m[1]:.1f}"
     table_data["Distance (m)"][0] = f"{distance_m:.2f}"
     table_data["Azimuth (°)"][0] = f"{azimuth:.2f}"
     table_data["Elevation Angle (°)"][0] = f"{elevation_angle:.2f}"
 
 # Create HTML table based on test.html format
 html_table = """
-<table style="width:100%; border-collapse: collapse;" border="1">
+<table style="width:100%; border-collapse: collapse; border: 4px solid black;" border="1">
     <tr>
-        <th colspan="3" style="text-align:center;">Start</th>
+        <th colspan="3" style="text-align:center;background-color: navy; color: white;">Start</th>
         <th colspan="3" style="text-align:center;"></th>
-        <th colspan="3" style="text-align:center;">End</th>
+        <th colspan="3" style="text-align:center;background-color: red; color: white;">End</th>
     </tr>
     <tr>
-        <th>Latitude</th><th>Longitude</th><th>Altitude</th>
-        <th>Range</th><th>Azimuth</th><th>Elevation</th>
-        <th>Latitude</th><th>Longitude</th><th>Altitude</th>
+        <th style="text-align:center;background-color: navy; color: white;">Lat</th>
+            <th style="text-align:center;background-color: navy; color: white;">Lon</th>
+            <th style="text-align:center;background-color: navy; color: white;">Alt (m)</th>
+        <th>Range (m)</th><th>Azimuth (°)</th><th>Elevation (°)</th>
+        <th style="text-align:center;background-color: red; color: white;">Lat</th>
+            <th style="text-align:center;background-color: red; color: white;">Lon</th>
+            <th style="text-align:center;background-color: red; color: white;">Alt (m)</th>
     </tr>
     <tr>
         <td>{start_lat}</td><td>{start_lon}</td><td>{start_alt}</td>
@@ -107,14 +139,14 @@ html_table = """
 </table>
 """.format(
     start_lat=table_data["Start Latitude"][0],
-    start_lon=table_data["Start Longitude"][0], 
-    start_alt=table_data["Start Altitude (ft)"][0],
+    start_lon=table_data["Start Longitude"][0],
+    start_alt=table_data["Start Altitude (m)"][0],
     range=table_data["Distance (m)"][0],
     azimuth=table_data["Azimuth (°)"][0],
     elevation=table_data["Elevation Angle (°)"][0],
     end_lat=table_data["End Latitude"][0],
     end_lon=table_data["End Longitude"][0],
-    end_alt=table_data["End Altitude (ft)"][0]
+    end_alt=table_data["End Altitude (m)"][0]
 )
 
 st.markdown(html_table, unsafe_allow_html=True)
@@ -135,13 +167,38 @@ class CssInjector(MacroElement):
         {{% endmacro %}}
         """)
 
-# Initial map center
-map_center = [37.76, -122.4]
+# Build the map with satellite imagery
+m = folium.Map(
+    location=st.session_state.map_center, 
+    zoom_start=st.session_state.zoom_level,
+    tiles=None  # Start with no base layer
+)
 
+# Add satellite imagery as base layer
+folium.TileLayer(
+    tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attr='Esri',
+    name='Satellite',
+    overlay=False,
+    control=True
+).add_to(m)
 
-# Build the map
-m = folium.Map(location=map_center, zoom_start=13)
+# Add road overlay
+folium.TileLayer(
+    tiles='https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}',
+    attr='Esri',
+    name='Roads',
+    overlay=True,
+    control=True,
+    opacity=0.7
+).add_to(m)
+
+# Add layer control
+folium.LayerControl().add_to(m)
+
+LocateControl().add_to(m)
 m.get_root().add_child(CssInjector(cursor_css))
+Geocoder().add_to(m)
 
 # Add existing points with color-coded markers
 for i, point in enumerate(st.session_state.points):
@@ -151,23 +208,45 @@ for i, point in enumerate(st.session_state.points):
         icon=folium.Icon(color=color)
     ).add_to(m)
 
-click_info = st_folium(m, width=700, height=500)
+map_info = st_folium(m, width=700, height=500)
+display_map_events(map_info)
 
-# When a point is clicked
-if click_info:
-    if click_info.get("last_clicked"):
+
+# When a point is clicked or map is moved
+if map_info:
+    if map_info.get("last_clicked"):
         latlon = [
-            click_info["last_clicked"]["lat"],
-            click_info["last_clicked"]["lng"]
+            map_info["last_clicked"]["lat"],
+            map_info["last_clicked"]["lng"]
         ]
         if len(st.session_state.points) < 2:
             st.session_state.points.append(latlon)
             st.rerun()
+    if map_info.get("center"):
+        st.session_state.map_center = [
+            map_info["center"]["lat"],
+            map_info["center"]["lng"]
+        ]
+    if map_info.get("zoom"):
+        st.session_state.zoom_level = map_info["zoom"]
 
 
 # Add a reset button (always show if any points present)
 if len(st.session_state.points) > 0:
     if st.button("Reset"):
         st.session_state.points = []
-        st.session_state.elevations = []
+        st.session_state.elevations_m = []
         st.rerun()
+
+#st.subheader("Changed Session State Values")
+#
+changes = {k: v for k, v in st.session_state.items() if prev_session_state.get(k) != v}
+if changes:
+     print("STATE changes:", changes)
+else:
+     print("No STATE changes in this run.")
+
+print("_______________________________________")
+print("  ")
+print("  ")
+print("  ")
