@@ -6,31 +6,61 @@ import math
 from branca.element import MacroElement
 from jinja2 import Template
 import pandas as pd
+import requests
 
 st.title("Select Two Points to Compute Azimuth and Distance")
+
+# Function to get elevation from Open Elevation API
+def get_elevation(lat, lng):
+    """Get elevation in feet from Open Elevation API"""
+    try:
+        url = f"https://api.open-elevation.com/api/v1/lookup?locations={lat},{lng}"
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        elevation_m = data['results'][0]['elevation']
+        elevation_ft = elevation_m * 3.28084  # Convert meters to feet
+        return elevation_ft
+    except Exception as e:
+        st.warning(f"Could not fetch elevation data: {e}")
+        return 0.0
 
 # Initialize session state
 if "points" not in st.session_state:
     st.session_state.points = []
+if "elevations" not in st.session_state:
+    st.session_state.elevations = []
+
+# Display elevation fetching status
+if len(st.session_state.points) > 0 and len(st.session_state.elevations) < len(st.session_state.points):
+    with st.spinner("Fetching elevation data..."):
+        # Fetch missing elevations
+        for i in range(len(st.session_state.elevations), len(st.session_state.points)):
+            point = st.session_state.points[i]
+            elevation = get_elevation(point[0], point[1])
+            st.session_state.elevations.append(elevation)
 
 # Pre-fill table with empty or partial data
 table_data = {
     "Start Latitude": [""],
     "Start Longitude": [""],
+    "Start Altitude (ft)": [""],
     "End Latitude": [""],
     "End Longitude": [""],
-    "Distance (km)": [""],
+    "End Altitude (ft)": [""],
+    "Distance (m)": [""],
     "Azimuth (°)": [""]
 }
 
-if len(st.session_state.points) >= 1:
+if len(st.session_state.points) >= 1 and len(st.session_state.elevations) >= 1:
     p1 = st.session_state.points[0]
     table_data["Start Latitude"][0] = f"{p1[0]:.6f}"
     table_data["Start Longitude"][0] = f"{p1[1]:.6f}"
+    table_data["Start Altitude (ft)"][0] = f"{st.session_state.elevations[0]:.1f}"
 
-if len(st.session_state.points) == 2:
+if len(st.session_state.points) == 2 and len(st.session_state.elevations) == 2:
     p2 = st.session_state.points[1]
-    distance_km = geodesic(p1, p2).kilometers
+    distance_m = geodesic(p1, p2).meters
 
     def calculate_bearing(pointA, pointB):
         lat1, lon1 = math.radians(pointA[0]), math.radians(pointA[1])
@@ -44,7 +74,8 @@ if len(st.session_state.points) == 2:
     azimuth = calculate_bearing(p1, p2)
     table_data["End Latitude"][0] = f"{p2[0]:.6f}"
     table_data["End Longitude"][0] = f"{p2[1]:.6f}"
-    table_data["Distance (km)"][0] = f"{distance_km:.2f}"
+    table_data["End Altitude (ft)"][0] = f"{st.session_state.elevations[1]:.1f}"
+    table_data["Distance (m)"][0] = f"{distance_m:.2f}"
     table_data["Azimuth (°)"][0] = f"{azimuth:.2f}"
 
 st.table(pd.DataFrame(table_data))
@@ -102,3 +133,5 @@ if click_info:
 if len(st.session_state.points) > 0:
     if st.button("Reset"):
         st.session_state.points = []
+        st.session_state.elevations = []
+        st.rerun()
