@@ -6,7 +6,6 @@ from sessions_tab import render_sessions_tab
 from view_session_tab import render_view_session_tab
 from locations_tab import render_locations_tab
 from files_tab import render_files_tab
-from mapping_tab import render_mapping_tab
 
 # Set wide layout for more space - must be first Streamlit command
 st.set_page_config(layout="wide")
@@ -23,7 +22,7 @@ bucket = st.secrets["supabase"]["bucket"]
 supabase = create_client(url, key)
 
 # Main app tabs
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["Upload Files", "Sessions", "View Session", "Locations", "My Files", "Range Mapping"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["Upload Files", "Sessions", "View Session", "Locations", "My Files"])
 
 with tab1:
     render_upload_tab(user, supabase, bucket)
@@ -39,6 +38,3 @@ with tab4:
 
 with tab5:
     render_files_tab(user, supabase, bucket)
-
-with tab6:
-    render_mapping_tab()

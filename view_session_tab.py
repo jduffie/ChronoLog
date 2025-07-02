@@ -62,6 +62,80 @@ def render_view_session_tab(user, supabase):
                 
                 st.dataframe(session_details_df, use_container_width=True, hide_index=True)
                 
+                # Data Entry Sub-section
+                st.subheader("📝 Data Entry")
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    # Location dropdown
+                    try:
+                        locations_response = supabase.table("locations").select("*").execute()
+                        locations = locations_response.data if locations_response.data else []
+                        
+                        if locations:
+                            location_options = ["Select Location"] + [f"{loc['name']}" for loc in locations]
+                            location_ids = [None] + [loc['id'] for loc in locations]
+                            
+                            # Find current location index
+                            current_location_index = 0
+                            if selected_session.get('location_id'):
+                                try:
+                                    current_location_index = location_ids.index(selected_session['location_id'])
+                                except ValueError:
+                                    current_location_index = 0
+                            
+                            selected_location_entry = st.selectbox(
+                                "📍 Select Location", 
+                                location_options, 
+                                index=current_location_index,
+                                key="location_entry"
+                            )
+                            
+                            # Update location if changed
+                            if selected_location_entry != "Select Location":
+                                selected_location_id = location_ids[location_options.index(selected_location_entry)]
+                                if selected_location_id != selected_session.get('location_id'):
+                                    try:
+                                        supabase.table("sessions").update({"location_id": selected_location_id}).eq("id", selected_session['id']).execute()
+                                        st.success(f"Location updated to: {selected_location_entry}")
+                                        st.rerun()
+                                    except Exception as e:
+                                        st.error(f"Failed to update location: {e}")
+                            elif selected_session.get('location_id'):
+                                # User selected "Select Location" but session had a location - clear it
+                                try:
+                                    supabase.table("sessions").update({"location_id": None}).eq("id", selected_session['id']).execute()
+                                    st.success("Location cleared")
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"Failed to clear location: {e}")
+                        else:
+                            st.selectbox("📍 Select Location", ["No locations available - Add in Locations tab"], disabled=True, key="location_entry_disabled")
+                            
+                    except Exception as e:
+                        st.error(f"Error loading locations: {e}")
+                
+                with col2:
+                    # Weather Meter dropdown
+                    try:
+                        weather_response = supabase.table("weather_measurements").select("device_name").eq("user_email", user["email"]).execute()
+                        weather_data = weather_response.data if weather_response.data else []
+                        
+                        # Get unique device names
+                        unique_devices = list(set([w['device_name'] for w in weather_data if w.get('device_name')]))
+                        
+                        if unique_devices:
+                            weather_options = ["Select Weather Meter"] + unique_devices
+                            selected_weather_meter_entry = st.selectbox("🌤️ Select Weather Meter", weather_options, key="weather_entry")
+                        else:
+                            st.selectbox("🌤️ Select Weather Meter", ["No weather data available - Upload Kestrel files"], disabled=True, key="weather_entry_disabled")
+                            
+                    except Exception as e:
+                        st.error(f"Error loading weather meters: {e}")
+                
+                st.divider()
+                
                 # Add DELETE SESSION button
                 col1, col2 = st.columns([1, 4])
                 with col1:
@@ -102,56 +176,9 @@ def render_view_session_tab(user, supabase):
                             del st.session_state[f"confirm_delete_session_{selected_session['id']}"]
                             st.rerun()
                 
-                # Location Section
-                st.subheader("Location")
-                
-                # Get locations for dropdown (all approved locations)
-                try:
-                    locations_response = supabase.table("locations").select("*").execute()
-                    active_locations = locations_response.data
-                except:
-                    active_locations = []
-                
-                # Location dropdown
-                location_options = ["None"] + [f"{loc['name']}" for loc in active_locations]
-                location_ids = [None] + [loc['id'] for loc in active_locations]
-                
-                # Find current location index
-                current_location_index = 0
+                # Show current location details if assigned
                 if selected_session.get('location_id'):
-                    try:
-                        current_location_index = location_ids.index(selected_session['location_id'])
-                    except ValueError:
-                        current_location_index = 0
-                
-                selected_location = st.selectbox(
-                    "Location:",
-                    options=location_options,
-                    index=current_location_index,
-                    help="Select the shooting location for this session"
-                )
-                
-                # Update location if changed
-                if selected_location != "None":
-                    selected_location_id = location_ids[location_options.index(selected_location)]
-                    if selected_location_id != selected_session.get('location_id'):
-                        try:
-                            supabase.table("sessions").update({"location_id": selected_location_id}).eq("id", selected_session['id']).execute()
-                            st.success(f"Location updated to: {selected_location}")
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Failed to update location: {e}")
-                elif selected_session.get('location_id'):
-                    # User selected "None" but session had a location - clear it
-                    try:
-                        supabase.table("sessions").update({"location_id": None}).eq("id", selected_session['id']).execute()
-                        st.success("Location cleared")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Failed to clear location: {e}")
-                
-                # Get current location details for display
-                if selected_session.get('location_id'):
+                    st.subheader("📍 Location Details")
                     # Get full location details from database
                     try:
                         location_response = supabase.table("locations").select("*").eq("id", selected_session['location_id']).execute()
@@ -177,8 +204,6 @@ def render_view_session_tab(user, supabase):
                             st.info("Location details not found")
                     except Exception as e:
                         st.error(f"Error loading location details: {e}")
-                else:
-                    st.info("No location assigned to this session")
                 
                 # Get measurement count and statistics
                 measurements_response = supabase.table("measurements").select("*").eq("session_id", selected_session['id']).execute()

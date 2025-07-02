@@ -178,17 +178,11 @@ def render_weather_upload(user, supabase, bucket):
     
     # Upload and parse CSV
     uploaded_file = st.file_uploader("Upload Weather Data CSV File", type=["csv"], key="weather_upload")
-    print(f"uploaded_file '{uploaded_file}'")
-    print(f"uploaded_file ", uploaded_file)
-
-    st.info(f"uploaded_file '{uploaded_file}'")
-
     if uploaded_file:
         try:
             file_bytes = uploaded_file.getvalue()
             file_name = f"{user['email']}/kestrel/{uploaded_file.name}"
-            print("filename {file_name}")
-            
+
             # Try to upload file, handle duplicate error
             try:
                 supabase.storage.from_(bucket).upload(file_name, file_bytes, {"content-type": "text/csv"})
