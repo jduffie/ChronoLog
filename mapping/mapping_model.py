@@ -193,7 +193,7 @@ class MappingModel:
         """Get all ranges submitted by a user."""
         try:
             result = supabase_client.table("ranges_submissions").select(
-                "id, range_name, range_description, start_lat, start_lon, end_lat, end_lon, distance_m, azimuth_deg, elevation_angle_deg, display_name, submitted_at"
+                "id, range_name, range_description, start_lat, start_lon, end_lat, end_lon, distance_m, azimuth_deg, elevation_angle_deg, display_name, submitted_at, status"
             ).eq("user_email", user_email).order("submitted_at", desc=True).execute()
             return result.data if result.data else []
         except Exception as e:
@@ -238,6 +238,110 @@ class MappingModel:
             traceback.print_exc()
             return False
 
+    def get_all_pending_submissions(self, supabase_client) -> List[Dict[str, Any]]:
+        """Get all range submissions that are pending review."""
+        try:
+            result = supabase_client.table("ranges_submissions").select(
+                "id, user_email, range_name, range_description, start_lat, start_lon, end_lat, end_lon, "
+                "start_altitude_m, end_altitude_m, distance_m, azimuth_deg, elevation_angle_deg, "
+                "display_name, submitted_at, status, review_reason"
+            ).eq("status", "Under Review").order("submitted_at", desc=False).execute()
+            return result.data if result.data else []
+        except Exception as e:
+            print(f"Error getting pending submissions: {e}")
+            return []
+
+    def approve_submission(self, submission_id: str, review_reason: str, supabase_client) -> bool:
+        """Approve a submission and copy it to the ranges table."""
+        try:
+            # First get the submission details
+            submission_result = supabase_client.table("ranges_submissions").select("*").eq("id", submission_id).execute()
+            if not submission_result.data:
+                print(f"Submission {submission_id} not found")
+                return False
+            
+            submission = submission_result.data[0]
+            
+            # Copy to ranges table (without id, status, review_reason)
+            range_data = {
+                "user_email": submission["user_email"],
+                "range_name": submission["range_name"],
+                "range_description": submission["range_description"],
+                "start_lat": submission["start_lat"],
+                "start_lon": submission["start_lon"],
+                "start_altitude_m": submission["start_altitude_m"],
+                "end_lat": submission["end_lat"],
+                "end_lon": submission["end_lon"],
+                "end_altitude_m": submission["end_altitude_m"],
+                "distance_m": submission["distance_m"],
+                "azimuth_deg": submission["azimuth_deg"],
+                "elevation_angle_deg": submission["elevation_angle_deg"],
+                "address_geojson": submission["address_geojson"],
+                "display_name": submission["display_name"],
+                "submitted_at": submission["submitted_at"]
+            }
+            
+            # Insert into ranges table
+            ranges_result = supabase_client.table("ranges").insert(range_data).execute()
+            if not ranges_result.data:
+                print("Failed to insert into ranges table")
+                return False
+            
+            # Update submission status
+            update_result = supabase_client.table("ranges_submissions").update({
+                "status": "Accepted",
+                "review_reason": review_reason
+            }).eq("id", submission_id).execute()
+            
+            if update_result.data:
+                print(f"Successfully approved submission {submission_id}")
+                return True
+            else:
+                print(f"Failed to update submission status for {submission_id}")
+                return False
+                
+        except Exception as e:
+            print(f"Error approving submission: {e}")
+            return False
+
+    def deny_submission(self, submission_id: str, review_reason: str, supabase_client) -> bool:
+        """Deny a submission with reason."""
+        try:
+            result = supabase_client.table("ranges_submissions").update({
+                "status": "Denied",
+                "review_reason": review_reason
+            }).eq("id", submission_id).execute()
+            
+            if result.data:
+                print(f"Successfully denied submission {submission_id}")
+                return True
+            else:
+                print(f"Failed to deny submission {submission_id}")
+                return False
+                
+        except Exception as e:
+            print(f"Error denying submission: {e}")
+            return False
+
+    def reset_submission_status(self, submission_id: str, supabase_client) -> bool:
+        """Reset submission status back to Under Review."""
+        try:
+            result = supabase_client.table("ranges_submissions").update({
+                "status": "Under Review",
+                "review_reason": None
+            }).eq("id", submission_id).execute()
+            
+            if result.data:
+                print(f"Successfully reset status for submission {submission_id}")
+                return True
+            else:
+                print(f"Failed to reset status for submission {submission_id}")
+                return False
+                
+        except Exception as e:
+            print(f"Error resetting submission status: {e}")
+            return False
+
     def save_range_submission(self, user_email: str, range_name: str, range_description: str, measurements: Dict[str, Any], supabase_client) -> bool:
         """Save range submission to the database."""
         try:
@@ -278,7 +382,9 @@ class MappingModel:
                 "azimuth_deg": azimuth,
                 "elevation_angle_deg": elevation_angle,
                 "address_geojson": measurements.get("address_geojson", {}),
-                "display_name": measurements.get("display_name", "")
+                "display_name": measurements.get("display_name", ""),
+                "status": "Under Review",
+                "review_reason": None
             }
             
             # Insert into database

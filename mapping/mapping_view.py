@@ -182,7 +182,8 @@ class MappingView:
             
             table_data.append({
                 'Select': False,  # Checkbox column
-                'Range Name': range_data.get('range_name', ''),
+                'Name': range_data.get('range_name', ''),
+                'Status': range_data.get('status', 'Under Review'),
                 'Description': range_data.get('range_description', '')[:50] + ('...' if len(range_data.get('range_description', '')) > 50 else ''),
                 'Distance (m)': f"{range_data.get('distance_m', 0):.1f}",
                 'Azimuth (°)': f"{range_data.get('azimuth_deg', 0):.1f}",
@@ -202,7 +203,8 @@ class MappingView:
             hide_index=True,
             column_config={
                 "Select": st.column_config.CheckboxColumn("Select", width="small", default=False),
-                "Range Name": st.column_config.TextColumn("Range Name", width="medium", disabled=True),
+                "Name": st.column_config.TextColumn("Name", width="medium", disabled=True),
+                "Status": st.column_config.TextColumn("Status", width="small", disabled=True),
                 "Description": st.column_config.TextColumn("Description", width="large", disabled=True),
                 "Distance (m)": st.column_config.TextColumn("Distance (m)", width="small", disabled=True),
                 "Azimuth (°)": st.column_config.TextColumn("Azimuth (°)", width="small", disabled=True),
@@ -220,7 +222,6 @@ class MappingView:
             selected_indices = selected_rows.index.tolist()
         
         # Selection controls
-        st.markdown("### Actions")
         col1, col2 = st.columns([4, 1])
         
         with col1:
@@ -239,15 +240,14 @@ class MappingView:
                     st.session_state["delete_selected_ranges"] = selected_indices
                     action_result["action"] = "delete"
         
-        # Auto-map selected ranges - any selected ranges should be mapped immediately
-        if selected_indices:
-            action_result["action"] = "map"
-            action_result["selected_indices"] = selected_indices
-        
-        # Check if we have a persisted delete selection
-        if not action_result["action"] and "delete_selected_ranges" in st.session_state:
+        # Check if we have a persisted delete selection first
+        if "delete_selected_ranges" in st.session_state:
             action_result["action"] = "delete"
             action_result["selected_indices"] = st.session_state["delete_selected_ranges"]
+        # Auto-map selected ranges - any selected ranges should be mapped immediately
+        elif selected_indices:
+            action_result["action"] = "map"
+            action_result["selected_indices"] = selected_indices
         
         return action_result
 

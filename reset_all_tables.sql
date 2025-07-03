@@ -6,12 +6,14 @@ DELETE FROM measurements;
 DELETE FROM sessions;
 DELETE FROM weather_measurements;
 DELETE FROM ranges_submissions;
+DELETE FROM ranges;
 
 -- Drop all tables with CASCADE to handle any remaining dependencies
 DROP TABLE IF EXISTS measurements CASCADE;
 DROP TABLE IF EXISTS sessions CASCADE;
 DROP TABLE IF EXISTS weather_measurements CASCADE;
 DROP TABLE IF EXISTS ranges_submissions CASCADE;
+DROP TABLE IF EXISTS ranges CASCADE;
 
 -- Create sessions table
 CREATE TABLE sessions (
@@ -84,8 +86,41 @@ CREATE TABLE weather_measurements (
     UNIQUE(device_name, serial_number, measurement_timestamp)
 );
 
--- Create ranges_submissions table for mapping data
+-- Create ranges_submissions table for mapping data (pending approval)
 CREATE TABLE ranges_submissions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_email TEXT NOT NULL,
+    range_name TEXT NOT NULL,
+    range_description TEXT,
+    
+    -- Geographic coordinates and measurements
+    start_lat NUMERIC(10, 6) NOT NULL,
+    start_lon NUMERIC(10, 6) NOT NULL,
+    start_altitude_m NUMERIC(8, 2),
+    end_lat NUMERIC(10, 6) NOT NULL,
+    end_lon NUMERIC(10, 6) NOT NULL,
+    end_altitude_m NUMERIC(8, 2),
+    
+    -- Calculated values
+    distance_m NUMERIC(10, 2),
+    azimuth_deg NUMERIC(6, 2),
+    elevation_angle_deg NUMERIC(6, 2),
+    
+    -- Address information (stored as GeoJSON)
+    address_geojson JSONB,
+    display_name TEXT,
+    
+    -- Admin review fields
+    status TEXT NOT NULL DEFAULT 'Under Review' CHECK (status IN ('Under Review', 'Accepted', 'Denied')),
+    review_reason TEXT,
+    
+    -- Timestamps
+    submitted_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Create ranges table for approved ranges (public)
+CREATE TABLE ranges (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_email TEXT NOT NULL,
     range_name TEXT NOT NULL,
@@ -125,6 +160,10 @@ CREATE INDEX idx_weather_measurements_timestamp ON weather_measurements(measurem
 CREATE INDEX idx_ranges_submissions_user_email ON ranges_submissions(user_email);
 CREATE INDEX idx_ranges_submissions_range_name ON ranges_submissions(range_name);
 CREATE INDEX idx_ranges_submissions_submitted_at ON ranges_submissions(submitted_at);
+CREATE INDEX idx_ranges_submissions_status ON ranges_submissions(status);
+CREATE INDEX idx_ranges_user_email ON ranges(user_email);
+CREATE INDEX idx_ranges_range_name ON ranges(range_name);
+CREATE INDEX idx_ranges_submitted_at ON ranges(submitted_at);
 
 -- Enable RLS on sessions table
 ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
@@ -169,3 +208,17 @@ CREATE POLICY ranges_submissions_user_policy ON ranges_submissions
 
 CREATE POLICY ranges_submissions_insert_policy ON ranges_submissions
     FOR INSERT WITH CHECK (user_email = auth.jwt() ->> 'email');
+
+-- Admin policy for ranges_submissions (johnduffie91@gmail.com can see all)
+CREATE POLICY ranges_submissions_admin_policy ON ranges_submissions
+    FOR ALL USING (auth.jwt() ->> 'email' = 'johnduffie91@gmail.com');
+
+-- Enable RLS on ranges table
+ALTER TABLE ranges ENABLE ROW LEVEL SECURITY;
+
+-- Ranges RLS policies (public read access, admin can insert)
+CREATE POLICY ranges_public_read_policy ON ranges
+    FOR SELECT USING (true);
+
+CREATE POLICY ranges_admin_policy ON ranges
+    FOR ALL USING (auth.jwt() ->> 'email' = 'johnduffie91@gmail.com');

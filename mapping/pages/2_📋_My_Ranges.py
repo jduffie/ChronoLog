@@ -51,7 +51,6 @@ def main():
     
     # Display title
     st.title("My Ranges")
-    st.subheader("Select ranges to map or delete")
     
     # Fetch and display user ranges table with actions
     try:
@@ -96,17 +95,9 @@ def main():
         st.markdown("---")
         
         if table_result["action"] == "map" and table_result["selected_indices"]:
-            st.subheader("🗺️ Selected Ranges Map")
             # Show only selected ranges
             ranges_map = view.display_ranges_map(user_ranges, table_result["selected_indices"])
-        elif table_result["selected_indices"] and table_result["action"] != "map":
-            st.subheader("🗺️ Map")
-            st.info("💡 Click MAP button above to display the selected ranges on the map.")
-            # Show empty map when ranges are selected but MAP not clicked
-            ranges_map = view.display_ranges_map(user_ranges, [])
         else:
-            st.subheader("🗺️ Map")
-            st.info("💡 Select ranges in the table above and click MAP to highlight them on the map.")
             # Show empty map when no ranges are selected
             ranges_map = view.display_ranges_map(user_ranges, [])
         
