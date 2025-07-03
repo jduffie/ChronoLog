@@ -2,6 +2,7 @@ import streamlit as st
 from mapping_model import MappingModel
 from mapping_view import MappingView
 from auth import handle_auth
+from supabase import create_client
 from typing import Dict, Any
 
 
@@ -35,6 +36,20 @@ class MappingController:
         st.session_state.elevations_m = self.model.elevations_m
         st.session_state.map_center = self.model.map_center
         st.session_state.zoom_level = self.model.zoom_level
+
+    def _clear_all_form_data(self) -> None:
+        """Clear all form data and model state."""
+        # Clear model state
+        self.model.reset_points()
+        
+        # Clear form input session state
+        form_keys = ["range_name", "range_description"]
+        for key in form_keys:
+            if key in st.session_state:
+                del st.session_state[key]
+        
+        # Sync model state to session state
+        self._sync_session_state_with_model()
 
     def _handle_elevation_fetching(self) -> None:
         """Handle elevation data fetching with spinner."""
@@ -78,9 +93,54 @@ class MappingController:
         """Handle reset button action."""
         if len(self.model.points) > 0:
             if self.view.display_reset_button():
-                self.model.reset_points()
-                self._sync_session_state_with_model()
+                self._clear_all_form_data()
                 st.rerun()
+    
+    def _handle_range_submission(self, user: Dict[str, Any], submission_data: Dict[str, Any]) -> None:
+        """Handle range data submission to database."""
+        range_data = submission_data.get("range", {})
+        range_name = range_data.get("range_name", "").strip()
+        range_description = range_data.get("range_description", "").strip()
+        measurements = range_data.get("measurements", {})
+        
+        # Validate required fields
+        if not range_name:
+            st.error("❌ Range name is required")
+            return
+            
+        if len(range_name) < 3:
+            st.error("❌ Range name must be at least 3 characters long")
+            return
+        
+        try:
+            # Setup Supabase client
+            url = st.secrets["supabase"]["url"]
+            key = st.secrets["supabase"]["key"]
+            supabase = create_client(url, key)
+            
+            # Save to database
+            with st.spinner("Saving range data..."):
+                success = self.model.save_range_submission(
+                    user_email=user["email"],
+                    range_name=range_name,
+                    range_description=range_description,
+                    measurements=measurements,
+                    supabase_client=supabase
+                )
+            
+            if success:
+                # Clear all form data and model state
+                self._clear_all_form_data()
+                
+                # Show success message and rerun
+                st.success(f"✅ Range '{range_name}' saved successfully!")
+                st.rerun()
+            else:
+                st.error("❌ Failed to save range data. Please try again.")
+                
+        except Exception as e:
+            st.error(f"❌ Error saving range data: {str(e)}")
+            print(f"Range submission error: {e}")
 
     def _debug_session_state(self) -> None:
         """Debug session state changes."""
@@ -136,7 +196,12 @@ class MappingController:
         else:
             measurements = self.model.get_partial_measurements()
         
-        self.view.display_measurements_table(measurements)
+        # Display measurements table and handle submission
+        submission_result = self.view.display_measurements_table(measurements)
+        
+        # Handle range submission
+        if submission_result and submission_result.get("action") == "submit":
+            self._handle_range_submission(user, submission_result)
 
         # Create and display map
         map_obj = self.view.create_map(

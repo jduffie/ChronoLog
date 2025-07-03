@@ -179,3 +179,60 @@ class MappingModel:
         # Add a small delay to respect API rate limits
         time.sleep(0.1)
         return self.fetch_address_geojson(lat, lon)
+    
+    def save_range_submission(self, user_email: str, range_name: str, range_description: str, measurements: Dict[str, Any], supabase_client) -> bool:
+        """Save range submission to the database."""
+        try:
+            # Parse numeric values from string representations
+            start_lat = float(measurements.get("start_lat", 0))
+            start_lon = float(measurements.get("start_lon", 0))
+            end_lat = float(measurements.get("end_lat", 0))
+            end_lon = float(measurements.get("end_lon", 0))
+            
+            # Parse altitude values (remove " m" suffix if present)
+            start_alt_str = measurements.get("start_alt", "0")
+            end_alt_str = measurements.get("end_alt", "0")
+            start_alt = float(start_alt_str.replace(" m", "")) if start_alt_str else 0
+            end_alt = float(end_alt_str.replace(" m", "")) if end_alt_str else 0
+            
+            # Parse distance (remove " m" suffix)
+            distance_str = measurements.get("distance", "0")
+            distance = float(distance_str.replace(" m", "")) if distance_str else 0
+            
+            # Parse angles (remove "°" suffix)
+            azimuth_str = measurements.get("azimuth", "0")
+            elevation_str = measurements.get("elevation_angle", "0")
+            azimuth = float(azimuth_str.replace("°", "")) if azimuth_str else 0
+            elevation_angle = float(elevation_str.replace("°", "")) if elevation_str else 0
+            
+            # Prepare data for insertion
+            range_data = {
+                "user_email": user_email,
+                "range_name": range_name,
+                "range_description": range_description,
+                "start_lat": start_lat,
+                "start_lon": start_lon,
+                "start_altitude_m": start_alt,
+                "end_lat": end_lat,
+                "end_lon": end_lon,
+                "end_altitude_m": end_alt,
+                "distance_m": distance,
+                "azimuth_deg": azimuth,
+                "elevation_angle_deg": elevation_angle,
+                "address_geojson": measurements.get("address_geojson", {}),
+                "display_name": measurements.get("display_name", "")
+            }
+            
+            # Insert into database
+            result = supabase_client.table("ranges_submissions").insert(range_data).execute()
+            
+            if result.data:
+                print(f"Successfully saved range submission: {range_name}")
+                return True
+            else:
+                print(f"Failed to save range submission: {range_name}")
+                return False
+                
+        except Exception as e:
+            print(f"Error saving range submission: {e}")
+            return False

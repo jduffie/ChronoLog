@@ -5,11 +5,13 @@
 DELETE FROM measurements;
 DELETE FROM sessions;
 DELETE FROM weather_measurements;
+DELETE FROM ranges_submissions;
 
 -- Drop all tables with CASCADE to handle any remaining dependencies
 DROP TABLE IF EXISTS measurements CASCADE;
 DROP TABLE IF EXISTS sessions CASCADE;
 DROP TABLE IF EXISTS weather_measurements CASCADE;
+DROP TABLE IF EXISTS ranges_submissions CASCADE;
 
 -- Create sessions table
 CREATE TABLE sessions (
@@ -82,6 +84,35 @@ CREATE TABLE weather_measurements (
     UNIQUE(device_name, serial_number, measurement_timestamp)
 );
 
+-- Create ranges_submissions table for mapping data
+CREATE TABLE ranges_submissions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_email TEXT NOT NULL,
+    range_name TEXT NOT NULL,
+    range_description TEXT,
+    
+    -- Geographic coordinates and measurements
+    start_lat NUMERIC(10, 6) NOT NULL,
+    start_lon NUMERIC(10, 6) NOT NULL,
+    start_altitude_m NUMERIC(8, 2),
+    end_lat NUMERIC(10, 6) NOT NULL,
+    end_lon NUMERIC(10, 6) NOT NULL,
+    end_altitude_m NUMERIC(8, 2),
+    
+    -- Calculated values
+    distance_m NUMERIC(10, 2),
+    azimuth_deg NUMERIC(6, 2),
+    elevation_angle_deg NUMERIC(6, 2),
+    
+    -- Address information (stored as GeoJSON)
+    address_geojson JSONB,
+    display_name TEXT,
+    
+    -- Timestamps
+    submitted_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Create indexes for better performance
 CREATE INDEX idx_sessions_user_email ON sessions(user_email);
 CREATE INDEX idx_sessions_uploaded_at ON sessions(uploaded_at);
@@ -91,6 +122,19 @@ CREATE INDEX idx_measurements_datetime_local ON measurements(datetime_local);
 CREATE INDEX idx_weather_measurements_user_email ON weather_measurements(user_email);
 CREATE INDEX idx_weather_measurements_device_serial_timestamp ON weather_measurements(device_name, serial_number, measurement_timestamp);
 CREATE INDEX idx_weather_measurements_timestamp ON weather_measurements(measurement_timestamp);
+CREATE INDEX idx_ranges_submissions_user_email ON ranges_submissions(user_email);
+CREATE INDEX idx_ranges_submissions_range_name ON ranges_submissions(range_name);
+CREATE INDEX idx_ranges_submissions_submitted_at ON ranges_submissions(submitted_at);
+
+-- Enable RLS on sessions table
+ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
+
+-- Sessions RLS policies
+CREATE POLICY sessions_user_policy ON sessions
+    FOR ALL USING (user_email = auth.jwt() ->> 'email');
+
+CREATE POLICY sessions_insert_policy ON sessions
+    FOR INSERT WITH CHECK (user_email = auth.jwt() ->> 'email');
 
 -- Enable RLS on measurements table
 ALTER TABLE measurements ENABLE ROW LEVEL SECURITY;
@@ -114,4 +158,14 @@ CREATE POLICY weather_measurements_user_policy ON weather_measurements
     FOR ALL USING (user_email = auth.jwt() ->> 'email');
 
 CREATE POLICY weather_measurements_insert_policy ON weather_measurements
+    FOR INSERT WITH CHECK (user_email = auth.jwt() ->> 'email');
+
+-- Enable RLS on ranges_submissions table
+ALTER TABLE ranges_submissions ENABLE ROW LEVEL SECURITY;
+
+-- Ranges submissions RLS policies
+CREATE POLICY ranges_submissions_user_policy ON ranges_submissions
+    FOR ALL USING (user_email = auth.jwt() ->> 'email');
+
+CREATE POLICY ranges_submissions_insert_policy ON ranges_submissions
     FOR INSERT WITH CHECK (user_email = auth.jwt() ->> 'email');

@@ -36,26 +36,53 @@ class MappingView:
         # Get display name from GeoJSON response
         location_display = measurements.get("display_name", "")
         
+        # Check if we have complete data for submission
+        has_complete_data = (measurements.get("start_lat") and measurements.get("start_lon") and 
+                            measurements.get("end_lat") and measurements.get("end_lon"))
+        
+        # Create columns for Range Name to make it more inline
+        col1, col2 = st.columns([1, 3])
+        with col1:
+            st.markdown("**Range Name:**")
+        with col2:
+            # Use value parameter to ensure clearing works properly
+            range_name_value = st.session_state.get("range_name", "")
+            range_name = st.text_input("Range Name", value=range_name_value, key="range_name", placeholder="Enter range name", label_visibility="collapsed")
+        
         html_table = f"""
-        <div>
-            <label for="rangeName">Name:</label>
-            <input type="text" id="rangeName" placeholder="Enter range name" />
-            <br><br>
-            <label for="rangeDescription">Description:</label>
-            <textarea id="rangeDescription" placeholder="Enter range description" rows="3" style="width: 100%;"></textarea>
-            <br><br>
-            <div class="output">
-              <div><strong>Firing Position:</strong> <span id="firingPos">{measurements.get("start_lat", "")}, {measurements.get("start_lon", "")}</span></div>
-              <div><strong>Target Position:</strong> <span id="targetPos">{measurements.get("end_lat", "")}, {measurements.get("end_lon", "")}</span></div>
-              <div><strong>Distance:</strong> <span id="distance">{measurements.get("distance", "")}</span></div>
-              <div><strong>Azimuth Angle:</strong> <span id="azimuth">{measurements.get("azimuth", "")}</span></div>
-              <div><strong>Elevation Angle:</strong> <span id="elevation">{measurements.get("elevation_angle", "")}</span></div>
-              <div><strong>Location:</strong> <span id="location">{location_display}</span></div>
-            </div>
+        <div class="output">
+          <div><strong>Firing Position:</strong> <span id="firingPos">{measurements.get("start_lat", "")}, {measurements.get("start_lon", "")}</span></div>
+          <div><strong>Target Position:</strong> <span id="targetPos">{measurements.get("end_lat", "")}, {measurements.get("end_lon", "")}</span></div>
+          <div><strong>Distance:</strong> <span id="distance">{measurements.get("distance", "")}</span></div>
+          <div><strong>Azimuth Angle:</strong> <span id="azimuth">{measurements.get("azimuth", "")}</span></div>
+          <div><strong>Elevation Angle:</strong> <span id="elevation">{measurements.get("elevation_angle", "")}</span></div>
+          <div><strong>Location:</strong> <span id="location">{location_display}</span></div>
         </div>
         """
         
         st.markdown(html_table, unsafe_allow_html=True)
+        
+        # Add range description input with consistent styling
+        st.markdown("**Range Description:**")
+        range_description_value = st.session_state.get("range_description", "")
+        range_description = st.text_area("Description", value=range_description_value, key="range_description", placeholder="Enter a description for this range", height=100, label_visibility="collapsed")
+        
+        # Submit button (only show if we have complete measurement data)
+        if has_complete_data:
+            if st.button("Submit Range Data", type="primary"):
+
+                return {
+                    "action": "submit",
+                    "range": {
+                        "range_name": range_name,
+                        "range_description": range_description,
+                        "measurements": measurements
+                    }
+                }
+        else:
+            st.info("📍 Select two points on the map to enable range submission")
+            
+        return None
 
     def create_map(self, map_center: List[float], zoom_level: int, points: List[List[float]]) -> folium.Map:
         """Create and configure the folium map."""
