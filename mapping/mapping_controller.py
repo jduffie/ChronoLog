@@ -1,6 +1,12 @@
 import streamlit as st
-from mapping_model import MappingModel
-from mapping_view import MappingView
+import sys
+import os
+
+# Add the parent directory to the path so we can import shared modules
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from mapping.mapping_model import MappingModel
+from mapping.mapping_view import MappingView
 from auth import handle_auth
 from supabase import create_client
 from typing import Dict, Any
@@ -180,6 +186,26 @@ class MappingController:
             
         # Display user info in sidebar
         st.sidebar.success(f"Logged in as {user['name']}")
+        
+        # Check range limit
+        try:
+            url = st.secrets["supabase"]["url"]
+            key = st.secrets["supabase"]["key"]
+            supabase = create_client(url, key)
+            range_count = self.model.get_user_range_count(user["email"], supabase)
+            
+            if range_count >= 15:
+                st.error("🚫 **Maximum range limit reached**")
+                st.warning(f"You have submitted {range_count}/15 ranges. You cannot submit any more ranges.")
+                st.info("If you need to submit more ranges, please contact support.")
+                return
+                
+            # Show current range count
+            st.sidebar.info(f"Ranges submitted: {range_count}/15")
+            
+        except Exception as e:
+            st.error(f"Error checking range limit: {str(e)}")
+            return
         
         # Sync model with session state
         self._sync_model_with_session_state()

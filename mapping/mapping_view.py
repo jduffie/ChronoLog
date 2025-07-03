@@ -159,3 +159,41 @@ class MappingView:
         if filtered:
             print("Map event data:", filtered)
             print("")
+
+    def display_ranges_table(self, ranges: List[Dict[str, Any]]) -> None:
+        """Display a table of submitted ranges."""
+        if not ranges:
+            st.info("📍 No ranges submitted yet.")
+            return
+            
+        st.subheader(f"Your Submitted Ranges ({len(ranges)})")
+        
+        # Prepare data for display
+        table_data = []
+        for range_data in ranges:
+            # Format the submitted date
+            submitted_at = range_data.get('submitted_at', '')
+            if submitted_at:
+                try:
+                    from datetime import datetime
+                    dt = datetime.fromisoformat(submitted_at.replace('Z', '+00:00'))
+                    formatted_date = dt.strftime('%Y-%m-%d %H:%M')
+                except:
+                    formatted_date = submitted_at[:16]  # Fallback to first 16 chars
+            else:
+                formatted_date = 'Unknown'
+            
+            table_data.append({
+                'Range Name': range_data.get('range_name', ''),
+                'Description': range_data.get('range_description', '')[:50] + ('...' if len(range_data.get('range_description', '')) > 50 else ''),
+                'Distance (m)': f"{range_data.get('distance_m', 0):.1f}",
+                'Azimuth (°)': f"{range_data.get('azimuth_deg', 0):.1f}",
+                'Elevation (°)': f"{range_data.get('elevation_angle_deg', 0):.2f}",
+                'Location': range_data.get('display_name', '')[:40] + ('...' if len(range_data.get('display_name', '')) > 40 else ''),
+                'Submitted': formatted_date
+            })
+        
+        # Display as a dataframe
+        import pandas as pd
+        df = pd.DataFrame(table_data)
+        st.dataframe(df, use_container_width=True, hide_index=True)

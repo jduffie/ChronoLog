@@ -180,6 +180,26 @@ class MappingModel:
         time.sleep(0.1)
         return self.fetch_address_geojson(lat, lon)
     
+    def get_user_range_count(self, user_email: str, supabase_client) -> int:
+        """Get the count of ranges submitted by a user."""
+        try:
+            result = supabase_client.table("ranges_submissions").select("id").eq("user_email", user_email).execute()
+            return len(result.data) if result.data else 0
+        except Exception as e:
+            print(f"Error getting user range count: {e}")
+            return 0
+
+    def get_user_ranges(self, user_email: str, supabase_client) -> List[Dict[str, Any]]:
+        """Get all ranges submitted by a user."""
+        try:
+            result = supabase_client.table("ranges_submissions").select(
+                "range_name, range_description, distance_m, azimuth_deg, elevation_angle_deg, display_name, submitted_at"
+            ).eq("user_email", user_email).order("submitted_at", desc=True).execute()
+            return result.data if result.data else []
+        except Exception as e:
+            print(f"Error getting user ranges: {e}")
+            return []
+
     def save_range_submission(self, user_email: str, range_name: str, range_description: str, measurements: Dict[str, Any], supabase_client) -> bool:
         """Save range submission to the database."""
         try:
