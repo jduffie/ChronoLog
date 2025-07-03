@@ -1,5 +1,7 @@
 import math
 import requests
+import streamlit as st
+import time
 from geopy.distance import geodesic
 from typing import List, Tuple, Dict, Any
 
@@ -63,6 +65,9 @@ class MappingModel:
         elevation_diff_m = self.elevations_m[1] - self.elevations_m[0]
         elevation_angle = math.degrees(math.atan2(elevation_diff_m, distance_m))
 
+        # Get address GeoJSON for start position
+        address_data = self.get_address_geojson_with_rate_limit(p1[0], p1[1])
+
         return {
             "start_lat": f"{p1[0]:.6f}",
             "start_lon": f"{p1[1]:.6f}",
@@ -70,9 +75,11 @@ class MappingModel:
             "end_lat": f"{p2[0]:.6f}",
             "end_lon": f"{p2[1]:.6f}",
             "end_alt": f"{self.elevations_m[1]:.1f}",
-            "distance": f"{distance_m:.2f}",
-            "azimuth": f"{azimuth:.2f}",
-            "elevation_angle": f"{elevation_angle:.2f}"
+            "distance": f"{distance_m:.2f} m",
+            "azimuth": f"{azimuth:.2f}°",
+            "elevation_angle": f"{elevation_angle:.2f}°",
+            "address_geojson": address_data.get('geojson', {}),
+            "display_name": address_data.get('display_name', ''),
         }
 
     def get_partial_measurements(self) -> Dict[str, Any]:
@@ -81,10 +88,16 @@ class MappingModel:
         
         if len(self.points) >= 1 and len(self.elevations_m) >= 1:
             p1 = self.points[0]
+            
+            # Get address GeoJSON for start position
+            address_data = self.get_address_geojson_with_rate_limit(p1[0], p1[1])
+            
             measurements.update({
                 "start_lat": f"{p1[0]:.6f}",
                 "start_lon": f"{p1[1]:.6f}",
-                "start_alt": f"{self.elevations_m[0]:.1f}"
+                "start_alt": f"{self.elevations_m[0]:.1f}",
+                "address_geojson": address_data.get('geojson', {}),
+                "display_name": address_data.get('display_name', ''),
             })
         
         return measurements
@@ -100,7 +113,9 @@ class MappingModel:
             "end_alt": "",
             "distance": "",
             "azimuth": "",
-            "elevation_angle": ""
+            "elevation_angle": "",
+            "address_geojson": {},
+            "display_name": "",
         }
 
     def update_map_state(self, center: Dict[str, float] = None, zoom: int = None) -> None:
@@ -113,3 +128,54 @@ class MappingModel:
     def needs_elevation_fetch(self) -> bool:
         """Check if elevation data needs to be fetched."""
         return len(self.points) > 0 and len(self.elevations_m) < len(self.points)
+
+    @staticmethod
+    @st.cache_data
+    def fetch_address_geojson(lat: float, lon: float) -> Dict[str, any]:
+        """Fetch GeoJSON response from coordinates using reverse geocoding API with caching."""
+        try:
+            # Use OpenStreetMap Nominatim API for reverse geocoding
+            url = f"https://nominatim.openstreetmap.org/reverse"
+            params = {
+                'format': 'geojson',
+                'lat': lat,
+                'lon': lon,
+                'zoom': 18,
+                'addressdetails': 1
+            }
+            headers = {
+                'User-Agent': 'ChronoLog-App/1.0 (mapping application)'
+            }
+            
+            response = requests.get(url, params=params, headers=headers, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+
+            # pretty print the response
+            import json
+            print(f"Reverse geocoding API response for {lat}, {lon}:")
+            print(json.dumps(data, indent=2, ensure_ascii=False))
+            print("=" * 50)
+
+            # Return the full GeoJSON with metadata
+            return {
+                'lat': lat,
+                'lon': lon,
+                'geojson': data,
+                'display_name': data.get('features', [{}])[0].get('properties', {}).get('display_name', '') if data.get('features') else ''
+            }
+                
+        except Exception as e:
+            print(f"Error fetching address: {e}")
+            return {
+                'lat': lat,
+                'lon': lon,
+                'geojson': {},
+                'display_name': ''
+            }
+
+    def get_address_geojson_with_rate_limit(self, lat: float, lon: float) -> Dict[str, any]:
+        """Get address GeoJSON with rate limiting."""
+        # Add a small delay to respect API rate limits
+        time.sleep(0.1)
+        return self.fetch_address_geojson(lat, lon)

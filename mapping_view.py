@@ -33,39 +33,27 @@ class MappingView:
 
     def display_measurements_table(self, measurements: Dict[str, Any]) -> None:
         """Display the measurements table using HTML."""
-        html_table = """
-        <table style="width:100%; border-collapse: collapse; border: 4px solid black;" border="1">
-            <tr>
-                <th colspan="3" style="text-align:center;background-color: navy; color: white;">Start</th>
-                <th colspan="3" style="text-align:center;"></th>
-                <th colspan="3" style="text-align:center;background-color: red; color: white;">End</th>
-            </tr>
-            <tr>
-                <th style="text-align:center;background-color: navy; color: white;">Lat</th>
-                    <th style="text-align:center;background-color: navy; color: white;">Lon</th>
-                    <th style="text-align:center;background-color: navy; color: white;">Alt (m)</th>
-                <th>Range (m)</th><th>Azimuth (°)</th><th>Elevation (°)</th>
-                <th style="text-align:center;background-color: red; color: white;">Lat</th>
-                    <th style="text-align:center;background-color: red; color: white;">Lon</th>
-                    <th style="text-align:center;background-color: red; color: white;">Alt (m)</th>
-            </tr>
-            <tr>
-                <td>{start_lat}</td><td>{start_lon}</td><td>{start_alt}</td>
-                <td>{range}</td><td>{azimuth}</td><td>{elevation}</td>
-                <td>{end_lat}</td><td>{end_lon}</td><td>{end_alt}</td>
-            </tr>
-        </table>
-        """.format(
-            start_lat=measurements["start_lat"],
-            start_lon=measurements["start_lon"],
-            start_alt=measurements["start_alt"],
-            range=measurements["distance"],
-            azimuth=measurements["azimuth"],
-            elevation=measurements["elevation_angle"],
-            end_lat=measurements["end_lat"],
-            end_lon=measurements["end_lon"],
-            end_alt=measurements["end_alt"]
-        )
+        # Get display name from GeoJSON response
+        location_display = measurements.get("display_name", "")
+        
+        html_table = f"""
+        <div>
+            <label for="rangeName">Name:</label>
+            <input type="text" id="rangeName" placeholder="Enter range name" />
+            <br><br>
+            <label for="rangeDescription">Description:</label>
+            <textarea id="rangeDescription" placeholder="Enter range description" rows="3" style="width: 100%;"></textarea>
+            <br><br>
+            <div class="output">
+              <div><strong>Firing Position:</strong> <span id="firingPos">{measurements.get("start_lat", "")}, {measurements.get("start_lon", "")}</span></div>
+              <div><strong>Target Position:</strong> <span id="targetPos">{measurements.get("end_lat", "")}, {measurements.get("end_lon", "")}</span></div>
+              <div><strong>Distance:</strong> <span id="distance">{measurements.get("distance", "")}</span></div>
+              <div><strong>Azimuth Angle:</strong> <span id="azimuth">{measurements.get("azimuth", "")}</span></div>
+              <div><strong>Elevation Angle:</strong> <span id="elevation">{measurements.get("elevation_angle", "")}</span></div>
+              <div><strong>Location:</strong> <span id="location">{location_display}</span></div>
+            </div>
+        </div>
+        """
         
         st.markdown(html_table, unsafe_allow_html=True)
 
