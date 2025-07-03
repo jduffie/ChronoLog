@@ -212,6 +212,12 @@ def render_view_session_tab(user, supabase):
                 if measurements:
                     df = pd.DataFrame(measurements)
                     
+                    # Format datetime_local for display if it exists
+                    if 'datetime_local' in df.columns:
+                        df['datetime_display'] = df['datetime_local'].apply(
+                            lambda x: pd.to_datetime(x).strftime('%Y-%m-%d %H:%M:%S') if pd.notna(x) and x else None
+                        )
+                    
                     # Statistics
                     st.subheader("Session Statistics")
                     
@@ -236,7 +242,12 @@ def render_view_session_tab(user, supabase):
                     st.subheader("Measurement Data")
                     
                     # Reorder columns for better display
-                    display_columns = ['shot_number', 'speed_fps', 'delta_avg_fps', 'ke_ft_lb', 'power_factor', 'time_local']
+                    display_columns = ['shot_number', 'speed_fps', 'delta_avg_fps', 'ke_ft_lb', 'power_factor']
+                    
+                    # Use datetime_display if available
+                    if 'datetime_display' in df.columns:
+                        display_columns.append('datetime_display')
+                    
                     if 'clean_bore' in df.columns:
                         display_columns.append('clean_bore')
                     if 'cold_bore' in df.columns:

@@ -133,7 +133,7 @@ def render_garmin_upload(user, supabase, bucket):
                     continue
 
                 try:
-                    # Clean time string to remove non-breaking spaces and other Unicode issues
+                    # Clean time string and create datetime
                     def clean_time_string(time_value):
                         if pd.isna(time_value) or time_value is None:
                             return None
@@ -145,6 +145,23 @@ def render_garmin_upload(user, supabase, bucket):
                         time_str = time_str.strip()
                         return time_str if time_str else None
 
+                    def create_datetime_local(time_value, session_timestamp):
+                        time_str = clean_time_string(time_value)
+                        if not time_str:
+                            return None
+                        try:
+                            # Get session date
+                            if session_timestamp:
+                                session_date = pd.to_datetime(session_timestamp).strftime('%Y-%m-%d')
+                            else:
+                                session_date = pd.Timestamp.now().strftime('%Y-%m-%d')
+                            
+                            # Combine date with time
+                            datetime_str = f"{session_date} {time_str}"
+                            return pd.to_datetime(datetime_str).isoformat()
+                        except:
+                            return None
+
                     measurement_data = {
                         "session_id": session_id,
                         "shot_number": shot_number,
@@ -152,7 +169,7 @@ def render_garmin_upload(user, supabase, bucket):
                         "delta_avg_fps": safe_float(row.get("Δ AVG (FPS)")),
                         "ke_ft_lb": safe_float(row.get("KE (FT-LB)")),
                         "power_factor": safe_float(row.get("Power Factor (kgr⋅ft/s)")),
-                        "time_local": clean_time_string(row.get("Time")),
+                        "datetime_local": create_datetime_local(row.get("Time"), session_timestamp),
                         "clean_bore": bool(row.get("Clean Bore")) if "Clean Bore" in row and not pd.isna(row.get("Clean Bore")) else None,
                         "cold_bore": bool(row.get("Cold Bore")) if "Cold Bore" in row and not pd.isna(row.get("Cold Bore")) else None,
                         "shot_notes": str(row.get("Shot Notes")) if "Shot Notes" in row and not pd.isna(row.get("Shot Notes")) else None
