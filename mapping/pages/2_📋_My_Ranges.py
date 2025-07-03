@@ -50,12 +50,70 @@ def main():
         return
     
     # Display title
-    st.title("My Submitted Ranges")
+    st.title("My Ranges")
+    st.subheader("Select ranges to map or delete")
     
-    # Fetch and display user ranges table
+    # Fetch and display user ranges table with actions
     try:
         user_ranges = model.get_user_ranges(user["email"], supabase)
-        view.display_ranges_table(user_ranges)
+        table_result = view.display_ranges_table(user_ranges)
+        
+        # Handle delete action
+        if table_result["action"] == "delete" and table_result["selected_indices"]:
+            # Confirm deletion
+            selected_names = [user_ranges[i].get('range_name', f'Range {i+1}') for i in table_result["selected_indices"]]
+            
+            st.warning(f"⚠️ Are you sure you want to delete the following {len(selected_names)} range(s)?")
+            for name in selected_names:
+                st.write(f"• {name}")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("✅ Confirm Delete", type="primary", use_container_width=True):
+                    # Get range IDs for deletion
+                    range_ids = [user_ranges[i]["id"] for i in table_result["selected_indices"]]
+                    
+                    with st.spinner("Deleting ranges..."):
+                        success = model.delete_user_ranges(user["email"], range_ids, supabase)
+                    
+                    if success:
+                        st.success(f"✅ Successfully deleted {len(range_ids)} range(s)!")
+                        # Clear the delete session state
+                        if "delete_selected_ranges" in st.session_state:
+                            del st.session_state["delete_selected_ranges"]
+                        st.rerun()
+                    else:
+                        st.error("❌ Failed to delete some ranges. Please try again.")
+            
+            with col2:
+                if st.button("❌ Cancel", use_container_width=True):
+                    # Clear the delete session state when canceling
+                    if "delete_selected_ranges" in st.session_state:
+                        del st.session_state["delete_selected_ranges"]
+                    st.rerun()
+        
+        # Map section - always show, but conditionally populate
+        st.markdown("---")
+        
+        if table_result["action"] == "map" and table_result["selected_indices"]:
+            st.subheader("🗺️ Selected Ranges Map")
+            # Show only selected ranges
+            ranges_map = view.display_ranges_map(user_ranges, table_result["selected_indices"])
+        elif table_result["selected_indices"] and table_result["action"] != "map":
+            st.subheader("🗺️ Map")
+            st.info("💡 Click MAP button above to display the selected ranges on the map.")
+            # Show empty map when ranges are selected but MAP not clicked
+            ranges_map = view.display_ranges_map(user_ranges, [])
+        else:
+            st.subheader("🗺️ Map")
+            st.info("💡 Select ranges in the table above and click MAP to highlight them on the map.")
+            # Show empty map when no ranges are selected
+            ranges_map = view.display_ranges_map(user_ranges, [])
+        
+        # Always display the map
+        st_folium = __import__('streamlit_folium', fromlist=['st_folium']).st_folium
+        st_folium(ranges_map, use_container_width=True, height=600)
+            
     except Exception as e:
         st.error(f"Error loading your submitted ranges: {str(e)}")
 

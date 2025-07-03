@@ -157,17 +157,17 @@ class MappingView:
             print("Map event data:", filtered)
             print("")
 
-    def display_ranges_table(self, ranges: List[Dict[str, Any]]) -> None:
-        """Display a table of submitted ranges."""
+    def display_ranges_table(self, ranges: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Display a table of submitted ranges with checkbox selection and actions."""
         if not ranges:
             st.info("📍 No ranges submitted yet.")
-            return
+            return {"action": None, "selected_indices": []}
             
-        st.subheader(f"Your Submitted Ranges ({len(ranges)})")
+        st.subheader(f"You have ({len(ranges)}) ranges")
         
-        # Prepare data for display
+        # Prepare data for display with checkboxes
         table_data = []
-        for range_data in ranges:
+        for i, range_data in enumerate(ranges):
             # Format the submitted date
             submitted_at = range_data.get('submitted_at', '')
             if submitted_at:
@@ -181,6 +181,7 @@ class MappingView:
                 formatted_date = 'Unknown'
             
             table_data.append({
+                'Select': False,  # Checkbox column
                 'Range Name': range_data.get('range_name', ''),
                 'Description': range_data.get('range_description', '')[:50] + ('...' if len(range_data.get('range_description', '')) > 50 else ''),
                 'Distance (m)': f"{range_data.get('distance_m', 0):.1f}",
@@ -190,7 +191,184 @@ class MappingView:
                 'Submitted': formatted_date
             })
         
-        # Display as a dataframe
+        # Display as an editable dataframe with checkboxes
         import pandas as pd
         df = pd.DataFrame(table_data)
-        st.dataframe(df, use_container_width=True, hide_index=True)
+        
+        # Use st.data_editor with checkbox column
+        edited_df = st.data_editor(
+            df,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "Select": st.column_config.CheckboxColumn("Select", width="small", default=False),
+                "Range Name": st.column_config.TextColumn("Range Name", width="medium", disabled=True),
+                "Description": st.column_config.TextColumn("Description", width="large", disabled=True),
+                "Distance (m)": st.column_config.TextColumn("Distance (m)", width="small", disabled=True),
+                "Azimuth (°)": st.column_config.TextColumn("Azimuth (°)", width="small", disabled=True),
+                "Elevation (°)": st.column_config.TextColumn("Elevation (°)", width="small", disabled=True),
+                "Location": st.column_config.TextColumn("Location", width="large", disabled=True),
+                "Submitted": st.column_config.TextColumn("Submitted", width="medium", disabled=True)
+            },
+            key="ranges_table_checkboxes"
+        )
+        
+        # Get selected rows
+        selected_indices = []
+        if edited_df is not None:
+            selected_rows = edited_df[edited_df['Select'] == True]
+            selected_indices = selected_rows.index.tolist()
+        
+        # Selection controls
+        st.markdown("### Actions")
+        col1, col2 = st.columns([4, 1])
+        
+        with col1:
+            if selected_indices:
+                st.info(f"📋 {len(selected_indices)} range(s) selected")
+            else:
+                st.info("📍 Check boxes in the table above to select ranges")
+        
+        action_result = {"action": None, "selected_indices": selected_indices}
+        
+        with col2:
+            # DELETE button - always visible, disabled when no selection
+            if st.button("🗑️ DELETE", use_container_width=True, type="secondary", disabled=not bool(selected_indices)):
+                if selected_indices:
+                    # Store the delete action and selected indices in session state
+                    st.session_state["delete_selected_ranges"] = selected_indices
+                    action_result["action"] = "delete"
+        
+        # Auto-map selected ranges - any selected ranges should be mapped immediately
+        if selected_indices:
+            action_result["action"] = "map"
+            action_result["selected_indices"] = selected_indices
+        
+        # Check if we have a persisted delete selection
+        if not action_result["action"] and "delete_selected_ranges" in st.session_state:
+            action_result["action"] = "delete"
+            action_result["selected_indices"] = st.session_state["delete_selected_ranges"]
+        
+        return action_result
+
+    def display_ranges_map(self, ranges: List[Dict[str, Any]], selected_indices: List[int] = None) -> folium.Map:
+        """Display a map with selected ranges plotted."""
+        # Default map center
+        map_center = [36.222278, -78.051833]
+        zoom_start = 12
+        
+        # Collect all coordinates for selected ranges to calculate bounds
+        all_coords = []
+        if selected_indices and ranges:
+            for idx in selected_indices:
+                if idx < len(ranges):
+                    range_data = ranges[idx]
+                    start_lat = range_data.get('start_lat')
+                    start_lon = range_data.get('start_lon')
+                    end_lat = range_data.get('end_lat')
+                    end_lon = range_data.get('end_lon')
+                    
+                    if start_lat and start_lon:
+                        all_coords.append([float(start_lat), float(start_lon)])
+                    if end_lat and end_lon:
+                        all_coords.append([float(end_lat), float(end_lon)])
+            
+            # If we have coordinates, calculate center and appropriate zoom
+            if all_coords:
+                # Calculate bounds
+                lats = [coord[0] for coord in all_coords]
+                lons = [coord[1] for coord in all_coords]
+                
+                min_lat, max_lat = min(lats), max(lats)
+                min_lon, max_lon = min(lons), max(lons)
+                
+                # Calculate center
+                map_center = [(min_lat + max_lat) / 2, (min_lon + max_lon) / 2]
+                
+                # Calculate appropriate zoom level based on bounds
+                lat_diff = max_lat - min_lat
+                lon_diff = max_lon - min_lon
+                max_diff = max(lat_diff, lon_diff)
+                
+                # Adjust zoom based on coordinate span
+                if max_diff < 0.01:  # Very close points
+                    zoom_start = 15
+                elif max_diff < 0.05:  # Close points
+                    zoom_start = 13
+                elif max_diff < 0.1:   # Medium distance
+                    zoom_start = 11
+                elif max_diff < 0.5:   # Far points
+                    zoom_start = 9
+                else:  # Very far points
+                    zoom_start = 7
+        
+        # Create map
+        m = folium.Map(
+            location=map_center,
+            zoom_start=zoom_start,
+            tiles=None
+        )
+        
+        # Add satellite imagery
+        folium.TileLayer(
+            tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+            attr='Esri',
+            name='Satellite',
+            overlay=False,
+            control=True
+        ).add_to(m)
+        
+        # Add road overlay
+        folium.TileLayer(
+            tiles='https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}',
+            attr='Esri',
+            name='Roads',
+            overlay=True,
+            control=True,
+            opacity=0.7
+        ).add_to(m)
+        
+        folium.LayerControl().add_to(m)
+        
+        # Plot selected ranges
+        colors = ['red', 'blue', 'green', 'purple', 'orange', 'darkred', 'lightred', 'beige', 'darkblue', 'darkgreen']
+        
+        if selected_indices:
+            for i, idx in enumerate(selected_indices):
+                if idx < len(ranges):
+                    range_data = ranges[idx]
+                    color = colors[i % len(colors)]
+                    
+                    # Get coordinates
+                    start_lat = float(range_data.get('start_lat', 0))
+                    start_lon = float(range_data.get('start_lon', 0))
+                    end_lat = float(range_data.get('end_lat', 0))
+                    end_lon = float(range_data.get('end_lon', 0))
+                    
+                    if start_lat and start_lon and end_lat and end_lon:
+                        # Add firing position marker
+                        folium.Marker(
+                            location=[start_lat, start_lon],
+                            popup=f"🎯 {range_data.get('range_name', 'Range')} - Firing Position",
+                            tooltip=f"Firing Position: {range_data.get('range_name', 'Range')}",
+                            icon=folium.Icon(color=color, icon='play')
+                        ).add_to(m)
+                        
+                        # Add target position marker
+                        folium.Marker(
+                            location=[end_lat, end_lon],
+                            popup=f"🎯 {range_data.get('range_name', 'Range')} - Target",
+                            tooltip=f"Target: {range_data.get('range_name', 'Range')}",
+                            icon=folium.Icon(color=color, icon='stop')
+                        ).add_to(m)
+                        
+                        # Add line between points
+                        folium.PolyLine(
+                            [[start_lat, start_lon], [end_lat, end_lon]],
+                            color=color,
+                            weight=3,
+                            opacity=0.8,
+                            popup=f"{range_data.get('range_name', 'Range')}<br>Distance: {range_data.get('distance_m', 0):.1f}m"
+                        ).add_to(m)
+        
+        return m
