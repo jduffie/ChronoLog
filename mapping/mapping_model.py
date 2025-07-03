@@ -400,3 +400,33 @@ class MappingModel:
         except Exception as e:
             print(f"Error saving range submission: {e}")
             return False
+
+    def get_public_ranges(self, supabase_client) -> List[Dict[str, Any]]:
+        """Get all public ranges from the ranges table."""
+        try:
+            result = supabase_client.table("ranges").select(
+                "id, user_email, range_name, range_description, start_lat, start_lon, end_lat, end_lon, "
+                "start_altitude_m, end_altitude_m, distance_m, azimuth_deg, elevation_angle_deg, "
+                "display_name, submitted_at"
+            ).order("submitted_at", desc=True).execute()
+            return result.data if result.data else []
+        except Exception as e:
+            print(f"Error getting public ranges: {e}")
+            return []
+
+    def delete_public_range(self, range_id: str, supabase_client) -> bool:
+        """Delete a range from the public ranges table."""
+        try:
+            result = supabase_client.table("ranges").delete().eq("id", range_id).execute()
+            if hasattr(result, 'data') and result.data is not None:
+                print(f"Successfully deleted public range {range_id}")
+                return True
+            elif hasattr(result, 'count') and result.count > 0:
+                print(f"Successfully deleted public range {range_id} (count method)")
+                return True
+            else:
+                print(f"Failed to delete public range {range_id}")
+                return False
+        except Exception as e:
+            print(f"Error deleting public range: {e}")
+            return False

@@ -453,3 +453,167 @@ class MappingView:
                         ).add_to(m)
         
         return m
+
+    def display_public_ranges_table_readonly(self, ranges: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Display a read-only table of public ranges."""
+        if not ranges:
+            st.info("🌍 No public ranges available yet.")
+            return {"action": None, "selected_indices": []}
+            
+        st.subheader(f"Public Ranges ({len(ranges)})")
+        
+        # Prepare data for display
+        table_data = []
+        for i, range_data in enumerate(ranges):
+            # Format the submitted date
+            submitted_at = range_data.get('submitted_at', '')
+            if submitted_at:
+                try:
+                    from datetime import datetime
+                    dt = datetime.fromisoformat(submitted_at.replace('Z', '+00:00'))
+                    formatted_date = dt.strftime('%Y-%m-%d %H:%M')
+                except:
+                    formatted_date = submitted_at[:16]  # Fallback to first 16 chars
+            else:
+                formatted_date = 'Unknown'
+            
+            table_data.append({
+                'Name': range_data.get('range_name', ''),
+                'Description': range_data.get('range_description', '')[:50] + ('...' if len(range_data.get('range_description', '')) > 50 else ''),
+                'Distance (m)': f"{range_data.get('distance_m', 0):.1f}",
+                'Firing Alt (m)': f"{range_data.get('start_altitude_m', 0):.1f}",
+                'Target Alt (m)': f"{range_data.get('end_altitude_m', 0):.1f}",
+                'Azimuth (°)': f"{range_data.get('azimuth_deg', 0):.1f}",
+                'Elevation (°)': f"{range_data.get('elevation_angle_deg', 0):.2f}",
+                'Location': range_data.get('display_name', '')[:40] + ('...' if len(range_data.get('display_name', '')) > 40 else ''),
+                'Submitted': formatted_date,
+                'Contributor': range_data.get('user_email', '')
+            })
+        
+        # Display as a static dataframe
+        import pandas as pd
+        df = pd.DataFrame(table_data)
+        
+        st.dataframe(
+            df,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "Name": st.column_config.TextColumn("Name", width="medium"),
+                "Description": st.column_config.TextColumn("Description", width="large"),
+                "Distance (m)": st.column_config.TextColumn("Distance (m)", width="small"),
+                "Firing Alt (m)": st.column_config.TextColumn("Firing Alt (m)", width="small"),
+                "Target Alt (m)": st.column_config.TextColumn("Target Alt (m)", width="small"),
+                "Azimuth (°)": st.column_config.TextColumn("Azimuth (°)", width="small"),
+                "Elevation (°)": st.column_config.TextColumn("Elevation (°)", width="small"),
+                "Location": st.column_config.TextColumn("Location", width="large"),
+                "Submitted": st.column_config.TextColumn("Submitted", width="medium"),
+                "Contributor": st.column_config.TextColumn("Contributor", width="medium")
+            }
+        )
+        
+        return {"action": None, "selected_indices": []}
+
+    def display_public_ranges_table_admin(self, ranges: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Display an admin table of public ranges with edit/delete capabilities."""
+        if not ranges:
+            st.info("🌍 No public ranges available yet.")
+            return {"action": None, "selected_indices": []}
+            
+        st.subheader(f"Public Ranges ({len(ranges)}) - Admin Mode")
+        
+        # Prepare data for display with checkboxes
+        table_data = []
+        for i, range_data in enumerate(ranges):
+            # Format the submitted date
+            submitted_at = range_data.get('submitted_at', '')
+            if submitted_at:
+                try:
+                    from datetime import datetime
+                    dt = datetime.fromisoformat(submitted_at.replace('Z', '+00:00'))
+                    formatted_date = dt.strftime('%Y-%m-%d %H:%M')
+                except:
+                    formatted_date = submitted_at[:16]  # Fallback to first 16 chars
+            else:
+                formatted_date = 'Unknown'
+            
+            table_data.append({
+                'Select': False,  # Checkbox column
+                'Name': range_data.get('range_name', ''),
+                'Description': range_data.get('range_description', '')[:50] + ('...' if len(range_data.get('range_description', '')) > 50 else ''),
+                'Distance (m)': f"{range_data.get('distance_m', 0):.1f}",
+                'Firing Alt (m)': f"{range_data.get('start_altitude_m', 0):.1f}",
+                'Target Alt (m)': f"{range_data.get('end_altitude_m', 0):.1f}",
+                'Azimuth (°)': f"{range_data.get('azimuth_deg', 0):.1f}",
+                'Elevation (°)': f"{range_data.get('elevation_angle_deg', 0):.2f}",
+                'Location': range_data.get('display_name', '')[:40] + ('...' if len(range_data.get('display_name', '')) > 40 else ''),
+                'Submitted': formatted_date,
+                'Contributor': range_data.get('user_email', '')
+            })
+        
+        # Display as an editable dataframe with checkboxes
+        import pandas as pd
+        df = pd.DataFrame(table_data)
+        
+        # Use st.data_editor with checkbox column
+        edited_df = st.data_editor(
+            df,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "Select": st.column_config.CheckboxColumn("Select", width="small", default=False),
+                "Name": st.column_config.TextColumn("Name", width="medium", disabled=True),
+                "Description": st.column_config.TextColumn("Description", width="large", disabled=True),
+                "Distance (m)": st.column_config.TextColumn("Distance (m)", width="small", disabled=True),
+                "Firing Alt (m)": st.column_config.TextColumn("Firing Alt (m)", width="small", disabled=True),
+                "Target Alt (m)": st.column_config.TextColumn("Target Alt (m)", width="small", disabled=True),
+                "Azimuth (°)": st.column_config.TextColumn("Azimuth (°)", width="small", disabled=True),
+                "Elevation (°)": st.column_config.TextColumn("Elevation (°)", width="small", disabled=True),
+                "Location": st.column_config.TextColumn("Location", width="large", disabled=True),
+                "Submitted": st.column_config.TextColumn("Submitted", width="medium", disabled=True),
+                "Contributor": st.column_config.TextColumn("Contributor", width="medium", disabled=True)
+            },
+            key="public_ranges_table_checkboxes"
+        )
+        
+        # Get selected rows
+        selected_indices = []
+        if edited_df is not None:
+            selected_rows = edited_df[edited_df['Select'] == True]
+            selected_indices = selected_rows.index.tolist()
+        
+        # Admin controls
+        col1, col2, col3 = st.columns([4, 1, 1])
+        
+        with col1:
+            if selected_indices:
+                st.info(f"📋 {len(selected_indices)} range(s) selected")
+            else:
+                st.info("📍 Check boxes in the table above to select ranges")
+        
+        action_result = {"action": None, "selected_indices": selected_indices}
+        
+        with col2:
+            # VIEW MAP button - always visible, disabled when no selection
+            if st.button("🗺️ VIEW MAP", use_container_width=True, type="primary", disabled=not bool(selected_indices)):
+                if selected_indices:
+                    action_result["action"] = "map"
+        
+        with col3:
+            # DELETE button - always visible, disabled when no selection
+            if st.button("🗑️ DELETE", use_container_width=True, type="secondary", disabled=not bool(selected_indices)):
+                if selected_indices:
+                    # Store the delete action and selected indices in session state
+                    st.session_state["delete_selected_public_ranges"] = selected_indices
+                    action_result["action"] = "delete"
+        
+        # Check if we have a persisted delete selection first
+        if "delete_selected_public_ranges" in st.session_state:
+            action_result["action"] = "delete"
+            action_result["selected_indices"] = st.session_state["delete_selected_public_ranges"]
+        # Auto-map selected ranges - any selected ranges should be mapped immediately
+        elif selected_indices:
+            action_result["action"] = "map"
+            action_result["selected_indices"] = selected_indices
+        
+        return action_result
