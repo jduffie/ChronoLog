@@ -1,6 +1,7 @@
 import streamlit as st
 from mapping_model import MappingModel
 from mapping_view import MappingView
+from auth import handle_auth
 from typing import Dict, Any
 
 
@@ -108,6 +109,18 @@ class MappingController:
 
     def run(self) -> None:
         """Main controller method to run the application."""
+        # Set app identifier for auth system
+        if "app" not in st.query_params:
+            st.query_params["app"] = "mapping"
+            
+        # Handle authentication
+        user = handle_auth()
+        if not user:
+            return
+            
+        # Display user info in sidebar
+        st.sidebar.success(f"Logged in as {user['name']}")
+        
         # Sync model with session state
         self._sync_model_with_session_state()
 
