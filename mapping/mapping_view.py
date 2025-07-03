@@ -40,32 +40,29 @@ class MappingView:
         has_complete_data = (measurements.get("start_lat") and measurements.get("start_lon") and 
                             measurements.get("end_lat") and measurements.get("end_lon"))
         
-        # Create columns for Range Name to make it more inline
-        col1, col2 = st.columns([1, 3])
-        with col1:
-            st.markdown("**Range Name:**")
-        with col2:
-            # Use value parameter to ensure clearing works properly
-            range_name_value = st.session_state.get("range_name", "")
-            range_name = st.text_input("Range Name", value=range_name_value, key="range_name", placeholder="Enter range name", label_visibility="collapsed")
+        # Get form values
+        range_name_value = st.session_state.get("range_name", "")
+        range_description_value = st.session_state.get("range_description", "")
         
         html_table = f"""
         <div class="output">
+          <div><strong>Range Name:</strong> <span id="rangeName">{range_name_value}</span></div>
           <div><strong>Firing Position:</strong> <span id="firingPos">{measurements.get("start_lat", "")}, {measurements.get("start_lon", "")}</span></div>
           <div><strong>Target Position:</strong> <span id="targetPos">{measurements.get("end_lat", "")}, {measurements.get("end_lon", "")}</span></div>
           <div><strong>Distance:</strong> <span id="distance">{measurements.get("distance", "")}</span></div>
           <div><strong>Azimuth Angle:</strong> <span id="azimuth">{measurements.get("azimuth", "")}</span></div>
           <div><strong>Elevation Angle:</strong> <span id="elevation">{measurements.get("elevation_angle", "")}</span></div>
           <div><strong>Location:</strong> <span id="location">{location_display}</span></div>
+          <div><strong>Range Description:</strong> <span id="rangeDesc">{range_description_value}</span></div>
         </div>
         """
         
         st.markdown(html_table, unsafe_allow_html=True)
         
-        # Add range description input with consistent styling
-        st.markdown("**Range Description:**")
-        range_description_value = st.session_state.get("range_description", "")
-        range_description = st.text_area("Description", value=range_description_value, key="range_description", placeholder="Enter a description for this range", height=100, label_visibility="collapsed")
+        # Form inputs below the table
+        st.markdown("### Range Information")
+        range_name = st.text_input("Range Name", value=range_name_value, key="range_name", placeholder="Enter range name")
+        range_description = st.text_area("Range Description", value=range_description_value, key="range_description", placeholder="Enter a description for this range", height=100)
         
         # Submit button (only show if we have complete measurement data)
         if has_complete_data:
@@ -141,7 +138,7 @@ class MappingView:
 
     def display_map(self, m: folium.Map) -> Dict[str, Any]:
         """Display the map and return interaction data."""
-        return st_folium(m, width=700, height=500)
+        return st_folium(m, use_container_width=True, height=500)
 
     def display_reset_button(self) -> bool:
         """Display reset button and return True if clicked."""
