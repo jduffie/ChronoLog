@@ -194,14 +194,14 @@ class MappingController:
             supabase = create_client(url, key)
             range_count = self.model.get_user_range_count(user["email"], supabase)
             
-            if range_count >= 15:
+            if range_count >= 40:
                 st.error("🚫 **Maximum range limit reached**")
-                st.warning(f"You have submitted {range_count}/15 ranges. You cannot submit any more ranges.")
+                st.warning(f"You have submitted {range_count}/40 ranges. You cannot submit any more ranges.")
                 st.info("If you need to submit more ranges, please contact support.")
                 return
                 
             # Show current range count
-            st.sidebar.info(f"Ranges submitted: {range_count}/15")
+            st.sidebar.info(f"Ranges submitted: {range_count}/40")
             
         except Exception as e:
             st.error(f"Error checking range limit: {str(e)}")
@@ -216,18 +216,12 @@ class MappingController:
         # Handle elevation fetching
         self._handle_elevation_fetching()
 
-        # Get measurements and display table
-        if len(self.model.points) == 2 and len(self.model.elevations_m) == 2:
-            measurements = self.model.calculate_measurements()
-        else:
-            measurements = self.model.get_partial_measurements()
-        
-        # Display measurements table and handle submission
-        submission_result = self.view.display_measurements_table(measurements)
-        
-        # Handle range submission
-        if submission_result and submission_result.get("action") == "submit":
-            self._handle_range_submission(user, submission_result)
+        # Display instruction message
+        has_complete_data = (len(self.model.points) == 2 and len(self.model.elevations_m) == 2)
+        if not has_complete_data:
+            st.info("To submit a new range for review, start by selecting firing position and target on the map. \n\n" \
+            "Subsequently, after the application looks up the address and elevation, it will compute distance, azimuth, and elevation angles.")
+
 
         # Create and display map
         map_obj = self.view.create_map(
@@ -246,6 +240,19 @@ class MappingController:
 
         # Handle reset action
         self._handle_reset_action()
+
+        # Get measurements
+        if has_complete_data:
+            measurements = self.model.calculate_measurements()
+        else:
+            measurements = self.model.get_partial_measurements()
+        
+        # Display range form and measurements table
+        submission_result = self.view.display_range_form_and_table(measurements)
+        
+        # Handle range submission
+        if submission_result and submission_result.get("action") == "submit":
+            self._handle_range_submission(user, submission_result)
 
         # Debug session state
         self._debug_session_state()

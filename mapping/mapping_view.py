@@ -29,7 +29,7 @@ class MappingView:
 
     def display_title(self) -> None:
         """Display the main title."""
-        st.title("Select Two Points to Collect Altitude, Range, Azimuth, and Elevation")
+        st.title("Submit Range")
 
     def display_measurements_table(self, measurements: Dict[str, Any]) -> None:
         """Display the measurements table using HTML."""
@@ -46,28 +46,84 @@ class MappingView:
         
         html_table = f"""
         <div class="output">
-          <div><strong>Range Name:</strong> <span id="rangeName">{range_name_value}</span></div>
-          <div><strong>Firing Position:</strong> <span id="firingPos">{measurements.get("start_lat", "")}, {measurements.get("start_lon", "")}</span></div>
-          <div><strong>Target Position:</strong> <span id="targetPos">{measurements.get("end_lat", "")}, {measurements.get("end_lon", "")}</span></div>
-          <div><strong>Distance:</strong> <span id="distance">{measurements.get("distance", "")}</span></div>
-          <div><strong>Azimuth Angle:</strong> <span id="azimuth">{measurements.get("azimuth", "")}</span></div>
-          <div><strong>Elevation Angle:</strong> <span id="elevation">{measurements.get("elevation_angle", "")}</span></div>
-          <div><strong>Location:</strong> <span id="location">{location_display}</span></div>
+          <div><strong>Range Name       :</strong> <span id="rangeName">{range_name_value}</span></div>
           <div><strong>Range Description:</strong> <span id="rangeDesc">{range_description_value}</span></div>
+
+          <div><strong>Firing Position  :</strong> <span id="firingPos">{measurements.get("start_lat", "")}, {measurements.get("start_lon", "")}</span></div>
+          <div><strong>Firing Altitude  :</strong> <span id="firingAlt">{measurements.get("start_alt", "")}</span></div>
+          <div><strong>Target Position  :</strong> <span id="targetPos">{measurements.get("end_lat", "")}, {measurements.get("end_lon", "")}</span></div>
+          <div><strong>Target Altitude  :</strong> <span id="targetAlt">{measurements.get("end_alt", "")}</span></div>
+          <div><strong>Distance         :</strong> <span id="distance">{measurements.get("distance", "")}</span></div>
+          <div><strong>Azimuth Angle    :</strong> <span id="azimuth">{measurements.get("azimuth", "")}</span></div>
+          <div><strong>Elevation Angle  :</strong> <span id="elevation">{measurements.get("elevation_angle", "")}</span></div>
+          <div><strong>Location         :</strong> <span id="location">{location_display}</span></div>
+        </div>
+        """
+        
+        st.markdown(html_table, unsafe_allow_html=True)
+
+        # Form inputs below the table
+        st.markdown("### Range Information")
+        range_name = st.text_input("**Range Name**", value=range_name_value, key="range_name", placeholder="Enter range name")
+        range_description = st.text_area("**Range Description**", value=range_description_value, key="range_description", placeholder="Enter a description for this range", height=100)
+
+        # Submit button (only show if we have complete measurement data)
+        if has_complete_data:
+            if st.button("Submit Range Data", type="primary"):
+
+                return {
+                    "action": "submit",
+                    "range": {
+                        "range_name": range_name,
+                        "range_description": range_description,
+                        "measurements": measurements
+                    }
+                }
+        else:
+            st.info("📍 Submit a new range by selecting firing position and target on the map.")
+            
+        return None
+
+    def display_range_form_and_table(self, measurements: Dict[str, Any]) -> Dict[str, Any]:
+        """Display range form inputs and measurements table in the correct order."""
+        # Check if we have complete data for submission
+        has_complete_data = (measurements.get("start_lat") and measurements.get("start_lon") and 
+                            measurements.get("end_lat") and measurements.get("end_lon"))
+        
+        # Get form values
+        range_name_value = st.session_state.get("range_name", "")
+        range_description_value = st.session_state.get("range_description", "")
+        
+        # Range form inputs
+        st.markdown("### Range Information")
+        range_name = st.text_input("Range Name", value=range_name_value, key="range_name", placeholder="Enter range name")
+        range_description = st.text_area("Range Description", value=range_description_value, key="range_description", placeholder="Enter a description for this range", height=100)
+        
+        # Get display name from GeoJSON response
+        location_display = measurements.get("display_name", "")
+        
+        # Update form values in the measurements table
+        html_table = f"""
+        <div class="output">
+          <div><strong>Range Name       :</strong> <span id="rangeName">{range_name}</span></div>
+          <div><strong>Range Description:</strong> <span id="rangeDesc">{range_description}</span></div>
+
+          <div><strong>Firing Position  :</strong> <span id="firingPos">{measurements.get("start_lat", "")}, {measurements.get("start_lon", "")}</span></div>
+          <div><strong>Firing Altitude  :</strong> <span id="firingAlt">{measurements.get("start_alt", "")}</span></div>
+          <div><strong>Target Position  :</strong> <span id="targetPos">{measurements.get("end_lat", "")}, {measurements.get("end_lon", "")}</span></div>
+          <div><strong>Target Altitude  :</strong> <span id="targetAlt">{measurements.get("end_alt", "")}</span></div>
+          <div><strong>Distance         :</strong> <span id="distance">{measurements.get("distance", "")}</span></div>
+          <div><strong>Azimuth Angle    :</strong> <span id="azimuth">{measurements.get("azimuth", "")}</span></div>
+          <div><strong>Elevation Angle  :</strong> <span id="elevation">{measurements.get("elevation_angle", "")}</span></div>
+          <div><strong>Location         :</strong> <span id="location">{location_display}</span></div>
         </div>
         """
         
         st.markdown(html_table, unsafe_allow_html=True)
         
-        # Form inputs below the table
-        st.markdown("### Range Information")
-        range_name = st.text_input("Range Name", value=range_name_value, key="range_name", placeholder="Enter range name")
-        range_description = st.text_area("Range Description", value=range_description_value, key="range_description", placeholder="Enter a description for this range", height=100)
-        
         # Submit button (only show if we have complete measurement data)
         if has_complete_data:
             if st.button("Submit Range Data", type="primary"):
-
                 return {
                     "action": "submit",
                     "range": {
@@ -180,12 +236,22 @@ class MappingView:
             else:
                 formatted_date = 'Unknown'
             
+            # Format review reason
+            review_reason = range_data.get('review_reason', '')
+            if review_reason:
+                review_reason_display = review_reason[:30] + ('...' if len(review_reason) > 30 else '')
+            else:
+                review_reason_display = ''
+            
             table_data.append({
                 'Select': False,  # Checkbox column
                 'Name': range_data.get('range_name', ''),
                 'Status': range_data.get('status', 'Under Review'),
+                'Review Reason': review_reason_display,
                 'Description': range_data.get('range_description', '')[:50] + ('...' if len(range_data.get('range_description', '')) > 50 else ''),
                 'Distance (m)': f"{range_data.get('distance_m', 0):.1f}",
+                'Firing Alt (m)': f"{range_data.get('start_altitude_m', 0):.1f}",
+                'Target Alt (m)': f"{range_data.get('end_altitude_m', 0):.1f}",
                 'Azimuth (°)': f"{range_data.get('azimuth_deg', 0):.1f}",
                 'Elevation (°)': f"{range_data.get('elevation_angle_deg', 0):.2f}",
                 'Location': range_data.get('display_name', '')[:40] + ('...' if len(range_data.get('display_name', '')) > 40 else ''),
@@ -205,8 +271,11 @@ class MappingView:
                 "Select": st.column_config.CheckboxColumn("Select", width="small", default=False),
                 "Name": st.column_config.TextColumn("Name", width="medium", disabled=True),
                 "Status": st.column_config.TextColumn("Status", width="small", disabled=True),
+                "Review Reason": st.column_config.TextColumn("Review Reason", width="medium", disabled=True),
                 "Description": st.column_config.TextColumn("Description", width="large", disabled=True),
                 "Distance (m)": st.column_config.TextColumn("Distance (m)", width="small", disabled=True),
+                "Firing Alt (m)": st.column_config.TextColumn("Firing Alt (m)", width="small", disabled=True),
+                "Target Alt (m)": st.column_config.TextColumn("Target Alt (m)", width="small", disabled=True),
                 "Azimuth (°)": st.column_config.TextColumn("Azimuth (°)", width="small", disabled=True),
                 "Elevation (°)": st.column_config.TextColumn("Elevation (°)", width="small", disabled=True),
                 "Location": st.column_config.TextColumn("Location", width="large", disabled=True),

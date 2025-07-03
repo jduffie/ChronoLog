@@ -193,7 +193,7 @@ class MappingModel:
         """Get all ranges submitted by a user."""
         try:
             result = supabase_client.table("ranges_submissions").select(
-                "id, range_name, range_description, start_lat, start_lon, end_lat, end_lon, distance_m, azimuth_deg, elevation_angle_deg, display_name, submitted_at, status"
+                "id, range_name, range_description, start_lat, start_lon, end_lat, end_lon, distance_m, azimuth_deg, elevation_angle_deg, display_name, submitted_at, status, review_reason, start_altitude_m, end_altitude_m"
             ).eq("user_email", user_email).order("submitted_at", desc=True).execute()
             return result.data if result.data else []
         except Exception as e:
