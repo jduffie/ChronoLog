@@ -7,13 +7,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 from mapping.mapping_controller import MappingController
 
-# Set page configuration
-st.set_page_config(
-    page_title="Submit Range - ChronoLog Mapping",
-    page_icon="📍",
-    layout="wide"
-)
-
 # Run the mapping controller
 controller = MappingController()
 controller.run()

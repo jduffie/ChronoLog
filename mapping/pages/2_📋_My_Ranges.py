@@ -10,15 +10,15 @@ from mapping.mapping_view import MappingView
 from auth import handle_auth
 from supabase import create_client
 
-# Set page configuration
-st.set_page_config(
-    page_title="My Ranges - ChronoLog Mapping",
-    page_icon="📋",
-    layout="wide"
-)
-
 def main():
     """Main function for the My Ranges page."""
+    # Set page configuration FIRST, before any other Streamlit operations
+    st.set_page_config(
+        page_title="My Ranges - ChronoLog Mapping",
+        page_icon="📋",
+        layout="wide"
+    )
+    
     # Set app identifier for auth system
     if "app" not in st.query_params:
         st.query_params["app"] = "mapping"

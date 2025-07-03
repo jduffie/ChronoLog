@@ -44,10 +44,16 @@ class MappingView:
         range_name_value = st.session_state.get("range_name", "")
         range_description_value = st.session_state.get("range_description", "")
         
+        # Escape HTML and handle newlines properly
+        import html
+        range_name_escaped = html.escape(range_name_value)
+        range_description_escaped = html.escape(range_description_value).replace('\n', '<br>')
+        location_escaped = html.escape(location_display)
+        
         html_table = f"""
         <div class="output">
-          <div><strong>Range Name       :</strong> <span id="rangeName">{range_name_value}</span></div>
-          <div><strong>Range Description:</strong> <span id="rangeDesc">{range_description_value}</span></div>
+          <div><strong>Range Name       :</strong> <span id="rangeName">{range_name_escaped}</span></div>
+          <div><strong>Range Description:</strong> <span id="rangeDesc">{range_description_escaped}</span></div>
 
           <div><strong>Firing Position  :</strong> <span id="firingPos">{measurements.get("start_lat", "")}, {measurements.get("start_lon", "")}</span></div>
           <div><strong>Firing Altitude  :</strong> <span id="firingAlt">{measurements.get("start_alt", "")}</span></div>
@@ -56,7 +62,7 @@ class MappingView:
           <div><strong>Distance         :</strong> <span id="distance">{measurements.get("distance", "")}</span></div>
           <div><strong>Azimuth Angle    :</strong> <span id="azimuth">{measurements.get("azimuth", "")}</span></div>
           <div><strong>Elevation Angle  :</strong> <span id="elevation">{measurements.get("elevation_angle", "")}</span></div>
-          <div><strong>Location         :</strong> <span id="location">{location_display}</span></div>
+          <div><strong>Location         :</strong> <span id="location">{location_escaped}</span></div>
         </div>
         """
         
@@ -102,11 +108,17 @@ class MappingView:
         # Get display name from GeoJSON response
         location_display = measurements.get("display_name", "")
         
+        # Escape HTML and handle newlines properly
+        import html
+        range_name_escaped = html.escape(range_name)
+        range_description_escaped = html.escape(range_description).replace('\n', '<br>')
+        location_escaped = html.escape(location_display)
+        
         # Update form values in the measurements table
         html_table = f"""
         <div class="output">
-          <div><strong>Range Name       :</strong> <span id="rangeName">{range_name}</span></div>
-          <div><strong>Range Description:</strong> <span id="rangeDesc">{range_description}</span></div>
+          <div><strong>Range Name       :</strong> <span id="rangeName">{range_name_escaped}</span></div>
+          <div><strong>Range Description:</strong> <span id="rangeDesc">{range_description_escaped}</span></div>
 
           <div><strong>Firing Position  :</strong> <span id="firingPos">{measurements.get("start_lat", "")}, {measurements.get("start_lon", "")}</span></div>
           <div><strong>Firing Altitude  :</strong> <span id="firingAlt">{measurements.get("start_alt", "")}</span></div>
@@ -115,7 +127,7 @@ class MappingView:
           <div><strong>Distance         :</strong> <span id="distance">{measurements.get("distance", "")}</span></div>
           <div><strong>Azimuth Angle    :</strong> <span id="azimuth">{measurements.get("azimuth", "")}</span></div>
           <div><strong>Elevation Angle  :</strong> <span id="elevation">{measurements.get("elevation_angle", "")}</span></div>
-          <div><strong>Location         :</strong> <span id="location">{location_display}</span></div>
+          <div><strong>Location         :</strong> <span id="location">{location_escaped}</span></div>
         </div>
         """
         

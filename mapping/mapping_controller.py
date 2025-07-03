@@ -175,6 +175,13 @@ class MappingController:
 
     def run(self) -> None:
         """Main controller method to run the application."""
+        # Set page configuration FIRST, before any other Streamlit operations
+        st.set_page_config(
+            page_title="Submit Range - ChronoLog Mapping",
+            page_icon="📍",
+            layout="wide"
+        )
+        
         # Set app identifier for auth system
         if "app" not in st.query_params:
             st.query_params["app"] = "mapping"
