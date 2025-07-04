@@ -7,6 +7,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 from mapping.mapping_controller import MappingController
 
-# Run the mapping controller
-controller = MappingController()
-controller.run()
+def main():
+    """Main function for the Nominate New Range page."""
+    controller = MappingController()
+    controller.run()
+
+if __name__ == "__main__":
+    main()
