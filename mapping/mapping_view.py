@@ -292,17 +292,18 @@ class MappingView:
                 'Name': range_data.get('range_name', ''),
                 'Status': range_data.get('status', 'Under Review'),
                 'Review Comments': review_reason_display,
-                'Description': range_data.get('range_description', '')[:40] + ('...' if len(range_data.get('range_description', '')) > 40 else ''),
-                'Distance 2D (m)': f"{range_data.get('distance_m', 0):.1f}",
-                'Firing Alt (m)': f"{range_data.get('start_altitude_m', 0):.1f}",
-                'Target Alt (m)': f"{range_data.get('end_altitude_m', 0):.1f}",
-                'Azimuth (°)': f"{range_data.get('azimuth_deg', 0):.1f}",
-                'Elevation (°)': f"{range_data.get('elevation_angle_deg', 0):.2f}",
-                'Elev Change (m)': f"{range_data.get('end_altitude_m', 0) - range_data.get('start_altitude_m', 0):.1f}",
+                'Distance (m)': f"{range_data.get('distance_m', 0):.1f}",
+                'Firing lat': f"{range_data.get('start_lat', 0):.6f}",
+                'Firing lon': f"{range_data.get('start_lon', 0):.6f}",
+                'Firing alt (m)': f"{range_data.get('start_altitude_m', 0):.1f}",
+                'Azimuth angle (°)': f"{range_data.get('azimuth_deg', 0):.1f}",
+                'Elevation angle (°)': f"{range_data.get('elevation_angle_deg', 0):.2f}",
+                'Elevation change (m)': f"{range_data.get('start_altitude_m', 0) - range_data.get('end_altitude_m', 0):.1f}",
                 'County': address_components['county'],
                 'State': address_components['state'],
                 'Country': address_components['country'],
                 'Location': range_data.get('display_name', '')[:30] + ('...' if len(range_data.get('display_name', '')) > 30 else ''),
+                'Description': range_data.get('range_description', '')[:40] + ('...' if len(range_data.get('range_description', '')) > 40 else ''),
                 'Submitted': formatted_date
             })
         
@@ -319,18 +320,19 @@ class MappingView:
                 "Select": st.column_config.CheckboxColumn("Select", width="small", default=False),
                 "Name": st.column_config.TextColumn("Name", width="medium", disabled=True),
                 "Status": st.column_config.TextColumn("Status", width="small", disabled=True),
-                "Review Comments": st.column_config.TextColumn("Review Reason", width="medium", disabled=True),
-                "Description": st.column_config.TextColumn("Description", width="large", disabled=True),
-                "Distance 2D (m)": st.column_config.TextColumn("Distance 2D (m)", width="small", disabled=True),
-                "Firing Alt (m)": st.column_config.TextColumn("Firing Alt (m)", width="small", disabled=True),
-                "Target Alt (m)": st.column_config.TextColumn("Target Alt (m)", width="small", disabled=True),
-                "Azimuth (°)": st.column_config.TextColumn("Azimuth (°)", width="small", disabled=True),
-                "Elevation (°)": st.column_config.TextColumn("Elevation (°)", width="small", disabled=True),
-                "Elev Change (m)": st.column_config.TextColumn("Elev Change (m)", width="small", disabled=True),
+                "Review Comments": st.column_config.TextColumn("Review Comments", width="medium", disabled=True),
+                "Distance (m)": st.column_config.TextColumn("Distance (m)", width="small", disabled=True),
+                "Firing lat": st.column_config.TextColumn("Firing lat", width="small", disabled=True),
+                "Firing lon": st.column_config.TextColumn("Firing lon", width="small", disabled=True),
+                "Firing alt (m)": st.column_config.TextColumn("Firing alt (m)", width="small", disabled=True),
+                "Azimuth angle (°)": st.column_config.TextColumn("Azimuth angle (°)", width="small", disabled=True),
+                "Elevation angle (°)": st.column_config.TextColumn("Elevation angle (°)", width="small", disabled=True),
+                "Elevation change (m)": st.column_config.TextColumn("Elevation change (m)", width="small", disabled=True),
                 "County": st.column_config.TextColumn("County", width="medium", disabled=True),
                 "State": st.column_config.TextColumn("State", width="medium", disabled=True),
                 "Country": st.column_config.TextColumn("Country", width="medium", disabled=True),
                 "Location": st.column_config.TextColumn("Location", width="large", disabled=True),
+                "Description": st.column_config.TextColumn("Description", width="large", disabled=True),
                 "Submitted": st.column_config.TextColumn("Submitted", width="medium", disabled=True)
             },
             key="ranges_table_checkboxes"
@@ -522,18 +524,19 @@ class MappingView:
             
             table_data.append({
                 'Name': range_data.get('range_name', ''),
-                'Description': range_data.get('range_description', '')[:50] + ('...' if len(range_data.get('range_description', '')) > 50 else ''),
                 'Distance (m)': f"{range_data.get('distance_m', 0):.1f}",
-                'Firing Alt (m)': f"{range_data.get('start_altitude_m', 0):.1f}",
-                'Target Alt (m)': f"{range_data.get('end_altitude_m', 0):.1f}",
-                'Azimuth (°)': f"{range_data.get('azimuth_deg', 0):.1f}",
-                'Elevation (°)': f"{range_data.get('elevation_angle_deg', 0):.2f}",
+                'Firing lat': f"{range_data.get('start_lat', 0):.6f}",
+                'Firing lon': f"{range_data.get('start_lon', 0):.6f}",
+                'Firing alt (m)': f"{range_data.get('start_altitude_m', 0):.1f}",
+                'Azimuth angle (°)': f"{range_data.get('azimuth_deg', 0):.1f}",
+                'Elevation angle (°)': f"{range_data.get('elevation_angle_deg', 0):.2f}",
+                'Elevation change (m)': f"{range_data.get('start_altitude_m', 0) - range_data.get('end_altitude_m', 0):.1f}",
                 'County': address_components['county'],
                 'State': address_components['state'],
                 'Country': address_components['country'],
                 'Location': range_data.get('display_name', '')[:40] + ('...' if len(range_data.get('display_name', '')) > 40 else ''),
-                'Submitted': formatted_date,
-                'Contributor': range_data.get('user_email', '')
+                'Description': range_data.get('range_description', '')[:50] + ('...' if len(range_data.get('range_description', '')) > 50 else ''),
+                'Submitted': formatted_date
             })
         
         # Display as a static dataframe
@@ -546,18 +549,19 @@ class MappingView:
             hide_index=True,
             column_config={
                 "Name": st.column_config.TextColumn("Name", width="medium"),
-                "Description": st.column_config.TextColumn("Description", width="large"),
                 "Distance (m)": st.column_config.TextColumn("Distance (m)", width="small"),
-                "Firing Alt (m)": st.column_config.TextColumn("Firing Alt (m)", width="small"),
-                "Target Alt (m)": st.column_config.TextColumn("Target Alt (m)", width="small"),
-                "Azimuth (°)": st.column_config.TextColumn("Azimuth (°)", width="small"),
-                "Elevation (°)": st.column_config.TextColumn("Elevation (°)", width="small"),
+                "Firing lat": st.column_config.TextColumn("Firing lat", width="small"),
+                "Firing lon": st.column_config.TextColumn("Firing lon", width="small"),
+                "Firing alt (m)": st.column_config.TextColumn("Firing alt (m)", width="small"),
+                "Azimuth angle (°)": st.column_config.TextColumn("Azimuth angle (°)", width="small"),
+                "Elevation angle (°)": st.column_config.TextColumn("Elevation angle (°)", width="small"),
+                "Elevation change (m)": st.column_config.TextColumn("Elevation change (m)", width="small"),
                 "County": st.column_config.TextColumn("County", width="medium"),
                 "State": st.column_config.TextColumn("State", width="medium"),
                 "Country": st.column_config.TextColumn("Country", width="medium"),
                 "Location": st.column_config.TextColumn("Location", width="large"),
-                "Submitted": st.column_config.TextColumn("Submitted", width="medium"),
-                "Contributor": st.column_config.TextColumn("Contributor", width="medium")
+                "Description": st.column_config.TextColumn("Description", width="large"),
+                "Submitted": st.column_config.TextColumn("Submitted", width="medium")
             }
         )
         
@@ -590,18 +594,19 @@ class MappingView:
             table_data.append({
                 'Select': False,  # Checkbox column
                 'Name': range_data.get('range_name', ''),
-                'Description': range_data.get('range_description', '')[:50] + ('...' if len(range_data.get('range_description', '')) > 50 else ''),
                 'Distance (m)': f"{range_data.get('distance_m', 0):.1f}",
-                'Firing Alt (m)': f"{range_data.get('start_altitude_m', 0):.1f}",
-                'Target Alt (m)': f"{range_data.get('end_altitude_m', 0):.1f}",
-                'Azimuth (°)': f"{range_data.get('azimuth_deg', 0):.1f}",
-                'Elevation (°)': f"{range_data.get('elevation_angle_deg', 0):.2f}",
+                'Firing lat': f"{range_data.get('start_lat', 0):.6f}",
+                'Firing lon': f"{range_data.get('start_lon', 0):.6f}",
+                'Firing alt (m)': f"{range_data.get('start_altitude_m', 0):.1f}",
+                'Azimuth angle (°)': f"{range_data.get('azimuth_deg', 0):.1f}",
+                'Elevation angle (°)': f"{range_data.get('elevation_angle_deg', 0):.2f}",
+                'Elevation change (m)': f"{range_data.get('start_altitude_m', 0) - range_data.get('end_altitude_m', 0):.1f}",
                 'County': address_components['county'],
                 'State': address_components['state'],
                 'Country': address_components['country'],
                 'Location': range_data.get('display_name', '')[:40] + ('...' if len(range_data.get('display_name', '')) > 40 else ''),
-                'Submitted': formatted_date,
-                'Contributor': range_data.get('user_email', '')
+                'Description': range_data.get('range_description', '')[:50] + ('...' if len(range_data.get('range_description', '')) > 50 else ''),
+                'Submitted': formatted_date
             })
         
         # Display as an editable dataframe with checkboxes
@@ -616,18 +621,19 @@ class MappingView:
             column_config={
                 "Select": st.column_config.CheckboxColumn("Select", width="small", default=False),
                 "Name": st.column_config.TextColumn("Name", width="medium", disabled=True),
-                "Description": st.column_config.TextColumn("Description", width="large", disabled=True),
                 "Distance (m)": st.column_config.TextColumn("Distance (m)", width="small", disabled=True),
-                "Firing Alt (m)": st.column_config.TextColumn("Firing Alt (m)", width="small", disabled=True),
-                "Target Alt (m)": st.column_config.TextColumn("Target Alt (m)", width="small", disabled=True),
-                "Azimuth (°)": st.column_config.TextColumn("Azimuth (°)", width="small", disabled=True),
-                "Elevation (°)": st.column_config.TextColumn("Elevation (°)", width="small", disabled=True),
+                "Firing lat": st.column_config.TextColumn("Firing lat", width="small", disabled=True),
+                "Firing lon": st.column_config.TextColumn("Firing lon", width="small", disabled=True),
+                "Firing alt (m)": st.column_config.TextColumn("Firing alt (m)", width="small", disabled=True),
+                "Azimuth angle (°)": st.column_config.TextColumn("Azimuth angle (°)", width="small", disabled=True),
+                "Elevation angle (°)": st.column_config.TextColumn("Elevation angle (°)", width="small", disabled=True),
+                "Elevation change (m)": st.column_config.TextColumn("Elevation change (m)", width="small", disabled=True),
                 "County": st.column_config.TextColumn("County", width="medium", disabled=True),
                 "State": st.column_config.TextColumn("State", width="medium", disabled=True),
                 "Country": st.column_config.TextColumn("Country", width="medium", disabled=True),
                 "Location": st.column_config.TextColumn("Location", width="large", disabled=True),
-                "Submitted": st.column_config.TextColumn("Submitted", width="medium", disabled=True),
-                "Contributor": st.column_config.TextColumn("Contributor", width="medium", disabled=True)
+                "Description": st.column_config.TextColumn("Description", width="large", disabled=True),
+                "Submitted": st.column_config.TextColumn("Submitted", width="medium", disabled=True)
             },
             key="public_ranges_table_checkboxes"
         )
