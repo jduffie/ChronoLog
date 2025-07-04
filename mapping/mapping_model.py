@@ -93,11 +93,11 @@ class MappingModel:
                     },
                     "properties": {
                         "type": "firing_position",
-                        "address": start_address_data.get('display_name', ''),
                         "altitude_m": start_alt,
                         "azimuth_deg": azimuth,
                         "elevation_angle_deg": elevation_angle,
-                        "elevation_change_m": elevation_diff_m
+                        "elevation_change_m": elevation_diff_m,
+                        **start_address_data.get('geojson', {}).get('features', [{}])[0].get('properties', {})
                     }
                 },
                 {
@@ -108,8 +108,8 @@ class MappingModel:
                     },
                     "properties": {
                         "type": "target_position",
-                        "address": end_address_data.get('display_name', ''),
-                        "altitude_m": end_alt
+                        "altitude_m": end_alt,
+                        **end_address_data.get('geojson', {}).get('features', [{}])[0].get('properties', {})
                     }
                 },
                 {
@@ -229,11 +229,17 @@ class MappingModel:
             print("=" * 50)
 
             # Return the full GeoJSON with metadata
+            feature_properties = data.get('features', [{}])[0].get('properties', {}) if data.get('features') else {}
+            address_obj = feature_properties.get('address', {})
+            
             return {
                 'lat': lat,
                 'lon': lon,
-                'geojson': data,
-                'display_name': data.get('features', [{}])[0].get('properties', {}).get('display_name', '') if data.get('features') else ''
+                'display_name': feature_properties.get('display_name', ''),
+                'county': address_obj.get('county', ''),
+                'state': address_obj.get('state', ''),
+                'country': address_obj.get('country', ''),
+                'geojson': data
             }
                 
         except Exception as e:
@@ -241,8 +247,11 @@ class MappingModel:
             return {
                 'lat': lat,
                 'lon': lon,
-                'geojson': {},
-                'display_name': ''
+                'display_name': '',
+                'county': '',
+                'state': '',
+                'country': '',
+                'geojson': {}
             }
 
     def get_address_geojson_with_rate_limit(self, lat: float, lon: float) -> Dict[str, any]:
@@ -264,7 +273,7 @@ class MappingModel:
         """Get all ranges submitted by a user."""
         try:
             result = supabase_client.table("ranges_submissions").select(
-                "id, range_name, range_description, start_lat, start_lon, end_lat, end_lon, distance_m, azimuth_deg, elevation_angle_deg, display_name, submitted_at, status, review_reason, start_altitude_m, end_altitude_m"
+                "id, range_name, range_description, start_lat, start_lon, end_lat, end_lon, distance_m, azimuth_deg, elevation_angle_deg, display_name, submitted_at, status, review_reason, start_altitude_m, end_altitude_m, address_geojson"
             ).eq("user_email", user_email).order("submitted_at", desc=True).execute()
             return result.data if result.data else []
         except Exception as e:
@@ -315,7 +324,7 @@ class MappingModel:
             result = supabase_client.table("ranges_submissions").select(
                 "id, user_email, range_name, range_description, start_lat, start_lon, end_lat, end_lon, "
                 "start_altitude_m, end_altitude_m, distance_m, azimuth_deg, elevation_angle_deg, "
-                "display_name, submitted_at, status, review_reason"
+                "display_name, submitted_at, status, review_reason, address_geojson"
             ).eq("status", "Under Review").order("submitted_at", desc=False).execute()
             return result.data if result.data else []
         except Exception as e:
@@ -480,7 +489,7 @@ class MappingModel:
             result = supabase_client.table("ranges").select(
                 "id, user_email, range_name, range_description, start_lat, start_lon, end_lat, end_lon, "
                 "start_altitude_m, end_altitude_m, distance_m, azimuth_deg, elevation_angle_deg, "
-                "display_name, submitted_at"
+                "display_name, submitted_at, address_geojson"
             ).order("submitted_at", desc=True).execute()
             return result.data if result.data else []
         except Exception as e:

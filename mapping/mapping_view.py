@@ -27,6 +27,27 @@ class MappingView:
         </style>
         """
 
+    def _extract_address_components(self, range_data: Dict[str, Any]) -> Dict[str, str]:
+        """Extract county, state, and country from address_geojson."""
+        try:
+            address_geojson = range_data.get('address_geojson', {})
+            if isinstance(address_geojson, dict) and 'features' in address_geojson:
+                features = address_geojson['features']
+                if features and len(features) > 0:
+                    # Get the firing position feature (first feature)
+                    firing_position = features[0]
+                    if 'properties' in firing_position and 'address' in firing_position['properties']:
+                        address = firing_position['properties']['address']
+                        return {
+                            'county': address.get('county', ''),
+                            'state': address.get('state', ''),
+                            'country': address.get('country', '')
+                        }
+        except (TypeError, KeyError, IndexError):
+            pass
+        
+        return {'county': '', 'state': '', 'country': ''}
+
     def display_title(self) -> None:
         """Display the main title."""
         st.title("Nominate New Range")
@@ -263,11 +284,14 @@ class MappingView:
             else:
                 review_reason_display = ''
             
+            # Extract address components
+            address_components = self._extract_address_components(range_data)
+            
             table_data.append({
                 'Select': False,  # Checkbox column
                 'Name': range_data.get('range_name', ''),
                 'Status': range_data.get('status', 'Under Review'),
-                'Review Reason': review_reason_display,
+                'Review Comments': review_reason_display,
                 'Description': range_data.get('range_description', '')[:40] + ('...' if len(range_data.get('range_description', '')) > 40 else ''),
                 'Distance 2D (m)': f"{range_data.get('distance_m', 0):.1f}",
                 'Firing Alt (m)': f"{range_data.get('start_altitude_m', 0):.1f}",
@@ -275,6 +299,9 @@ class MappingView:
                 'Azimuth (°)': f"{range_data.get('azimuth_deg', 0):.1f}",
                 'Elevation (°)': f"{range_data.get('elevation_angle_deg', 0):.2f}",
                 'Elev Change (m)': f"{range_data.get('end_altitude_m', 0) - range_data.get('start_altitude_m', 0):.1f}",
+                'County': address_components['county'],
+                'State': address_components['state'],
+                'Country': address_components['country'],
                 'Location': range_data.get('display_name', '')[:30] + ('...' if len(range_data.get('display_name', '')) > 30 else ''),
                 'Submitted': formatted_date
             })
@@ -292,7 +319,7 @@ class MappingView:
                 "Select": st.column_config.CheckboxColumn("Select", width="small", default=False),
                 "Name": st.column_config.TextColumn("Name", width="medium", disabled=True),
                 "Status": st.column_config.TextColumn("Status", width="small", disabled=True),
-                "Review Reason": st.column_config.TextColumn("Review Reason", width="medium", disabled=True),
+                "Review Comments": st.column_config.TextColumn("Review Reason", width="medium", disabled=True),
                 "Description": st.column_config.TextColumn("Description", width="large", disabled=True),
                 "Distance 2D (m)": st.column_config.TextColumn("Distance 2D (m)", width="small", disabled=True),
                 "Firing Alt (m)": st.column_config.TextColumn("Firing Alt (m)", width="small", disabled=True),
@@ -300,6 +327,9 @@ class MappingView:
                 "Azimuth (°)": st.column_config.TextColumn("Azimuth (°)", width="small", disabled=True),
                 "Elevation (°)": st.column_config.TextColumn("Elevation (°)", width="small", disabled=True),
                 "Elev Change (m)": st.column_config.TextColumn("Elev Change (m)", width="small", disabled=True),
+                "County": st.column_config.TextColumn("County", width="medium", disabled=True),
+                "State": st.column_config.TextColumn("State", width="medium", disabled=True),
+                "Country": st.column_config.TextColumn("Country", width="medium", disabled=True),
                 "Location": st.column_config.TextColumn("Location", width="large", disabled=True),
                 "Submitted": st.column_config.TextColumn("Submitted", width="medium", disabled=True)
             },
@@ -487,6 +517,9 @@ class MappingView:
             else:
                 formatted_date = 'Unknown'
             
+            # Extract address components
+            address_components = self._extract_address_components(range_data)
+            
             table_data.append({
                 'Name': range_data.get('range_name', ''),
                 'Description': range_data.get('range_description', '')[:50] + ('...' if len(range_data.get('range_description', '')) > 50 else ''),
@@ -495,6 +528,9 @@ class MappingView:
                 'Target Alt (m)': f"{range_data.get('end_altitude_m', 0):.1f}",
                 'Azimuth (°)': f"{range_data.get('azimuth_deg', 0):.1f}",
                 'Elevation (°)': f"{range_data.get('elevation_angle_deg', 0):.2f}",
+                'County': address_components['county'],
+                'State': address_components['state'],
+                'Country': address_components['country'],
                 'Location': range_data.get('display_name', '')[:40] + ('...' if len(range_data.get('display_name', '')) > 40 else ''),
                 'Submitted': formatted_date,
                 'Contributor': range_data.get('user_email', '')
@@ -516,6 +552,9 @@ class MappingView:
                 "Target Alt (m)": st.column_config.TextColumn("Target Alt (m)", width="small"),
                 "Azimuth (°)": st.column_config.TextColumn("Azimuth (°)", width="small"),
                 "Elevation (°)": st.column_config.TextColumn("Elevation (°)", width="small"),
+                "County": st.column_config.TextColumn("County", width="medium"),
+                "State": st.column_config.TextColumn("State", width="medium"),
+                "Country": st.column_config.TextColumn("Country", width="medium"),
                 "Location": st.column_config.TextColumn("Location", width="large"),
                 "Submitted": st.column_config.TextColumn("Submitted", width="medium"),
                 "Contributor": st.column_config.TextColumn("Contributor", width="medium")
@@ -545,6 +584,9 @@ class MappingView:
             else:
                 formatted_date = 'Unknown'
             
+            # Extract address components
+            address_components = self._extract_address_components(range_data)
+            
             table_data.append({
                 'Select': False,  # Checkbox column
                 'Name': range_data.get('range_name', ''),
@@ -554,6 +596,9 @@ class MappingView:
                 'Target Alt (m)': f"{range_data.get('end_altitude_m', 0):.1f}",
                 'Azimuth (°)': f"{range_data.get('azimuth_deg', 0):.1f}",
                 'Elevation (°)': f"{range_data.get('elevation_angle_deg', 0):.2f}",
+                'County': address_components['county'],
+                'State': address_components['state'],
+                'Country': address_components['country'],
                 'Location': range_data.get('display_name', '')[:40] + ('...' if len(range_data.get('display_name', '')) > 40 else ''),
                 'Submitted': formatted_date,
                 'Contributor': range_data.get('user_email', '')
@@ -577,6 +622,9 @@ class MappingView:
                 "Target Alt (m)": st.column_config.TextColumn("Target Alt (m)", width="small", disabled=True),
                 "Azimuth (°)": st.column_config.TextColumn("Azimuth (°)", width="small", disabled=True),
                 "Elevation (°)": st.column_config.TextColumn("Elevation (°)", width="small", disabled=True),
+                "County": st.column_config.TextColumn("County", width="medium", disabled=True),
+                "State": st.column_config.TextColumn("State", width="medium", disabled=True),
+                "Country": st.column_config.TextColumn("Country", width="medium", disabled=True),
                 "Location": st.column_config.TextColumn("Location", width="large", disabled=True),
                 "Submitted": st.column_config.TextColumn("Submitted", width="medium", disabled=True),
                 "Contributor": st.column_config.TextColumn("Contributor", width="medium", disabled=True)
