@@ -6,7 +6,7 @@ import importlib.util
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import the landing page module
-spec = importlib.util.spec_from_file_location("landing", "mapping/pages/1_Landing.py")
+spec = importlib.util.spec_from_file_location("landing", "mapping/pages/1_🏠_Home.py")
 landing_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(landing_module)
 

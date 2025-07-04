@@ -177,7 +177,7 @@ class MappingController:
         """Main controller method to run the application."""
         # Set page configuration FIRST, before any other Streamlit operations
         st.set_page_config(
-            page_title="Nominate New Range - ChronoLog Mapping",
+            page_title="Nominate - ChronoLog Mapping",
             page_icon="📍",
             layout="wide"
         )

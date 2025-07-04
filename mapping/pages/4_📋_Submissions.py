@@ -11,10 +11,10 @@ from auth import handle_auth
 from supabase import create_client
 
 def main():
-    """Main function for the My Ranges page."""
+    """Main function for the Submissions page."""
     # Set page configuration FIRST, before any other Streamlit operations
     st.set_page_config(
-        page_title="My Ranges - ChronoLog Mapping",
+        page_title="Submissions - ChronoLog Mapping",
         page_icon="📋",
         layout="wide"
     )
@@ -49,7 +49,7 @@ def main():
         return
     
     # Display title
-    st.title("My Ranges")
+    st.title("Submissions")
     
     # Fetch and display user ranges table with actions
     try:
