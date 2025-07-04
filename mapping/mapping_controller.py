@@ -177,7 +177,7 @@ class MappingController:
         """Main controller method to run the application."""
         # Set page configuration FIRST, before any other Streamlit operations
         st.set_page_config(
-            page_title="Submit Range - ChronoLog Mapping",
+            page_title="Nominate New Range - ChronoLog Mapping",
             page_icon="📍",
             layout="wide"
         )
@@ -191,8 +191,7 @@ class MappingController:
         if not user:
             return
             
-        # Display user info in sidebar
-        st.sidebar.success(f"Logged in as {user['name']}")
+        # User info displayed by other pages to avoid duplication
         
         # Check range limit
         try:

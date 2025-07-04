@@ -14,7 +14,7 @@ def main():
     """Main function for the Public Ranges page."""
     # Set page configuration FIRST, before any other Streamlit operations
     st.set_page_config(
-        page_title="Public Ranges - ChronoLog Mapping",
+        page_title="Ranges - ChronoLog Mapping",
         page_icon="🌍",
         layout="wide"
     )
@@ -28,8 +28,10 @@ def main():
     if not user:
         return
         
-    # Display user info in sidebar
-    st.sidebar.success(f"Logged in as {user['name']}")
+    # Display user info in sidebar (only on this page to avoid duplication)
+    if "user_info_displayed" not in st.session_state:
+        st.sidebar.success(f"Logged in as {user['name']}")
+        st.session_state["user_info_displayed"] = True
     
     # Initialize model and view
     model = MappingModel()
@@ -45,8 +47,8 @@ def main():
         return
     
     # Display title
-    st.title("Public Ranges")
-    st.subheader("Approved shooting ranges available for public use")
+    st.title("Ranges")
+    st.subheader("Range data available to all users.")
     
     # Fetch all public ranges
     try:
@@ -56,8 +58,7 @@ def main():
             st.info("🌍 No public ranges available yet.")
             return
             
-        st.markdown(f"### Available Ranges ({len(public_ranges)})")
-        
+
         # Check if user is admin
         is_admin = user["email"] == "johnduffie91@gmail.com"
         
@@ -69,7 +70,7 @@ def main():
             action_result = view.display_public_ranges_table_admin(public_ranges)
         else:
             action_result = view.display_public_ranges_table_readonly(public_ranges)
-        
+
         # Handle admin actions
         if is_admin and action_result and action_result.get("action"):
             if action_result["action"] == "delete":
@@ -90,8 +91,11 @@ def main():
                         else:
                             st.error("❌ Failed to delete ranges.")
                         
-                        # Clear confirmation state
-                        del st.session_state["confirm_delete_public_ranges"]
+                        # Clear both confirmation and selection state
+                        if "confirm_delete_public_ranges" in st.session_state:
+                            del st.session_state["confirm_delete_public_ranges"]
+                        if "delete_selected_public_ranges" in st.session_state:
+                            del st.session_state["delete_selected_public_ranges"]
                         st.rerun()
                     else:
                         # Show confirmation dialog
@@ -117,7 +121,6 @@ def main():
                 # Display map with selected ranges
                 selected_indices = action_result.get("selected_indices", [])
                 if selected_indices:
-                    st.markdown("### Selected Ranges Map")
                     ranges_map = view.display_ranges_map(public_ranges, selected_indices)
                     st_folium = __import__('streamlit_folium', fromlist=['st_folium']).st_folium
                     st_folium(ranges_map, use_container_width=True, height=500)

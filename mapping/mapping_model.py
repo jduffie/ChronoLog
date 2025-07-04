@@ -58,28 +58,94 @@ class MappingModel:
             return self._empty_measurements()
 
         p1, p2 = self.points[0], self.points[1]
-        distance_m = geodesic(p1, p2).m
-        azimuth = self.calculate_bearing(p1, p2)
+        start_alt, end_alt = self.elevations_m[0], self.elevations_m[1]
         
-        # Calculate elevation angle
-        elevation_diff_m = self.elevations_m[1] - self.elevations_m[0]
-        elevation_angle = math.degrees(math.atan2(elevation_diff_m, distance_m))
+        # Calculate 2D and 3D distances
+        distance_2d_m = geodesic(p1, p2).m
+        elevation_diff_m = end_alt - start_alt
+        distance_3d_m = math.sqrt(distance_2d_m**2 + elevation_diff_m**2)
+        
+        azimuth = self.calculate_bearing(p1, p2)
+        elevation_angle = math.degrees(math.atan2(elevation_diff_m, distance_2d_m))
 
-        # Get address GeoJSON for start position
-        address_data = self.get_address_geojson_with_rate_limit(p1[0], p1[1])
+        # Get address data for both start and end points
+        start_address_data = self.get_address_geojson_with_rate_limit(p1[0], p1[1])
+        end_address_data = self.get_address_geojson_with_rate_limit(p2[0], p2[1])
+
+        # Calculate bounding box [min_lon, min_lat, min_alt, max_lon, max_lat, max_alt]
+        min_lon = min(p1[1], p2[1])
+        max_lon = max(p1[1], p2[1])
+        min_lat = min(p1[0], p2[0])
+        max_lat = max(p1[0], p2[0])
+        min_alt = min(start_alt, end_alt)
+        max_alt = max(start_alt, end_alt)
+        
+        # Create comprehensive GeoJSON FeatureCollection
+        geojson_features = {
+            "type": "FeatureCollection",
+            "bbox": [min_lon, min_lat, min_alt, max_lon, max_lat, max_alt],
+            "features": [
+                {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [p1[1], p1[0], start_alt]  # [lon, lat, alt]
+                    },
+                    "properties": {
+                        "type": "firing_position",
+                        "address": start_address_data.get('display_name', ''),
+                        "altitude_m": start_alt,
+                        "azimuth_deg": azimuth,
+                        "elevation_angle_deg": elevation_angle,
+                        "elevation_change_m": elevation_diff_m
+                    }
+                },
+                {
+                    "type": "Feature", 
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [p2[1], p2[0], end_alt]  # [lon, lat, alt]
+                    },
+                    "properties": {
+                        "type": "target_position",
+                        "address": end_address_data.get('display_name', ''),
+                        "altitude_m": end_alt
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "LineString",
+                        "coordinates": [
+                            [p1[1], p1[0], start_alt],  # [lon, lat, alt]
+                            [p2[1], p2[0], end_alt]     # [lon, lat, alt]
+                        ]
+                    },
+                    "properties": {
+                        "type": "range_line",
+                        "distance_2d_m": distance_2d_m,
+                        "distance_3d_m": distance_3d_m
+                    }
+                }
+            ]
+        }
 
         return {
             "start_lat": f"{p1[0]:.6f}",
             "start_lon": f"{p1[1]:.6f}",
-            "start_alt": f"{self.elevations_m[0]:.1f}",
+            "start_alt": f"{start_alt:.1f}",
+            "start_address": start_address_data.get('display_name', ''),
             "end_lat": f"{p2[0]:.6f}",
             "end_lon": f"{p2[1]:.6f}",
-            "end_alt": f"{self.elevations_m[1]:.1f}",
-            "distance": f"{distance_m:.2f} m",
+            "end_alt": f"{end_alt:.1f}",
+            "end_address": end_address_data.get('display_name', ''),
+            "distance_2d": f"{distance_2d_m:.2f} m",
+            "distance_3d": f"{distance_3d_m:.2f} m",
             "azimuth": f"{azimuth:.2f}°",
             "elevation_angle": f"{elevation_angle:.2f}°",
-            "address_geojson": address_data.get('geojson', {}),
-            "display_name": address_data.get('display_name', ''),
+            "elevation_change": f"{elevation_diff_m:.1f} m",
+            "address_geojson": geojson_features,
+            "display_name": start_address_data.get('display_name', ''),
         }
 
     def get_partial_measurements(self) -> Dict[str, Any]:
@@ -96,6 +162,7 @@ class MappingModel:
                 "start_lat": f"{p1[0]:.6f}",
                 "start_lon": f"{p1[1]:.6f}",
                 "start_alt": f"{self.elevations_m[0]:.1f}",
+                "start_address": address_data.get('display_name', ''),
                 "address_geojson": address_data.get('geojson', {}),
                 "display_name": address_data.get('display_name', ''),
             })
@@ -108,12 +175,16 @@ class MappingModel:
             "start_lat": "",
             "start_lon": "",
             "start_alt": "",
+            "start_address": "",
             "end_lat": "",
             "end_lon": "",
             "end_alt": "",
-            "distance": "",
+            "end_address": "",
+            "distance_2d": "",
+            "distance_3d": "",
             "azimuth": "",
             "elevation_angle": "",
+            "elevation_change": "",
             "address_geojson": {},
             "display_name": "",
         }
@@ -357,9 +428,11 @@ class MappingModel:
             start_alt = float(start_alt_str.replace(" m", "")) if start_alt_str else 0
             end_alt = float(end_alt_str.replace(" m", "")) if end_alt_str else 0
             
-            # Parse distance (remove " m" suffix)
-            distance_str = measurements.get("distance", "0")
-            distance = float(distance_str.replace(" m", "")) if distance_str else 0
+            # Parse distance (remove " m" suffix) - use 2D distance for compatibility
+            distance_2d_str = measurements.get("distance_2d", "0")
+            distance_3d_str = measurements.get("distance_3d", "0")
+            distance_2d = float(distance_2d_str.replace(" m", "")) if distance_2d_str else 0
+            distance_3d = float(distance_3d_str.replace(" m", "")) if distance_3d_str else 0
             
             # Parse angles (remove "°" suffix)
             azimuth_str = measurements.get("azimuth", "0")
@@ -378,7 +451,7 @@ class MappingModel:
                 "end_lat": end_lat,
                 "end_lon": end_lon,
                 "end_altitude_m": end_alt,
-                "distance_m": distance,
+                "distance_m": distance_2d,  # Use 2D distance for database compatibility
                 "azimuth_deg": azimuth,
                 "elevation_angle_deg": elevation_angle,
                 "address_geojson": measurements.get("address_geojson", {}),

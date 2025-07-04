@@ -28,8 +28,7 @@ def main():
     if not user:
         return
         
-    # Display user info in sidebar
-    st.sidebar.success(f"Logged in as {user['name']}")
+    # User info displayed by other pages to avoid duplication
     
     # Initialize model and view
     model = MappingModel()

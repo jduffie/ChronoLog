@@ -33,8 +33,7 @@ def main():
         st.error("🚫 Access Denied: This page is restricted to administrators only.")
         return
         
-    # Display user info in sidebar
-    st.sidebar.success(f"Logged in as Admin: {user['name']}")
+    # User info displayed by other pages to avoid duplication
     
     # Initialize model and view
     model = MappingModel()

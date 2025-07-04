@@ -29,7 +29,7 @@ class MappingView:
 
     def display_title(self) -> None:
         """Display the main title."""
-        st.title("Submit Range")
+        st.title("Nominate New Range")
 
     def display_measurements_table(self, measurements: Dict[str, Any]) -> None:
         """Display the measurements table using HTML."""
@@ -57,11 +57,15 @@ class MappingView:
 
           <div><strong>Firing Position  :</strong> <span id="firingPos">{measurements.get("start_lat", "")}, {measurements.get("start_lon", "")}</span></div>
           <div><strong>Firing Altitude  :</strong> <span id="firingAlt">{measurements.get("start_alt", "")}</span></div>
+          <div><strong>Firing Address   :</strong> <span id="firingAddr">{html.escape(measurements.get("start_address", ""))}</span></div>
           <div><strong>Target Position  :</strong> <span id="targetPos">{measurements.get("end_lat", "")}, {measurements.get("end_lon", "")}</span></div>
           <div><strong>Target Altitude  :</strong> <span id="targetAlt">{measurements.get("end_alt", "")}</span></div>
-          <div><strong>Distance         :</strong> <span id="distance">{measurements.get("distance", "")}</span></div>
+          <div><strong>Target Address   :</strong> <span id="targetAddr">{html.escape(measurements.get("end_address", ""))}</span></div>
+          <div><strong>Distance (2D)    :</strong> <span id="distance2d">{measurements.get("distance_2d", "")}</span></div>
+          <div><strong>Distance (3D)    :</strong> <span id="distance3d">{measurements.get("distance_3d", "")}</span></div>
           <div><strong>Azimuth Angle    :</strong> <span id="azimuth">{measurements.get("azimuth", "")}</span></div>
           <div><strong>Elevation Angle  :</strong> <span id="elevation">{measurements.get("elevation_angle", "")}</span></div>
+          <div><strong>Elevation Change :</strong> <span id="elevChange">{measurements.get("elevation_change", "")}</span></div>
           <div><strong>Location         :</strong> <span id="location">{location_escaped}</span></div>
         </div>
         """
@@ -122,11 +126,15 @@ class MappingView:
 
           <div><strong>Firing Position  :</strong> <span id="firingPos">{measurements.get("start_lat", "")}, {measurements.get("start_lon", "")}</span></div>
           <div><strong>Firing Altitude  :</strong> <span id="firingAlt">{measurements.get("start_alt", "")}</span></div>
+          <div><strong>Firing Address   :</strong> <span id="firingAddr">{html.escape(measurements.get("start_address", ""))}</span></div>
           <div><strong>Target Position  :</strong> <span id="targetPos">{measurements.get("end_lat", "")}, {measurements.get("end_lon", "")}</span></div>
           <div><strong>Target Altitude  :</strong> <span id="targetAlt">{measurements.get("end_alt", "")}</span></div>
-          <div><strong>Distance         :</strong> <span id="distance">{measurements.get("distance", "")}</span></div>
+          <div><strong>Target Address   :</strong> <span id="targetAddr">{html.escape(measurements.get("end_address", ""))}</span></div>
+          <div><strong>Distance (2D)    :</strong> <span id="distance2d">{measurements.get("distance_2d", "")}</span></div>
+          <div><strong>Distance (3D)    :</strong> <span id="distance3d">{measurements.get("distance_3d", "")}</span></div>
           <div><strong>Azimuth Angle    :</strong> <span id="azimuth">{measurements.get("azimuth", "")}</span></div>
           <div><strong>Elevation Angle  :</strong> <span id="elevation">{measurements.get("elevation_angle", "")}</span></div>
+          <div><strong>Elevation Change :</strong> <span id="elevChange">{measurements.get("elevation_change", "")}</span></div>
           <div><strong>Location         :</strong> <span id="location">{location_escaped}</span></div>
         </div>
         """
@@ -260,13 +268,14 @@ class MappingView:
                 'Name': range_data.get('range_name', ''),
                 'Status': range_data.get('status', 'Under Review'),
                 'Review Reason': review_reason_display,
-                'Description': range_data.get('range_description', '')[:50] + ('...' if len(range_data.get('range_description', '')) > 50 else ''),
-                'Distance (m)': f"{range_data.get('distance_m', 0):.1f}",
+                'Description': range_data.get('range_description', '')[:40] + ('...' if len(range_data.get('range_description', '')) > 40 else ''),
+                'Distance 2D (m)': f"{range_data.get('distance_m', 0):.1f}",
                 'Firing Alt (m)': f"{range_data.get('start_altitude_m', 0):.1f}",
                 'Target Alt (m)': f"{range_data.get('end_altitude_m', 0):.1f}",
                 'Azimuth (°)': f"{range_data.get('azimuth_deg', 0):.1f}",
                 'Elevation (°)': f"{range_data.get('elevation_angle_deg', 0):.2f}",
-                'Location': range_data.get('display_name', '')[:40] + ('...' if len(range_data.get('display_name', '')) > 40 else ''),
+                'Elev Change (m)': f"{range_data.get('end_altitude_m', 0) - range_data.get('start_altitude_m', 0):.1f}",
+                'Location': range_data.get('display_name', '')[:30] + ('...' if len(range_data.get('display_name', '')) > 30 else ''),
                 'Submitted': formatted_date
             })
         
@@ -285,11 +294,12 @@ class MappingView:
                 "Status": st.column_config.TextColumn("Status", width="small", disabled=True),
                 "Review Reason": st.column_config.TextColumn("Review Reason", width="medium", disabled=True),
                 "Description": st.column_config.TextColumn("Description", width="large", disabled=True),
-                "Distance (m)": st.column_config.TextColumn("Distance (m)", width="small", disabled=True),
+                "Distance 2D (m)": st.column_config.TextColumn("Distance 2D (m)", width="small", disabled=True),
                 "Firing Alt (m)": st.column_config.TextColumn("Firing Alt (m)", width="small", disabled=True),
                 "Target Alt (m)": st.column_config.TextColumn("Target Alt (m)", width="small", disabled=True),
                 "Azimuth (°)": st.column_config.TextColumn("Azimuth (°)", width="small", disabled=True),
                 "Elevation (°)": st.column_config.TextColumn("Elevation (°)", width="small", disabled=True),
+                "Elev Change (m)": st.column_config.TextColumn("Elev Change (m)", width="small", disabled=True),
                 "Location": st.column_config.TextColumn("Location", width="large", disabled=True),
                 "Submitted": st.column_config.TextColumn("Submitted", width="medium", disabled=True)
             },
@@ -519,9 +529,7 @@ class MappingView:
         if not ranges:
             st.info("🌍 No public ranges available yet.")
             return {"action": None, "selected_indices": []}
-            
-        st.subheader(f"Public Ranges ({len(ranges)}) - Admin Mode")
-        
+
         # Prepare data for display with checkboxes
         table_data = []
         for i, range_data in enumerate(ranges):
@@ -594,11 +602,8 @@ class MappingView:
         action_result = {"action": None, "selected_indices": selected_indices}
         
         with col2:
-            # VIEW MAP button - always visible, disabled when no selection
-            if st.button("🗺️ VIEW MAP", use_container_width=True, type="primary", disabled=not bool(selected_indices)):
-                if selected_indices:
-                    action_result["action"] = "map"
-        
+            st.info(f"📋 {len(ranges)} range(s) available")
+
         with col3:
             # DELETE button - always visible, disabled when no selection
             if st.button("🗑️ DELETE", use_container_width=True, type="secondary", disabled=not bool(selected_indices)):
