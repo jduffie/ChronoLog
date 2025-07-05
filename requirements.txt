@@ -8,3 +8,4 @@ folium
 streamlit-folium
 geopy
 urllib3<2.0
+matplotlib

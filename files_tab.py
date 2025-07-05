@@ -3,9 +3,12 @@ import pandas as pd
 from collections import defaultdict
 import os
 
-def render_files_tab(user, supabase, bucket):
+def render_files_tab(user, supabase, bucket, file_type_filter=None):
     """Render the My Files tab with file explorer style"""
-    st.header("📁 My Uploaded Files")
+    if file_type_filter:
+        st.header(f"📁 My {file_type_filter.title()} Files")
+    else:
+        st.header("📁 My Uploaded Files")
     
     try:
         # Get all files for the user by checking both root and subdirectories
@@ -71,6 +74,14 @@ def render_files_tab(user, supabase, bucket):
         
         # Display file explorer
         st.markdown("### 🗂️ File Explorer")
+        
+        # Apply file type filter if specified
+        if file_type_filter:
+            filtered_tree = {}
+            for directory, files in file_tree.items():
+                if directory.lower() == file_type_filter.lower() or (file_type_filter.lower() == "kestrel" and directory.lower() == "weather"):
+                    filtered_tree[directory] = files
+            file_tree = filtered_tree
         
         # Show directory structure
         for directory, files in file_tree.items():

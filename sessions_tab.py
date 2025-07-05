@@ -1,20 +1,54 @@
 import streamlit as st
 import pandas as pd
+from datetime import datetime
+import re
+
+def safe_parse_datetime(timestamp_str):
+    """Safely parse datetime string, handling microseconds with extra precision"""
+    if not timestamp_str:
+        return None
+    
+    try:
+        # First try pandas direct parsing
+        return pd.to_datetime(timestamp_str)
+    except Exception:
+        try:
+            # If that fails, try to fix microseconds issue
+            # Pattern to match ISO format with potentially too many microsecond digits
+            pattern = r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.(\d+)(\+\d{2}:\d{2}|Z|$)'
+            match = re.match(pattern, timestamp_str)
+            
+            if match:
+                base_time = match.group(1)
+                microseconds = match.group(2)
+                timezone = match.group(3)
+                
+                # Truncate microseconds to 6 digits
+                if len(microseconds) > 6:
+                    microseconds = microseconds[:6]
+                elif len(microseconds) < 6:
+                    microseconds = microseconds.ljust(6, '0')
+                
+                # Reconstruct the timestamp
+                fixed_timestamp = f"{base_time}.{microseconds}{timezone}"
+                return pd.to_datetime(fixed_timestamp)
+            else:
+                # Try without microseconds
+                return pd.to_datetime(timestamp_str.split('.')[0])
+        except Exception:
+            # Last resort - return current time
+            return pd.Timestamp.now()
 
 def render_sessions_tab(user, supabase):
     """Render the Sessions tab"""
     st.header("📊 Sessions")
     
     try:
-        # Get user's sessions with location info
+        # Get user's sessions
         sessions_response = supabase.table("sessions").select("*").eq("user_email", user["email"]).order("session_timestamp", desc=True).execute()
         sessions = sessions_response.data
         
         if sessions:
-            # Get all locations for lookup
-            locations_response = supabase.table("locations").select("*").execute()
-            locations_dict = {loc['id']: loc for loc in locations_response.data} if locations_response.data else {}
-            
             # Process sessions with aggregated measurement data
             session_summaries = []
             session_lookup = {}  # For mapping display rows to session data
@@ -26,18 +60,13 @@ def render_sessions_tab(user, supabase):
                 
                 # Prepare session timestamp
                 if session.get('session_timestamp'):
-                    session_dt = pd.to_datetime(session['session_timestamp'])
+                    session_dt = safe_parse_datetime(session['session_timestamp'])
                     session_date = session_dt.strftime('%Y-%m-%d')
                     session_time = session_dt.strftime('%H:%M')
                 else:
-                    upload_dt = pd.to_datetime(session['uploaded_at'])
+                    upload_dt = safe_parse_datetime(session['uploaded_at'])
                     session_date = upload_dt.strftime('%Y-%m-%d')
                     session_time = upload_dt.strftime('%H:%M')
-                
-                # Get location name
-                location_name = "Not assigned"
-                if session.get('location_id') and session['location_id'] in locations_dict:
-                    location_name = locations_dict[session['location_id']]['name']
                 
                 # Calculate statistics from measurements
                 shot_count = len(measurements) if measurements else 0
@@ -61,7 +90,6 @@ def render_sessions_tab(user, supabase):
                     'Time': session_time,
                     'Bullet Type': session['bullet_type'],
                     'Bullet Weight (gr)': session['bullet_grain'],
-                    'Location': location_name,
                     'Shot Count': shot_count,
                     'Avg Velocity (fps)': avg_velocity,
                     'Std Dev (fps)': std_velocity,
@@ -95,7 +123,6 @@ def render_sessions_tab(user, supabase):
                         'Time': st.column_config.TextColumn('Time'),
                         'Bullet Type': st.column_config.TextColumn('Bullet Type'),
                         'Bullet Weight (gr)': st.column_config.NumberColumn('Bullet Weight (gr)', format="%.1f"),
-                        'Location': st.column_config.TextColumn('Location'),
                         'Shot Count': st.column_config.NumberColumn('Shot Count'),
                         'Avg Velocity (fps)': st.column_config.TextColumn('Avg Velocity (fps)'),
                         'Std Dev (fps)': st.column_config.TextColumn('Std Dev (fps)'),
@@ -112,9 +139,9 @@ def render_sessions_tab(user, supabase):
                         
                         # Store the selected session in session state for the View Session tab
                         if 'session_timestamp' in selected_session and selected_session['session_timestamp']:
-                            session_time = pd.to_datetime(selected_session['session_timestamp']).strftime('%Y-%m-%d %H:%M')
+                            session_time = safe_parse_datetime(selected_session['session_timestamp']).strftime('%Y-%m-%d %H:%M')
                         else:
-                            session_time = pd.to_datetime(selected_session['uploaded_at']).strftime('%Y-%m-%d %H:%M')
+                            session_time = safe_parse_datetime(selected_session['uploaded_at']).strftime('%Y-%m-%d %H:%M')
                         session_display_name = f"{session_time} - {selected_session['bullet_type']} ({selected_session['bullet_grain']}gr) - {selected_session['sheet_name']}"
                         
                         # Set the session in session state so View Session tab can pick it up
