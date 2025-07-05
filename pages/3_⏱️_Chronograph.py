@@ -8,8 +8,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from auth import handle_auth
 from supabase import create_client
 from upload_tab import render_garmin_upload
-from logs_tab import render_logs_tab
-from view_log_tab import render_view_log_tab
+from chronograph.logs_tab import render_logs_tab
+from chronograph.view_log_tab import render_view_log_tab
 from files_tab import render_files_tab
 
 def main():

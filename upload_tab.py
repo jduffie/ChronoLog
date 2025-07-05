@@ -80,7 +80,7 @@ def render_garmin_upload(user, supabase, bucket):
                 session_timestamp = datetime.now(timezone.utc).isoformat()
 
             # Check if a session already exists at this date/time for this user
-            existing_session_response = supabase.table("sessions").select("id").eq("user_email", user["email"]).eq("session_timestamp", session_timestamp).execute()
+            existing_session_response = supabase.table("chrono_sessions").select("id").eq("user_email", user["email"]).eq("tab_name", sheet).eq("datetime_local", session_timestamp).execute()
             
             if existing_session_response.data:
                 st.warning(f"⚠️ Session already exists for {pd.to_datetime(session_timestamp).strftime('%Y-%m-%d %H:%M')} - skipping sheet '{sheet}'")
@@ -108,13 +108,13 @@ def render_garmin_upload(user, supabase, bucket):
                     return None
 
             session_id = str(uuid.uuid4())
-            supabase.table("sessions").insert({
+            supabase.table("chrono_sessions").insert({
                 "id": session_id,
                 "user_email": user["email"],
-                "sheet_name": sheet,
+                "tab_name": sheet,
                 "bullet_type": bullet_type,
                 "bullet_grain": bullet_grain,
-                "session_timestamp": session_timestamp,
+                "datetime_local": session_timestamp,
                 "uploaded_at": datetime.now(timezone.utc).isoformat(),
                 "file_path": file_name
             }).execute()
@@ -162,25 +162,75 @@ def render_garmin_upload(user, supabase, bucket):
                         except:
                             return None
 
+                    # Extract session date for chrono_measurements
+                    session_date = pd.to_datetime(session_timestamp).date().isoformat() if session_timestamp else None
+                    
+                    # Extract time component for time_local field
+                    time_str = clean_time_string(row.get("Time"))
+                    time_local = None
+                    if time_str:
+                        try:
+                            time_local = pd.to_datetime(time_str, format='%H:%M:%S').time().isoformat()
+                        except:
+                            try:
+                                time_local = pd.to_datetime(time_str).time().isoformat()
+                            except:
+                                time_local = None
+                    
                     measurement_data = {
-                        "session_id": session_id,
+                        "user_email": user["email"],
+                        "tab_name": sheet,
+                        "bullet_type": bullet_type,
+                        "bullet_grain": bullet_grain,
+                        "session_date": session_date,
+                        "uploaded_at": datetime.now(timezone.utc).isoformat(),
+                        "file_path": file_name,
                         "shot_number": shot_number,
                         "speed_fps": speed_fps,
                         "delta_avg_fps": safe_float(row.get("Δ AVG (FPS)")),
                         "ke_ft_lb": safe_float(row.get("KE (FT-LB)")),
                         "power_factor": safe_float(row.get("Power Factor (kgr⋅ft/s)")),
+                        "time_local": time_local,
                         "datetime_local": create_datetime_local(row.get("Time"), session_timestamp),
                         "clean_bore": bool(row.get("Clean Bore")) if "Clean Bore" in row and not pd.isna(row.get("Clean Bore")) else None,
                         "cold_bore": bool(row.get("Cold Bore")) if "Cold Bore" in row and not pd.isna(row.get("Cold Bore")) else None,
                         "shot_notes": str(row.get("Shot Notes")) if "Shot Notes" in row and not pd.isna(row.get("Shot Notes")) else None
                     }
                     
-                    supabase.table("measurements").insert(measurement_data).execute()
+                    supabase.table("chrono_measurements").insert(measurement_data).execute()
                     valid_measurements += 1
                     
                 except Exception as e:
                     st.warning(f"Skipped row {shot_number}: {e}")
                     skipped_measurements += 1
+
+            # Calculate and update session summary statistics
+            if valid_measurements > 0:
+                # Get all measurements for this session to calculate stats
+                session_measurements = supabase.table("chrono_measurements").select("speed_fps").eq("user_email", user["email"]).eq("tab_name", sheet).eq("session_date", session_date).execute()
+                
+                if session_measurements.data:
+                    speeds = [m['speed_fps'] for m in session_measurements.data if m.get('speed_fps') is not None]
+                    
+                    if speeds:
+                        avg_speed = sum(speeds) / len(speeds)
+                        min_speed = min(speeds)
+                        max_speed = max(speeds)
+                        
+                        # Calculate standard deviation
+                        std_dev = 0
+                        if len(speeds) > 1:
+                            variance = sum((x - avg_speed) ** 2 for x in speeds) / len(speeds)
+                            std_dev = variance ** 0.5
+                        
+                        # Update the chrono_sessions record with calculated stats
+                        supabase.table("chrono_sessions").update({
+                            "shot_count": len(speeds),
+                            "avg_speed_fps": avg_speed,
+                            "std_dev_fps": std_dev,
+                            "min_speed_fps": min_speed,
+                            "max_speed_fps": max_speed
+                        }).eq("id", session_id).execute()
 
             # Show upload summary
             if skipped_measurements > 0:

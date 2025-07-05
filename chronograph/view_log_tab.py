@@ -10,7 +10,7 @@ def render_view_log_tab(user, supabase):
     
     try:
         # Get all sessions for selection
-        sessions_response = supabase.table("sessions").select("*").eq("user_email", user["email"]).order("session_timestamp", desc=True).execute()
+        sessions_response = supabase.table("chrono_sessions").select("*").eq("user_email", user["email"]).order("datetime_local", desc=True).execute()
         
         if not sessions_response.data:
             st.info("No chronograph logs found. Import some data files to get started!")
@@ -20,7 +20,7 @@ def render_view_log_tab(user, supabase):
         
         # Session selector
         session_options = {
-            f"{s['sheet_name']} - {datetime.fromisoformat(s['session_timestamp']).strftime('%Y-%m-%d %H:%M')}": s['id']
+            f"{s['tab_name']} - {datetime.fromisoformat(s['datetime_local']).strftime('%Y-%m-%d %H:%M')}": s['id']
             for s in sessions
         }
         
@@ -48,7 +48,7 @@ def render_view_log_tab(user, supabase):
         session = next(s for s in sessions if s['id'] == selected_session_id)
         
         # Get measurements for this session
-        measurements_response = supabase.table("measurements").select("*").eq("session_id", selected_session_id).order("shot_number").execute()
+        measurements_response = supabase.table("chrono_measurements").select("*").eq("user_email", user["email"]).eq("tab_name", session['tab_name']).order("shot_number").execute()
         
         if not measurements_response.data:
             st.warning("No measurements found for this session.")
@@ -58,14 +58,14 @@ def render_view_log_tab(user, supabase):
         df = pd.DataFrame(measurements)
         
         # Session header
-        st.subheader(f"📊 {session['sheet_name']}")
+        st.subheader(f"📊 {session['tab_name']}")
         
         col1, col2, col3 = st.columns(3)
         with col1:
             st.write(f"**Bullet:** {session['bullet_type']}")
             st.write(f"**Grain:** {session['bullet_grain']}")
         with col2:
-            st.write(f"**Date:** {datetime.fromisoformat(session['session_timestamp']).strftime('%Y-%m-%d %H:%M')}")
+            st.write(f"**Date:** {datetime.fromisoformat(session['datetime_local']).strftime('%Y-%m-%d %H:%M')}")
             st.write(f"**Shots:** {len(measurements)}")
         with col3:
             st.write(f"**Session ID:** {session['id'][:8]}...")
@@ -198,7 +198,7 @@ def render_view_log_tab(user, supabase):
             st.download_button(
                 label="Download CSV",
                 data=csv,
-                file_name=f"chronograph_data_{session['sheet_name']}_{datetime.now().strftime('%Y%m%d')}.csv",
+                file_name=f"chronograph_data_{session['tab_name']}_{datetime.now().strftime('%Y%m%d')}.csv",
                 mime="text/csv"
             )
         
@@ -208,7 +208,7 @@ def render_view_log_tab(user, supabase):
             st.download_button(
                 label="Download JSON",
                 data=json_data,
-                file_name=f"chronograph_data_{session['sheet_name']}_{datetime.now().strftime('%Y%m%d')}.json",
+                file_name=f"chronograph_data_{session['tab_name']}_{datetime.now().strftime('%Y%m%d')}.json",
                 mime="application/json"
             )
     
