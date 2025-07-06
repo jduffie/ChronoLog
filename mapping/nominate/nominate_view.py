@@ -286,7 +286,7 @@ class NominateView:
 
     def display_map(self, m: folium.Map) -> Dict[str, Any]:
         """Display the map and return interaction data."""
-        map_info =  st_folium(m, use_container_width=True, height=500)
+        map_info =  st_folium(m, use_container_width=True, height=1200)
         return map_info
 
     def display_reset_button(self) -> bool:

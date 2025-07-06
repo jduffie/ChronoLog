@@ -171,7 +171,7 @@ class SubmissionView:
                 # Start point (firing position) - blue
                 folium.Marker(
                     location=[range_data['start_lat'], range_data['start_lon']],
-                    popup=f"🔫 Firing Position<br>{range_data.get('range_name', 'Unnamed Range')}<br>Status: {range_data.get('status', 'Unknown')}",
+                    popup=f"🔫 Firing Position<br>{range_data.get('range_name', 'Unnamed Range')}<br>Status: {range_data.get('status', 'Unknown')}<br><a href='https://www.google.com/maps?q={range_data['start_lat']},{range_data['start_lon']}' target='_blank'>📍 View in Google Maps</a>",
                     icon=folium.Icon(color='blue', icon='play')
                 ).add_to(m)
 
@@ -206,7 +206,7 @@ class SubmissionView:
             st_folium(empty_map, use_container_width=True, height=400)
         else:
             ranges_map = self.display_ranges_map(ranges, selected_indices)
-            st_folium(ranges_map, use_container_width=True, height=600)
+            st_folium(ranges_map, use_container_width=True, height=1200)
 
     def display_success_message(self, message: str) -> None:
         """Display success message."""

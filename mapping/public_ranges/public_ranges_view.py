@@ -421,7 +421,7 @@ class PublicRangesView:
                         # Add firing position marker
                         folium.Marker(
                             location=[start_lat, start_lon],
-                            popup=f"🎯 {range_data.get('range_name', 'Range')} - Firing Position",
+                            popup=f"🎯 {range_data.get('range_name', 'Range')} - Firing Position<br><a href='https://www.google.com/maps?q={start_lat},{start_lon}' target='_blank'>📍 View in Google Maps</a>",
                             tooltip=f"Firing Position: {range_data.get('range_name', 'Range')}",
                             icon=folium.Icon(color=color, icon='play')
                         ).add_to(m)
@@ -429,7 +429,7 @@ class PublicRangesView:
                         # Add target position marker
                         folium.Marker(
                             location=[end_lat, end_lon],
-                            popup=f"🎯 {range_data.get('range_name', 'Range')} - Target",
+                            popup=f"🎯 {range_data.get('range_name', 'Range')} - Target<br><a href='https://www.google.com/maps?q={end_lat},{end_lon}' target='_blank'>📍 View in Google Maps</a>",
                             tooltip=f"Target: {range_data.get('range_name', 'Range')}",
                             icon=folium.Icon(color=color, icon='stop')
                         ).add_to(m)
