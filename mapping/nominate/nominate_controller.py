@@ -229,8 +229,7 @@ class NominateController:
         # Display instruction message
         has_complete_data = (len(self.model.points) == 2 and len(self.model.elevations_m) == 2)
         if not has_complete_data:
-            st.info("To submit a new range for review, start by selecting firing position and target on the map. \n\n" +
-            "Subsequently, after the application looks up the address and elevation, it will compute distance, azimuth, and elevation angles.")
+            self.view.display_instruction_message()
 
         # Create and display map
         map_obj = self.view.create_map(

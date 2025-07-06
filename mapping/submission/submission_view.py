@@ -178,7 +178,7 @@ class SubmissionView:
                 # End point (target) - red
                 folium.Marker(
                     location=[range_data['end_lat'], range_data['end_lon']],
-                    popup=f"🎯 Target<br>{range_data.get('range_name', 'Unnamed Range')}<br>Distance: {range_data.get('distance_m', 0):.1f}m",
+                    popup=f"🎯 Target<br>{range_data.get('range_name', 'Unnamed Range')}<br>Distance: {range_data.get('distance_m', 0):.1f}m<br><a href='https://www.google.com/maps?q={range_data['end_lat']},{range_data['end_lon']}' target='_blank'>📍 View in Google Maps</a>",
                     icon=folium.Icon(color='red', icon='stop')
                 ).add_to(m)
 

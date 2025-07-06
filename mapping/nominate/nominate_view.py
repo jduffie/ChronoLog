@@ -32,10 +32,14 @@ class NominateView:
         """Display the main title."""
         st.title("Nominate New Range")
 
+    def display_instruction_message(self) -> None:
+        """Display instruction message for range nomination."""
+        st.info("To submit a new range for review, start by selecting firing position and target on the map. \n\n" +
+                "Subsequently, after the application looks up the address and elevation, it will compute distance, azimuth, and elevation angles.")
+
     def display_search_controls(self, default_lat: float = 37.76, default_lon: float = -122.4) -> Tuple[float, float, bool]:
         """Display search controls for address or lat/lon and return coordinates and whether to zoom."""
-        st.subheader("Move Map")
-        method = st.radio("Choose how to move the map:", ["Address", "Lat/Lon"])
+        method = st.radio("Navigate:", ["Address", "Lat/Lon"])
         
         lat, lon = default_lat, default_lon
         should_zoom_to_max = False

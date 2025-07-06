@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 from urllib.parse import urlencode
+from users import handle_user_profile
 
 # Auth0 settings
 AUTH0_DOMAIN = st.secrets["auth0"]["domain"]
@@ -100,7 +101,7 @@ def get_user_info(code):
     return userinfo_resp.json()
 
 def handle_auth():
-    """Handle authentication flow and return user or None"""
+    """Handle authentication flow and return user profile or None"""
     # Auth check
     query_params = st.query_params
     if "code" in query_params:
@@ -114,5 +115,9 @@ def handle_auth():
         return None
     
     user = st.session_state["user"]
-    st.sidebar.success(f"Logged in as {user['name']}")
-    return user
+    
+    # Handle user profile setup/management
+    user_profile = handle_user_profile(user)
+    
+    # Return user profile (sidebar display is handled in users module)
+    return user_profile
