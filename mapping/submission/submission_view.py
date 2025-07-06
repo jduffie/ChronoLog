@@ -27,10 +27,11 @@ class SubmissionView:
             self.display_no_submissions_message()
             return {"action": None, "selected_indices": []}
 
-        # Convert to DataFrame for display
+        # Convert to DataFrame for display with checkbox column
         display_data = []
         for i, range_data in enumerate(ranges):
             display_data.append({
+                "Select": False,  # Checkbox column
                 "Index": i,
                 "Range Name": range_data.get('range_name', 'Unnamed'),
                 "Description": range_data.get('range_description', '')[:50] + "..." if range_data.get('range_description', '') and len(range_data.get('range_description', '')) > 50 else range_data.get('range_description', ''),
@@ -42,24 +43,37 @@ class SubmissionView:
 
         df = pd.DataFrame(display_data)
         
-        # Display the dataframe
-        st.dataframe(
+        # Display as an editable dataframe with checkboxes
+        edited_df = st.data_editor(
             df.drop('Index', axis=1),  # Don't show index column to user
             use_container_width=True,
-            hide_index=True
+            hide_index=True,
+            column_config={
+                "Select": st.column_config.CheckboxColumn("Select", width="small", default=False),
+                "Range Name": st.column_config.TextColumn("Range Name", width="medium", disabled=True),
+                "Description": st.column_config.TextColumn("Description", width="large", disabled=True),
+                "Status": st.column_config.TextColumn("Status", width="small", disabled=True),
+                "Distance (m)": st.column_config.TextColumn("Distance (m)", width="small", disabled=True),
+                "Location": st.column_config.TextColumn("Location", width="large", disabled=True),
+                "Submitted": st.column_config.TextColumn("Submitted", width="medium", disabled=True)
+            },
+            key="ranges_table_checkboxes"
         )
+        
+        # Get selected rows
+        selected_indices = []
+        if edited_df is not None:
+            selected_rows = edited_df[edited_df['Select'] == True]
+            selected_indices = selected_rows.index.tolist()
 
         # Selection and action controls
         st.markdown("### Actions")
         
-        # Multi-select for ranges
-        range_options = {i: f"{ranges[i].get('range_name', f'Range {i+1}')}" for i in range(len(ranges))}
-        selected_indices = st.multiselect(
-            "Select ranges for actions:",
-            options=list(range_options.keys()),
-            format_func=lambda x: range_options[x],
-            key="selected_ranges"
-        )
+        # Show selection status
+        if selected_indices:
+            st.info(f"📋 {len(selected_indices)} range(s) selected")
+        else:
+            st.info("📍 Check boxes in the table above to select ranges")
 
         # Action buttons
         col1, col2, col3 = st.columns(3)
