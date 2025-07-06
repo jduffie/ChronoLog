@@ -209,14 +209,19 @@ class NominateController:
         self.view.display_title()
 
         # Display search controls and get coordinates
-        search_lat, search_lon = self.view.display_search_controls(
+        search_lat, search_lon, should_zoom_to_max = self.view.display_search_controls(
             default_lat=self.model.map_center[0], 
             default_lon=self.model.map_center[1]
         )
         
         # Update map center if coordinates changed
         if [search_lat, search_lon] != self.model.map_center:
-            self.model.update_map_state(center={"lat": search_lat, "lng": search_lon})
+            # Set zoom level to max (18) if coordinates were manually entered or from address search
+            zoom_level = 18 if should_zoom_to_max else self.model.zoom_level
+            self.model.update_map_state(
+                center={"lat": search_lat, "lng": search_lon}, 
+                zoom=zoom_level
+            )
 
         # Handle elevation fetching
         self._handle_elevation_fetching()

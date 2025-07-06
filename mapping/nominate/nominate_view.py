@@ -4,7 +4,7 @@ from streamlit_folium import st_folium
 from branca.element import MacroElement
 from jinja2 import Template
 from folium.plugins import LocateControl, Geocoder
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 from geopy.geocoders import Nominatim
 
 
@@ -32,32 +32,58 @@ class NominateView:
         """Display the main title."""
         st.title("Nominate New Range")
 
-    def display_search_controls(self, default_lat: float = 37.76, default_lon: float = -122.4) -> Tuple[float, float]:
-        """Display search controls for address or lat/lon and return coordinates."""
+    def display_search_controls(self, default_lat: float = 37.76, default_lon: float = -122.4) -> Tuple[float, float, bool]:
+        """Display search controls for address or lat/lon and return coordinates and whether to zoom."""
         st.subheader("Move Map")
         method = st.radio("Choose how to move the map:", ["Address", "Lat/Lon"])
         
         lat, lon = default_lat, default_lon
+        should_zoom_to_max = False
         
         if method == "Address":
             address = st.text_input("Enter address:")
             if address:
                 try:
-                    geolocator = Nominatim(user_agent="streamlit_map")
+                    geolocator = Nominatim(user_agent="streamlit_map", timeout=10)
                     location = geolocator.geocode(address)
                     if location:
                         lat, lon = location.latitude, location.longitude
+                        should_zoom_to_max = True  # Zoom to max for address searches
                     else:
                         st.warning("Address not found.")
                 except Exception as e:
                     st.error(f"Geocoding error: {e}")
         else:
-            lat = st.number_input("Latitude", value=default_lat, format="%.6f")
-            lon = st.number_input("Longitude", value=default_lon, format="%.6f")
+            # Single text input for comma-separated lat,lon
+            default_coords = f"{default_lat:.6f}, {default_lon:.6f}"
+            coords_input = st.text_input("Coordinates (lat, lon):", value=default_coords, placeholder="39.144281414690745, -108.32961991597905")
+            
+            # Parse the input
+            try:
+                if coords_input.strip():
+                    # Split by comma and clean up whitespace
+                    parts = [part.strip() for part in coords_input.split(',')]
+                    if len(parts) == 2:
+                        new_lat = float(parts[0])
+                        new_lon = float(parts[1])
+                        # Check if user changed the coordinates from defaults
+                        if abs(new_lat - default_lat) > 0.000001 or abs(new_lon - default_lon) > 0.000001:
+                            lat, lon = new_lat, new_lon
+                            should_zoom_to_max = True  # Zoom to max for manual coordinate entry
+                        else:
+                            lat, lon = new_lat, new_lon
+                    else:
+                        st.error("Please enter coordinates in the format: lat, lon (e.g., 39.144281414690745, -108.32961991597905)")
+                        lat, lon = default_lat, default_lon
+                else:
+                    lat, lon = default_lat, default_lon
+            except ValueError:
+                st.error("Invalid coordinate format. Please enter valid numbers separated by a comma.")
+                lat, lon = default_lat, default_lon
         
-        return lat, lon
+        return lat, lon, should_zoom_to_max
 
-    def display_measurements_table(self, measurements: Dict[str, Any]) -> None:
+    def display_measurements_table(self, measurements: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Display the measurements table using HTML."""
         # Get display name from GeoJSON response
         location_display = measurements.get("display_name", "")
@@ -120,7 +146,7 @@ class NominateView:
             
         return None
 
-    def display_range_form_and_table(self, measurements: Dict[str, Any]) -> Dict[str, Any]:
+    def display_range_form_and_table(self, measurements: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Display range form inputs and measurements table in the correct order."""
         # Check if we have complete data for submission
         has_complete_data = (measurements.get("start_lat") and measurements.get("start_lon") and 

@@ -16,7 +16,11 @@ class SessionStateManager:
         "public_ranges": [
             "delete_selected_public_ranges",
             "confirm_delete_public_ranges",
-            "public_ranges_table_checkboxes"
+            "public_ranges_table_checkboxes",
+            "public_ranges_state_filter",
+            "public_ranges_location_search",
+            "public_ranges_admin_state_filter",
+            "public_ranges_admin_location_search"
         ],
         "submission": [
             "delete_selected_ranges",

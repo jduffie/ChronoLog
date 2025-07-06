@@ -1,6 +1,5 @@
 import streamlit as st
 import folium
-from folium.plugins import LocateControl
 from typing import List, Dict, Any
 
 
@@ -34,12 +33,69 @@ class PublicRangesView:
         if not ranges:
             st.info("🌍 No public ranges available yet.")
             return {"action": None, "selected_indices": []}
-            
-        st.subheader(f"Public Ranges ({len(ranges)})")
+        
+        # Extract all unique states for dropdown
+        all_states = set()
+        for range_data in ranges:
+            address_components = self._extract_address_components(range_data)
+            state = address_components.get('state', '').strip()
+            if state:
+                all_states.add(state)
+        
+        # Search controls
+        st.subheader("🔍 Search & Filter")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # State dropdown filter
+            state_options = ["All States"] + sorted(list(all_states))
+            selected_state = st.selectbox(
+                "Filter by State:",
+                options=state_options,
+                index=0,
+                key="public_ranges_state_filter"
+            )
+        
+        with col2:
+            # Location text search
+            location_search = st.text_input(
+                "Search Location:",
+                placeholder="Enter city, county, or location name...",
+                key="public_ranges_location_search"
+            )
+        
+        # Apply filters
+        filtered_ranges = ranges.copy()
+        
+        # Filter by state
+        if selected_state != "All States":
+            filtered_ranges = [
+                range_data for range_data in filtered_ranges
+                if self._extract_address_components(range_data).get('state', '') == selected_state
+            ]
+        
+        # Filter by location text search
+        if location_search:
+            search_lower = location_search.lower()
+            filtered_ranges = [
+                range_data for range_data in filtered_ranges
+                if search_lower in range_data.get('display_name', '').lower()
+            ]
+        
+        # Show filtered count
+        if len(filtered_ranges) != len(ranges):
+            st.info(f"📍 Showing {len(filtered_ranges)} of {len(ranges)} ranges")
+        else:
+            st.subheader(f"Public Ranges ({len(ranges)})")
+        
+        # Check if no results after filtering
+        if not filtered_ranges:
+            st.warning("🔍 No ranges match your search criteria. Try adjusting your filters.")
+            return {"action": None, "selected_indices": []}
         
         # Prepare data for display
         table_data = []
-        for i, range_data in enumerate(ranges):
+        for i, range_data in enumerate(filtered_ranges):
             # Format the submitted date
             submitted_at = range_data.get('submitted_at', '')
             if submitted_at:
@@ -106,9 +162,66 @@ class PublicRangesView:
             st.info("🌍 No public ranges available yet.")
             return {"action": None, "selected_indices": []}
 
+        # Extract all unique states for dropdown
+        all_states = set()
+        for range_data in ranges:
+            address_components = self._extract_address_components(range_data)
+            state = address_components.get('state', '').strip()
+            if state:
+                all_states.add(state)
+        
+        # Search controls
+        st.subheader("🔍 Search & Filter")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # State dropdown filter
+            state_options = ["All States"] + sorted(list(all_states))
+            selected_state = st.selectbox(
+                "Filter by State:",
+                options=state_options,
+                index=0,
+                key="public_ranges_admin_state_filter"
+            )
+        
+        with col2:
+            # Location text search
+            location_search = st.text_input(
+                "Search Location:",
+                placeholder="Enter city, county, or location name...",
+                key="public_ranges_admin_location_search"
+            )
+        
+        # Apply filters
+        filtered_ranges = ranges.copy()
+        
+        # Filter by state
+        if selected_state != "All States":
+            filtered_ranges = [
+                range_data for range_data in filtered_ranges
+                if self._extract_address_components(range_data).get('state', '') == selected_state
+            ]
+        
+        # Filter by location text search
+        if location_search:
+            search_lower = location_search.lower()
+            filtered_ranges = [
+                range_data for range_data in filtered_ranges
+                if search_lower in range_data.get('display_name', '').lower()
+            ]
+        
+        # Show filtered count
+        if len(filtered_ranges) != len(ranges):
+            st.info(f"📍 Showing {len(filtered_ranges)} of {len(ranges)} ranges")
+        
+        # Check if no results after filtering
+        if not filtered_ranges:
+            st.warning("🔍 No ranges match your search criteria. Try adjusting your filters.")
+            return {"action": None, "selected_indices": []}
+
         # Prepare data for display with checkboxes
         table_data = []
-        for i, range_data in enumerate(ranges):
+        for i, range_data in enumerate(filtered_ranges):
             # Format the submitted date
             submitted_at = range_data.get('submitted_at', '')
             if submitted_at:
