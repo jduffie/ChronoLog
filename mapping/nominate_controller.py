@@ -7,6 +7,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from mapping.nominate_model import NominateModel
 from mapping.nominate_view import NominateView
+from mapping.session_state_manager import SessionStateManager
 from auth import handle_auth
 from supabase import create_client
 from typing import Dict, Any
@@ -14,34 +15,13 @@ from typing import Dict, Any
 
 class NominateController:
     def __init__(self):
-        self.model = NominateModel()
+        # Store model in session state to persist across runs
+        if "nominate_model" not in st.session_state:
+            st.session_state.nominate_model = NominateModel()
+        self.model = st.session_state.nominate_model
         self.view = NominateView()
-        self._initialize_session_state()
 
-    def _initialize_session_state(self) -> None:
-        """Initialize session state variables."""
-        if "points" not in st.session_state:
-            st.session_state.points = []
-        if "elevations_m" not in st.session_state:
-            st.session_state.elevations_m = []
-        if "map_center" not in st.session_state:
-            st.session_state.map_center = [36.222278, -78.051833]
-        if "zoom_level" not in st.session_state:
-            st.session_state.zoom_level = 13
 
-    def _sync_model_with_session_state(self) -> None:
-        """Sync model state with Streamlit session state."""
-        self.model.points = st.session_state.points
-        self.model.elevations_m = st.session_state.elevations_m
-        self.model.map_center = st.session_state.map_center
-        self.model.zoom_level = st.session_state.zoom_level
-
-    def _sync_session_state_with_model(self) -> None:
-        """Sync Streamlit session state with model state."""
-        st.session_state.points = self.model.points
-        st.session_state.elevations_m = self.model.elevations_m
-        st.session_state.map_center = self.model.map_center
-        st.session_state.zoom_level = self.model.zoom_level
 
     def _clear_all_form_data(self) -> None:
         """Clear all form data and model state."""
@@ -49,20 +29,17 @@ class NominateController:
         self.model.reset_points()
         
         # Clear form input session state
-        form_keys = ["range_name", "range_description"]
+        form_keys = ["range_name", "range_description", "last_clicked"]
         for key in form_keys:
             if key in st.session_state:
                 del st.session_state[key]
         
-        # Sync model state to session state
-        self._sync_session_state_with_model()
 
     def _handle_elevation_fetching(self) -> None:
         """Handle elevation data fetching with spinner."""
         if self.model.needs_elevation_fetch():
             with self.view.display_spinner("Fetching elevation data..."):
                 self.model.fetch_missing_elevations()
-                self._sync_session_state_with_model()
 
     def _handle_map_interactions(self, map_info: Dict[str, Any]) -> None:
         """Handle map click and movement interactions."""
@@ -71,26 +48,35 @@ class NominateController:
 
         rerun_needed = False
 
-        # Handle point clicks
-        if map_info.get("last_clicked"):
-            lat = map_info["last_clicked"]["lat"]
-            lng = map_info["last_clicked"]["lng"]
-            
-            if len(self.model.points) < 2:
+        # Handle point clicks using session state deduplication
+        clicked = map_info.get("last_clicked")
+        if clicked:
+            prev_click = st.session_state.get("last_clicked", None)
+            if prev_click != clicked and len(self.model.points) < 2:
+                # Store the new click in session state
+                st.session_state.last_clicked = clicked
+                # Process the new click
+                lat = clicked["lat"]
+                lng = clicked["lng"]
                 self.model.add_point(lat, lng)
-                self._sync_session_state_with_model()
+                print(f"✅ Added point: {lat}, {lng}. Total points: {len(self.model.points)}")
                 rerun_needed = True
+            else:
+                print(f"⚠️ Click ignored. prev_click == clicked: {prev_click == clicked}, points: {len(self.model.points)}")
 
-        # Handle map state changes
+        # Handle map state changes (update model but don't trigger rerun for map navigation)
         if map_info.get("center"):
             center = map_info["center"]
-            self.model.update_map_state(center=center)
-            self._sync_session_state_with_model()
+            # Only update if center actually changed significantly to avoid constant updates
+            current_center = self.model.map_center
+            lat_diff = abs(center["lat"] - current_center[0])
+            lng_diff = abs(center["lng"] - current_center[1])
+            if lat_diff > 0.001 or lng_diff > 0.001:  # Only update if moved more than ~100m
+                self.model.update_map_state(center=center)
 
-        if map_info.get("zoom"):
-            zoom = map_info["zoom"]
-            self.model.update_map_state(zoom=zoom)
-            self._sync_session_state_with_model()
+        if "zoom" in map_info and map_info["zoom"] is not None:
+            if map_info["zoom"] != self.model.zoom_level:
+                self.model.update_map_state(zoom=map_info["zoom"])
 
         if rerun_needed:
             st.rerun()
@@ -191,6 +177,9 @@ class NominateController:
         if not user:
             return
             
+        # Manage page-specific session state
+        SessionStateManager.set_current_page("nominate")
+        
         # User info displayed by other pages to avoid duplication
         
         # Check range limit
@@ -213,11 +202,19 @@ class NominateController:
             st.error(f"Error checking range limit: {str(e)}")
             return
         
-        # Sync model with session state
-        self._sync_model_with_session_state()
 
         # Display title
         self.view.display_title()
+
+        # Display search controls and get coordinates
+        search_lat, search_lon = self.view.display_search_controls(
+            default_lat=self.model.map_center[0], 
+            default_lon=self.model.map_center[1]
+        )
+        
+        # Update map center if coordinates changed
+        if [search_lat, search_lon] != self.model.map_center:
+            self.model.update_map_state(center={"lat": search_lat, "lng": search_lon})
 
         # Handle elevation fetching
         self._handle_elevation_fetching()
@@ -227,7 +224,6 @@ class NominateController:
         if not has_complete_data:
             st.info("To submit a new range for review, start by selecting firing position and target on the map. \n\n" \
             "Subsequently, after the application looks up the address and elevation, it will compute distance, azimuth, and elevation angles.")
-
 
         # Create and display map
         map_obj = self.view.create_map(

@@ -7,6 +7,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from mapping.submission_model import SubmissionModel
 from mapping.submission_view import SubmissionView
+from mapping.session_state_manager import SessionStateManager
 from auth import handle_auth
 from supabase import create_client
 from typing import Dict, Any, List
@@ -95,6 +96,9 @@ class SubmissionController:
         user = handle_auth()
         if not user:
             return
+
+        # Manage page-specific session state
+        SessionStateManager.set_current_page("submission")
 
         # Display title
         self.view.display_title()

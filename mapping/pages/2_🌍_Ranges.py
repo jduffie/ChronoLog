@@ -5,8 +5,7 @@ import os
 # Add the root directory to the path so we can import our modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from mapping.public_ranges_model import PublicRangesModel
-from mapping.mapping_view import MappingView
+from mapping.public_ranges_controller import PublicRangesController
 from auth import handle_auth
 from supabase import create_client
 
@@ -33,9 +32,11 @@ def main():
         st.sidebar.success(f"Logged in as {user['name']}")
         st.session_state["user_info_displayed"] = True
     
-    # Initialize model and view
-    model = PublicRangesModel()
-    view = MappingView()
+    # Initialize controller
+    controller = PublicRangesController()
+    
+    # Setup page-specific session state
+    controller.setup_page_state()
     
     # Database connection
     try:
@@ -52,7 +53,7 @@ def main():
     
     # Fetch all public ranges
     try:
-        public_ranges = model.get_public_ranges(supabase)
+        public_ranges = controller.get_public_ranges(supabase)
         
         if not public_ranges:
             st.info("🌍 No public ranges available yet.")
@@ -67,9 +68,9 @@ def main():
         
         # Display ranges table with admin capabilities
         if is_admin:
-            action_result = view.display_public_ranges_table_admin(public_ranges)
+            action_result = controller.display_public_ranges_table_admin(public_ranges)
         else:
-            action_result = view.display_public_ranges_table_readonly(public_ranges)
+            action_result = controller.display_public_ranges_table_readonly(public_ranges)
 
         # Handle admin actions
         if is_admin and action_result and action_result.get("action"):
@@ -83,7 +84,7 @@ def main():
                         for idx in selected_indices:
                             if idx < len(public_ranges):
                                 range_id = public_ranges[idx]["id"]
-                                if model.delete_public_range(range_id, supabase):
+                                if controller.delete_public_range(range_id, supabase):
                                     deleted_count += 1
                         
                         if deleted_count > 0:
@@ -121,7 +122,7 @@ def main():
                 # Display map with selected ranges
                 selected_indices = action_result.get("selected_indices", [])
                 if selected_indices:
-                    ranges_map = view.display_ranges_map(public_ranges, selected_indices)
+                    ranges_map = controller.display_ranges_map(public_ranges, selected_indices)
                     st_folium = __import__('streamlit_folium', fromlist=['st_folium']).st_folium
                     st_folium(ranges_map, use_container_width=True, height=500)
         
@@ -129,7 +130,7 @@ def main():
         elif not is_admin and public_ranges:
             st.markdown("### All Public Ranges Map")
             all_indices = list(range(len(public_ranges)))
-            ranges_map = view.display_ranges_map(public_ranges, all_indices)
+            ranges_map = controller.display_ranges_map(public_ranges, all_indices)
             st_folium = __import__('streamlit_folium', fromlist=['st_folium']).st_folium
             st_folium(ranges_map, use_container_width=True, height=500)
     

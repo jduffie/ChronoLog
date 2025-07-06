@@ -4,7 +4,8 @@ from streamlit_folium import st_folium
 from branca.element import MacroElement
 from jinja2 import Template
 from folium.plugins import LocateControl, Geocoder
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
+from geopy.geocoders import Nominatim
 
 
 class CssInjector(MacroElement):
@@ -30,6 +31,31 @@ class NominateView:
     def display_title(self) -> None:
         """Display the main title."""
         st.title("Nominate New Range")
+
+    def display_search_controls(self, default_lat: float = 37.76, default_lon: float = -122.4) -> Tuple[float, float]:
+        """Display search controls for address or lat/lon and return coordinates."""
+        st.subheader("Move Map")
+        method = st.radio("Choose how to move the map:", ["Address", "Lat/Lon"])
+        
+        lat, lon = default_lat, default_lon
+        
+        if method == "Address":
+            address = st.text_input("Enter address:")
+            if address:
+                try:
+                    geolocator = Nominatim(user_agent="streamlit_map")
+                    location = geolocator.geocode(address)
+                    if location:
+                        lat, lon = location.latitude, location.longitude
+                    else:
+                        st.warning("Address not found.")
+                except Exception as e:
+                    st.error(f"Geocoding error: {e}")
+        else:
+            lat = st.number_input("Latitude", value=default_lat, format="%.6f")
+            lon = st.number_input("Longitude", value=default_lon, format="%.6f")
+        
+        return lat, lon
 
     def display_measurements_table(self, measurements: Dict[str, Any]) -> None:
         """Display the measurements table using HTML."""
@@ -196,15 +222,35 @@ class NominateView:
         # Add existing points with color-coded markers
         for i, point in enumerate(points):
             color = 'blue' if i == 0 else 'red'
+            
+            # Handle both list [lat, lng] and dict {"lat": lat, "lng": lng} formats
+            if isinstance(point, dict):
+                lat = point.get("lat", 0)
+                lng = point.get("lng", 0)
+            else:
+                lat = point[0]
+                lng = point[1]
+            
             folium.Marker(
-                location=[point[0], point[1]],
+                location=[lat, lng],
                 icon=folium.Icon(color=color)
             ).add_to(m)
 
         # Draw line between two points
         if len(points) == 2:
+            # Convert points to proper format for PolyLine
+            polyline_points = []
+            for point in points:
+                if isinstance(point, dict):
+                    lat = point.get("lat", 0)
+                    lng = point.get("lng", 0)
+                else:
+                    lat = point[0]
+                    lng = point[1]
+                polyline_points.append([lat, lng])
+            
             folium.PolyLine(
-                points,
+                polyline_points,
                 color="yellow",
                 weight=3,
                 opacity=0.8
@@ -214,7 +260,8 @@ class NominateView:
 
     def display_map(self, m: folium.Map) -> Dict[str, Any]:
         """Display the map and return interaction data."""
-        return st_folium(m, use_container_width=True, height=500)
+        map_info =  st_folium(m, use_container_width=True, height=500)
+        return map_info
 
     def display_reset_button(self) -> bool:
         """Display reset button and return True if clicked."""
