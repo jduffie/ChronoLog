@@ -135,29 +135,31 @@ class NominateController:
             print(f"Range submission error: {e}")
 
     def _debug_session_state(self) -> None:
-        """Debug session state changes."""
-        prev_session_state = getattr(st.session_state, '_prev_state', dict(st.session_state))
+        """Debug nominate module session state changes."""
+        prev_session_state = getattr(st.session_state, '_prev_nominate_state', {})
+        
+        # Use SessionStateManager to get filtered nominate state
+        current_nominate_state = SessionStateManager.debug_session_state("nominate")
         
         # Log starting state
-        filtered = {k: v for k, v in st.session_state.items() if v is not None}
-        if filtered:
-            print("Starting State:", st.session_state)
+        if current_nominate_state:
+            print("Nominate Starting State:", current_nominate_state)
             print("")
 
         # Log changes
-        changes = {k: v for k, v in st.session_state.items() if prev_session_state.get(k) != v}
+        changes = {k: v for k, v in current_nominate_state.items() if prev_session_state.get(k) != v}
         if changes:
-            print("STATE changes:", changes)
+            print("Nominate STATE changes:", changes)
         else:
-            print("No STATE changes in this run.")
+            print("No Nominate STATE changes in this run.")
 
         print("_______________________________________")
         print("  ")
         print("  ")
         print("  ")
 
-        # Store current state for next comparison
-        st.session_state._prev_state = dict(st.session_state)
+        # Store current nominate state for next comparison
+        st.session_state._prev_nominate_state = current_nominate_state.copy()
 
     def run(self) -> None:
         """Main controller method to run the nomination application."""
@@ -222,7 +224,7 @@ class NominateController:
         # Display instruction message
         has_complete_data = (len(self.model.points) == 2 and len(self.model.elevations_m) == 2)
         if not has_complete_data:
-            st.info("To submit a new range for review, start by selecting firing position and target on the map. \n\n" \
+            st.info("To submit a new range for review, start by selecting firing position and target on the map. \n\n" +
             "Subsequently, after the application looks up the address and elevation, it will compute distance, azimuth, and elevation angles.")
 
         # Create and display map
