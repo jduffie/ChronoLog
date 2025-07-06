@@ -5,7 +5,7 @@ import os
 # Add the parent directory to the path so we can import shared modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from mapping.mapping_model import MappingModel
+from mapping.nominate_model import NominateModel
 from mapping.nominate_view import NominateView
 from auth import handle_auth
 from supabase import create_client
@@ -14,7 +14,7 @@ from typing import Dict, Any
 
 class NominateController:
     def __init__(self):
-        self.model = MappingModel()
+        self.model = NominateModel()
         self.view = NominateView()
         self._initialize_session_state()
 

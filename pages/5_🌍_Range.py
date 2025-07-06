@@ -5,7 +5,7 @@ import os
 # Add the root directory to the path so we can import our modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from mapping.mapping_model import MappingModel
+from mapping.public_ranges_model import PublicRangesModel
 from mapping.mapping_view import MappingView
 from auth import handle_auth
 from supabase import create_client
@@ -34,7 +34,7 @@ def main():
         st.session_state["user_info_displayed"] = True
     
     # Initialize model and view
-    model = MappingModel()
+    model = PublicRangesModel()
     view = MappingView()
     
     # Database connection
