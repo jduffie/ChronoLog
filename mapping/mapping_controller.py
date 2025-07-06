@@ -7,260 +7,45 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from mapping.mapping_model import MappingModel
 from mapping.mapping_view import MappingView
-from mapping.nominate_view import NominateView
 from auth import handle_auth
 from supabase import create_client
 from typing import Dict, Any
 
 
 class MappingController:
+    """Controller for general mapping functionality (excluding nomination)."""
     def __init__(self):
         self.model = MappingModel()
         self.view = MappingView()
-        self.nominate_view = NominateView()
-        self._initialize_session_state()
 
-    def _initialize_session_state(self) -> None:
-        """Initialize session state variables."""
-        if "points" not in st.session_state:
-            st.session_state.points = []
-        if "elevations_m" not in st.session_state:
-            st.session_state.elevations_m = []
-        if "map_center" not in st.session_state:
-            st.session_state.map_center = [36.222278, -78.051833]
-        if "zoom_level" not in st.session_state:
-            st.session_state.zoom_level = 13
-
-    def _sync_model_with_session_state(self) -> None:
-        """Sync model state with Streamlit session state."""
-        self.model.points = st.session_state.points
-        self.model.elevations_m = st.session_state.elevations_m
-        self.model.map_center = st.session_state.map_center
-        self.model.zoom_level = st.session_state.zoom_level
-
-    def _sync_session_state_with_model(self) -> None:
-        """Sync Streamlit session state with model state."""
-        st.session_state.points = self.model.points
-        st.session_state.elevations_m = self.model.elevations_m
-        st.session_state.map_center = self.model.map_center
-        st.session_state.zoom_level = self.model.zoom_level
-
-    def _clear_all_form_data(self) -> None:
-        """Clear all form data and model state."""
-        # Clear model state
-        self.model.reset_points()
-        
-        # Clear form input session state
-        form_keys = ["range_name", "range_description"]
-        for key in form_keys:
-            if key in st.session_state:
-                del st.session_state[key]
-        
-        # Sync model state to session state
-        self._sync_session_state_with_model()
-
-    def _handle_elevation_fetching(self) -> None:
-        """Handle elevation data fetching with spinner."""
-        if self.model.needs_elevation_fetch():
-            with self.nominate_view.display_spinner("Fetching elevation data..."):
-                self.model.fetch_missing_elevations()
-                self._sync_session_state_with_model()
-
-    def _handle_map_interactions(self, map_info: Dict[str, Any]) -> None:
-        """Handle map click and movement interactions."""
-        if not map_info:
-            return
-
-        rerun_needed = False
-
-        # Handle point clicks
-        if map_info.get("last_clicked"):
-            lat = map_info["last_clicked"]["lat"]
-            lng = map_info["last_clicked"]["lng"]
-            
-            if len(self.model.points) < 2:
-                self.model.add_point(lat, lng)
-                self._sync_session_state_with_model()
-                rerun_needed = True
-
-        # Handle map state changes
-        if map_info.get("center"):
-            center = map_info["center"]
-            self.model.update_map_state(center=center)
-            self._sync_session_state_with_model()
-
-        if map_info.get("zoom"):
-            zoom = map_info["zoom"]
-            self.model.update_map_state(zoom=zoom)
-            self._sync_session_state_with_model()
-
-        if rerun_needed:
-            st.rerun()
-
-    def _handle_reset_action(self) -> None:
-        """Handle reset button action."""
-        if len(self.model.points) > 0:
-            if self.nominate_view.display_reset_button():
-                self._clear_all_form_data()
-                st.rerun()
+    def get_public_ranges(self, supabase_client):
+        """Get all public ranges."""
+        return self.model.get_public_ranges(supabase_client)
     
-    def _handle_range_submission(self, user: Dict[str, Any], submission_data: Dict[str, Any]) -> None:
-        """Handle range data submission to database."""
-        range_data = submission_data.get("range", {})
-        range_name = range_data.get("range_name", "").strip()
-        range_description = range_data.get("range_description", "").strip()
-        measurements = range_data.get("measurements", {})
-        
-        # Validate required fields
-        if not range_name:
-            st.error("❌ Range name is required")
-            return
-            
-        if len(range_name) < 3:
-            st.error("❌ Range name must be at least 3 characters long")
-            return
-        
-        try:
-            # Setup Supabase client
-            url = st.secrets["supabase"]["url"]
-            key = st.secrets["supabase"]["key"]
-            supabase = create_client(url, key)
-            
-            # Save to database
-            with st.spinner("Saving range data..."):
-                success = self.model.save_range_submission(
-                    user_email=user["email"],
-                    range_name=range_name,
-                    range_description=range_description,
-                    measurements=measurements,
-                    supabase_client=supabase
-                )
-            
-            if success:
-                # Clear all form data and model state
-                self._clear_all_form_data()
-                
-                # Show success message and rerun
-                st.success(f"✅ Range '{range_name}' saved successfully!")
-                st.rerun()
-            else:
-                st.error("❌ Failed to save range data. Please try again.")
-                
-        except Exception as e:
-            st.error(f"❌ Error saving range data: {str(e)}")
-            print(f"Range submission error: {e}")
-
-    def _debug_session_state(self) -> None:
-        """Debug session state changes."""
-        prev_session_state = getattr(st.session_state, '_prev_state', dict(st.session_state))
-        
-        # Log starting state
-        filtered = {k: v for k, v in st.session_state.items() if v is not None}
-        if filtered:
-            print("Starting State:", st.session_state)
-            print("")
-
-        # Log changes
-        changes = {k: v for k, v in st.session_state.items() if prev_session_state.get(k) != v}
-        if changes:
-            print("STATE changes:", changes)
-        else:
-            print("No STATE changes in this run.")
-
-        print("_______________________________________")
-        print("  ")
-        print("  ")
-        print("  ")
-
-        # Store current state for next comparison
-        st.session_state._prev_state = dict(st.session_state)
-
-    def run(self) -> None:
-        """Main controller method to run the application."""
-        # Set page configuration FIRST, before any other Streamlit operations
-        st.set_page_config(
-            page_title="Nominate - ChronoLog Mapping",
-            page_icon="📍",
-            layout="wide"
-        )
-        
-        # Set app identifier for auth system
-        if "app" not in st.query_params:
-            st.query_params["app"] = "mapping"
-            
-        # Handle authentication
-        user = handle_auth()
-        if not user:
-            return
-            
-        # User info displayed by other pages to avoid duplication
-        
-        # Check range limit
-        try:
-            url = st.secrets["supabase"]["url"]
-            key = st.secrets["supabase"]["key"]
-            supabase = create_client(url, key)
-            range_count = self.model.get_user_range_count(user["email"], supabase)
-            
-            if range_count >= 40:
-                st.error("🚫 **Maximum range limit reached**")
-                st.warning(f"You have submitted {range_count}/40 ranges. You cannot submit any more ranges.")
-                st.info("If you need to submit more ranges, please contact support.")
-                return
-                
-            # Show current range count
-            st.sidebar.info(f"Ranges submitted: {range_count}/40")
-            
-        except Exception as e:
-            st.error(f"Error checking range limit: {str(e)}")
-            return
-        
-        # Sync model with session state
-        self._sync_model_with_session_state()
-
-        # Display title
-        self.nominate_view.display_title()
-
-        # Handle elevation fetching
-        self._handle_elevation_fetching()
-
-        # Display instruction message
-        has_complete_data = (len(self.model.points) == 2 and len(self.model.elevations_m) == 2)
-        if not has_complete_data:
-            st.info("To submit a new range for review, start by selecting firing position and target on the map. \n\n" \
-            "Subsequently, after the application looks up the address and elevation, it will compute distance, azimuth, and elevation angles.")
-
-
-        # Create and display map
-        map_obj = self.nominate_view.create_map(
-            self.model.map_center, 
-            self.model.zoom_level, 
-            self.model.points
-        )
-        
-        map_info = self.nominate_view.display_map(map_obj)
-        
-        # Display map events for debugging
-        self.nominate_view.display_map_events(map_info)
-
-        # Handle map interactions
-        self._handle_map_interactions(map_info)
-
-        # Handle reset action
-        self._handle_reset_action()
-
-        # Get measurements
-        if has_complete_data:
-            measurements = self.model.calculate_measurements()
-        else:
-            measurements = self.model.get_partial_measurements()
-        
-        # Display range form and measurements table
-        submission_result = self.nominate_view.display_range_form_and_table(measurements)
-        
-        # Handle range submission
-        if submission_result and submission_result.get("action") == "submit":
-            self._handle_range_submission(user, submission_result)
-
-        # Debug session state
-        self._debug_session_state()
+    def get_user_ranges(self, user_email: str, supabase_client):
+        """Get ranges for a specific user."""
+        return self.model.get_user_ranges(user_email, supabase_client)
+    
+    def display_ranges_table(self, ranges):
+        """Display ranges table with actions."""
+        return self.view.display_ranges_table(ranges)
+    
+    def display_ranges_map(self, ranges, selected_indices):
+        """Display ranges on map."""
+        return self.view.display_ranges_map(ranges, selected_indices)
+    
+    def display_public_ranges_table_readonly(self, ranges):
+        """Display public ranges table in read-only mode."""
+        return self.view.display_public_ranges_table_readonly(ranges)
+    
+    def display_public_ranges_table_admin(self, ranges):
+        """Display public ranges table with admin controls."""
+        return self.view.display_public_ranges_table_admin(ranges)
+    
+    def delete_user_ranges(self, user_email: str, range_ids, supabase_client):
+        """Delete user ranges."""
+        return self.model.delete_user_ranges(user_email, range_ids, supabase_client)
+    
+    def delete_public_range(self, range_id, supabase_client):
+        """Delete a public range."""
+        return self.model.delete_public_range(range_id, supabase_client)
