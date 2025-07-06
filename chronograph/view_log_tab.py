@@ -3,24 +3,27 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime
+from .models import ChronographSession, ChronographMeasurement
+from .service import ChronographService
 
 def render_view_log_tab(user, supabase):
     """Render the View Log tab for detailed session analysis"""
     st.header("🔍 View Chronograph Log")
     
     try:
-        # Get all sessions for selection
-        sessions_response = supabase.table("chrono_sessions").select("*").eq("user_email", user["email"]).order("datetime_local", desc=True).execute()
+        # Initialize service
+        chrono_service = ChronographService(supabase)
         
-        if not sessions_response.data:
+        # Get all sessions for selection
+        sessions = chrono_service.get_sessions_for_user(user["email"])
+        
+        if not sessions:
             st.info("No chronograph logs found. Import some data files to get started!")
             return
         
-        sessions = sessions_response.data
-        
         # Session selector
         session_options = {
-            f"{s['tab_name']} - {datetime.fromisoformat(s['datetime_local']).strftime('%Y-%m-%d %H:%M')}": s['id']
+            s.display_name(): s.id
             for s in sessions
         }
         
@@ -45,35 +48,44 @@ def render_view_log_tab(user, supabase):
         selected_session_id = session_options[selected_session_name]
         
         # Get session details
-        session = next(s for s in sessions if s['id'] == selected_session_id)
+        session = next(s for s in sessions if s.id == selected_session_id)
         
-        # Get measurements for this session
-        measurements_response = supabase.table("chrono_measurements").select("*").eq("user_email", user["email"]).eq("tab_name", session['tab_name']).order("shot_number").execute()
+        # Get measurements for this session using service
+        measurements = chrono_service.get_measurements_for_session(user["email"], session.tab_name)
         
-        if not measurements_response.data:
+        if not measurements:
             st.warning("No measurements found for this session.")
             return
         
-        measurements = measurements_response.data
-        df = pd.DataFrame(measurements)
+        # Convert to DataFrame for analysis
+        df = pd.DataFrame([{
+            'shot_number': m.shot_number,
+            'speed_fps': m.speed_fps,
+            'delta_avg_fps': m.delta_avg_fps,
+            'ke_ft_lb': m.ke_ft_lb,
+            'power_factor': m.power_factor,
+            'datetime_local': m.datetime_local,
+            'clean_bore': m.clean_bore,
+            'cold_bore': m.cold_bore,
+            'shot_notes': m.shot_notes
+        } for m in measurements])
         
         # Session header
-        st.subheader(f"📊 {session['tab_name']}")
+        st.subheader(f"📊 {session.tab_name}")
         
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.write(f"**Bullet:** {session['bullet_type']}")
-            st.write(f"**Grain:** {session['bullet_grain']}")
+            st.write(f"**Bullet:** {session.bullet_type}")
+            st.write(f"**Grain:** {session.bullet_grain}")
         with col2:
-            st.write(f"**Date:** {datetime.fromisoformat(session['datetime_local']).strftime('%Y-%m-%d %H:%M')}")
+            st.write(f"**Date:** {session.datetime_local.strftime('%Y-%m-%d %H:%M')}")
             st.write(f"**Shots:** {len(measurements)}")
         with col3:
-            st.write(f"**Session ID:** {session['id'][:8]}...")
-            if session.get('file_path'):
-                st.write(f"**File:** {session['file_path'].split('/')[-1]}")
+            st.write(f"**Session ID:** {session.id[:8]}...")
+            st.write(f"**File:** {session.file_name()}")
         
         # Statistics
-        speeds = [m["speed_fps"] for m in measurements if m["speed_fps"]]
+        speeds = [m.speed_fps for m in measurements if m.speed_fps]
         if not speeds:
             st.warning("No speed data available for analysis.")
             return
@@ -198,7 +210,7 @@ def render_view_log_tab(user, supabase):
             st.download_button(
                 label="Download CSV",
                 data=csv,
-                file_name=f"chronograph_data_{session['tab_name']}_{datetime.now().strftime('%Y%m%d')}.csv",
+                file_name=f"chronograph_data_{session.tab_name}_{datetime.now().strftime('%Y%m%d')}.csv",
                 mime="text/csv"
             )
         
@@ -208,7 +220,7 @@ def render_view_log_tab(user, supabase):
             st.download_button(
                 label="Download JSON",
                 data=json_data,
-                file_name=f"chronograph_data_{session['tab_name']}_{datetime.now().strftime('%Y%m%d')}.json",
+                file_name=f"chronograph_data_{session.tab_name}_{datetime.now().strftime('%Y%m%d')}.json",
                 mime="application/json"
             )
     

@@ -3,6 +3,7 @@ import pandas as pd
 import uuid
 from datetime import datetime, timezone
 import math
+from chronograph.service import ChronographService
 
 def render_upload_tab(user, supabase, bucket):
     """Render the Upload Files tab"""
@@ -79,10 +80,11 @@ def render_garmin_upload(user, supabase, bucket):
             if not session_timestamp:
                 session_timestamp = datetime.now(timezone.utc).isoformat()
 
-            # Check if a session already exists at this date/time for this user
-            existing_session_response = supabase.table("chrono_sessions").select("id").eq("user_email", user["email"]).eq("tab_name", sheet).eq("datetime_local", session_timestamp).execute()
+            # Initialize chronograph service
+            chrono_service = ChronographService(supabase)
             
-            if existing_session_response.data:
+            # Check if a session already exists at this date/time for this user
+            if chrono_service.session_exists(user["email"], sheet, session_timestamp):
                 st.warning(f"⚠️ Session already exists for {pd.to_datetime(session_timestamp).strftime('%Y-%m-%d %H:%M')} - skipping sheet '{sheet}'")
                 continue
 
@@ -108,7 +110,7 @@ def render_garmin_upload(user, supabase, bucket):
                     return None
 
             session_id = str(uuid.uuid4())
-            supabase.table("chrono_sessions").insert({
+            session_data = {
                 "id": session_id,
                 "user_email": user["email"],
                 "tab_name": sheet,
@@ -117,7 +119,8 @@ def render_garmin_upload(user, supabase, bucket):
                 "datetime_local": session_timestamp,
                 "uploaded_at": datetime.now(timezone.utc).isoformat(),
                 "file_path": file_name
-            }).execute()
+            }
+            chrono_service.create_session(session_data)
 
             valid_measurements = 0
             skipped_measurements = 0
@@ -197,7 +200,7 @@ def render_garmin_upload(user, supabase, bucket):
                         "shot_notes": str(row.get("Shot Notes")) if "Shot Notes" in row and not pd.isna(row.get("Shot Notes")) else None
                     }
                     
-                    supabase.table("chrono_measurements").insert(measurement_data).execute()
+                    chrono_service.create_measurement(measurement_data)
                     valid_measurements += 1
                     
                 except Exception as e:
@@ -207,30 +210,28 @@ def render_garmin_upload(user, supabase, bucket):
             # Calculate and update session summary statistics
             if valid_measurements > 0:
                 # Get all measurements for this session to calculate stats
-                session_measurements = supabase.table("chrono_measurements").select("speed_fps").eq("user_email", user["email"]).eq("tab_name", sheet).eq("session_date", session_date).execute()
+                speeds = chrono_service.get_measurements_for_stats(user["email"], sheet, session_date)
                 
-                if session_measurements.data:
-                    speeds = [m['speed_fps'] for m in session_measurements.data if m.get('speed_fps') is not None]
+                if speeds:
+                    avg_speed = sum(speeds) / len(speeds)
+                    min_speed = min(speeds)
+                    max_speed = max(speeds)
                     
-                    if speeds:
-                        avg_speed = sum(speeds) / len(speeds)
-                        min_speed = min(speeds)
-                        max_speed = max(speeds)
-                        
-                        # Calculate standard deviation
-                        std_dev = 0
-                        if len(speeds) > 1:
-                            variance = sum((x - avg_speed) ** 2 for x in speeds) / len(speeds)
-                            std_dev = variance ** 0.5
-                        
-                        # Update the chrono_sessions record with calculated stats
-                        supabase.table("chrono_sessions").update({
-                            "shot_count": len(speeds),
-                            "avg_speed_fps": avg_speed,
-                            "std_dev_fps": std_dev,
-                            "min_speed_fps": min_speed,
-                            "max_speed_fps": max_speed
-                        }).eq("id", session_id).execute()
+                    # Calculate standard deviation
+                    std_dev = 0
+                    if len(speeds) > 1:
+                        variance = sum((x - avg_speed) ** 2 for x in speeds) / len(speeds)
+                        std_dev = variance ** 0.5
+                    
+                    # Update the chrono_sessions record with calculated stats
+                    stats = {
+                        "shot_count": len(speeds),
+                        "avg_speed_fps": avg_speed,
+                        "std_dev_fps": std_dev,
+                        "min_speed_fps": min_speed,
+                        "max_speed_fps": max_speed
+                    }
+                    chrono_service.update_session_stats(session_id, stats)
 
             # Show upload summary
             if skipped_measurements > 0:
