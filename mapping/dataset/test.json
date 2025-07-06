@@ -1,0 +1,105 @@
+{
+  "bbox": [
+    -78.10249328613281,
+    36.21754862951343,
+    70,
+    -78.08309555053712,
+    36.22267269750614,
+    90
+  ],
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.10249328613281,
+          36.22267269750614,
+          90
+        ]
+      },
+      "properties": {
+        "name": "",
+        "type": "house",
+        "osm_id": 415399657,
+        "address": {
+          "road": "NC 58",
+          "state": "North Carolina",
+          "county": "Warren County",
+          "hamlet": "Inez",
+          "country": "United States",
+          "postcode": "27589",
+          "country_code": "us",
+          "house_number": "3686",
+          "ISO3166-2-lvl4": "US-NC"
+        },
+        "category": "place",
+        "osm_type": "way",
+        "place_id": 383005647,
+        "altitude_m": 90,
+        "importance": 0.00000999999999995449,
+        "place_rank": 30,
+        "addresstype": "place",
+        "azimuth_deg": 108.1244557801653,
+        "display_name": "3686, NC 58, Inez, Warren County, North Carolina, 27589, United States",
+        "elevation_change_m": -20,
+        "elevation_angle_deg": -0.6246435428780054
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.08309555053712,
+          36.21754862951343,
+          70
+        ]
+      },
+      "properties": {
+        "name": "Warren County",
+        "type": "administrative",
+        "osm_id": 2528752,
+        "address": {
+          "state": "North Carolina",
+          "county": "Warren County",
+          "country": "United States",
+          "country_code": "us",
+          "ISO3166-2-lvl4": "US-NC"
+        },
+        "category": "boundary",
+        "osm_type": "relation",
+        "place_id": 323949797,
+        "altitude_m": 70,
+        "importance": 0.5512221901652813,
+        "place_rank": 12,
+        "addresstype": "county",
+        "display_name": "Warren County, North Carolina, United States"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -78.10249328613281,
+            36.22267269750614,
+            90
+          ],
+          [
+            -78.08309555053712,
+            36.21754862951343,
+            70
+          ]
+        ]
+      },
+      "properties": {
+        "type": "range_line",
+        "distance_2d_m": 1834.4385426119757,
+        "distance_3d_m": 1834.5475645565446
+      }
+    }
+  ]
+}

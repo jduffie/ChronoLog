@@ -7,6 +7,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from mapping.mapping_model import MappingModel
 from mapping.mapping_view import MappingView
+from mapping.nominate_view import NominateView
 from auth import handle_auth
 from supabase import create_client
 from typing import Dict, Any
@@ -16,6 +17,7 @@ class MappingController:
     def __init__(self):
         self.model = MappingModel()
         self.view = MappingView()
+        self.nominate_view = NominateView()
         self._initialize_session_state()
 
     def _initialize_session_state(self) -> None:
@@ -60,7 +62,7 @@ class MappingController:
     def _handle_elevation_fetching(self) -> None:
         """Handle elevation data fetching with spinner."""
         if self.model.needs_elevation_fetch():
-            with self.view.display_spinner("Fetching elevation data..."):
+            with self.nominate_view.display_spinner("Fetching elevation data..."):
                 self.model.fetch_missing_elevations()
                 self._sync_session_state_with_model()
 
@@ -98,7 +100,7 @@ class MappingController:
     def _handle_reset_action(self) -> None:
         """Handle reset button action."""
         if len(self.model.points) > 0:
-            if self.view.display_reset_button():
+            if self.nominate_view.display_reset_button():
                 self._clear_all_form_data()
                 st.rerun()
     
@@ -217,7 +219,7 @@ class MappingController:
         self._sync_model_with_session_state()
 
         # Display title
-        self.view.display_title()
+        self.nominate_view.display_title()
 
         # Handle elevation fetching
         self._handle_elevation_fetching()
@@ -230,16 +232,16 @@ class MappingController:
 
 
         # Create and display map
-        map_obj = self.view.create_map(
+        map_obj = self.nominate_view.create_map(
             self.model.map_center, 
             self.model.zoom_level, 
             self.model.points
         )
         
-        map_info = self.view.display_map(map_obj)
+        map_info = self.nominate_view.display_map(map_obj)
         
         # Display map events for debugging
-        self.view.display_map_events(map_info)
+        self.nominate_view.display_map_events(map_info)
 
         # Handle map interactions
         self._handle_map_interactions(map_info)
@@ -254,7 +256,7 @@ class MappingController:
             measurements = self.model.get_partial_measurements()
         
         # Display range form and measurements table
-        submission_result = self.view.display_range_form_and_table(measurements)
+        submission_result = self.nominate_view.display_range_form_and_table(measurements)
         
         # Handle range submission
         if submission_result and submission_result.get("action") == "submit":
