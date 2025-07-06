@@ -1,71 +1,106 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
 from datetime import datetime
+from .service import WeatherService
 
 def render_weather_view_log_tab(user, supabase):
     """Render the Weather View Log tab for detailed weather analysis"""
     st.header("🔍 View Weather Log")
     
     try:
-        # Get all weather measurements for the user
-        measurements_response = supabase.table("weather_measurements").select("*").eq("user_email", user["email"]).order("measurement_timestamp", desc=True).execute()
+        # Initialize weather service
+        weather_service = WeatherService(supabase)
         
-        if not measurements_response.data:
-            st.info("No weather logs found. Import some Kestrel data files to get started!")
+        # Get all weather sources for the user
+        sources = weather_service.get_sources_for_user(user["email"])
+        
+        if not sources:
+            st.info("No weather sources found. Import some Kestrel data files to get started!")
             return
         
-        measurements = measurements_response.data
-        df_all = pd.DataFrame(measurements)
+        # Get all measurements for the user
+        measurements = weather_service.get_all_measurements_for_user(user["email"])
         
-        # Create date/device selector
-        date_device_options = {}
+        if not measurements:
+            st.info("No weather measurements found.")
+            return
+        
+        # Create source/date selector
+        source_date_options = {}
         for measurement in measurements:
-            date_str = datetime.fromisoformat(measurement['measurement_timestamp']).strftime('%Y-%m-%d')
-            device_key = f"{measurement['device_name']} ({measurement['device_model']}) - {measurement['serial_number']}"
-            option_key = f"{date_str} | {device_key}"
-            date_device_options[option_key] = {
-                'date': date_str,
-                'serial_number': measurement['serial_number'],
-                'device_name': measurement['device_name'],
-                'device_model': measurement['device_model']
-            }
+            # Find the source for this measurement
+            source_obj = None
+            for source in sources:
+                if source.id == measurement.weather_source_id:
+                    source_obj = source
+                    break
+            
+            if source_obj:
+                date_str = pd.to_datetime(measurement.measurement_timestamp).strftime('%Y-%m-%d')
+                option_key = f"{source_obj.display_name()} | {date_str}"
+                source_date_options[option_key] = {
+                    'source_id': source_obj.id,
+                    'source_name': source_obj.display_name(),
+                    'date': date_str,
+                    'device_display': source_obj.device_display()
+                }
         
-        # Use selected date/device from session state if available
+        # Remove duplicates and sort
+        unique_options = list(set(source_date_options.keys()))
+        unique_options.sort(reverse=True)  # Most recent first
+        
+        # Use selected source/date from session state if available
         default_selection = None
-        if 'selected_weather_date' in st.session_state and 'selected_weather_device' in st.session_state:
+        if 'selected_weather_source_id' in st.session_state and 'selected_weather_date' in st.session_state:
+            target_source_id = st.session_state['selected_weather_source_id']
             target_date = st.session_state['selected_weather_date']
-            target_device = st.session_state['selected_weather_device']
-            for option_key, info in date_device_options.items():
-                if info['date'] == target_date and info['serial_number'] == target_device:
+            for option_key, info in source_date_options.items():
+                if info['source_id'] == target_source_id and info['date'] == target_date:
                     default_selection = option_key
                     break
         
+        if not unique_options:
+            st.info("No weather data available for analysis.")
+            return
+        
         selected_option = st.selectbox(
-            "Select Date & Device to View",
-            options=list(date_device_options.keys()),
-            index=list(date_device_options.keys()).index(default_selection) if default_selection else 0
+            "Select Weather Source & Date to View",
+            options=unique_options,
+            index=unique_options.index(default_selection) if default_selection and default_selection in unique_options else 0
         )
         
         if not selected_option:
-            st.info("Please select a date and device to view.")
+            st.info("Please select a weather source and date to view.")
             return
         
-        selection_info = date_device_options[selected_option]
+        selection_info = source_date_options[selected_option]
         
-        # Filter measurements for selected date and device
+        # Filter measurements for selected source and date
         selected_measurements = [
             m for m in measurements 
-            if (datetime.fromisoformat(m['measurement_timestamp']).strftime('%Y-%m-%d') == selection_info['date'] and
-                m['serial_number'] == selection_info['serial_number'])
+            if (m.weather_source_id == selection_info['source_id'] and
+                pd.to_datetime(m.measurement_timestamp).strftime('%Y-%m-%d') == selection_info['date'])
         ]
         
         if not selected_measurements:
-            st.warning("No measurements found for selected date and device.")
+            st.warning("No measurements found for selected weather source and date.")
             return
         
-        df = pd.DataFrame(selected_measurements)
+        # Convert to DataFrame for analysis
+        measurements_dict = []
+        for m in selected_measurements:
+            measurements_dict.append({
+                'measurement_timestamp': m.measurement_timestamp,
+                'temperature_f': m.temperature_f,
+                'relative_humidity_pct': m.relative_humidity_pct,
+                'barometric_pressure_inhg': m.barometric_pressure_inhg,
+                'wind_speed_mph': m.wind_speed_mph,
+                'density_altitude_ft': m.density_altitude_ft,
+                'location_description': m.location_description
+            })
+        
+        df = pd.DataFrame(measurements_dict)
         df['timestamp'] = pd.to_datetime(df['measurement_timestamp'])
         df = df.sort_values('timestamp')
         
@@ -74,16 +109,15 @@ def render_weather_view_log_tab(user, supabase):
         
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.write(f"**Device:** {selection_info['device_name']}")
-            st.write(f"**Model:** {selection_info['device_model']}")
+            st.write(f"**Weather Source:** {selection_info['source_name']}")
+            st.write(f"**Device:** {selection_info['device_display']}")
         with col2:
-            st.write(f"**Serial:** {selection_info['serial_number']}")
             st.write(f"**Measurements:** {len(selected_measurements)}")
-        with col3:
             time_range = f"{df['timestamp'].min().strftime('%H:%M')} - {df['timestamp'].max().strftime('%H:%M')}"
             st.write(f"**Time Range:** {time_range}")
-            if selected_measurements[0].get('location_description'):
-                st.write(f"**Location:** {selected_measurements[0]['location_description']}")
+        with col3:
+            if measurements_dict and measurements_dict[0].get('location_description'):
+                st.write(f"**Location:** {measurements_dict[0]['location_description']}")
         
         # Key Statistics
         st.subheader("📈 Weather Statistics")
@@ -267,7 +301,7 @@ def render_weather_view_log_tab(user, supabase):
             st.download_button(
                 label="Download CSV",
                 data=csv,
-                file_name=f"weather_data_{selection_info['date']}_{selection_info['serial_number']}.csv",
+                file_name=f"weather_data_{selection_info['source_name'].replace(' ', '_')}_{selection_info['date']}.csv",
                 mime="text/csv"
             )
         
@@ -277,7 +311,7 @@ def render_weather_view_log_tab(user, supabase):
             st.download_button(
                 label="Download JSON",
                 data=json_data,
-                file_name=f"weather_data_{selection_info['date']}_{selection_info['serial_number']}.json",
+                file_name=f"weather_data_{selection_info['source_name'].replace(' ', '_')}_{selection_info['date']}.json",
                 mime="application/json"
             )
     

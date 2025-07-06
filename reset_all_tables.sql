@@ -5,6 +5,7 @@
 DELETE FROM measurements;
 DELETE FROM sessions;
 DELETE FROM weather_measurements;
+DELETE FROM weather_source;
 DELETE FROM chrono_measurements;
 DELETE FROM chrono_sessions;
 DELETE FROM ranges_submissions;
@@ -14,6 +15,7 @@ DELETE FROM ranges;
 DROP TABLE IF EXISTS measurements CASCADE;
 DROP TABLE IF EXISTS sessions CASCADE;
 DROP TABLE IF EXISTS weather_measurements CASCADE;
+DROP TABLE IF EXISTS weather_source CASCADE;
 DROP TABLE IF EXISTS chrono_measurements CASCADE;
 DROP TABLE IF EXISTS chrono_sessions CASCADE;
 DROP TABLE IF EXISTS ranges_submissions CASCADE;
@@ -48,14 +50,39 @@ CREATE TABLE measurements (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Create weather_source table for weather meter metadata
+CREATE TABLE weather_source (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_email TEXT NOT NULL,
+    
+    -- User-defined name for this weather meter
+    name TEXT NOT NULL,
+    
+    -- Source type and make (user-selected)
+    source_type TEXT NOT NULL DEFAULT 'meter',  -- 'meter' (future: 'api')
+    make TEXT,           -- Manufacturer/brand (Kestrel)
+    
+    -- Optional device information (from CSV metadata)
+    device_name TEXT,     -- Device name from CSV row 1
+    model TEXT,          -- Device model from CSV row 2
+    serial_number TEXT,  -- Serial number from CSV row 3
+    
+    -- Timestamps
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    
+    -- Unique constraint to prevent duplicate weather sources per user
+    UNIQUE(user_email, name)
+);
+
 -- Create weather_measurements table for Kestrel weather data
 CREATE TABLE weather_measurements (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_email TEXT NOT NULL,
-    device_name TEXT,
-    device_model TEXT,
-    serial_number TEXT NOT NULL,
+    weather_source_id UUID REFERENCES weather_source(id) ON DELETE CASCADE,
     measurement_timestamp TIMESTAMPTZ NOT NULL,
+    
+    -- Import metadata
     uploaded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     file_path TEXT,
     
@@ -86,42 +113,8 @@ CREATE TABLE weather_measurements (
     location_coordinates TEXT,
     notes TEXT,
     
-    -- Unique constraint on device_name + serial_number + timestamp
-    UNIQUE(device_name, serial_number, measurement_timestamp)
-);
-
--- Create chrono_measurements table for Garmin Xero chronograph timeseries data
-CREATE TABLE chrono_measurements (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_email TEXT NOT NULL,
-    
-    -- Session information from Excel file
-    tab_name TEXT NOT NULL,  -- Sheet/tab name from Excel file
-    bullet_type TEXT NOT NULL,  -- First part before comma in first row
-    bullet_grain NUMERIC,  -- Grain weight from first row
-    session_date DATE,  -- Date portion from DATE cell (before 'at')
-    uploaded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    file_path TEXT,
-    
-    -- Timeseries measurement data from Excel rows
-    shot_number INTEGER NOT NULL,  -- # column
-    speed_fps NUMERIC NOT NULL,  -- Speed (FPS) column
-    delta_avg_fps NUMERIC,  -- Δ AVG (FPS) column
-    ke_ft_lb NUMERIC,  -- KE (FT-LB) column
-    power_factor NUMERIC,  -- Power Factor column
-    time_local TIME,  -- Time column from Excel
-    datetime_local TIMESTAMPTZ,  -- Computed: session_date + time_local
-    
-    -- Optional measurement flags
-    clean_bore BOOLEAN,  -- Clean Bore column
-    cold_bore BOOLEAN,  -- Cold Bore column
-    shot_notes TEXT,  -- Shot Notes column
-    
-    -- Timestamps
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    
-    -- Unique constraint to prevent duplicate measurements
-    UNIQUE(user_email, tab_name, shot_number, datetime_local)
+    -- Unique constraint on source + timestamp to prevent duplicate measurements
+    UNIQUE(user_email, weather_source_id, measurement_timestamp)
 );
 
 -- Create chrono_sessions table for session metadata from Excel tabs
@@ -149,6 +142,31 @@ CREATE TABLE chrono_sessions (
     
     -- Unique constraint to prevent duplicate sessions
     UNIQUE(user_email, tab_name, datetime_local)
+);
+
+-- Create chrono_measurements table for Garmin Xero chronograph timeseries data
+CREATE TABLE chrono_measurements (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_email TEXT NOT NULL,
+    
+    -- Foreign key to chrono_sessions
+    chrono_session_id UUID REFERENCES chrono_sessions(id) ON DELETE CASCADE,
+    
+    -- Timeseries measurement data from Excel rows
+    shot_number INTEGER NOT NULL,  -- # column
+    speed_fps NUMERIC NOT NULL,  -- Speed (FPS) column
+    delta_avg_fps NUMERIC,  -- Δ AVG (FPS) column
+    ke_ft_lb NUMERIC,  -- KE (FT-LB) column
+    power_factor NUMERIC,  -- Power Factor column
+    datetime_local TIMESTAMPTZ,  -- Computed: session_date + time_local
+    
+    -- Optional measurement flags
+    clean_bore BOOLEAN,  -- Clean Bore column
+    cold_bore BOOLEAN,  -- Cold Bore column
+    shot_notes TEXT,  -- Shot Notes column
+    
+    -- Unique constraint to prevent duplicate measurements
+    UNIQUE(user_email, chrono_session_id, shot_number, datetime_local)
 );
 
 -- Create ranges_submissions table for mapping data (pending approval)
@@ -220,14 +238,18 @@ CREATE INDEX idx_measurements_session_id ON measurements(session_id);
 CREATE INDEX idx_measurements_shot_number ON measurements(shot_number);
 CREATE INDEX idx_measurements_datetime_local ON measurements(datetime_local);
 CREATE INDEX idx_weather_measurements_user_email ON weather_measurements(user_email);
-CREATE INDEX idx_weather_measurements_device_serial_timestamp ON weather_measurements(device_name, serial_number, measurement_timestamp);
+CREATE INDEX idx_weather_measurements_source_timestamp ON weather_measurements(weather_source_id, measurement_timestamp);
 CREATE INDEX idx_weather_measurements_timestamp ON weather_measurements(measurement_timestamp);
+CREATE INDEX idx_weather_measurements_source_id ON weather_measurements(weather_source_id);
+CREATE INDEX idx_weather_measurements_uploaded_at ON weather_measurements(uploaded_at);
+CREATE INDEX idx_weather_source_user_email ON weather_source(user_email);
+CREATE INDEX idx_weather_source_name ON weather_source(name);
+CREATE INDEX idx_weather_source_serial_number ON weather_source(serial_number);
 CREATE INDEX idx_chrono_measurements_user_email ON chrono_measurements(user_email);
-CREATE INDEX idx_chrono_measurements_tab_name ON chrono_measurements(tab_name);
 CREATE INDEX idx_chrono_measurements_datetime_local ON chrono_measurements(datetime_local);
 CREATE INDEX idx_chrono_measurements_shot_number ON chrono_measurements(shot_number);
 CREATE INDEX idx_chrono_measurements_speed_fps ON chrono_measurements(speed_fps);
-CREATE INDEX idx_chrono_measurements_bullet_type ON chrono_measurements(bullet_type);
+CREATE INDEX idx_chrono_measurements_session_id ON chrono_measurements(chrono_session_id);
 CREATE INDEX idx_chrono_sessions_user_email ON chrono_sessions(user_email);
 CREATE INDEX idx_chrono_sessions_tab_name ON chrono_sessions(tab_name);
 CREATE INDEX idx_chrono_sessions_datetime_local ON chrono_sessions(datetime_local);
@@ -272,6 +294,16 @@ CREATE POLICY weather_measurements_user_policy ON weather_measurements
     FOR ALL USING (user_email = auth.jwt() ->> 'email');
 
 CREATE POLICY weather_measurements_insert_policy ON weather_measurements
+    FOR INSERT WITH CHECK (user_email = auth.jwt() ->> 'email');
+
+-- Enable RLS on weather_source table
+ALTER TABLE weather_source ENABLE ROW LEVEL SECURITY;
+
+-- Weather source RLS policies
+CREATE POLICY weather_source_user_policy ON weather_source
+    FOR ALL USING (user_email = auth.jwt() ->> 'email');
+
+CREATE POLICY weather_source_insert_policy ON weather_source
     FOR INSERT WITH CHECK (user_email = auth.jwt() ->> 'email');
 
 -- Enable RLS on chrono_measurements table

@@ -3,24 +3,9 @@ import pandas as pd
 import uuid
 from datetime import datetime, timezone
 import math
-from chronograph.service import ChronographService
+from .service import ChronographService
 
-def render_upload_tab(user, supabase, bucket):
-    """Render the Upload Files tab"""
-    st.header("📤 Upload Files")
-    
-    # Create two columns for different upload types
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.subheader("🎯 Garmin Xero Chronograph")
-        render_garmin_upload(user, supabase, bucket)
-    
-    with col2:
-        st.subheader("🌤️ Weather Data (Kestrel)")
-        render_weather_upload(user, supabase, bucket)
-
-def render_garmin_upload(user, supabase, bucket):
+def render_chronograph_import_tab(user, supabase, bucket):
     """Render Garmin file upload section"""
     
     # Upload and parse Excel
@@ -182,12 +167,12 @@ def render_garmin_upload(user, supabase, bucket):
                     
                     measurement_data = {
                         "user_email": user["email"],
+                        "chrono_session_id": session_id,
                         "tab_name": sheet,
                         "bullet_type": bullet_type,
                         "bullet_grain": bullet_grain,
                         "session_date": session_date,
                         "uploaded_at": datetime.now(timezone.utc).isoformat(),
-                        "file_path": file_name,
                         "shot_number": shot_number,
                         "speed_fps": speed_fps,
                         "delta_avg_fps": safe_float(row.get("Δ AVG (FPS)")),
@@ -240,167 +225,3 @@ def render_garmin_upload(user, supabase, bucket):
                 st.success(f"✅ Successfully processed {valid_measurements} measurements")
 
         st.success("Upload complete!")
-
-def render_weather_upload(user, supabase, bucket):
-    """Render weather file upload section"""
-    
-    # Upload and parse CSV
-    uploaded_file = st.file_uploader("Upload Weather Data CSV File", type=["csv"], key="weather_upload")
-    if uploaded_file:
-        try:
-            file_bytes = uploaded_file.getvalue()
-            file_name = f"{user['email']}/kestrel/{uploaded_file.name}"
-
-            # Try to upload file, handle duplicate error
-            try:
-                supabase.storage.from_(bucket).upload(file_name, file_bytes, {"content-type": "text/csv"})
-            except Exception as upload_error:
-                if "already exists" in str(upload_error) or "409" in str(upload_error):
-                    st.error(f"❌ Weather file '{uploaded_file.name}' already exists in storage.")
-                    st.info("💡 Go to the 'My Files' tab to delete the existing file if you want to re-upload it.")
-                    return
-                else:
-                    st.error(f"❌ Error uploading weather file: {upload_error}")
-                    return
-
-            # Read the file as text and parse manually
-            uploaded_file.seek(0)
-            content = uploaded_file.getvalue().decode('utf-8')
-            lines = content.strip().split('\n')
-            
-            if len(lines) < 6:
-                st.error("❌ Invalid weather file format. File must have metadata and data rows.")
-                return
-            
-            # Parse metadata from first 3 rows
-            device_name = lines[0].split(',')[1] if ',' in lines[0] and len(lines[0].split(',')) > 1 else ""
-            device_model = lines[1].split(',')[1] if ',' in lines[1] and len(lines[1].split(',')) > 1 else ""  
-            serial_number = lines[2].split(',')[1] if ',' in lines[2] and len(lines[2].split(',')) > 1 else ""
-            
-            # Headers are in row 4 (index 3), data starts row 6 (index 5)
-            headers = [h.strip() for h in lines[3].split(',')]
-            
-            # Process data rows (starting from index 5)
-            data_rows = []
-            for i in range(5, len(lines)):
-                line = lines[i].strip()
-                if line:  # Skip empty lines
-                    row_data = [cell.strip() for cell in line.split(',')]
-                    # Check if we have data in the first column (timestamp)
-                    if len(row_data) > 0 and row_data[0] and row_data[0] != 'nan':
-                        data_rows.append(row_data)
-            
-            if not data_rows:
-                st.warning("⚠️ No data rows found in weather file.")
-                st.info(f"Debug: Found {len(lines)} total lines, expected data starting from line 6")
-                st.info(f"Debug: Device info - Name: {device_name}, Model: {device_model}, Serial: {serial_number}")
-                return
-            
-            # Process each data row
-            valid_measurements = 0
-            skipped_measurements = 0
-            
-            for row_data in data_rows:
-                try:
-                    # Parse timestamp (first column)
-                    timestamp_str = row_data[0]
-                    if not timestamp_str:
-                        skipped_measurements += 1
-                        continue
-                    
-                    # Parse timestamp to check for duplicates
-                    measurement_timestamp = pd.to_datetime(timestamp_str).isoformat()
-                    
-                    # Check if measurement already exists (unique key: serial_number + timestamp)
-                    existing_measurement = supabase.table("weather_measurements").select("id").eq("serial_number", serial_number).eq("measurement_timestamp", measurement_timestamp).execute()
-                    
-                    if existing_measurement.data:
-                        skipped_measurements += 1
-                        continue
-                    
-                    # Helper function to safely convert to float
-                    def safe_float(value, default=None):
-                        try:
-                            if pd.isna(value) or value == '' or value is None:
-                                return default
-                            return float(value)
-                        except (ValueError, TypeError):
-                            return default
-                    
-                    # Create measurement record with all available fields
-                    measurement_data = {
-                        "user_email": user["email"],
-                        "device_name": device_name,
-                        "device_model": device_model,
-                        "serial_number": serial_number,
-                        "measurement_timestamp": measurement_timestamp,
-                        "uploaded_at": datetime.now(timezone.utc).isoformat(),
-                        "file_path": file_name
-                    }
-                    
-                    # Map data columns to database fields (based on header names)
-                    for i, header in enumerate(headers):
-                        if i < len(row_data):
-                            value = row_data[i]
-                            
-                            # Skip the timestamp column (already processed)
-                            if header == "FORMATTED DATE_TIME":
-                                continue
-                                
-                            # Map specific headers to database columns
-                            field_mapping = {
-                                "Temperature": "temperature_f",
-                                "Wet Bulb Temp": "wet_bulb_temp_f", 
-                                "Relative Humidity": "relative_humidity_pct",
-                                "Barometric Pressure": "barometric_pressure_inhg",
-                                "Altitude": "altitude_ft",
-                                "Station Pressure": "station_pressure_inhg",
-                                "Wind Speed": "wind_speed_mph",
-                                "Heat Index": "heat_index_f",
-                                "Dew Point": "dew_point_f",
-                                "Density Altitude": "density_altitude_ft",
-                                "Crosswind": "crosswind_mph",
-                                "Headwind": "headwind_mph",
-                                "Compass Magnetic Direction": "compass_magnetic_deg",
-                                "Compass True Direction": "compass_true_deg",
-                                "Wind Chill": "wind_chill_f",
-                                "Data Type": "data_type",
-                                "Record name": "record_name",
-                                "Start time": "start_time",
-                                "Duration (H:M:S)": "duration",
-                                "Location description": "location_description",
-                                "Location address": "location_address", 
-                                "Location coordinates": "location_coordinates",
-                                "Notes": "notes"
-                            }
-                            
-                            if header in field_mapping:
-                                db_field = field_mapping[header]
-                                # Convert numeric fields to float, keep text fields as string
-                                if header in ["Temperature", "Wet Bulb Temp", "Relative Humidity", "Barometric Pressure", 
-                                            "Altitude", "Station Pressure", "Wind Speed", "Heat Index", "Dew Point", 
-                                            "Density Altitude", "Crosswind", "Headwind", "Compass Magnetic Direction", 
-                                            "Compass True Direction", "Wind Chill"]:
-                                    measurement_data[db_field] = safe_float(value)
-                                else:
-                                    measurement_data[db_field] = value if value else None
-                    
-                    # Insert into weather_measurements table
-                    supabase.table("weather_measurements").insert(measurement_data).execute()
-                    valid_measurements += 1
-                    
-                except Exception as e:
-                    st.warning(f"Skipped weather measurement at {timestamp_str if 'timestamp_str' in locals() else 'unknown time'}: {e}")
-                    skipped_measurements += 1
-            
-            # Show upload summary
-            if skipped_measurements > 0:
-                st.warning(f"⚠️ Processed {valid_measurements} weather measurements, skipped {skipped_measurements} rows")
-            else:
-                st.success(f"✅ Successfully processed {valid_measurements} weather measurements")
-                
-            # Display metadata summary
-            st.info(f"📱 Device: {device_name} ({device_model}) - Serial: {serial_number}")
-            
-        except Exception as e:
-            st.error(f"❌ Error processing weather file: {e}")

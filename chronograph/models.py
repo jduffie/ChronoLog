@@ -84,23 +84,16 @@ class ChronographMeasurement:
     """Entity representing a single chronograph measurement"""
     id: str
     user_email: str
-    tab_name: str
-    bullet_type: str
-    bullet_grain: Optional[float]
-    session_date: Optional[str]
-    uploaded_at: datetime
-    file_path: Optional[str]
+    chrono_session_id: str
     shot_number: int
     speed_fps: float
+    datetime_local: datetime
     delta_avg_fps: Optional[float] = None
     ke_ft_lb: Optional[float] = None
     power_factor: Optional[float] = None
-    time_local: Optional[str] = None
-    datetime_local: Optional[datetime] = None
     clean_bore: Optional[bool] = None
     cold_bore: Optional[bool] = None
     shot_notes: Optional[str] = None
-    created_at: Optional[datetime] = None
     
     @classmethod
     def from_supabase_record(cls, record: dict) -> 'ChronographMeasurement':
@@ -108,23 +101,16 @@ class ChronographMeasurement:
         return cls(
             id=record['id'],
             user_email=record['user_email'],
-            tab_name=record['tab_name'],
-            bullet_type=record['bullet_type'],
-            bullet_grain=record.get('bullet_grain'),
-            session_date=record.get('session_date'),
-            uploaded_at=pd.to_datetime(record['uploaded_at']),
-            file_path=record.get('file_path'),
+            chrono_session_id=record['chrono_session_id'],
             shot_number=record['shot_number'],
             speed_fps=record['speed_fps'],
             delta_avg_fps=record.get('delta_avg_fps'),
             ke_ft_lb=record.get('ke_ft_lb'),
             power_factor=record.get('power_factor'),
-            time_local=record.get('time_local'),
-            datetime_local=pd.to_datetime(record['datetime_local']) if record.get('datetime_local') else None,
+            datetime_local=pd.to_datetime(record['datetime_local']),
             clean_bore=record.get('clean_bore'),
             cold_bore=record.get('cold_bore'),
-            shot_notes=record.get('shot_notes'),
-            created_at=pd.to_datetime(record['created_at']) if record.get('created_at') else None
+            shot_notes=record.get('shot_notes')
         )
     
     @classmethod

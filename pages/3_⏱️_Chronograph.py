@@ -7,7 +7,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from auth import handle_auth
 from supabase import create_client
-from upload_tab import render_garmin_upload
+from chronograph.import_tab import render_chronograph_import_tab
 from chronograph.logs_tab import render_logs_tab
 from chronograph.view_log_tab import render_view_log_tab
 from files_tab import render_files_tab
@@ -47,7 +47,7 @@ def main():
     
     with tab1:
         st.subheader("Garmin Xero Log Files")
-        render_garmin_upload(user, supabase, bucket)
+        render_chronograph_import_tab(user, supabase, bucket)
     
     with tab2:
         render_logs_tab(user, supabase)
