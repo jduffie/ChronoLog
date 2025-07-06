@@ -11,7 +11,7 @@ def get_redirect_uri():
     # Check query params for app identifier
     query_params = st.query_params
     if "app" in query_params and query_params["app"] == "mapping":
-        # For test_mapping.py, use port 8502
+        # For Range_Library.py, use port 8502
         return st.secrets["auth0"].get("mapping_redirect_uri", "http://localhost:8502")
     else:
         # For main app.py, use default port
