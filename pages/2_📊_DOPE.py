@@ -7,9 +7,9 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from auth import handle_auth
 from supabase import create_client
-from create_session_tab import render_create_session_tab
-from sessions_tab import render_sessions_tab
-from view_session_tab import render_view_session_tab
+from dope.create_session_tab import render_create_session_tab
+from dope.sessions_tab import render_sessions_tab
+from dope.view_session_tab import render_view_session_tab
 
 def main():
     """Main function for the Sessions page."""
