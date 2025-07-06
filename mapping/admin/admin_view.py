@@ -195,7 +195,7 @@ class AdminView:
                 "User": submission.get('user_email', 'Unknown')[:20] + "..." if len(submission.get('user_email', '')) > 20 else submission.get('user_email', 'Unknown'),
                 "Status": submission.get('status', 'Unknown'),
                 "Distance (m)": f"{submission.get('distance_m', 0):.1f}",
-                "Location": submission.get('display_name', 'Unknown')[:30] + "..." if len(submission.get('display_name', '')) > 30 else submission.get('display_name', 'Unknown'),
+                "Location": submission.get('display_name', 'Unknown')[:85] + "..." if len(submission.get('display_name', '')) > 85 else submission.get('display_name', 'Unknown'),
                 "Submitted": submission.get('submitted_at', 'Unknown')[:10] if submission.get('submitted_at') else 'Unknown'  # Show date only
             })
 
@@ -235,7 +235,7 @@ class AdminView:
                 "User": submission.get('user_email', 'Unknown')[:20] + "..." if len(submission.get('user_email', '')) > 20 else submission.get('user_email', 'Unknown'),
                 "Status": submission.get('status', 'Unknown'),
                 "Distance (m)": f"{submission.get('distance_m', 0):.1f}",
-                "Location": submission.get('display_name', 'Unknown')[:30] + "..." if len(submission.get('display_name', '')) > 30 else submission.get('display_name', 'Unknown'),
+                "Location": submission.get('display_name', 'Unknown')[:85] + "..." if len(submission.get('display_name', '')) > 85 else submission.get('display_name', 'Unknown'),
                 "Submitted": submission.get('submitted_at', 'Unknown')[:10] if submission.get('submitted_at') else 'Unknown'
             })
 

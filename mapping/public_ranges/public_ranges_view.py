@@ -67,7 +67,7 @@ class PublicRangesView:
                 'County': address_components['county'],
                 'State': address_components['state'],
                 'Country': address_components['country'],
-                'Location': range_data.get('display_name', '')[:40] + ('...' if len(range_data.get('display_name', '')) > 40 else ''),
+                'Location': range_data.get('display_name', '')[:85] + ('...' if len(range_data.get('display_name', '')) > 85 else ''),
                 'Description': range_data.get('range_description', '')[:50] + ('...' if len(range_data.get('range_description', '')) > 50 else ''),
                 'Submitted': formatted_date
             })
@@ -137,7 +137,7 @@ class PublicRangesView:
                 'County': address_components['county'],
                 'State': address_components['state'],
                 'Country': address_components['country'],
-                'Location': range_data.get('display_name', '')[:40] + ('...' if len(range_data.get('display_name', '')) > 40 else ''),
+                'Location': range_data.get('display_name', '')[:85] + ('...' if len(range_data.get('display_name', '')) > 85 else ''),
                 'Description': range_data.get('range_description', '')[:50] + ('...' if len(range_data.get('range_description', '')) > 50 else ''),
                 'Submitted': formatted_date
             })

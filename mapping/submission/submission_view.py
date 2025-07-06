@@ -36,7 +36,7 @@ class SubmissionView:
                 "Description": range_data.get('range_description', '')[:50] + "..." if range_data.get('range_description', '') and len(range_data.get('range_description', '')) > 50 else range_data.get('range_description', ''),
                 "Status": range_data.get('status', 'Unknown'),
                 "Distance (m)": f"{range_data.get('distance_m', 0):.1f}" if range_data.get('distance_m') else "N/A",
-                "Location": range_data.get('display_name', 'Unknown')[:40] + "..." if range_data.get('display_name', '') and len(range_data.get('display_name', '')) > 40 else range_data.get('display_name', 'Unknown'),
+                "Location": range_data.get('display_name', 'Unknown')[:85] + "..." if range_data.get('display_name', '') and len(range_data.get('display_name', '')) > 85 else range_data.get('display_name', 'Unknown'),
                 "Submitted": range_data.get('submitted_at', 'Unknown')
             })
 
