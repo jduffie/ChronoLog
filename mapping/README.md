@@ -40,11 +40,6 @@ The mapping module depends on these shared components from the root directory:
 
 ## Running the Application
 
-### Multi-Page Version (Recommended)
-```bash
-cd mapping/
-streamlit run test_mapping_multipage.py --server.port=8502
-```
 
 ### Single-Page Version
 ```bash

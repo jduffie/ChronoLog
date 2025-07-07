@@ -11,12 +11,24 @@ def get_redirect_uri():
     """Get the appropriate redirect URI based on the current application."""
     # Check query params for app identifier
     query_params = st.query_params
-    if "app" in query_params and query_params["app"] == "mapping":
-        # For Range_Library.py, use port 8502
-        return st.secrets["auth0"].get("mapping_redirect_uri", "http://localhost:8502")
-    else:
-        # For main ChronoLog.py, use default port (also handles "chronolog" app identifier)
-        return st.secrets["auth0"].get("redirect_uri", "http://localhost:8501")
+    
+    # Determine if running locally or in production
+    try:
+        # In production, use the secrets URIs
+        if "app" in query_params and query_params["app"] == "mapping":
+            # For Range_Library.py
+            return st.secrets["auth0"]["mapping_redirect_uri"]
+        else:
+            # For main ChronoLog.py (also handles "chronolog" app identifier)
+            return st.secrets["auth0"]["redirect_uri"]
+    except KeyError:
+        # In local development, use localhost with appropriate ports
+        if "app" in query_params and query_params["app"] == "mapping":
+            # For Range_Library.py locally - port 8502
+            return "http://localhost:8502"
+        else:
+            # For main ChronoLog.py locally - port 8501
+            return "http://localhost:8501"
 
 def get_app_name():
     """Get the current application name."""

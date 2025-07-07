@@ -170,17 +170,73 @@ def render_logs_tab(user, supabase):
                 # Show summary stats
                 if len(all_measurements) > 0:
                     st.subheader("📈 Summary Statistics")
+                    
+                    # Extract data for calculations
                     speeds = [m["Speed (fps)"] for m in all_measurements if m["Speed (fps)"] is not None]
+                    power_factors = [m["Power Factor"] for m in all_measurements if m["Power Factor"] is not None]
+                    
                     if speeds:
-                        col1, col2, col3, col4 = st.columns(4)
+                        # Calculate statistics
+                        min_speed = min(speeds)
+                        max_speed = max(speeds)
+                        avg_speed = sum(speeds) / len(speeds)
+                        
+                        # Calculate standard deviation
+                        variance = sum((x - avg_speed) ** 2 for x in speeds) / len(speeds)
+                        std_dev = variance ** 0.5
+                        
+                        # Calculate spread (max - min)
+                        spread = max_speed - min_speed
+                        
+                        # Calculate average power factor
+                        avg_power_factor = sum(power_factors) / len(power_factors) if power_factors else None
+                        
+                        # Display in two rows of metrics
+                        col1, col2, col3 = st.columns(3)
                         with col1:
-                            st.metric("Total Shots", len(speeds))
+                            st.metric("Min Speed", f"{min_speed:.1f} fps")
                         with col2:
-                            st.metric("Avg Speed", f"{sum(speeds)/len(speeds):.1f} fps")
+                            st.metric("Max Speed", f"{max_speed:.1f} fps")
                         with col3:
-                            st.metric("Min Speed", f"{min(speeds):.1f} fps")
+                            st.metric("Average Speed", f"{avg_speed:.1f} fps")
+                        
+                        col4, col5, col6 = st.columns(3)
                         with col4:
-                            st.metric("Max Speed", f"{max(speeds):.1f} fps")
+                            st.metric("Std Dev", f"{std_dev:.1f} fps")
+                        with col5:
+                            st.metric("Spread", f"{spread:.1f} fps")
+                        with col6:
+                            if avg_power_factor is not None:
+                                st.metric("Avg Power Factor", f"{avg_power_factor:.1f}")
+                            else:
+                                st.metric("Avg Power Factor", "N/A")
+                        
+                        # Add histogram
+                        st.subheader("📊 Velocity Distribution")
+                        import matplotlib.pyplot as plt
+                        import numpy as np
+                        
+                        fig, ax = plt.subplots(figsize=(10, 6))
+                        
+                        # Create histogram
+                        n_bins = min(20, len(speeds) // 2) if len(speeds) > 10 else 10
+                        counts, bins, patches = ax.hist(speeds, bins=n_bins, alpha=0.7, color='steelblue', edgecolor='black')
+                        
+                        # Add vertical lines for statistics
+                        ax.axvline(avg_speed, color='red', linestyle='--', linewidth=2, label=f'Average: {avg_speed:.1f} fps')
+                        ax.axvline(avg_speed - std_dev, color='orange', linestyle=':', linewidth=2, label=f'-1σ: {avg_speed - std_dev:.1f} fps')
+                        ax.axvline(avg_speed + std_dev, color='orange', linestyle=':', linewidth=2, label=f'+1σ: {avg_speed + std_dev:.1f} fps')
+                        
+                        # Formatting
+                        ax.set_xlabel('Velocity (fps)', fontsize=12)
+                        ax.set_ylabel('Frequency', fontsize=12)
+                        ax.set_title('Shot Velocity Distribution', fontsize=14, fontweight='bold')
+                        ax.grid(True, alpha=0.3)
+                        ax.legend()
+                        
+                        # Display the plot
+                        st.pyplot(fig)
+                        plt.close()
             else:
                 st.info("No measurement data found for selected sessions.")
     
