@@ -105,7 +105,7 @@ The script will prompt for confirmation by requiring you to type `RESET EVERYTHI
 ### Start the Streamlit App
 ```bash
 source venv/bin/activate
-streamlit run app.py
+streamlit run ChronoLog.py
 ```
 
 ## 📁 Project Structure

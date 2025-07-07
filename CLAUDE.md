@@ -41,7 +41,7 @@ python verify_supabase.py
 ### Running the Application
 ```bash
 # Run the main Streamlit app
-streamlit run app.py
+streamlit run ChronoLog.py
 ```
 
 ## Architecture Overview

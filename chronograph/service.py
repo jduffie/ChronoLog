@@ -33,10 +33,10 @@ class ChronographService:
         except Exception as e:
             raise Exception(f"Error fetching session: {str(e)}")
     
-    def get_measurements_for_session(self, user_email: str, tab_name: str) -> List[ChronographMeasurement]:
+    def get_measurements_for_session(self, user_email: str, session_id: str) -> List[ChronographMeasurement]:
         """Get all measurements for a specific session"""
         try:
-            response = self.supabase.table("chrono_measurements").select("*").eq("user_email", user_email).eq("tab_name", tab_name).order("shot_number").execute()
+            response = self.supabase.table("chrono_measurements").select("*").eq("user_email", user_email).eq("chrono_session_id", session_id).order("shot_number").execute()
             
             if not response.data:
                 return []
@@ -47,15 +47,9 @@ class ChronographService:
             raise Exception(f"Error fetching measurements: {str(e)}")
     
     def get_measurements_by_session_id(self, session_id: str, user_email: str) -> List[ChronographMeasurement]:
-        """Get measurements for a session by session ID (requires joining with session data)"""
+        """Get measurements for a session by session ID"""
         try:
-            # First get the session to get the tab_name
-            session = self.get_session_by_id(session_id, user_email)
-            if not session:
-                return []
-            
-            # Then get measurements using tab_name
-            return self.get_measurements_for_session(user_email, session.tab_name)
+            return self.get_measurements_for_session(user_email, session_id)
         
         except Exception as e:
             raise Exception(f"Error fetching measurements by session ID: {str(e)}")
@@ -143,10 +137,10 @@ class ChronographService:
         except Exception as e:
             raise Exception(f"Error creating measurement: {str(e)}")
     
-    def get_measurements_for_stats(self, user_email: str, tab_name: str, session_date: str) -> List[float]:
+    def get_measurements_for_stats(self, user_email: str, session_id: str) -> List[float]:
         """Get speed measurements for calculating session statistics"""
         try:
-            response = self.supabase.table("chrono_measurements").select("speed_fps").eq("user_email", user_email).eq("tab_name", tab_name).eq("session_date", session_date).execute()
+            response = self.supabase.table("chrono_measurements").select("speed_fps").eq("user_email", user_email).eq("chrono_session_id", session_id).execute()
             
             if not response.data:
                 return []

@@ -65,6 +65,9 @@ def render_chronograph_import_tab(user, supabase, bucket):
             if not session_timestamp:
                 session_timestamp = datetime.now(timezone.utc).isoformat()
 
+            # Extract session date for use in measurements
+            session_date = pd.to_datetime(session_timestamp).date().isoformat() if session_timestamp else None
+
             # Initialize chronograph service
             chrono_service = ChronographService(supabase)
             
@@ -150,9 +153,6 @@ def render_chronograph_import_tab(user, supabase, bucket):
                         except:
                             return None
 
-                    # Extract session date for chrono_measurements
-                    session_date = pd.to_datetime(session_timestamp).date().isoformat() if session_timestamp else None
-                    
                     # Extract time component for time_local field
                     time_str = clean_time_string(row.get("Time"))
                     time_local = None
@@ -168,17 +168,11 @@ def render_chronograph_import_tab(user, supabase, bucket):
                     measurement_data = {
                         "user_email": user["email"],
                         "chrono_session_id": session_id,
-                        "tab_name": sheet,
-                        "bullet_type": bullet_type,
-                        "bullet_grain": bullet_grain,
-                        "session_date": session_date,
-                        "uploaded_at": datetime.now(timezone.utc).isoformat(),
                         "shot_number": shot_number,
                         "speed_fps": speed_fps,
                         "delta_avg_fps": safe_float(row.get("Δ AVG (FPS)")),
                         "ke_ft_lb": safe_float(row.get("KE (FT-LB)")),
                         "power_factor": safe_float(row.get("Power Factor (kgr⋅ft/s)")),
-                        "time_local": time_local,
                         "datetime_local": create_datetime_local(row.get("Time"), session_timestamp),
                         "clean_bore": bool(row.get("Clean Bore")) if "Clean Bore" in row and not pd.isna(row.get("Clean Bore")) else None,
                         "cold_bore": bool(row.get("Cold Bore")) if "Cold Bore" in row and not pd.isna(row.get("Cold Bore")) else None,
@@ -195,7 +189,7 @@ def render_chronograph_import_tab(user, supabase, bucket):
             # Calculate and update session summary statistics
             if valid_measurements > 0:
                 # Get all measurements for this session to calculate stats
-                speeds = chrono_service.get_measurements_for_stats(user["email"], sheet, session_date)
+                speeds = chrono_service.get_measurements_for_stats(user["email"], session_id)
                 
                 if speeds:
                     avg_speed = sum(speeds) / len(speeds)
