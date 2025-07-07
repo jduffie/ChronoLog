@@ -72,9 +72,9 @@ def main():
         else:
             action_result = controller.display_public_ranges_table_readonly(public_ranges)
 
-        # Handle admin actions
-        if is_admin and action_result and action_result.get("action"):
-            if action_result["action"] == "delete":
+        # Handle actions from both admin and readonly users
+        if action_result and action_result.get("action"):
+            if action_result["action"] == "delete" and is_admin:
                 # Handle delete confirmation
                 selected_indices = action_result.get("selected_indices", [])
                 if selected_indices:
@@ -119,20 +119,12 @@ def main():
                                 st.rerun()
             
             elif action_result["action"] == "map":
-                # Display map with selected ranges
+                # Display map with selected ranges (both admin and readonly)
                 selected_indices = action_result.get("selected_indices", [])
                 if selected_indices:
                     ranges_map = controller.display_ranges_map(public_ranges, selected_indices)
                     st_folium = __import__('streamlit_folium', fromlist=['st_folium']).st_folium
                     st_folium(ranges_map, use_container_width=True, height=500)
-        
-        # Display map for read-only users when ranges are available
-        elif not is_admin and public_ranges:
-            st.markdown("### All Public Ranges Map")
-            all_indices = list(range(len(public_ranges)))
-            ranges_map = controller.display_ranges_map(public_ranges, all_indices)
-            st_folium = __import__('streamlit_folium', fromlist=['st_folium']).st_folium
-            st_folium(ranges_map, use_container_width=True, height=500)
     
     except Exception as e:
         st.error(f"Error loading public ranges: {str(e)}")

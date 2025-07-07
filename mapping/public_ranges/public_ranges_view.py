@@ -30,10 +30,18 @@ class PublicRangesView:
 
     def display_public_ranges_table_readonly(self, ranges: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Display a read-only table of public ranges."""
+        return self._display_public_ranges_table(ranges, is_admin=False)
+
+    def display_public_ranges_table_admin(self, ranges: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Display an admin table of public ranges with edit/delete capabilities."""
+        return self._display_public_ranges_table(ranges, is_admin=True)
+
+    def _display_public_ranges_table(self, ranges: List[Dict[str, Any]], is_admin: bool = False) -> Dict[str, Any]:
+        """Internal method to display public ranges table with optional admin controls."""
         if not ranges:
             st.info("🌍 No public ranges available yet.")
             return {"action": None, "selected_indices": []}
-        
+
         # Extract all unique states for dropdown
         all_states = set()
         for range_data in ranges:
@@ -47,21 +55,23 @@ class PublicRangesView:
         col1, col2 = st.columns(2)
         
         with col1:
-            # State dropdown filter
+            # State dropdown filter - use different keys for admin vs readonly
+            state_key = "public_ranges_admin_state_filter" if is_admin else "public_ranges_state_filter"
             state_options = ["All States"] + sorted(list(all_states))
             selected_state = st.selectbox(
                 "Filter by State:",
                 options=state_options,
                 index=0,
-                key="public_ranges_state_filter"
+                key=state_key
             )
         
         with col2:
-            # Location text search
+            # Location text search - use different keys for admin vs readonly
+            location_key = "public_ranges_admin_location_search" if is_admin else "public_ranges_location_search"
             location_search = st.text_input(
                 "Search Location:",
                 placeholder="Enter city, county, or location name...",
-                key="public_ranges_location_search"
+                key=location_key
             )
         
         # Apply filters
@@ -86,133 +96,8 @@ class PublicRangesView:
         if len(filtered_ranges) != len(ranges):
             st.info(f"📍 Showing {len(filtered_ranges)} of {len(ranges)} ranges")
         else:
-            st.subheader(f"Public Ranges ({len(ranges)})")
-        
-        # Check if no results after filtering
-        if not filtered_ranges:
-            st.warning("🔍 No ranges match your search criteria. Try adjusting your filters.")
-            return {"action": None, "selected_indices": []}
-        
-        # Prepare data for display
-        table_data = []
-        for i, range_data in enumerate(filtered_ranges):
-            # Format the submitted date
-            submitted_at = range_data.get('submitted_at', '')
-            if submitted_at:
-                try:
-                    from datetime import datetime
-                    dt = datetime.fromisoformat(submitted_at.replace('Z', '+00:00'))
-                    formatted_date = dt.strftime('%Y-%m-%d %H:%M')
-                except:
-                    formatted_date = submitted_at[:16]  # Fallback to first 16 chars
-            else:
-                formatted_date = 'Unknown'
-            
-            # Extract address components
-            address_components = self._extract_address_components(range_data)
-            
-            table_data.append({
-                'Name': range_data.get('range_name', ''),
-                'Distance (m)': f"{range_data.get('distance_m', 0):.1f}",
-                'Firing lat': f"{range_data.get('start_lat', 0):.6f}",
-                'Firing lon': f"{range_data.get('start_lon', 0):.6f}",
-                'Firing alt (m)': f"{range_data.get('start_altitude_m', 0):.1f}",
-                'Azimuth angle (°)': f"{range_data.get('azimuth_deg', 0):.1f}",
-                'Elevation angle (°)': f"{range_data.get('elevation_angle_deg', 0):.2f}",
-                'Elevation change (m)': f"{range_data.get('start_altitude_m', 0) - range_data.get('end_altitude_m', 0):.1f}",
-                'County': address_components['county'],
-                'State': address_components['state'],
-                'Country': address_components['country'],
-                'Location': range_data.get('display_name', '')[:85] + ('...' if len(range_data.get('display_name', '')) > 85 else ''),
-                'Description': range_data.get('range_description', '')[:50] + ('...' if len(range_data.get('range_description', '')) > 50 else ''),
-                'Submitted': formatted_date
-            })
-        
-        # Display as a static dataframe
-        import pandas as pd
-        df = pd.DataFrame(table_data)
-        
-        st.dataframe(
-            df,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "Name": st.column_config.TextColumn("Name", width="medium"),
-                "Distance (m)": st.column_config.TextColumn("Distance (m)", width="small"),
-                "Firing lat": st.column_config.TextColumn("Firing lat", width="small"),
-                "Firing lon": st.column_config.TextColumn("Firing lon", width="small"),
-                "Firing alt (m)": st.column_config.TextColumn("Firing alt (m)", width="small"),
-                "Azimuth angle (°)": st.column_config.TextColumn("Azimuth angle (°)", width="small"),
-                "Elevation angle (°)": st.column_config.TextColumn("Elevation angle (°)", width="small"),
-                "Elevation change (m)": st.column_config.TextColumn("Elevation change (m)", width="small"),
-                "County": st.column_config.TextColumn("County", width="medium"),
-                "State": st.column_config.TextColumn("State", width="medium"),
-                "Country": st.column_config.TextColumn("Country", width="medium"),
-                "Location": st.column_config.TextColumn("Location", width="large"),
-                "Description": st.column_config.TextColumn("Description", width="large"),
-                "Submitted": st.column_config.TextColumn("Submitted", width="medium")
-            }
-        )
-        
-        return {"action": None, "selected_indices": []}
-
-    def display_public_ranges_table_admin(self, ranges: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Display an admin table of public ranges with edit/delete capabilities."""
-        if not ranges:
-            st.info("🌍 No public ranges available yet.")
-            return {"action": None, "selected_indices": []}
-
-        # Extract all unique states for dropdown
-        all_states = set()
-        for range_data in ranges:
-            address_components = self._extract_address_components(range_data)
-            state = address_components.get('state', '').strip()
-            if state:
-                all_states.add(state)
-        
-        # Search controls
-        st.subheader("🔍 Search & Filter")
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            # State dropdown filter
-            state_options = ["All States"] + sorted(list(all_states))
-            selected_state = st.selectbox(
-                "Filter by State:",
-                options=state_options,
-                index=0,
-                key="public_ranges_admin_state_filter"
-            )
-        
-        with col2:
-            # Location text search
-            location_search = st.text_input(
-                "Search Location:",
-                placeholder="Enter city, county, or location name...",
-                key="public_ranges_admin_location_search"
-            )
-        
-        # Apply filters
-        filtered_ranges = ranges.copy()
-        
-        # Filter by state
-        if selected_state != "All States":
-            filtered_ranges = [
-                range_data for range_data in filtered_ranges
-                if self._extract_address_components(range_data).get('state', '') == selected_state
-            ]
-        
-        # Filter by location text search
-        if location_search:
-            search_lower = location_search.lower()
-            filtered_ranges = [
-                range_data for range_data in filtered_ranges
-                if search_lower in range_data.get('display_name', '').lower()
-            ]
-        
-        # Show filtered count
-        if len(filtered_ranges) != len(ranges):
-            st.info(f"📍 Showing {len(filtered_ranges)} of {len(ranges)} ranges")
+            if not is_admin:
+                st.subheader(f"Public Ranges ({len(ranges)})")
         
         # Check if no results after filtering
         if not filtered_ranges:
@@ -259,8 +144,12 @@ class PublicRangesView:
         import pandas as pd
         df = pd.DataFrame(table_data)
         
+        # Use different keys for admin vs readonly to avoid conflicts
+        table_key = "public_ranges_table_checkboxes" if is_admin else "public_ranges_readonly_table_checkboxes"
+        
         # Use st.data_editor with checkbox column
-        edited_df = st.data_editor(
+        edited_df = (st.data_editor
+            (
             df,
             use_container_width=True,
             hide_index=True,
@@ -281,8 +170,8 @@ class PublicRangesView:
                 "Description": st.column_config.TextColumn("Description", width="large", disabled=True),
                 "Submitted": st.column_config.TextColumn("Submitted", width="medium", disabled=True)
             },
-            key="public_ranges_table_checkboxes"
-        )
+            key=table_key
+        ))
         
         # Get selected rows
         selected_indices = []
@@ -290,36 +179,44 @@ class PublicRangesView:
             selected_rows = edited_df[edited_df['Select'] == True]
             selected_indices = selected_rows.index.tolist()
         
-        # Admin controls
-        col1, col2, col3 = st.columns([4, 1, 1])
-        
-        with col1:
-            if selected_indices:
-                st.info(f"📋 {len(selected_indices)} range(s) selected")
-            else:
-                st.info("📍 Check boxes in the table above to select ranges")
-        
         action_result = {"action": None, "selected_indices": selected_indices}
         
-        with col2:
-            st.info(f"📋 {len(ranges)} range(s) available")
-
-        with col3:
-            # DELETE button - always visible, disabled when no selection
-            if st.button("🗑️ DELETE", use_container_width=True, type="secondary", disabled=not bool(selected_indices)):
+        if is_admin:
+            # Admin controls
+            col1, col2, col3 = st.columns([4, 1, 1])
+            
+            with col1:
                 if selected_indices:
-                    # Store the delete action and selected indices in session state
-                    st.session_state["delete_selected_public_ranges"] = selected_indices
-                    action_result["action"] = "delete"
-        
-        # Check if we have a persisted delete selection first
-        if "delete_selected_public_ranges" in st.session_state:
-            action_result["action"] = "delete"
-            action_result["selected_indices"] = st.session_state["delete_selected_public_ranges"]
-        # Auto-map selected ranges - any selected ranges should be mapped immediately
-        elif selected_indices:
-            action_result["action"] = "map"
-            action_result["selected_indices"] = selected_indices
+                    st.info(f"📋 {len(selected_indices)} range(s) selected")
+                else:
+                    st.info("📍 Check boxes in the table above to select ranges")
+            
+            with col2:
+                st.info(f"📋 {len(ranges)} range(s) available")
+
+            with col3:
+                # DELETE button - always visible, disabled when no selection
+                if st.button("🗑️ DELETE", use_container_width=True, type="secondary", disabled=not bool(selected_indices)):
+                    if selected_indices:
+                        # Store the delete action and selected indices in session state
+                        st.session_state["delete_selected_public_ranges"] = selected_indices
+                        action_result["action"] = "delete"
+            
+            # Check if we have a persisted delete selection first
+            if "delete_selected_public_ranges" in st.session_state:
+                action_result["action"] = "delete"
+                action_result["selected_indices"] = st.session_state["delete_selected_public_ranges"]
+            # Auto-map selected ranges - any selected ranges should be mapped immediately
+            elif selected_indices:
+                action_result["action"] = "map"
+                action_result["selected_indices"] = selected_indices
+        else:
+            # Readonly user controls
+            if selected_indices:
+                st.info(f"📋 {len(selected_indices)} range(s) selected")
+                # Auto-map selected ranges for readonly users (same as admin)
+                action_result["action"] = "map"
+                action_result["selected_indices"] = selected_indices
         
         return action_result
 
