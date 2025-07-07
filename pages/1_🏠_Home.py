@@ -16,9 +16,9 @@ def run():
         layout="wide"
     )
     
-    # Set app identifier for auth system
+    # Set app identifier for auth system (main ChronoLog app)
     if "app" not in st.query_params:
-        st.query_params["app"] = "mapping"
+        st.query_params["app"] = "chronolog"
         
     # Handle authentication
     user = handle_auth()

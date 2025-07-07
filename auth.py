@@ -15,7 +15,7 @@ def get_redirect_uri():
         # For Range_Library.py, use port 8502
         return st.secrets["auth0"].get("mapping_redirect_uri", "http://localhost:8502")
     else:
-        # For main ChronoLog.py, use default port
+        # For main ChronoLog.py, use default port (also handles "chronolog" app identifier)
         return st.secrets["auth0"].get("redirect_uri", "http://localhost:8501")
 
 def get_app_name():

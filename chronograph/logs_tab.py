@@ -1,12 +1,11 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-from .models import ChronographSession
 from .service import ChronographService
 
 def render_logs_tab(user, supabase):
-    """Render the Logs tab showing all chronograph sessions"""
-    st.header("📊 Chronograph Logs")
+    """Render the View tab showing all chronograph sessions"""
+    st.header("📊 Chronograph Sessions")
     
     try:
         # Initialize service
@@ -19,98 +18,171 @@ def render_logs_tab(user, supabase):
             st.info("No chronograph logs found. Import some data files to get started!")
             return
         
-        # Create a summary table
-        st.subheader("📋 Session Summary")
-        
-        # Create display columns using entity methods
-        display_data = []
+        # Extract all unique bullet types for dropdown (using bullet_display which includes grain)
+        all_bullet_types = set()
         for session in sessions:
-            display_data.append({
+            bullet_display = session.bullet_display()
+            if bullet_display:
+                all_bullet_types.add(bullet_display)
+        
+        # Search controls
+        st.subheader("🔍 Search & Filter")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Bullet type dropdown filter
+            bullet_options = ["All Bullets"] + sorted(list(all_bullet_types))
+            selected_bullet = st.selectbox(
+                "Filter by Bullet Type:",
+                options=bullet_options,
+                index=0,
+                key="chronograph_bullet_filter"
+            )
+        
+        with col2:
+            # Date range filter
+            date_range = st.date_input(
+                "Filter by Date Range:",
+                value=[],
+                max_value=datetime.now().date(),
+                help="Select a date range to filter sessions",
+                key="chronograph_date_filter"
+            )
+        
+        # Apply filters
+        filtered_sessions = sessions.copy()
+        
+        # Filter by bullet type
+        if selected_bullet != "All Bullets":
+            filtered_sessions = [
+                session for session in filtered_sessions
+                if session.bullet_display() == selected_bullet
+            ]
+        
+        # Filter by date range
+        if date_range:
+            if len(date_range) == 2:
+                start_date, end_date = date_range
+                filtered_sessions = [
+                    session for session in filtered_sessions
+                    if start_date <= session.datetime_local.date() <= end_date
+                ]
+            elif len(date_range) == 1:
+                selected_date = date_range[0]
+                filtered_sessions = [
+                    session for session in filtered_sessions
+                    if session.datetime_local.date() == selected_date
+                ]
+        
+        # Show filtered count
+        if len(filtered_sessions) != len(sessions):
+            st.info(f"📊 Showing {len(filtered_sessions)} of {len(sessions)} sessions")
+        else:
+            st.subheader(f"Chronograph Sessions ({len(sessions)})")
+        
+        # Check if no results after filtering
+        if not filtered_sessions:
+            st.warning("🔍 No sessions match your search criteria. Try adjusting your filters.")
+            return
+        
+        # Create display data with selection column
+        table_data = []
+        for i, session in enumerate(filtered_sessions):
+            table_data.append({
+                "Select": False,  # Radio button column (only one can be True)
                 "Date": session.datetime_local.strftime("%Y-%m-%d %H:%M"),
                 "Session": session.tab_name,
                 "Bullet": session.bullet_display(),
-                "Shots": session.shot_count,
+                "Shots": session.shot_count if session.shot_count else 0,
                 "Avg Speed": session.avg_speed_display(),
                 "Session ID": session.id[:8] + "..."
             })
         
-        # Display as table
-        if display_data:
-            df_display = pd.DataFrame(display_data)
-            st.dataframe(df_display, use_container_width=True)
+        # Display as an editable dataframe with radio button selection
+        df = pd.DataFrame(table_data)
         
-        # Detailed session cards
-        st.subheader("📁 Session Details")
+        # Use st.data_editor with selection column
+        edited_df = st.data_editor(
+            df,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "Select": st.column_config.CheckboxColumn("Select", width="small", default=False),
+                "Date": st.column_config.TextColumn("Date", width="medium", disabled=True),
+                "Session": st.column_config.TextColumn("Session", width="medium", disabled=True),
+                "Bullet": st.column_config.TextColumn("Bullet", width="medium", disabled=True),
+                "Shots": st.column_config.NumberColumn("Shots", width="small", disabled=True),
+                "Avg Speed": st.column_config.TextColumn("Avg Speed", width="small", disabled=True),
+                "Session ID": st.column_config.TextColumn("Session ID", width="medium", disabled=True),
+            },
+            key="chronograph_sessions_table"
+        )
         
-        # Filter options
-        col1, col2 = st.columns(2)
-        with col1:
-            bullet_types = chrono_service.get_unique_bullet_types(user["email"])
-            selected_bullet = st.selectbox("Filter by Bullet Type", ["All"] + bullet_types)
+        # Handle multiple row selection
+        selected_indices = []
+        if edited_df is not None:
+            for i, selected in enumerate(edited_df["Select"]):
+                if selected:
+                    selected_indices.append(i)
         
-        with col2:
-            date_range = st.date_input("Filter by Date Range", value=[], max_value=datetime.now().date())
-        
-        # Apply filters using service
-        start_date_str = None
-        end_date_str = None
-        
-        if date_range:
-            if len(date_range) == 2:
-                start_date_str = date_range[0].isoformat()
-                end_date_str = date_range[1].isoformat()
-            elif len(date_range) == 1:
-                start_date_str = date_range[0].isoformat()
-                end_date_str = date_range[0].isoformat()
-        
-        # Get filtered sessions from service
-        if selected_bullet != "All" or date_range:
-            filtered_sessions = chrono_service.get_sessions_filtered(
-                user["email"], 
-                bullet_type=selected_bullet if selected_bullet != "All" else None,
-                start_date=start_date_str,
-                end_date=end_date_str
-            )
+        # Store selected sessions in session state
+        if selected_indices:
+            selected_sessions = [filtered_sessions[i] for i in selected_indices]
+            st.session_state['selected_session_ids'] = [session.id for session in selected_sessions]
+            st.success(f"✅ Selected {len(selected_sessions)} session(s)")
         else:
-            filtered_sessions = sessions
+            # Clear selection if nothing is selected
+            if 'selected_session_ids' in st.session_state:
+                del st.session_state['selected_session_ids']
         
-        # Display filtered sessions
-        for session in filtered_sessions:
-            with st.expander(f"📊 {session.display_name()}"):
-                col1, col2 = st.columns(2)
+        # Shot Data section
+        if selected_indices:
+            st.subheader("📊 Shot Data")
+            
+            # Get measurement data for all selected sessions
+            all_measurements = []
+            for idx in selected_indices:
+                session = filtered_sessions[idx]
+                try:
+                    measurements = chrono_service.get_measurements_by_session_id(session.id, user["email"])
+                    for measurement in measurements:
+                        all_measurements.append({
+                            "Session": session.tab_name,
+                            "Bullet": session.bullet_display(),
+                            "Shot #": measurement.shot_number,
+                            "Speed (fps)": measurement.speed_fps,
+                            "Δ AVG (fps)": measurement.delta_avg_fps if measurement.delta_avg_fps else None,
+                            "KE (ft-lb)": measurement.ke_ft_lb if measurement.ke_ft_lb else None,
+                            "Power Factor": measurement.power_factor if measurement.power_factor else None,
+                            "Time": measurement.datetime_local.strftime("%H:%M:%S") if measurement.datetime_local else None,
+                            "Clean Bore": "Yes" if measurement.clean_bore else ("No" if measurement.clean_bore is False else None),
+                            "Cold Bore": "Yes" if measurement.cold_bore else ("No" if measurement.cold_bore is False else None),
+                            "Notes": measurement.shot_notes if measurement.shot_notes else None
+                        })
+                except Exception as e:
+                    st.error(f"Error loading measurements for session {session.display_name()}: {str(e)}")
+            
+            if all_measurements:
+                # Display measurements table
+                measurements_df = pd.DataFrame(all_measurements)
+                st.dataframe(measurements_df, use_container_width=True, hide_index=True)
                 
-                with col1:
-                    st.write(f"**Bullet:** {session.bullet_type}")
-                    st.write(f"**Grain:** {session.bullet_grain}")
-                    st.write(f"**Date:** {session.datetime_local.strftime('%Y-%m-%d %H:%M')}")
-                    
-                with col2:
-                    st.write(f"**Session ID:** {session.id}")
-                    st.write(f"**Uploaded:** {session.uploaded_at.strftime('%Y-%m-%d %H:%M')}")
-                    st.write(f"**File:** {session.file_name()}")
-                
-                # Use pre-calculated session stats from entity
-                if session.has_measurements():
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        st.metric("Shots", session.shot_count)
-                    with col2:
-                        st.metric("Avg Speed", session.avg_speed_display())
-                    with col3:
-                        st.metric("Std Dev", session.std_dev_display())
-                    
-                    # Quick stats
-                    st.write("**Quick Stats:**")
-                    st.write(f"• Min: {session.min_speed_fps:.0f} fps" if session.min_speed_fps else "• Min: N/A")
-                    st.write(f"• Max: {session.max_speed_fps:.0f} fps" if session.max_speed_fps else "• Max: N/A")
-                    st.write(f"• Range: {session.velocity_range_display()}")
-                    
-                    # View button
-                    if st.button(f"View Details", key=f"view_{session.id}"):
-                        st.session_state['selected_session_id'] = session.id
-                        st.info("Session selected! Go to the 'View Log' tab to see detailed analysis.")
-                else:
-                    st.info("No measurements found for this session.")
+                # Show summary stats
+                if len(all_measurements) > 0:
+                    st.subheader("📈 Summary Statistics")
+                    speeds = [m["Speed (fps)"] for m in all_measurements if m["Speed (fps)"] is not None]
+                    if speeds:
+                        col1, col2, col3, col4 = st.columns(4)
+                        with col1:
+                            st.metric("Total Shots", len(speeds))
+                        with col2:
+                            st.metric("Avg Speed", f"{sum(speeds)/len(speeds):.1f} fps")
+                        with col3:
+                            st.metric("Min Speed", f"{min(speeds):.1f} fps")
+                        with col4:
+                            st.metric("Max Speed", f"{max(speeds):.1f} fps")
+            else:
+                st.info("No measurement data found for selected sessions.")
     
     except Exception as e:
         st.error(f"Error loading logs: {str(e)}")
