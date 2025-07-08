@@ -3,9 +3,12 @@ import folium
 from streamlit_folium import st_folium
 from branca.element import MacroElement
 from jinja2 import Template
-from folium.plugins import LocateControl, Geocoder
+from folium.plugins import LocateControl
 from typing import List, Dict, Any, Tuple, Optional
 from geopy.geocoders import Nominatim
+from folium.plugins import Draw
+
+
 
 
 class CssInjector(MacroElement):
@@ -34,8 +37,11 @@ class NominateView:
 
     def display_instruction_message(self) -> None:
         """Display instruction message for range nomination."""
-        st.info("To submit a new range for review, start by selecting firing position and target on the map. \n\n" +
-                "Subsequently, after the application looks up the address and elevation, it will compute distance, azimuth, and elevation angles.")
+        st.info("📍 To submit a new range for review, use the **Draw** toolbar on the map to add markers for the firing position and target. \n\n" +
+                "1. Click the marker tool (📍) in the map's draw toolbar\n" +
+                "2. Click on the map to place the firing position (1st point)\n" +
+                "3. Click again to place the target position (2nd point)\n\n" +
+                "The app will automatically look up addresses and elevations, then compute distance, azimuth, and elevation angles.")
 
     def display_search_controls(self, default_lat: float = 37.76, default_lon: float = -122.4) -> Tuple[float, float, bool]:
         """Display search controls for address or lat/lon and return coordinates and whether to zoom."""
@@ -213,7 +219,7 @@ class NominateView:
             
         return None
 
-    def create_map(self, map_center: List[float], zoom_level: int, points: List[List[float]]) -> folium.Map:
+    def create_map(self, map_center: List[float], zoom_level: int, points: List[List[float]], disable_draw: bool = False) -> folium.Map:
         """Create and configure the folium map."""
         # Build the map with satellite imagery
         m = folium.Map(
@@ -244,10 +250,27 @@ class NominateView:
         # Add layer control
         folium.LayerControl().add_to(m)
 
-        # Add locate control and geocoder
+        # Add locate control
         LocateControl().add_to(m)
         m.get_root().add_child(CssInjector(self.cursor_css))
-        Geocoder().add_to(m)
+
+        # Add draw plugin with specific configuration to allow multiple markers
+        draw = Draw(
+            export=True,
+            draw_options={
+                'polyline': False,
+                'polygon': False,
+                'circle': False,
+                'rectangle': False,
+                'marker': not disable_draw,  # Disable marker tool when we have 2 points
+                'circlemarker': False,
+            },
+            edit_options={
+                'edit': True,
+                'remove': True
+            }
+        )
+        draw.add_to(m)
 
         # Add existing points with color-coded markers
         for i, point in enumerate(points):
@@ -290,7 +313,7 @@ class NominateView:
 
     def display_map(self, m: folium.Map) -> Dict[str, Any]:
         """Display the map and return interaction data."""
-        map_info =  st_folium(m, use_container_width=True, height=1200)
+        map_info = st_folium(m, use_container_width=True, height=600, key="nominate_map")
         return map_info
 
     def display_reset_button(self) -> bool:

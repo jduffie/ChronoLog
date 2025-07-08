@@ -29,11 +29,10 @@ class NominateController:
         self.model.reset_points()
         
         # Clear form input session state
-        form_keys = ["range_name", "range_description", "last_clicked"]
+        form_keys = ["range_name", "range_description"]
         for key in form_keys:
             if key in st.session_state:
                 del st.session_state[key]
-        
 
     def _handle_elevation_fetching(self) -> None:
         """Handle elevation data fetching with spinner."""
@@ -42,44 +41,54 @@ class NominateController:
                 self.model.fetch_missing_elevations()
 
     def _handle_map_interactions(self, map_info: Dict[str, Any]) -> None:
-        """Handle map click and movement interactions."""
+        """Handle map draw interactions and navigation."""
         if not map_info:
             return
 
-        rerun_needed = False
+        # Handle draw events (markers from draw plugin)
+        if "all_drawings" in map_info and map_info["all_drawings"]:
+            all_drawings = map_info["all_drawings"]
+            # Debug: Print raw all_drawings data - pretty print it
+            print(f"🔍 Raw all_drawings: {all_drawings}")
 
-        # Handle point clicks using session state deduplication
-        clicked = map_info.get("last_clicked")
-        if clicked:
-            prev_click = st.session_state.get("last_clicked", None)
-            if prev_click != clicked and len(self.model.points) < 2:
-                # Store the new click in session state
-                st.session_state.last_clicked = clicked
-                # Process the new click
-                lat = clicked["lat"]
-                lng = clicked["lng"]
-                self.model.add_point(lat, lng)
-                print(f"✅ Added point: {lat}, {lng}. Total points: {len(self.model.points)}")
-                rerun_needed = True
-            else:
-                print(f"⚠️ Click ignored. prev_click == clicked: {prev_click == clicked}, points: {len(self.model.points)}")
+            # Filter for markers (points) only
+            markers = [feature for feature in all_drawings if feature["geometry"]["type"] == "Point"]
+            
+            if len(markers) == 1:
+                print(f"📍 First pushpin placed")
+            elif len(markers) == 2:
+                # Print lat/lon of both features
+                point1 = markers[0]["geometry"]["coordinates"]
+                point2 = markers[1]["geometry"]["coordinates"]
+                print(f"📍 Two pushpins placed:")
+                print(f"  Point 1: lat={point1[1]:.6f}, lon={point1[0]:.6f}")
+                print(f"  Point 2: lat={point2[1]:.6f}, lon={point2[0]:.6f}")
+                
+                # Process the points and disable draw
+                if len(self.model.points) < 2:
+                    # Clear existing points and add the two new ones
+                    self.model.points = []
+                    self.model.add_point(point1[1], point1[0])  # lat, lon
+                    self.model.add_point(point2[1], point2[0])  # lat, lon
+                    self.model.disable_draw = True
+                    
+                    # Calculate and store measurements
+                    if len(self.model.points) == 2:
+                        # Fetch elevations first
+                        self.model.fetch_missing_elevations()
+                        # Calculate and store measurements
+                        self.model.measurements = self.model.calculate_measurements()
+                    
+                    print(f"✅ Processed points, calculated measurements, and disabled draw")
 
         # Handle map state changes (update model but don't trigger rerun for map navigation)
         if map_info.get("center"):
             center = map_info["center"]
-            # Only update if center actually changed significantly to avoid constant updates
-            current_center = self.model.map_center
-            lat_diff = abs(center["lat"] - current_center[0])
-            lng_diff = abs(center["lng"] - current_center[1])
-            if lat_diff > 0.001 or lng_diff > 0.001:  # Only update if moved more than ~100m
-                self.model.update_map_state(center=center)
+            print(f"CENTER : {center}")
 
         if "zoom" in map_info and map_info["zoom"] is not None:
-            if map_info["zoom"] != self.model.zoom_level:
-                self.model.update_map_state(zoom=map_info["zoom"])
-
-        if rerun_needed:
-            st.rerun()
+            zoom = map_info["zoom"]
+            print(f" ZOOM: {zoom}")
 
     def _handle_reset_action(self) -> None:
         """Handle reset button action."""
@@ -227,15 +236,15 @@ class NominateController:
         self._handle_elevation_fetching()
 
         # Display instruction message
-        has_complete_data = (len(self.model.points) == 2 and len(self.model.elevations_m) == 2)
-        if not has_complete_data:
+        if not self.model.disable_draw:
             self.view.display_instruction_message()
 
         # Create and display map
         map_obj = self.view.create_map(
             self.model.map_center, 
             self.model.zoom_level, 
-            self.model.points
+            self.model.points,
+            disable_draw=self.model.disable_draw
         )
         
         map_info = self.view.display_map(map_obj)
@@ -249,11 +258,8 @@ class NominateController:
         # Handle reset action
         self._handle_reset_action()
 
-        # Get measurements
-        if has_complete_data:
-            measurements = self.model.calculate_measurements()
-        else:
-            measurements = self.model.get_partial_measurements()
+        # Get measurements from model state
+        measurements = self.model.measurements if self.model.measurements else self.model._empty_measurements()
         
         # Display range form and measurements table
         submission_result = self.view.display_range_form_and_table(measurements)

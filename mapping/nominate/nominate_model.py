@@ -2,7 +2,7 @@ import math
 import requests
 import streamlit as st
 from geopy.distance import geodesic
-from typing import List, Tuple, Dict, Any
+from typing import List, Dict, Any
 
 
 class NominateModel:
@@ -13,10 +13,8 @@ class NominateModel:
         self.elevations_m: List[float] = []
         self.map_center: List[float] = [36.222278, -78.051833]
         self.zoom_level: int = 13
-        self._cached_measurements: Dict[str, Any] = None
-        self._measurements_cache_key: str = ""
-        self._cached_partial_measurements: Dict[str, Any] = None
-        self._partial_measurements_cache_key: str = ""
+        self.disable_draw: bool = False
+        self.measurements: Dict[str, Any] = {}
 
     def add_point(self, lat: float, lng: float) -> None:
         """Add a new point if less than 2 points exist."""
@@ -27,11 +25,8 @@ class NominateModel:
         """Clear all points and elevations."""
         self.points = []
         self.elevations_m = []
-        # Clear cached measurements
-        self._cached_measurements = None
-        self._measurements_cache_key = ""
-        self._cached_partial_measurements = None
-        self._partial_measurements_cache_key = ""
+        self.disable_draw = False
+        self.measurements = {}
 
     def get_elevation(self, lat: float, lng: float) -> float:
         """Get elevation in meters from Open Elevation API."""
@@ -66,13 +61,6 @@ class NominateModel:
         """Calculate all measurements when two points are available."""
         if len(self.points) != 2 or len(self.elevations_m) != 2:
             return self._empty_measurements()
-
-        # Create cache key from current state
-        cache_key = f"{self.points[0]}-{self.points[1]}-{self.elevations_m[0]}-{self.elevations_m[1]}"
-        
-        # Return cached result if available and cache key matches
-        if self._cached_measurements and self._measurements_cache_key == cache_key:
-            return self._cached_measurements
 
         p1, p2 = self.points[0], self.points[1]
         start_alt, end_alt = self.elevations_m[0], self.elevations_m[1]
@@ -147,7 +135,7 @@ class NominateModel:
             ]
         }
 
-        result = {
+        return {
             "start_lat": f"{p1[0]:.6f}",
             "start_lon": f"{p1[1]:.6f}",
             "start_alt": f"{start_alt:.1f}",
@@ -164,44 +152,7 @@ class NominateModel:
             "address_geojson": geojson_features,
             "display_name": start_address_data.get('display_name', ''),
         }
-        
-        # Cache the result
-        self._cached_measurements = result
-        self._measurements_cache_key = cache_key
-        
-        return result
 
-    def get_partial_measurements(self) -> Dict[str, Any]:
-        """Get measurements with partial data when only one point exists."""
-        if len(self.points) >= 1 and len(self.elevations_m) >= 1:
-            # Create cache key from current state
-            p1 = self.points[0]
-            cache_key = f"{p1}-{self.elevations_m[0]}"
-            
-            # Return cached result if available and cache key matches
-            if self._cached_partial_measurements and self._partial_measurements_cache_key == cache_key:
-                return self._cached_partial_measurements
-            
-            # Get address GeoJSON for start position
-            address_data = self.get_address_geojson_with_rate_limit(p1[0], p1[1])
-            
-            measurements = self._empty_measurements()
-            measurements.update({
-                "start_lat": f"{p1[0]:.6f}",
-                "start_lon": f"{p1[1]:.6f}",
-                "start_alt": f"{self.elevations_m[0]:.1f}",
-                "start_address": address_data.get('display_name', ''),
-                "address_geojson": address_data.get('geojson', {}),
-                "display_name": address_data.get('display_name', ''),
-            })
-            
-            # Cache the result
-            self._cached_partial_measurements = measurements
-            self._partial_measurements_cache_key = cache_key
-            
-            return measurements
-        
-        return self._empty_measurements()
 
     def _empty_measurements(self) -> Dict[str, Any]:
         """Return empty measurements template."""

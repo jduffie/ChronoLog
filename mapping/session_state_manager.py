@@ -10,8 +10,7 @@ class SessionStateManager:
         "nominate": [
             "range_name",
             "range_description",
-            "nominate_model",
-            "last_clicked"
+            "nominate_model"
         ],
         "public_ranges": [
             "delete_selected_public_ranges",
