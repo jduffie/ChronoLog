@@ -71,15 +71,16 @@ class NominateController:
                     self.model.add_point(point1[1], point1[0])  # lat, lon
                     self.model.add_point(point2[1], point2[0])  # lat, lon
                     self.model.disable_draw = True
-                    
+
+                    # Fetch elevations first
+                    self.model.fetch_missing_elevations()
                     # Calculate and store measurements
-                    if len(self.model.points) == 2:
-                        # Fetch elevations first
-                        self.model.fetch_missing_elevations()
-                        # Calculate and store measurements
-                        self.model.measurements = self.model.calculate_measurements()
+                    self.model.measurements = self.model.calculate_measurements()
                     
                     print(f"✅ Processed points, calculated measurements, and disabled draw")
+                    
+                    # Trigger rerun to update map with polyline and disable draw
+                    st.rerun()
 
         # Handle map state changes (update model but don't trigger rerun for map navigation)
         if map_info.get("center"):
