@@ -51,7 +51,6 @@ def render_create_session_tab(user, supabase):
         st.session_state.dope_model = DopeModel()
     
     dope_model = st.session_state.dope_model
-    tab_name = "create_session"
     
     # Step 1: Select chronograph session
     st.subheader("1. Select Chronograph Session")
@@ -79,6 +78,9 @@ def render_create_session_tab(user, supabase):
         
         if selected_session_label:
             selected_session = session_options[selected_session_label]
+            
+            # Use chronograph session ID as unique tab name for DOPE session
+            tab_name = f"chrono_session_{selected_session['id']}"
             
             # Step 2: Select range and weather sources
             st.subheader("2. Select Range and Weather Sources")
@@ -127,16 +129,19 @@ def render_create_session_tab(user, supabase):
                     st.warning("No weather sources found.")
                     selected_weather = None
             
-            # Step 3: Submit button and create merged table
-            # Allow creation with just chronograph data, range and weather are optional
+            # Prepare selected range and weather data
             selected_range = range_options[selected_range_label] if selected_range_label else None
             
-            if st.button("Create DOPE Session", type="primary"):
-                create_dope_session(user, supabase, selected_session, selected_range, selected_weather, dope_model, tab_name)
-        
-        # If session has been created, display it
-        if dope_model.is_tab_created(tab_name):
-            display_dope_session(user, supabase, dope_model, tab_name)
+            # Create/update the DOPE session with current selections
+            create_dope_session(user, supabase, selected_session, selected_range, selected_weather, dope_model, tab_name)
+            
+            # Add spacing before the table
+            st.markdown("---")
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            # Display the session if it has been created
+            if dope_model.is_tab_created(tab_name):
+                display_dope_session(user, supabase, dope_model, tab_name)
     
     except Exception as e:
         st.error(f"Error loading data: {str(e)}")
@@ -152,9 +157,11 @@ def create_dope_session(user, supabase, chrono_session, range_data, weather_sour
             st.warning("No measurements found for the selected chronograph session.")
             return
         
-        # Get weather measurements for the user (to match by timestamp)
-        weather_measurements = supabase.table("weather_measurements").select("*").eq("user_email", user["email"]).execute()
-        weather_data = weather_measurements.data if weather_measurements.data else []
+        # Get weather measurements only if a weather source is selected
+        weather_data = []
+        if weather_source:
+            weather_measurements = supabase.table("weather_measurements").select("*").eq("weather_source_id", weather_source["id"]).execute()
+            weather_data = weather_measurements.data if weather_measurements.data else []
         
         # Create the measurements data table
         measurements_data = []
@@ -171,9 +178,7 @@ def create_dope_session(user, supabase, chrono_session, range_data, weather_sour
                 "speed": measurement.get("speed_fps", ""),
                 "ke_ft_lb": measurement.get("ke_ft_lb", ""),
                 "power_factor": measurement.get("power_factor", ""),
-                "clean_bore": measurement.get("clean_bore", ""),
-                "cold_bore": measurement.get("cold_bore", ""),
-                "shot_notes": measurement.get("shot_notes", ""),
+
                 
                 # Range position data (repeated for each measurement)
                 "start_lat": range_data.get("start_lat", "") if range_data else "",
@@ -191,6 +196,10 @@ def create_dope_session(user, supabase, chrono_session, range_data, weather_sour
                 "distance": "",  # User-provided distance (separate from range distance)
                 "elevation_adjustment": "",  # Elevation adjustment in RADS or MOA
                 "windage_adjustment": "",  # Windage adjustment in RADS or MOA
+
+                "clean_bore": measurement.get("clean_bore") or "",
+                "cold_bore": measurement.get("cold_bore") or "",
+                "shot_notes": measurement.get("shot_notes") or "",
             }
             measurements_data.append(row)
         
@@ -269,13 +278,15 @@ def display_dope_session(user, supabase, dope_model, tab_name):
             "pressure": st.column_config.NumberColumn("Pressure (inHg)", width="small", format="%.2f", disabled=True),
             "humidity": st.column_config.NumberColumn("Humidity (%)", width="small", format="%.1f", disabled=True),
             
-            # Editable columns (grouped at the end)
-            "clean_bore": st.column_config.TextColumn("Clean Bore", width="small", help="Clean bore indicator"),
-            "cold_bore": st.column_config.TextColumn("Cold Bore", width="small", help="Cold bore indicator"),
-            "shot_notes": st.column_config.TextColumn("Shot Notes", width="medium", help="Notes for this shot"),
+            # User DOPE adjustments (editable)
             "distance": st.column_config.TextColumn("Distance", width="small", help="User-provided distance"),
             "elevation_adjustment": st.column_config.TextColumn("Elevation Adj", width="medium", help="Elevation adjustment in RADS or MOA"),
             "windage_adjustment": st.column_config.TextColumn("Windage Adj", width="medium", help="Windage adjustment in RADS or MOA"),
+            
+            # Shot metadata (editable, far right)
+            "clean_bore": st.column_config.TextColumn("Clean Bore", width="small", help="Clean bore indicator"),
+            "cold_bore": st.column_config.TextColumn("Cold Bore", width="small", help="Cold bore indicator"),
+            "shot_notes": st.column_config.TextColumn("Shot Notes", width="medium", help="Notes for this shot"),
         },
         key=f"dope_measurements_table_{tab_name}"
     )
@@ -303,34 +314,52 @@ def save_dope_session(user, supabase, dope_model, tab_name):
             st.error("No DOPE session data to save.")
             return
         
+        chrono_session = session_details.get("chrono_session")
+        if not chrono_session:
+            st.error("No chronograph session found.")
+            return
+        
+        # Check if DOPE session already exists for this chronograph session
+        existing_dope_session = supabase.table("dope_sessions").select("*").eq("chrono_session_id", chrono_session["id"]).execute()
+        
         # Generate session name based on bullet type and timestamp
         session_name = f"{session_details.get('bullet_type', 'Unknown')}-{session_details.get('bullet_grain', '')}gr-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
         
-        # Create dope_session record
-        dope_session_id = str(uuid.uuid4())
-        weather_source = session_details.get("weather_source")
-        chrono_session = session_details.get("chrono_session")
-        range_data = session_details.get("range_data")
-        session_data = {
-            "id": dope_session_id,
-            "user_email": user["email"],
-            "session_name": session_name,
-            "bullet_type": session_details.get("bullet_type", ""),
-            "bullet_grain": int(session_details.get("bullet_grain", 0)) if session_details.get("bullet_grain") else None,
-            "range_name": session_details.get("range_name", ""),
-            "distance_m": float(session_details.get("distance_m", 0)) if session_details.get("distance_m") else None,
-            "chrono_session_id": chrono_session.get("id") if chrono_session else None,
-            "range_submission_id": range_data.get("id") if range_data else None,
-            "weather_source_id": weather_source.get("id") if weather_source else None,
-            "notes": f"Created from DOPE session on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-        }
-        
-        # Insert dope_session
-        session_response = supabase.table("dope_sessions").insert(session_data).execute()
-        
-        if not session_response.data:
-            st.error("Failed to save DOPE session.")
-            return
+        if existing_dope_session.data:
+            # Update existing DOPE session
+            dope_session_id = existing_dope_session.data[0]["id"]
+            session_name = existing_dope_session.data[0]["session_name"]  # Use existing session name
+            st.info(f"🔄 Updating existing DOPE session for this chronograph session...")
+            
+            # Delete existing measurements
+            supabase.table("dope_measurements").delete().eq("dope_session_id", dope_session_id).execute()
+            
+        else:
+            # Create new DOPE session
+            dope_session_id = str(uuid.uuid4())
+            
+            weather_source = session_details.get("weather_source")
+            range_data = session_details.get("range_data")
+            session_data = {
+                "id": dope_session_id,
+                "user_email": user["email"],
+                "session_name": session_name,
+                "bullet_type": session_details.get("bullet_type", ""),
+                "bullet_grain": int(session_details.get("bullet_grain", 0)) if session_details.get("bullet_grain") else None,
+                "range_name": session_details.get("range_name", ""),
+                "distance_m": float(session_details.get("distance_m", 0)) if session_details.get("distance_m") else None,
+                "chrono_session_id": chrono_session.get("id"),
+                "range_submission_id": range_data.get("id") if range_data else None,
+                "weather_source_id": weather_source.get("id") if weather_source else None,
+                "notes": f"Created from DOPE session on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            }
+            
+            # Insert dope_session
+            session_response = supabase.table("dope_sessions").insert(session_data).execute()
+            
+            if not session_response.data:
+                st.error("Failed to save DOPE session.")
+                return
         
         # Helper function to safely convert values
         def safe_float(value):

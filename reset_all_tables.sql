@@ -267,7 +267,8 @@ CREATE TABLE dope_sessions (
     notes TEXT,
     status TEXT DEFAULT 'active' CHECK (status IN ('active', 'archived', 'deleted')),
     
-    UNIQUE(user_email, session_name)
+    UNIQUE(user_email, session_name),
+    UNIQUE(chrono_session_id)  -- Enforce 1-to-1 relationship with chronograph sessions
 );
 
 -- Create dope_measurements table for individual shot measurements and DOPE adjustments
