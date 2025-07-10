@@ -1,0 +1,6 @@
+Device Name,BALLISTIC - 3063770
+Device Model,5700SL
+Serial Number,3063770
+FORMATTED DATE_TIME,Temperature,Wet Bulb Temp,Relative Humidity,Barometric Pressure,Altitude,Station Pressure,Wind Speed,Heat Index,Dew Point,Density Altitude,Crosswind,Headwind,Compass Magnetic Direction,Compass True Direction,Wind Chill,Data Type,Record name,Start time,Duration (H:M:S),Location description,Location address,Location coordinates,Notes
+yyyy-MM-dd hh:mm:ss a,°F,°F,%,inHg,ft,inHg,mph,°F,°F,ft,mph,mph,Deg,Deg,°F
+2025-06-26 05:32:36 PM,75.8,64.6,54.8,29.98,131,29.62,0.0,75.0,58.4,1639,0.0,0.0,48,48,75.7,snapshot,"Snapshot - Jun 26, 2025 5:32:36 PM",2025-06-26 05:32:36 PM 5:32:36 PM,00:00:00,,,,
