@@ -248,7 +248,7 @@ CREATE TABLE dope_sessions (
     -- Source data references
     chrono_session_id UUID REFERENCES chrono_sessions(id) ON DELETE SET NULL,
     range_submission_id UUID REFERENCES ranges_submissions(id) ON DELETE SET NULL,
-    weather_source TEXT,  -- Weather source identifier
+    weather_source_id UUID REFERENCES weather_source(id) ON DELETE SET NULL,
     
     -- Session details from original sources
     bullet_type TEXT,

@@ -44,12 +44,42 @@ def main():
     tab1, tab2, tab3 = st.tabs(["Create", "Sessions", "View Session"])
     
     with tab1:
+        # Clear DOPE model state when Create tab is accessed
+        if "dope_tab_create_visited" not in st.session_state:
+            st.session_state.dope_tab_create_visited = True
+            if "dope_model" in st.session_state:
+                for tab_name in list(st.session_state.dope_model.get_all_tabs()):
+                    st.session_state.dope_model.clear_tab_data(tab_name)
+            # Reset other tab visit flags
+            st.session_state.pop("dope_tab_sessions_visited", None)
+            st.session_state.pop("dope_tab_view_visited", None)
+        
         render_create_session_tab(user, supabase)
     
     with tab2:
+        # Clear DOPE model state when Sessions tab is accessed
+        if "dope_tab_sessions_visited" not in st.session_state:
+            st.session_state.dope_tab_sessions_visited = True
+            if "dope_model" in st.session_state:
+                for tab_name in list(st.session_state.dope_model.get_all_tabs()):
+                    st.session_state.dope_model.clear_tab_data(tab_name)
+            # Reset other tab visit flags
+            st.session_state.pop("dope_tab_create_visited", None)
+            st.session_state.pop("dope_tab_view_visited", None)
+        
         render_sessions_tab(user, supabase)
     
     with tab3:
+        # Clear DOPE model state when View Session tab is accessed
+        if "dope_tab_view_visited" not in st.session_state:
+            st.session_state.dope_tab_view_visited = True
+            if "dope_model" in st.session_state:
+                for tab_name in list(st.session_state.dope_model.get_all_tabs()):
+                    st.session_state.dope_model.clear_tab_data(tab_name)
+            # Reset other tab visit flags
+            st.session_state.pop("dope_tab_create_visited", None)
+            st.session_state.pop("dope_tab_sessions_visited", None)
+        
         render_view_session_tab(user, supabase)
 
 if __name__ == "__main__":

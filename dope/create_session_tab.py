@@ -89,8 +89,8 @@ def render_create_session_tab(user, supabase):
                 # Get range submissions for the user
                 range_submissions = supabase.table("ranges_submissions").select("*").eq("user_email", user["email"]).order("submitted_at", desc=True).execute()
                 
+                range_options = {}
                 if range_submissions.data:
-                    range_options = {}
                     for range_sub in range_submissions.data:
                         label = f"{range_sub['range_name']} - {range_sub['distance_m']:.1f}m ({range_sub['submitted_at'][:10]})"
                         range_options[label] = range_sub
@@ -106,21 +106,33 @@ def render_create_session_tab(user, supabase):
                     selected_range_label = None
             
             with col2:
-                # Weather source placeholder
-                weather_options = ["Manual Entry", "Weather Station A", "Weather Station B"]
-                selected_weather = st.selectbox(
-                    "Choose weather source:",
-                    options=weather_options,
-                    index=None,
-                    placeholder="Select weather source..."
-                )
+                # Get weather sources for the user
+                weather_sources = supabase.table("weather_source").select("*").eq("user_email", user["email"]).order("created_at", desc=True).execute()
+                
+                if weather_sources.data:
+                    weather_options = {}
+                    for weather_source in weather_sources.data:
+                        label = f"{weather_source['name']} ({weather_source['make'] or 'Unknown'})"
+                        weather_options[label] = weather_source
+                    
+                    selected_weather_label = st.selectbox(
+                        "Choose weather source:",
+                        options=list(weather_options.keys()),
+                        index=None,
+                        placeholder="Select weather source..."
+                    )
+                    
+                    selected_weather = weather_options[selected_weather_label] if selected_weather_label else None
+                else:
+                    st.warning("No weather sources found.")
+                    selected_weather = None
             
             # Step 3: Submit button and create merged table
-            if selected_range_label and selected_weather:
-                selected_range = range_options[selected_range_label]
-                
-                if st.button("Create DOPE Session", type="primary"):
-                    create_dope_session(user, supabase, selected_session, selected_range, selected_weather, dope_model, tab_name)
+            # Allow creation with just chronograph data, range and weather are optional
+            selected_range = range_options[selected_range_label] if selected_range_label else None
+            
+            if st.button("Create DOPE Session", type="primary"):
+                create_dope_session(user, supabase, selected_session, selected_range, selected_weather, dope_model, tab_name)
         
         # If session has been created, display it
         if dope_model.is_tab_created(tab_name):
@@ -164,11 +176,11 @@ def create_dope_session(user, supabase, chrono_session, range_data, weather_sour
                 "shot_notes": measurement.get("shot_notes", ""),
                 
                 # Range position data (repeated for each measurement)
-                "start_lat": range_data.get("start_lat", ""),
-                "start_lon": range_data.get("start_lon", ""),
-                "start_alt": range_data.get("start_altitude_m", ""),
-                "azimuth": range_data.get("azimuth_deg", ""),
-                "elevation_angle": range_data.get("elevation_angle_deg", ""),
+                "start_lat": range_data.get("start_lat", "") if range_data else "",
+                "start_lon": range_data.get("start_lon", "") if range_data else "",
+                "start_alt": range_data.get("start_altitude_m", "") if range_data else "",
+                "azimuth": range_data.get("azimuth_deg", "") if range_data else "",
+                "elevation_angle": range_data.get("elevation_angle_deg", "") if range_data else "",
                 
                 # Weather data (matched by timestamp)
                 "temperature": closest_weather.get("temperature_f", "") if closest_weather else "",
@@ -189,9 +201,12 @@ def create_dope_session(user, supabase, chrono_session, range_data, weather_sour
         session_details = {
             "bullet_type": chrono_session.get("bullet_type", ""),
             "bullet_grain": chrono_session.get("bullet_grain", ""),
-            "range_name": range_data.get("range_name", ""),
-            "weather_source": weather_source,
-            "distance_m": range_data.get("distance_m", "")
+            "range_name": range_data.get("range_name", "") if range_data else "",
+            "weather_source": weather_source,  # Store entire weather source object
+            "weather_source_name": weather_source.get("name", "") if weather_source else "",
+            "distance_m": range_data.get("distance_m", "") if range_data else "",
+            "chrono_session": chrono_session,  # Store entire chrono session object
+            "range_data": range_data  # Store entire range data object
         }
         dope_model.set_tab_session_details(tab_name, session_details)
         
@@ -224,7 +239,7 @@ def display_dope_session(user, supabase, dope_model, tab_name):
     with col3:
         st.metric("Range", session_details.get("range_name", ""))
     with col4:
-        st.metric("Weather Source", session_details.get("weather_source", ""))
+        st.metric("Weather Source", session_details.get("weather_source_name", ""))
     
     # Component 2: DOPE Session Measurements Table
     st.markdown("#### Measurements")
@@ -293,6 +308,9 @@ def save_dope_session(user, supabase, dope_model, tab_name):
         
         # Create dope_session record
         dope_session_id = str(uuid.uuid4())
+        weather_source = session_details.get("weather_source")
+        chrono_session = session_details.get("chrono_session")
+        range_data = session_details.get("range_data")
         session_data = {
             "id": dope_session_id,
             "user_email": user["email"],
@@ -301,7 +319,9 @@ def save_dope_session(user, supabase, dope_model, tab_name):
             "bullet_grain": int(session_details.get("bullet_grain", 0)) if session_details.get("bullet_grain") else None,
             "range_name": session_details.get("range_name", ""),
             "distance_m": float(session_details.get("distance_m", 0)) if session_details.get("distance_m") else None,
-            "weather_source": session_details.get("weather_source", ""),
+            "chrono_session_id": chrono_session.get("id") if chrono_session else None,
+            "range_submission_id": range_data.get("id") if range_data else None,
+            "weather_source_id": weather_source.get("id") if weather_source else None,
             "notes": f"Created from DOPE session on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
         }
         
