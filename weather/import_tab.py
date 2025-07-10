@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import uuid
 from datetime import datetime, timezone
 from .service import WeatherService
 
@@ -121,9 +120,12 @@ def render_file_upload(user, supabase, bucket, weather_service, selected_meter_i
             data_rows = []
             for i in range(5, len(lines)):
                 line = lines[i].strip()
+                print("line-", line)
                 if line:  # Skip empty lines
                     row_data = [cell.strip() for cell in line.split(',')]
-                    # Check if we have data in the first column (timestamp)
+                    print("    row_data", row_data)
+
+                # Check if we have data in the first column (timestamp)
                     if len(row_data) > 0 and row_data[0] and row_data[0] != 'nan':
                         data_rows.append(row_data)
             

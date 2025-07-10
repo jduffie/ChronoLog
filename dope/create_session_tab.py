@@ -1,5 +1,45 @@
 import streamlit as st
 import pandas as pd
+from datetime import datetime, timedelta
+
+def find_closest_weather_measurement(shot_datetime, weather_data, max_time_diff_minutes=30):
+    """Find the closest weather measurement by timestamp within a time window"""
+    if not weather_data or not shot_datetime:
+        return None
+    
+    try:
+        # Parse shot datetime
+        if isinstance(shot_datetime, str):
+            shot_dt = datetime.fromisoformat(shot_datetime.replace('Z', '+00:00'))
+        else:
+            shot_dt = shot_datetime
+        
+        closest_weather = None
+        min_time_diff = timedelta(minutes=max_time_diff_minutes)
+        
+        for weather in weather_data:
+            # Parse weather measurement timestamp
+            weather_timestamp = weather.get("measurement_timestamp")
+            if not weather_timestamp:
+                continue
+                
+            if isinstance(weather_timestamp, str):
+                weather_dt = datetime.fromisoformat(weather_timestamp.replace('Z', '+00:00'))
+            else:
+                weather_dt = weather_timestamp
+            
+            # Calculate time difference
+            time_diff = abs(shot_dt - weather_dt)
+            
+            # Check if this is the closest match within the time window
+            if time_diff < min_time_diff:
+                min_time_diff = time_diff
+                closest_weather = weather
+        
+        return closest_weather
+    except Exception as e:
+        print(f"Error finding closest weather measurement: {e}")
+        return None
 
 def render_create_session_tab(user, supabase):
     """Render the Create Session tab"""
@@ -88,6 +128,10 @@ def create_dope_session(user, supabase, chrono_session, range_data, weather_sour
             st.warning("No measurements found for the selected chronograph session.")
             return
         
+        # Get weather measurements for the user (to match by timestamp)
+        weather_measurements = supabase.table("weather_measurements").select("*").eq("user_email", user["email"]).execute()
+        weather_data = weather_measurements.data if weather_measurements.data else []
+        
         st.subheader("3. DOPE Session")
         
         # Component 1: DOPE Session Details
@@ -110,6 +154,10 @@ def create_dope_session(user, supabase, chrono_session, range_data, weather_sour
         measurements_data = []
         
         for measurement in measurements.data:
+            # Find closest weather measurement by timestamp
+            shot_datetime = measurement.get("datetime_local", "")
+            closest_weather = find_closest_weather_measurement(shot_datetime, weather_data)
+            
             row = {
                 # Chronograph measurement data
                 "datetime": measurement.get("datetime_local", ""),
@@ -128,11 +176,15 @@ def create_dope_session(user, supabase, chrono_session, range_data, weather_sour
                 "azimuth": range_data.get("azimuth_deg", ""),
                 "elevation_angle": range_data.get("elevation_angle_deg", ""),
                 
+                # Weather data (matched by timestamp)
+                "temperature": closest_weather.get("temperature_f", "") if closest_weather else "",
+                "pressure": closest_weather.get("barometric_pressure_inhg", "") if closest_weather else "",
+                "humidity": closest_weather.get("relative_humidity_pct", "") if closest_weather else "",
+                
                 # Optional DOPE data (to be filled by user later)
                 "distance": "",  # User-provided distance (separate from range distance)
                 "elevation_adjustment": "",  # Elevation adjustment in RADS or MOA
                 "windage_adjustment": "",  # Windage adjustment in RADS or MOA
-                "dope_notes": "",  # Additional notes for this measurement
             }
             measurements_data.append(row)
         
@@ -158,11 +210,15 @@ def create_dope_session(user, supabase, chrono_session, range_data, weather_sour
                 "azimuth": st.column_config.NumberColumn("Azimuth (°)", width="small", format="%.2f"),
                 "elevation_angle": st.column_config.NumberColumn("Elevation Angle (°)", width="small", format="%.2f"),
                 
+                # Weather data columns (matched by timestamp)
+                "temperature": st.column_config.NumberColumn("Temp (°F)", width="small", format="%.1f"),
+                "pressure": st.column_config.NumberColumn("Pressure (inHg)", width="small", format="%.2f"),
+                "humidity": st.column_config.NumberColumn("Humidity (%)", width="small", format="%.1f"),
+                
                 # Optional DOPE columns (user-editable)
                 "distance": st.column_config.TextColumn("Distance", width="small", help="User-provided distance"),
                 "elevation_adjustment": st.column_config.TextColumn("Elevation Adj", width="medium", help="Elevation adjustment in RADS or MOA"),
                 "windage_adjustment": st.column_config.TextColumn("Windage Adj", width="medium", help="Windage adjustment in RADS or MOA"),
-                "dope_notes": st.column_config.TextColumn("DOPE Notes", width="large", help="Additional notes for this measurement"),
             }
         )
         
