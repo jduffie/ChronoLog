@@ -2,6 +2,8 @@
 -- Run this in Supabase SQL Editor
 
 -- Delete all data first (respecting foreign key constraints)
+DELETE FROM dope_measurements;
+DELETE FROM dope_sessions;
 DELETE FROM measurements;
 DELETE FROM sessions;
 DELETE FROM weather_measurements;
@@ -12,6 +14,8 @@ DELETE FROM ranges_submissions;
 DELETE FROM ranges;
 
 -- Drop all tables with CASCADE to handle any remaining dependencies
+DROP TABLE IF EXISTS dope_measurements CASCADE;
+DROP TABLE IF EXISTS dope_sessions CASCADE;
 DROP TABLE IF EXISTS measurements CASCADE;
 DROP TABLE IF EXISTS sessions CASCADE;
 DROP TABLE IF EXISTS weather_measurements CASCADE;
@@ -231,6 +235,83 @@ CREATE TABLE ranges (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Create dope_sessions table for DOPE session metadata
+CREATE TABLE dope_sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_email TEXT NOT NULL,
+    
+    -- Session metadata
+    session_name TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    
+    -- Source data references
+    chrono_session_id UUID REFERENCES chrono_sessions(id) ON DELETE SET NULL,
+    range_submission_id UUID REFERENCES ranges_submissions(id) ON DELETE SET NULL,
+    weather_source TEXT,  -- Weather source identifier
+    
+    -- Session details from original sources
+    bullet_type TEXT,
+    bullet_grain INTEGER,
+    range_name TEXT,
+    distance_m REAL,
+    
+    -- User-editable session fields (for future use)
+    caliber TEXT,
+    manufacturer TEXT,
+    model TEXT,
+    grain INTEGER,
+    rifle TEXT,
+    
+    -- Additional metadata
+    notes TEXT,
+    status TEXT DEFAULT 'active' CHECK (status IN ('active', 'archived', 'deleted')),
+    
+    UNIQUE(user_email, session_name)
+);
+
+-- Create dope_measurements table for individual shot measurements and DOPE adjustments
+CREATE TABLE dope_measurements (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    dope_session_id UUID NOT NULL REFERENCES dope_sessions(id) ON DELETE CASCADE,
+    user_email TEXT NOT NULL,
+    
+    -- Shot identification
+    shot_number INTEGER,
+    datetime_shot TIMESTAMPTZ,
+    
+    -- Source chronograph data (read-only)
+    speed_fps REAL,
+    ke_ft_lb REAL,
+    power_factor REAL,
+    
+    -- Source range data (read-only)
+    start_lat REAL,
+    start_lon REAL,
+    start_altitude_m REAL,
+    azimuth_deg REAL,
+    elevation_angle_deg REAL,
+    
+    -- Source weather data (read-only)
+    temperature_f REAL,
+    pressure_inhg REAL,
+    humidity_pct REAL,
+    
+    -- User-editable DOPE data
+    clean_bore TEXT,
+    cold_bore TEXT,
+    shot_notes TEXT,
+    distance TEXT,  -- User-provided distance (may differ from range distance)
+    elevation_adjustment TEXT,  -- Elevation adjustment in RADS or MOA
+    windage_adjustment TEXT,  -- Windage adjustment in RADS or MOA
+    
+    -- Metadata
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    
+    UNIQUE(dope_session_id, shot_number)
+);
+
 -- Create indexes for better performance
 CREATE INDEX idx_sessions_user_email ON sessions(user_email);
 CREATE INDEX idx_sessions_uploaded_at ON sessions(uploaded_at);
@@ -261,6 +342,15 @@ CREATE INDEX idx_ranges_submissions_status ON ranges_submissions(status);
 CREATE INDEX idx_ranges_user_email ON ranges(user_email);
 CREATE INDEX idx_ranges_range_name ON ranges(range_name);
 CREATE INDEX idx_ranges_submitted_at ON ranges(submitted_at);
+CREATE INDEX idx_dope_sessions_user_email ON dope_sessions(user_email);
+CREATE INDEX idx_dope_sessions_session_name ON dope_sessions(session_name);
+CREATE INDEX idx_dope_sessions_created_at ON dope_sessions(created_at);
+CREATE INDEX idx_dope_sessions_chrono_session_id ON dope_sessions(chrono_session_id);
+CREATE INDEX idx_dope_sessions_range_submission_id ON dope_sessions(range_submission_id);
+CREATE INDEX idx_dope_measurements_dope_session_id ON dope_measurements(dope_session_id);
+CREATE INDEX idx_dope_measurements_user_email ON dope_measurements(user_email);
+CREATE INDEX idx_dope_measurements_shot_number ON dope_measurements(shot_number);
+CREATE INDEX idx_dope_measurements_datetime_shot ON dope_measurements(datetime_shot);
 
 -- Enable RLS on sessions table
 ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
@@ -349,3 +439,23 @@ CREATE POLICY ranges_public_read_policy ON ranges
 
 CREATE POLICY ranges_admin_policy ON ranges
     FOR ALL USING (auth.jwt() ->> 'email' = 'johnduffie91@gmail.com');
+
+-- Enable RLS on dope_sessions table
+ALTER TABLE dope_sessions ENABLE ROW LEVEL SECURITY;
+
+-- DOPE sessions RLS policies
+CREATE POLICY dope_sessions_user_policy ON dope_sessions
+    FOR ALL USING (user_email = auth.jwt() ->> 'email');
+
+CREATE POLICY dope_sessions_insert_policy ON dope_sessions
+    FOR INSERT WITH CHECK (user_email = auth.jwt() ->> 'email');
+
+-- Enable RLS on dope_measurements table
+ALTER TABLE dope_measurements ENABLE ROW LEVEL SECURITY;
+
+-- DOPE measurements RLS policies
+CREATE POLICY dope_measurements_user_policy ON dope_measurements
+    FOR ALL USING (user_email = auth.jwt() ->> 'email');
+
+CREATE POLICY dope_measurements_insert_policy ON dope_measurements
+    FOR INSERT WITH CHECK (user_email = auth.jwt() ->> 'email');

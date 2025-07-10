@@ -1,5 +1,6 @@
 import streamlit as st
 from datetime import datetime, timedelta
+import uuid
 from .dope_model import DopeModel
 
 def find_closest_weather_measurement(shot_datetime, weather_data, max_time_diff_minutes=30):
@@ -123,7 +124,7 @@ def render_create_session_tab(user, supabase):
         
         # If session has been created, display it
         if dope_model.is_tab_created(tab_name):
-            display_dope_session(dope_model, tab_name)
+            display_dope_session(user, supabase, dope_model, tab_name)
     
     except Exception as e:
         st.error(f"Error loading data: {str(e)}")
@@ -199,7 +200,7 @@ def create_dope_session(user, supabase, chrono_session, range_data, weather_sour
     except Exception as e:
         st.error(f"Error creating DOPE session: {str(e)}")
 
-def display_dope_session(dope_model, tab_name):
+def display_dope_session(user, supabase, dope_model, tab_name):
     """Display the DOPE session with editable measurements table"""
     
     # Get session details and measurements from model
@@ -267,7 +268,120 @@ def display_dope_session(dope_model, tab_name):
     # Update model with any edits
     if not edited_df.equals(current_df):
         dope_model.update_tab_measurements(tab_name, edited_df)
-        st.info("💡 Changes saved automatically. You can save these to the database when this feature is implemented.")
+        st.info("💡 Changes saved automatically. Click 'Save Session' to persist to database.")
     
-    # Option to save the session (future enhancement)
-    st.info("💡 Future: Save this DOPE session to database for later analysis")
+    # Save session button
+    col1, col2 = st.columns([1, 4])
+    with col1:
+        if st.button("💾 Save Session", type="primary", help="Save this DOPE session to database"):
+            save_dope_session(user, supabase, dope_model, tab_name)
+
+def save_dope_session(user, supabase, dope_model, tab_name):
+    """Save the DOPE session and measurements to the database"""
+    
+    try:
+        # Get session details and measurements from model
+        session_details = dope_model.get_tab_session_details(tab_name)
+        measurements_df = dope_model.get_tab_measurements_df(tab_name)
+        
+        if not session_details or measurements_df is None:
+            st.error("No DOPE session data to save.")
+            return
+        
+        # Generate session name based on bullet type and timestamp
+        session_name = f"{session_details.get('bullet_type', 'Unknown')}-{session_details.get('bullet_grain', '')}gr-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+        
+        # Create dope_session record
+        dope_session_id = str(uuid.uuid4())
+        session_data = {
+            "id": dope_session_id,
+            "user_email": user["email"],
+            "session_name": session_name,
+            "bullet_type": session_details.get("bullet_type", ""),
+            "bullet_grain": int(session_details.get("bullet_grain", 0)) if session_details.get("bullet_grain") else None,
+            "range_name": session_details.get("range_name", ""),
+            "distance_m": float(session_details.get("distance_m", 0)) if session_details.get("distance_m") else None,
+            "weather_source": session_details.get("weather_source", ""),
+            "notes": f"Created from DOPE session on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        }
+        
+        # Insert dope_session
+        session_response = supabase.table("dope_sessions").insert(session_data).execute()
+        
+        if not session_response.data:
+            st.error("Failed to save DOPE session.")
+            return
+        
+        # Helper function to safely convert values
+        def safe_float(value):
+            try:
+                if value is None or value == "" or str(value).strip() == "":
+                    return None
+                return float(value)
+            except (ValueError, TypeError):
+                return None
+        
+        def safe_int(value):
+            try:
+                if value is None or value == "" or str(value).strip() == "":
+                    return None
+                return int(value)
+            except (ValueError, TypeError):
+                return None
+        
+        def safe_text(value):
+            if value is None or value == "" or str(value).strip() == "":
+                return None
+            return str(value)
+        
+        # Create dope_measurements records
+        measurements_data = []
+        for _, row in measurements_df.iterrows():
+            measurement_data = {
+                "dope_session_id": dope_session_id,
+                "user_email": user["email"],
+                "shot_number": safe_int(row.get("shot_number")),
+                "datetime_shot": row.get("datetime") if row.get("datetime") else None,
+                
+                # Source chronograph data
+                "speed_fps": safe_float(row.get("speed")),
+                "ke_ft_lb": safe_float(row.get("ke_ft_lb")),
+                "power_factor": safe_float(row.get("power_factor")),
+                
+                # Source range data
+                "start_lat": safe_float(row.get("start_lat")),
+                "start_lon": safe_float(row.get("start_lon")),
+                "start_altitude_m": safe_float(row.get("start_alt")),
+                "azimuth_deg": safe_float(row.get("azimuth")),
+                "elevation_angle_deg": safe_float(row.get("elevation_angle")),
+                
+                # Source weather data
+                "temperature_f": safe_float(row.get("temperature")),
+                "pressure_inhg": safe_float(row.get("pressure")),
+                "humidity_pct": safe_float(row.get("humidity")),
+                
+                # User-editable DOPE data
+                "clean_bore": safe_text(row.get("clean_bore")),
+                "cold_bore": safe_text(row.get("cold_bore")),
+                "shot_notes": safe_text(row.get("shot_notes")),
+                "distance": safe_text(row.get("distance")),
+                "elevation_adjustment": safe_text(row.get("elevation_adjustment")),
+                "windage_adjustment": safe_text(row.get("windage_adjustment")),
+            }
+            measurements_data.append(measurement_data)
+        
+        # Insert dope_measurements
+        if measurements_data:
+            measurements_response = supabase.table("dope_measurements").insert(measurements_data).execute()
+            
+            if not measurements_response.data:
+                st.error("Failed to save DOPE measurements.")
+                return
+        
+        # Success message
+        st.success(f"✅ DOPE session '{session_name}' saved successfully with {len(measurements_data)} measurements!")
+        st.info(f"💾 Session ID: {dope_session_id}")
+        
+    except Exception as e:
+        st.error(f"Error saving DOPE session: {str(e)}")
+        print(f"Save error details: {e}")  # For debugging
