@@ -1,6 +1,6 @@
 import streamlit as st
-import pandas as pd
 from datetime import datetime, timedelta
+from .dope_model import DopeModel
 
 def find_closest_weather_measurement(shot_datetime, weather_data, max_time_diff_minutes=30):
     """Find the closest weather measurement by timestamp within a time window"""
@@ -44,6 +44,13 @@ def find_closest_weather_measurement(shot_datetime, weather_data, max_time_diff_
 def render_create_session_tab(user, supabase):
     """Render the Create Session tab"""
     st.header("📝 Create New Session")
+    
+    # Initialize DOPE model in session state
+    if "dope_model" not in st.session_state:
+        st.session_state.dope_model = DopeModel()
+    
+    dope_model = st.session_state.dope_model
+    tab_name = "create_session"
     
     # Step 1: Select chronograph session
     st.subheader("1. Select Chronograph Session")
@@ -112,13 +119,17 @@ def render_create_session_tab(user, supabase):
                 selected_range = range_options[selected_range_label]
                 
                 if st.button("Create DOPE Session", type="primary"):
-                    create_dope_session(user, supabase, selected_session, selected_range, selected_weather)
+                    create_dope_session(user, supabase, selected_session, selected_range, selected_weather, dope_model, tab_name)
+        
+        # If session has been created, display it
+        if dope_model.is_tab_created(tab_name):
+            display_dope_session(dope_model, tab_name)
     
     except Exception as e:
         st.error(f"Error loading data: {str(e)}")
 
-def create_dope_session(user, supabase, chrono_session, range_data, weather_source):
-    """Create and display the merged DOPE session table"""
+def create_dope_session(user, supabase, chrono_session, range_data, weather_source, dope_model, tab_name):
+    """Create and store the merged DOPE session data in the model"""
     
     try:
         # Get chronograph measurements for the selected session
@@ -132,25 +143,7 @@ def create_dope_session(user, supabase, chrono_session, range_data, weather_sour
         weather_measurements = supabase.table("weather_measurements").select("*").eq("user_email", user["email"]).execute()
         weather_data = weather_measurements.data if weather_measurements.data else []
         
-        st.subheader("3. DOPE Session")
-        
-        # Component 1: DOPE Session Details
-        st.markdown("#### Session Details")
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.metric("Bullet Type", chrono_session.get("bullet_type", ""))
-        with col2:
-            st.metric("Bullet Grain", f"{chrono_session.get('bullet_grain', '')}gr")
-        with col3:
-            st.metric("Range", range_data.get("range_name", ""))
-        with col4:
-            st.metric("Weather Source", weather_source)
-        
-        # Component 2: DOPE Session Measurements Table
-        st.markdown("#### Measurements")
-        
-        # Create the measurements data table (without session-level fields)
+        # Create the measurements data table
         measurements_data = []
         
         for measurement in measurements.data:
@@ -188,44 +181,93 @@ def create_dope_session(user, supabase, chrono_session, range_data, weather_sour
             }
             measurements_data.append(row)
         
-        # Create DataFrame and display measurements table
-        df = pd.DataFrame(measurements_data)
+        # Store in model
+        dope_model.set_tab_measurements(tab_name, measurements_data)
         
-        st.dataframe(
-            df,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "datetime": st.column_config.TextColumn("DateTime", width="medium"),
-                "shot_number": st.column_config.NumberColumn("Shot #", width="small"),
-                "speed": st.column_config.NumberColumn("Speed (fps)", width="small"),
-                "ke_ft_lb": st.column_config.NumberColumn("KE (ft-lb)", width="small"),
-                "power_factor": st.column_config.NumberColumn("PF", width="small"),
-                "clean_bore": st.column_config.TextColumn("Clean Bore", width="small"),
-                "cold_bore": st.column_config.TextColumn("Cold Bore", width="small"),
-                "shot_notes": st.column_config.TextColumn("Shot Notes", width="medium"),
-                "start_lat": st.column_config.NumberColumn("Start Lat", width="small", format="%.6f"),
-                "start_lon": st.column_config.NumberColumn("Start Lon", width="small", format="%.6f"),
-                "start_alt": st.column_config.NumberColumn("Start Alt (m)", width="small"),
-                "azimuth": st.column_config.NumberColumn("Azimuth (°)", width="small", format="%.2f"),
-                "elevation_angle": st.column_config.NumberColumn("Elevation Angle (°)", width="small", format="%.2f"),
-                
-                # Weather data columns (matched by timestamp)
-                "temperature": st.column_config.NumberColumn("Temp (°F)", width="small", format="%.1f"),
-                "pressure": st.column_config.NumberColumn("Pressure (inHg)", width="small", format="%.2f"),
-                "humidity": st.column_config.NumberColumn("Humidity (%)", width="small", format="%.1f"),
-                
-                # Optional DOPE columns (user-editable)
-                "distance": st.column_config.TextColumn("Distance", width="small", help="User-provided distance"),
-                "elevation_adjustment": st.column_config.TextColumn("Elevation Adj", width="medium", help="Elevation adjustment in RADS or MOA"),
-                "windage_adjustment": st.column_config.TextColumn("Windage Adj", width="medium", help="Windage adjustment in RADS or MOA"),
-            }
-        )
+        # Store session details
+        session_details = {
+            "bullet_type": chrono_session.get("bullet_type", ""),
+            "bullet_grain": chrono_session.get("bullet_grain", ""),
+            "range_name": range_data.get("range_name", ""),
+            "weather_source": weather_source,
+            "distance_m": range_data.get("distance_m", "")
+        }
+        dope_model.set_tab_session_details(tab_name, session_details)
         
         st.success(f"✅ DOPE session created with {len(measurements_data)} measurements")
         
-        # Option to save the session (future enhancement)
-        st.info("💡 Future: Save this DOPE session to database for later analysis")
-        
     except Exception as e:
         st.error(f"Error creating DOPE session: {str(e)}")
+
+def display_dope_session(dope_model, tab_name):
+    """Display the DOPE session with editable measurements table"""
+    
+    # Get session details and measurements from model
+    session_details = dope_model.get_tab_session_details(tab_name)
+    current_df = dope_model.get_tab_measurements_df(tab_name)
+    
+    if current_df is None:
+        st.warning("No DOPE session data found.")
+        return
+    
+    st.subheader("3. DOPE Session")
+    
+    # Component 1: DOPE Session Details
+    st.markdown("#### Session Details")
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("Bullet Type", session_details.get("bullet_type", ""))
+    with col2:
+        st.metric("Bullet Grain", f"{session_details.get('bullet_grain', '')}gr")
+    with col3:
+        st.metric("Range", session_details.get("range_name", ""))
+    with col4:
+        st.metric("Weather Source", session_details.get("weather_source", ""))
+    
+    # Component 2: DOPE Session Measurements Table
+    st.markdown("#### Measurements")
+    
+    # Display editable measurements table
+    edited_df = st.data_editor(
+        current_df,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            # Read-only chronograph data columns
+            "datetime": st.column_config.TextColumn("DateTime", width="medium", disabled=True),
+            "shot_number": st.column_config.NumberColumn("Shot #", width="small", disabled=True),
+            "speed": st.column_config.NumberColumn("Speed (fps)", width="small", disabled=True),
+            "ke_ft_lb": st.column_config.NumberColumn("KE (ft-lb)", width="small", disabled=True),
+            "power_factor": st.column_config.NumberColumn("PF", width="small", disabled=True),
+            
+            # Read-only range data columns
+            "start_lat": st.column_config.NumberColumn("Start Lat", width="small", format="%.6f", disabled=True),
+            "start_lon": st.column_config.NumberColumn("Start Lon", width="small", format="%.6f", disabled=True),
+            "start_alt": st.column_config.NumberColumn("Start Alt (m)", width="small", disabled=True),
+            "azimuth": st.column_config.NumberColumn("Azimuth (°)", width="small", format="%.2f", disabled=True),
+            "elevation_angle": st.column_config.NumberColumn("Elevation Angle (°)", width="small", format="%.2f", disabled=True),
+            
+            # Read-only weather data columns
+            "temperature": st.column_config.NumberColumn("Temp (°F)", width="small", format="%.1f", disabled=True),
+            "pressure": st.column_config.NumberColumn("Pressure (inHg)", width="small", format="%.2f", disabled=True),
+            "humidity": st.column_config.NumberColumn("Humidity (%)", width="small", format="%.1f", disabled=True),
+            
+            # Editable columns (grouped at the end)
+            "clean_bore": st.column_config.TextColumn("Clean Bore", width="small", help="Clean bore indicator"),
+            "cold_bore": st.column_config.TextColumn("Cold Bore", width="small", help="Cold bore indicator"),
+            "shot_notes": st.column_config.TextColumn("Shot Notes", width="medium", help="Notes for this shot"),
+            "distance": st.column_config.TextColumn("Distance", width="small", help="User-provided distance"),
+            "elevation_adjustment": st.column_config.TextColumn("Elevation Adj", width="medium", help="Elevation adjustment in RADS or MOA"),
+            "windage_adjustment": st.column_config.TextColumn("Windage Adj", width="medium", help="Windage adjustment in RADS or MOA"),
+        },
+        key=f"dope_measurements_table_{tab_name}"
+    )
+    
+    # Update model with any edits
+    if not edited_df.equals(current_df):
+        dope_model.update_tab_measurements(tab_name, edited_df)
+        st.info("💡 Changes saved automatically. You can save these to the database when this feature is implemented.")
+    
+    # Option to save the session (future enhancement)
+    st.info("💡 Future: Save this DOPE session to database for later analysis")
