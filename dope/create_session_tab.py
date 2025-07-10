@@ -88,46 +88,57 @@ def create_dope_session(user, supabase, chrono_session, range_data, weather_sour
             st.warning("No measurements found for the selected chronograph session.")
             return
         
-        st.subheader("3. DOPE Session Data")
+        st.subheader("3. DOPE Session")
         
-        # Create the merged data table
-        merged_data = []
+        # Component 1: DOPE Session Details
+        st.markdown("#### Session Details")
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric("Bullet Type", chrono_session.get("bullet_type", ""))
+        with col2:
+            st.metric("Bullet Grain", f"{chrono_session.get('bullet_grain', '')}gr")
+        with col3:
+            st.metric("Range", range_data.get("range_name", ""))
+        with col4:
+            st.metric("Weather Source", weather_source)
+        
+        # Component 2: DOPE Session Measurements Table
+        st.markdown("#### Measurements")
+        
+        # Create the measurements data table (without session-level fields)
+        measurements_data = []
         
         for measurement in measurements.data:
             row = {
-                # Chronograph data
+                # Chronograph measurement data
                 "datetime": measurement.get("datetime_local", ""),
                 "shot_number": measurement.get("shot_number", ""),
                 "speed": measurement.get("speed_fps", ""),
-                "bullet_type": chrono_session.get("bullet_type", ""),
-                "bullet_grain": chrono_session.get("bullet_grain", ""),
                 "ke_ft_lb": measurement.get("ke_ft_lb", ""),
                 "power_factor": measurement.get("power_factor", ""),
                 "clean_bore": measurement.get("clean_bore", ""),
                 "cold_bore": measurement.get("cold_bore", ""),
                 "shot_notes": measurement.get("shot_notes", ""),
                 
-                # Range data
+                # Range position data (repeated for each measurement)
                 "start_lat": range_data.get("start_lat", ""),
                 "start_lon": range_data.get("start_lon", ""),
                 "start_alt": range_data.get("start_altitude_m", ""),
                 "azimuth": range_data.get("azimuth_deg", ""),
                 "elevation_angle": range_data.get("elevation_angle_deg", ""),
-                "range_name": range_data.get("range_name", ""),
-                "distance_m": range_data.get("distance_m", ""),
                 
-                # Weather source (placeholder for now)
-                "weather_source": weather_source
+                # Optional DOPE data (to be filled by user later)
+                "distance": "",  # User-provided distance (separate from range distance)
+                "elevation_adjustment": "",  # Elevation adjustment in RADS or MOA
+                "windage_adjustment": "",  # Windage adjustment in RADS or MOA
+                "dope_notes": "",  # Additional notes for this measurement
             }
-            merged_data.append(row)
+            measurements_data.append(row)
         
-        # Create DataFrame and display
-        df = pd.DataFrame(merged_data)
+        # Create DataFrame and display measurements table
+        df = pd.DataFrame(measurements_data)
         
-        # Display session info
-        st.info(f"**Chronograph Session:** {chrono_session['tab_name']} | **Range:** {range_data['range_name']} | **Weather:** {weather_source}")
-        
-        # Display the table
         st.dataframe(
             df,
             use_container_width=True,
@@ -136,8 +147,6 @@ def create_dope_session(user, supabase, chrono_session, range_data, weather_sour
                 "datetime": st.column_config.TextColumn("DateTime", width="medium"),
                 "shot_number": st.column_config.NumberColumn("Shot #", width="small"),
                 "speed": st.column_config.NumberColumn("Speed (fps)", width="small"),
-                "bullet_type": st.column_config.TextColumn("Bullet Type", width="medium"),
-                "bullet_grain": st.column_config.NumberColumn("Grain", width="small"),
                 "ke_ft_lb": st.column_config.NumberColumn("KE (ft-lb)", width="small"),
                 "power_factor": st.column_config.NumberColumn("PF", width="small"),
                 "clean_bore": st.column_config.TextColumn("Clean Bore", width="small"),
@@ -147,14 +156,17 @@ def create_dope_session(user, supabase, chrono_session, range_data, weather_sour
                 "start_lon": st.column_config.NumberColumn("Start Lon", width="small", format="%.6f"),
                 "start_alt": st.column_config.NumberColumn("Start Alt (m)", width="small"),
                 "azimuth": st.column_config.NumberColumn("Azimuth (°)", width="small", format="%.2f"),
-                "elevation_angle": st.column_config.NumberColumn("Elev Angle (°)", width="small", format="%.2f"),
-                "range_name": st.column_config.TextColumn("Range", width="medium"),
-                "distance_m": st.column_config.NumberColumn("Distance (m)", width="small"),
-                "weather_source": st.column_config.TextColumn("Weather", width="medium")
+                "elevation_angle": st.column_config.NumberColumn("Elevation Angle (°)", width="small", format="%.2f"),
+                
+                # Optional DOPE columns (user-editable)
+                "distance": st.column_config.TextColumn("Distance", width="small", help="User-provided distance"),
+                "elevation_adjustment": st.column_config.TextColumn("Elevation Adj", width="medium", help="Elevation adjustment in RADS or MOA"),
+                "windage_adjustment": st.column_config.TextColumn("Windage Adj", width="medium", help="Windage adjustment in RADS or MOA"),
+                "dope_notes": st.column_config.TextColumn("DOPE Notes", width="large", help="Additional notes for this measurement"),
             }
         )
         
-        st.success(f"✅ DOPE session created with {len(merged_data)} measurements")
+        st.success(f"✅ DOPE session created with {len(measurements_data)} measurements")
         
         # Option to save the session (future enhancement)
         st.info("💡 Future: Save this DOPE session to database for later analysis")
