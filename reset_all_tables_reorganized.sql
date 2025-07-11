@@ -1,7 +1,10 @@
 -- Reset all tables: delete data, drop tables, and recreate with latest schema
 -- Run this in Supabase SQL Editor
+-- REORGANIZED: All operations for each table are grouped together
 
--- Delete all data first (respecting foreign key constraints)
+-- ========================================
+-- INITIAL CLEANUP - Delete all data first (respecting foreign key constraints)
+-- ========================================
 DELETE FROM dope_measurements;
 DELETE FROM dope_sessions;
 DELETE FROM weather_measurements;
@@ -13,7 +16,9 @@ DELETE FROM ranges;
 DELETE FROM ammo;
 DELETE FROM rifles;
 
--- Drop all tables with CASCADE to handle any remaining dependencies
+-- ========================================
+-- INITIAL CLEANUP - Drop all tables with CASCADE
+-- ========================================
 DROP TABLE IF EXISTS dope_measurements CASCADE;
 DROP TABLE IF EXISTS dope_sessions CASCADE;
 DROP TABLE IF EXISTS weather_measurements CASCADE;
@@ -24,6 +29,11 @@ DROP TABLE IF EXISTS ranges_submissions CASCADE;
 DROP TABLE IF EXISTS ranges CASCADE;
 DROP TABLE IF EXISTS ammo CASCADE;
 DROP TABLE IF EXISTS rifles CASCADE;
+
+
+-- ========================================
+-- WEATHER_SOURCE TABLE
+-- ========================================
 
 -- Create weather_source table for weather meter metadata
 CREATE TABLE weather_source (
@@ -49,6 +59,25 @@ CREATE TABLE weather_source (
     -- Unique constraint to prevent duplicate weather sources per user
     UNIQUE(user_email, name)
 );
+
+-- Create weather_source indexes
+CREATE INDEX idx_weather_source_user_email ON weather_source(user_email);
+CREATE INDEX idx_weather_source_name ON weather_source(name);
+CREATE INDEX idx_weather_source_serial_number ON weather_source(serial_number);
+
+-- Enable RLS on weather_source table
+ALTER TABLE weather_source ENABLE ROW LEVEL SECURITY;
+
+-- Weather source RLS policies
+CREATE POLICY weather_source_user_policy ON weather_source
+    FOR ALL USING (user_email = auth.jwt() ->> 'email');
+
+CREATE POLICY weather_source_insert_policy ON weather_source
+    FOR INSERT WITH CHECK (user_email = auth.jwt() ->> 'email');
+
+-- ========================================
+-- WEATHER_MEASUREMENTS TABLE
+-- ========================================
 
 -- Create weather_measurements table for Kestrel weather data
 CREATE TABLE weather_measurements (
@@ -92,6 +121,27 @@ CREATE TABLE weather_measurements (
     UNIQUE(user_email, weather_source_id, measurement_timestamp)
 );
 
+-- Create weather_measurements indexes
+CREATE INDEX idx_weather_measurements_user_email ON weather_measurements(user_email);
+CREATE INDEX idx_weather_measurements_source_timestamp ON weather_measurements(weather_source_id, measurement_timestamp);
+CREATE INDEX idx_weather_measurements_timestamp ON weather_measurements(measurement_timestamp);
+CREATE INDEX idx_weather_measurements_source_id ON weather_measurements(weather_source_id);
+CREATE INDEX idx_weather_measurements_uploaded_at ON weather_measurements(uploaded_at);
+
+-- Enable RLS on weather_measurements table
+ALTER TABLE weather_measurements ENABLE ROW LEVEL SECURITY;
+
+-- Weather measurements RLS policies
+CREATE POLICY weather_measurements_user_policy ON weather_measurements
+    FOR ALL USING (user_email = auth.jwt() ->> 'email');
+
+CREATE POLICY weather_measurements_insert_policy ON weather_measurements
+    FOR INSERT WITH CHECK (user_email = auth.jwt() ->> 'email');
+
+-- ========================================
+-- CHRONO_SESSIONS TABLE
+-- ========================================
+
 -- Create chrono_sessions table for session metadata from Excel tabs
 CREATE TABLE chrono_sessions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -119,6 +169,26 @@ CREATE TABLE chrono_sessions (
     UNIQUE(user_email, tab_name, datetime_local)
 );
 
+-- Create chrono_sessions indexes
+CREATE INDEX idx_chrono_sessions_user_email ON chrono_sessions(user_email);
+CREATE INDEX idx_chrono_sessions_tab_name ON chrono_sessions(tab_name);
+CREATE INDEX idx_chrono_sessions_datetime_local ON chrono_sessions(datetime_local);
+CREATE INDEX idx_chrono_sessions_bullet_type ON chrono_sessions(bullet_type);
+
+-- Enable RLS on chrono_sessions table
+ALTER TABLE chrono_sessions ENABLE ROW LEVEL SECURITY;
+
+-- Chrono session RLS policies
+CREATE POLICY chrono_sessions_user_policy ON chrono_sessions
+    FOR ALL USING (user_email = auth.jwt() ->> 'email');
+
+CREATE POLICY chrono_sessions_insert_policy ON chrono_sessions
+    FOR INSERT WITH CHECK (user_email = auth.jwt() ->> 'email');
+
+-- ========================================
+-- CHRONO_MEASUREMENTS TABLE
+-- ========================================
+
 -- Create chrono_measurements table for Garmin Xero chronograph timeseries data
 CREATE TABLE chrono_measurements (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -143,6 +213,27 @@ CREATE TABLE chrono_measurements (
     -- Unique constraint to prevent duplicate measurements
     UNIQUE(user_email, chrono_session_id, shot_number, datetime_local)
 );
+
+-- Create chrono_measurements indexes
+CREATE INDEX idx_chrono_measurements_user_email ON chrono_measurements(user_email);
+CREATE INDEX idx_chrono_measurements_datetime_local ON chrono_measurements(datetime_local);
+CREATE INDEX idx_chrono_measurements_shot_number ON chrono_measurements(shot_number);
+CREATE INDEX idx_chrono_measurements_speed_fps ON chrono_measurements(speed_fps);
+CREATE INDEX idx_chrono_measurements_session_id ON chrono_measurements(chrono_session_id);
+
+-- Enable RLS on chrono_measurements table
+ALTER TABLE chrono_measurements ENABLE ROW LEVEL SECURITY;
+
+-- Chrono measurements RLS policies
+CREATE POLICY chrono_measurements_user_policy ON chrono_measurements
+    FOR ALL USING (user_email = auth.jwt() ->> 'email');
+
+CREATE POLICY chrono_measurements_insert_policy ON chrono_measurements
+    FOR INSERT WITH CHECK (user_email = auth.jwt() ->> 'email');
+
+-- ========================================
+-- RANGES_SUBMISSIONS TABLE
+-- ========================================
 
 -- Create ranges_submissions table for mapping data (pending approval)
 CREATE TABLE ranges_submissions (
@@ -177,6 +268,30 @@ CREATE TABLE ranges_submissions (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Create ranges_submissions indexes
+CREATE INDEX idx_ranges_submissions_user_email ON ranges_submissions(user_email);
+CREATE INDEX idx_ranges_submissions_range_name ON ranges_submissions(range_name);
+CREATE INDEX idx_ranges_submissions_submitted_at ON ranges_submissions(submitted_at);
+CREATE INDEX idx_ranges_submissions_status ON ranges_submissions(status);
+
+-- Enable RLS on ranges_submissions table
+ALTER TABLE ranges_submissions ENABLE ROW LEVEL SECURITY;
+
+-- Ranges submissions RLS policies
+CREATE POLICY ranges_submissions_user_policy ON ranges_submissions
+    FOR ALL USING (user_email = auth.jwt() ->> 'email');
+
+CREATE POLICY ranges_submissions_insert_policy ON ranges_submissions
+    FOR INSERT WITH CHECK (user_email = auth.jwt() ->> 'email');
+
+-- Admin policy for ranges_submissions (johnduffie91@gmail.com can see all)
+CREATE POLICY ranges_submissions_admin_policy ON ranges_submissions
+    FOR ALL USING (auth.jwt() ->> 'email' = 'johnduffie91@gmail.com');
+
+-- ========================================
+-- RANGES TABLE
+-- ========================================
+
 -- Create ranges table for approved ranges (public)
 CREATE TABLE ranges (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -205,6 +320,25 @@ CREATE TABLE ranges (
     submitted_at TIMESTAMPTZ DEFAULT NOW(),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Create ranges indexes
+CREATE INDEX idx_ranges_user_email ON ranges(user_email);
+CREATE INDEX idx_ranges_range_name ON ranges(range_name);
+CREATE INDEX idx_ranges_submitted_at ON ranges(submitted_at);
+
+-- Enable RLS on ranges table
+ALTER TABLE ranges ENABLE ROW LEVEL SECURITY;
+
+-- Ranges RLS policies (public read access, admin can insert)
+CREATE POLICY ranges_public_read_policy ON ranges
+    FOR SELECT USING (true);
+
+CREATE POLICY ranges_admin_policy ON ranges
+    FOR ALL USING (auth.jwt() ->> 'email' = 'johnduffie91@gmail.com');
+
+-- ========================================
+-- DOPE_SESSIONS TABLE
+-- ========================================
 
 -- Create dope_sessions table for DOPE session metadata
 CREATE TABLE dope_sessions (
@@ -241,6 +375,27 @@ CREATE TABLE dope_sessions (
     UNIQUE(user_email, session_name),
     UNIQUE(chrono_session_id)  -- Enforce 1-to-1 relationship with chronograph sessions
 );
+
+-- Create dope_sessions indexes
+CREATE INDEX idx_dope_sessions_user_email ON dope_sessions(user_email);
+CREATE INDEX idx_dope_sessions_session_name ON dope_sessions(session_name);
+CREATE INDEX idx_dope_sessions_created_at ON dope_sessions(created_at);
+CREATE INDEX idx_dope_sessions_chrono_session_id ON dope_sessions(chrono_session_id);
+CREATE INDEX idx_dope_sessions_range_submission_id ON dope_sessions(range_submission_id);
+
+-- Enable RLS on dope_sessions table
+ALTER TABLE dope_sessions ENABLE ROW LEVEL SECURITY;
+
+-- DOPE sessions RLS policies
+CREATE POLICY dope_sessions_user_policy ON dope_sessions
+    FOR ALL USING (user_email = auth.jwt() ->> 'email');
+
+CREATE POLICY dope_sessions_insert_policy ON dope_sessions
+    FOR INSERT WITH CHECK (user_email = auth.jwt() ->> 'email');
+
+-- ========================================
+-- DOPE_MEASUREMENTS TABLE
+-- ========================================
 
 -- Create dope_measurements table for individual shot measurements and DOPE adjustments
 CREATE TABLE dope_measurements (
@@ -284,6 +439,26 @@ CREATE TABLE dope_measurements (
     UNIQUE(dope_session_id, shot_number)
 );
 
+-- Create dope_measurements indexes
+CREATE INDEX idx_dope_measurements_dope_session_id ON dope_measurements(dope_session_id);
+CREATE INDEX idx_dope_measurements_user_email ON dope_measurements(user_email);
+CREATE INDEX idx_dope_measurements_shot_number ON dope_measurements(shot_number);
+CREATE INDEX idx_dope_measurements_datetime_shot ON dope_measurements(datetime_shot);
+
+-- Enable RLS on dope_measurements table
+ALTER TABLE dope_measurements ENABLE ROW LEVEL SECURITY;
+
+-- DOPE measurements RLS policies
+CREATE POLICY dope_measurements_user_policy ON dope_measurements
+    FOR ALL USING (user_email = auth.jwt() ->> 'email');
+
+CREATE POLICY dope_measurements_insert_policy ON dope_measurements
+    FOR INSERT WITH CHECK (user_email = auth.jwt() ->> 'email');
+
+-- ========================================
+-- AMMO TABLE
+-- ========================================
+
 -- Create ammo table for ammunition metadata
 CREATE TABLE ammo (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -301,6 +476,26 @@ CREATE TABLE ammo (
     -- Unique constraint to prevent duplicate ammo per user
     UNIQUE(user_email, make, model, caliber, weight)
 );
+
+-- Create ammo indexes
+CREATE INDEX idx_ammo_user_email ON ammo(user_email);
+CREATE INDEX idx_ammo_make ON ammo(make);
+CREATE INDEX idx_ammo_caliber ON ammo(caliber);
+CREATE INDEX idx_ammo_created_at ON ammo(created_at);
+
+-- Enable RLS on ammo table
+ALTER TABLE ammo ENABLE ROW LEVEL SECURITY;
+
+-- Ammo RLS policies
+CREATE POLICY ammo_user_policy ON ammo
+    FOR ALL USING (user_email = auth.jwt() ->> 'email');
+
+CREATE POLICY ammo_insert_policy ON ammo
+    FOR INSERT WITH CHECK (user_email = auth.jwt() ->> 'email');
+
+-- ========================================
+-- RIFLES TABLE
+-- ========================================
 
 -- Create rifles table for rifle metadata
 CREATE TABLE rifles (
@@ -322,142 +517,10 @@ CREATE TABLE rifles (
     UNIQUE(user_email, name)
 );
 
--- Create indexes for better performance
-CREATE INDEX idx_weather_measurements_user_email ON weather_measurements(user_email);
-CREATE INDEX idx_weather_measurements_source_timestamp ON weather_measurements(weather_source_id, measurement_timestamp);
-CREATE INDEX idx_weather_measurements_timestamp ON weather_measurements(measurement_timestamp);
-CREATE INDEX idx_weather_measurements_source_id ON weather_measurements(weather_source_id);
-CREATE INDEX idx_weather_measurements_uploaded_at ON weather_measurements(uploaded_at);
-CREATE INDEX idx_weather_source_user_email ON weather_source(user_email);
-CREATE INDEX idx_weather_source_name ON weather_source(name);
-CREATE INDEX idx_weather_source_serial_number ON weather_source(serial_number);
-CREATE INDEX idx_chrono_measurements_user_email ON chrono_measurements(user_email);
-CREATE INDEX idx_chrono_measurements_datetime_local ON chrono_measurements(datetime_local);
-CREATE INDEX idx_chrono_measurements_shot_number ON chrono_measurements(shot_number);
-CREATE INDEX idx_chrono_measurements_speed_fps ON chrono_measurements(speed_fps);
-CREATE INDEX idx_chrono_measurements_session_id ON chrono_measurements(chrono_session_id);
-CREATE INDEX idx_chrono_sessions_user_email ON chrono_sessions(user_email);
-CREATE INDEX idx_chrono_sessions_tab_name ON chrono_sessions(tab_name);
-CREATE INDEX idx_chrono_sessions_datetime_local ON chrono_sessions(datetime_local);
-CREATE INDEX idx_chrono_sessions_bullet_type ON chrono_sessions(bullet_type);
-CREATE INDEX idx_ranges_submissions_user_email ON ranges_submissions(user_email);
-CREATE INDEX idx_ranges_submissions_range_name ON ranges_submissions(range_name);
-CREATE INDEX idx_ranges_submissions_submitted_at ON ranges_submissions(submitted_at);
-CREATE INDEX idx_ranges_submissions_status ON ranges_submissions(status);
-CREATE INDEX idx_ranges_user_email ON ranges(user_email);
-CREATE INDEX idx_ranges_range_name ON ranges(range_name);
-CREATE INDEX idx_ranges_submitted_at ON ranges(submitted_at);
-CREATE INDEX idx_dope_sessions_user_email ON dope_sessions(user_email);
-CREATE INDEX idx_dope_sessions_session_name ON dope_sessions(session_name);
-CREATE INDEX idx_dope_sessions_created_at ON dope_sessions(created_at);
-CREATE INDEX idx_dope_sessions_chrono_session_id ON dope_sessions(chrono_session_id);
-CREATE INDEX idx_dope_sessions_range_submission_id ON dope_sessions(range_submission_id);
-CREATE INDEX idx_dope_measurements_dope_session_id ON dope_measurements(dope_session_id);
-CREATE INDEX idx_dope_measurements_user_email ON dope_measurements(user_email);
-CREATE INDEX idx_dope_measurements_shot_number ON dope_measurements(shot_number);
-CREATE INDEX idx_dope_measurements_datetime_shot ON dope_measurements(datetime_shot);
-CREATE INDEX idx_ammo_user_email ON ammo(user_email);
-CREATE INDEX idx_ammo_make ON ammo(make);
-CREATE INDEX idx_ammo_caliber ON ammo(caliber);
-CREATE INDEX idx_ammo_created_at ON ammo(created_at);
+-- Create rifles indexes
 CREATE INDEX idx_rifles_user_email ON rifles(user_email);
 CREATE INDEX idx_rifles_name ON rifles(name);
 CREATE INDEX idx_rifles_created_at ON rifles(created_at);
-
-
--- Enable RLS on weather_measurements table
-ALTER TABLE weather_measurements ENABLE ROW LEVEL SECURITY;
-
--- Weather measurements RLS policies
-CREATE POLICY weather_measurements_user_policy ON weather_measurements
-    FOR ALL USING (user_email = auth.jwt() ->> 'email');
-
-CREATE POLICY weather_measurements_insert_policy ON weather_measurements
-    FOR INSERT WITH CHECK (user_email = auth.jwt() ->> 'email');
-
--- Enable RLS on weather_source table
-ALTER TABLE weather_source ENABLE ROW LEVEL SECURITY;
-
--- Weather source RLS policies
-CREATE POLICY weather_source_user_policy ON weather_source
-    FOR ALL USING (user_email = auth.jwt() ->> 'email');
-
-CREATE POLICY weather_source_insert_policy ON weather_source
-    FOR INSERT WITH CHECK (user_email = auth.jwt() ->> 'email');
-
--- Enable RLS on chrono_measurements table
-ALTER TABLE chrono_measurements ENABLE ROW LEVEL SECURITY;
-
--- Chrono measurements RLS policies
-CREATE POLICY chrono_measurements_user_policy ON chrono_measurements
-    FOR ALL USING (user_email = auth.jwt() ->> 'email');
-
-CREATE POLICY chrono_measurements_insert_policy ON chrono_measurements
-    FOR INSERT WITH CHECK (user_email = auth.jwt() ->> 'email');
-
--- Enable RLS on chrono_sessions table
-ALTER TABLE chrono_sessions ENABLE ROW LEVEL SECURITY;
-
--- Chrono session RLS policies
-CREATE POLICY chrono_sessions_user_policy ON chrono_sessions
-    FOR ALL USING (user_email = auth.jwt() ->> 'email');
-
-CREATE POLICY chrono_sessions_insert_policy ON chrono_sessions
-    FOR INSERT WITH CHECK (user_email = auth.jwt() ->> 'email');
-
--- Enable RLS on ranges_submissions table
-ALTER TABLE ranges_submissions ENABLE ROW LEVEL SECURITY;
-
--- Ranges submissions RLS policies
-CREATE POLICY ranges_submissions_user_policy ON ranges_submissions
-    FOR ALL USING (user_email = auth.jwt() ->> 'email');
-
-CREATE POLICY ranges_submissions_insert_policy ON ranges_submissions
-    FOR INSERT WITH CHECK (user_email = auth.jwt() ->> 'email');
-
--- Admin policy for ranges_submissions (johnduffie91@gmail.com can see all)
-CREATE POLICY ranges_submissions_admin_policy ON ranges_submissions
-    FOR ALL USING (auth.jwt() ->> 'email' = 'johnduffie91@gmail.com');
-
--- Enable RLS on ranges table
-ALTER TABLE ranges ENABLE ROW LEVEL SECURITY;
-
--- Ranges RLS policies (public read access, admin can insert)
-CREATE POLICY ranges_public_read_policy ON ranges
-    FOR SELECT USING (true);
-
-CREATE POLICY ranges_admin_policy ON ranges
-    FOR ALL USING (auth.jwt() ->> 'email' = 'johnduffie91@gmail.com');
-
--- Enable RLS on dope_sessions table
-ALTER TABLE dope_sessions ENABLE ROW LEVEL SECURITY;
-
--- DOPE sessions RLS policies
-CREATE POLICY dope_sessions_user_policy ON dope_sessions
-    FOR ALL USING (user_email = auth.jwt() ->> 'email');
-
-CREATE POLICY dope_sessions_insert_policy ON dope_sessions
-    FOR INSERT WITH CHECK (user_email = auth.jwt() ->> 'email');
-
--- Enable RLS on dope_measurements table
-ALTER TABLE dope_measurements ENABLE ROW LEVEL SECURITY;
-
--- DOPE measurements RLS policies
-CREATE POLICY dope_measurements_user_policy ON dope_measurements
-    FOR ALL USING (user_email = auth.jwt() ->> 'email');
-
-CREATE POLICY dope_measurements_insert_policy ON dope_measurements
-    FOR INSERT WITH CHECK (user_email = auth.jwt() ->> 'email');
-
--- Enable RLS on ammo table
-ALTER TABLE ammo ENABLE ROW LEVEL SECURITY;
-
--- Ammo RLS policies
-CREATE POLICY ammo_user_policy ON ammo
-    FOR ALL USING (user_email = auth.jwt() ->> 'email');
-
-CREATE POLICY ammo_insert_policy ON ammo
-    FOR INSERT WITH CHECK (user_email = auth.jwt() ->> 'email');
 
 -- Enable RLS on rifles table
 ALTER TABLE rifles ENABLE ROW LEVEL SECURITY;
