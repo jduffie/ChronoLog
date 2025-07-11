@@ -129,11 +129,78 @@ def render_create_session_tab(user, supabase):
                     st.warning("No weather sources found.")
                     selected_weather = None
             
+            # Step 2.5: Rifle and Ammo Selection
+            st.subheader("2.5. Select Rifle and Ammo")
+            
+            col3, col4 = st.columns(2)
+            
+            with col3:
+                st.markdown("**Rifle Selection**")
+                # Get rifles for the user
+                try:
+                    rifles_response = supabase.table("rifles").select("*").eq("user_email", user["email"]).order("name").execute()
+                    
+                    rifle_options = {}
+                    if rifles_response.data:
+                        for rifle in rifles_response.data:
+                            # Create a descriptive label
+                            label = f"{rifle['name']}"
+                            details = []
+                            if rifle.get('barrel_length'):
+                                details.append(f"Length: {rifle['barrel_length']}")
+                            if rifle.get('barrel_twist_ratio'):
+                                details.append(f"Twist: {rifle['barrel_twist_ratio']}")
+                            if details:
+                                label += f" ({', '.join(details)})"
+                            rifle_options[label] = rifle
+                        
+                        selected_rifle_label = st.selectbox(
+                            "Choose a rifle:",
+                            options=list(rifle_options.keys()),
+                            index=None,
+                            placeholder="Select a rifle..."
+                        )
+                        
+                        selected_rifle = rifle_options[selected_rifle_label] if selected_rifle_label else None
+                    else:
+                        st.warning("No rifles found. Please add rifles first.")
+                        selected_rifle = None
+                except Exception as e:
+                    st.error(f"Error loading rifles: {str(e)}")
+                    selected_rifle = None
+            
+            with col4:
+                st.markdown("**Ammo Selection**")
+                # Get ammo for the user
+                try:
+                    ammo_response = supabase.table("ammo").select("*").eq("user_email", user["email"]).order("make").execute()
+                    
+                    ammo_options = {}
+                    if ammo_response.data:
+                        for ammo in ammo_response.data:
+                            label = f"{ammo['make']} {ammo['model']} - {ammo['caliber']} - {ammo['weight']}"
+                            ammo_options[label] = ammo
+                        
+                        selected_ammo_label = st.selectbox(
+                            "Choose ammo:",
+                            options=list(ammo_options.keys()),
+                            index=None,
+                            placeholder="Select ammo..."
+                        )
+                        
+                        selected_ammo = ammo_options[selected_ammo_label] if selected_ammo_label else None
+                    else:
+                        st.warning("No ammo found. Please add ammo first.")
+                        selected_ammo = None
+                except Exception as e:
+                    st.error(f"Error loading ammo: {str(e)}")
+                    selected_ammo = None
+            
             # Prepare selected range and weather data
             selected_range = range_options[selected_range_label] if selected_range_label else None
             
             # Create/update the DOPE session with current selections
-            create_dope_session(user, supabase, selected_session, selected_range, selected_weather, dope_model, tab_name)
+            create_dope_session(user, supabase, selected_session, selected_range, selected_weather, selected_rifle, selected_ammo, dope_model, tab_name)
             
             # Add spacing before the table
             st.markdown("---")
@@ -146,7 +213,7 @@ def render_create_session_tab(user, supabase):
     except Exception as e:
         st.error(f"Error loading data: {str(e)}")
 
-def create_dope_session(user, supabase, chrono_session, range_data, weather_source, dope_model, tab_name):
+def create_dope_session(user, supabase, chrono_session, range_data, weather_source, selected_rifle, selected_ammo, dope_model, tab_name):
     """Create and store the merged DOPE session data in the model"""
     
     try:
@@ -215,7 +282,11 @@ def create_dope_session(user, supabase, chrono_session, range_data, weather_sour
             "weather_source_name": weather_source.get("name", "") if weather_source else "",
             "distance_m": range_data.get("distance_m", "") if range_data else "",
             "chrono_session": chrono_session,  # Store entire chrono session object
-            "range_data": range_data  # Store entire range data object
+            "range_data": range_data,  # Store entire range data object
+            "rifle": selected_rifle,  # Store entire rifle object
+            "rifle_name": selected_rifle.get("name", "") if selected_rifle else "",
+            "ammo": selected_ammo,  # Store entire ammo object
+            "ammo_description": f"{selected_ammo.get('make', '')} {selected_ammo.get('model', '')}".strip() if selected_ammo else ""
         }
         dope_model.set_tab_session_details(tab_name, session_details)
         
@@ -239,7 +310,7 @@ def display_dope_session(user, supabase, dope_model, tab_name):
     
     # Component 1: DOPE Session Details
     st.markdown("#### Session Details")
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
     
     with col1:
         st.metric("Bullet Type", session_details.get("bullet_type", ""))
@@ -249,6 +320,10 @@ def display_dope_session(user, supabase, dope_model, tab_name):
         st.metric("Range", session_details.get("range_name", ""))
     with col4:
         st.metric("Weather Source", session_details.get("weather_source_name", ""))
+    with col5:
+        st.metric("Rifle", session_details.get("rifle_name", ""))
+    with col6:
+        st.metric("Ammo", session_details.get("ammo_description", ""))
     
     # Component 2: DOPE Session Measurements Table
     st.markdown("#### Measurements")
@@ -340,6 +415,8 @@ def save_dope_session(user, supabase, dope_model, tab_name):
             
             weather_source = session_details.get("weather_source")
             range_data = session_details.get("range_data")
+            rifle_data = session_details.get("rifle")
+            ammo_data = session_details.get("ammo")
             session_data = {
                 "id": dope_session_id,
                 "user_email": user["email"],
@@ -351,6 +428,8 @@ def save_dope_session(user, supabase, dope_model, tab_name):
                 "chrono_session_id": chrono_session.get("id"),
                 "range_submission_id": range_data.get("id") if range_data else None,
                 "weather_source_id": weather_source.get("id") if weather_source else None,
+                "rifle_id": rifle_data.get("id") if rifle_data else None,
+                "ammo_id": ammo_data.get("id") if ammo_data else None,
                 "notes": f"Created from DOPE session on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
             }
             
