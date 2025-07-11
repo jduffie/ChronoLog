@@ -6,8 +6,8 @@ def render_view_session_tab(user, supabase):
     st.header("🔍 View Session")
     
     try:
-        # Get user's sessions
-        sessions_response = supabase.table("dope_sessions").select("*").eq("user_email", user["email"]).order("created_at", desc=True).execute()
+        # Get user's sessions with datetime_local from chrono_sessions
+        sessions_response = supabase.table("dope_sessions").select("*, chrono_sessions(datetime_local)").eq("user_email", user["email"]).order("created_at", desc=True).execute()
         sessions = sessions_response.data
         
         if sessions:
@@ -20,8 +20,14 @@ def render_view_session_tab(user, supabase):
                 measurements_response = supabase.table("dope_measurements").select("*").eq("dope_session_id", session['id']).execute()
                 measurements = measurements_response.data
                 
-                # Prepare session timestamp
-                if session.get('created_at'):
+                # Prepare session timestamp using datetime_local from chrono_sessions
+                chrono_session = session.get('chrono_sessions')
+                if chrono_session and chrono_session.get('datetime_local'):
+                    session_dt = pd.to_datetime(chrono_session['datetime_local'])
+                    session_date = session_dt.strftime('%Y-%m-%d')
+                    session_time = session_dt.strftime('%H:%M')
+                elif session.get('created_at'):
+                    # Fallback to created_at if datetime_local not available
                     session_dt = pd.to_datetime(session['created_at'])
                     session_date = session_dt.strftime('%Y-%m-%d')
                     session_time = session_dt.strftime('%H:%M')
@@ -108,11 +114,17 @@ def render_view_session_tab(user, supabase):
                         with col3:
                             st.metric("Bullet Weight", f"{selected_session.get('bullet_grain', 'N/A')} gr")
                         with col4:
-                            if selected_session.get('created_at'):
+                            # Use datetime_local from chrono_sessions for the session date/time
+                            chrono_session = selected_session.get('chrono_sessions')
+                            if chrono_session and chrono_session.get('datetime_local'):
+                                session_dt = pd.to_datetime(chrono_session['datetime_local'])
+                                st.metric("Session Date", session_dt.strftime('%Y-%m-%d %H:%M'))
+                            elif selected_session.get('created_at'):
+                                # Fallback to created_at
                                 created_dt = pd.to_datetime(selected_session['created_at'])
                                 st.metric("Created", created_dt.strftime('%Y-%m-%d %H:%M'))
                             else:
-                                st.metric("Created", "N/A")
+                                st.metric("Date", "N/A")
                         
                         # Component 1: Cartridge Details
                         st.markdown("#### Cartridge")

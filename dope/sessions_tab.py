@@ -1,15 +1,15 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 
 def render_sessions_tab(user, supabase):
     """Render the Session Metrics tab - table view with multi-selection and graphing"""
     st.header("📊 Session Metrics")
     
     try:
-        # Get user's sessions
-        sessions_response = supabase.table("dope_sessions").select("*").eq("user_email", user["email"]).order("created_at", desc=True).execute()
+        # Get user's sessions with datetime_local from chrono_sessions
+        # Note: We order by created_at as a fallback since we can't order by joined table fields in Supabase
+        sessions_response = supabase.table("dope_sessions").select("*, chrono_sessions(datetime_local)").eq("user_email", user["email"]).order("created_at", desc=True).execute()
         sessions = sessions_response.data
         
         if sessions:
@@ -21,8 +21,14 @@ def render_sessions_tab(user, supabase):
                 measurements_response = supabase.table("dope_measurements").select("*").eq("dope_session_id", session['id']).execute()
                 measurements = measurements_response.data
                 
-                # Prepare session timestamp
-                if session.get('created_at'):
+                # Prepare session timestamp using datetime_local from chrono_sessions
+                chrono_session = session.get('chrono_sessions')
+                if chrono_session and chrono_session.get('datetime_local'):
+                    session_dt = pd.to_datetime(chrono_session['datetime_local'])
+                    session_date = session_dt.strftime('%Y-%m-%d')
+                    session_time = session_dt.strftime('%H:%M')
+                elif session.get('created_at'):
+                    # Fallback to created_at if datetime_local not available
                     session_dt = pd.to_datetime(session['created_at'])
                     session_date = session_dt.strftime('%Y-%m-%d')
                     session_time = session_dt.strftime('%H:%M')
