@@ -33,6 +33,10 @@ class NominateController:
         for key in form_keys:
             if key in st.session_state:
                 del st.session_state[key]
+        
+        # Clear processed markers to allow new submissions
+        if "processed_markers" in st.session_state:
+            del st.session_state["processed_markers"]
 
     def _handle_elevation_fetching(self) -> None:
         """Handle elevation data fetching with spinner."""
@@ -64,8 +68,15 @@ class NominateController:
                 print(f"  Point 1: lat={point1[1]:.6f}, lon={point1[0]:.6f}")
                 print(f"  Point 2: lat={point2[1]:.6f}, lon={point2[0]:.6f}")
                 
-                # Process the points and disable draw
-                if len(self.model.points) < 2:
+                # Create a unique key for this set of markers
+                markers_key = f"{point1[1]:.6f},{point1[0]:.6f}|{point2[1]:.6f},{point2[0]:.6f}"
+                
+                # Check if we've already processed these exact markers
+                if "processed_markers" not in st.session_state:
+                    st.session_state.processed_markers = set()
+                
+                # Process the points and disable draw only if not already processed
+                if markers_key not in st.session_state.processed_markers:
                     # Clear existing points and add the two new ones
                     self.model.points = []
                     self.model.add_point(point1[1], point1[0])  # lat, lon
@@ -77,10 +88,15 @@ class NominateController:
                     # Calculate and store measurements
                     self.model.measurements = self.model.calculate_measurements()
                     
+                    # Mark these markers as processed
+                    st.session_state.processed_markers.add(markers_key)
+                    
                     print(f"✅ Processed points, calculated measurements, and disabled draw")
                     
                     # Trigger rerun to update map with polyline and disable draw
                     st.rerun()
+                else:
+                    print(f"⚠️ Markers already processed, skipping rerun")
 
         # Handle map state changes (update model but don't trigger rerun for map navigation)
         if map_info.get("center"):
@@ -171,34 +187,13 @@ class NominateController:
         # Store current nominate state for next comparison
         st.session_state._prev_nominate_state = current_nominate_state.copy()
 
-    def run(self) -> None:
-        """Main controller method to run the nomination application."""
-        # Set page configuration FIRST, before any other Streamlit operations
-        st.set_page_config(
-            page_title="Nominate - ChronoLog Mapping",
-            page_icon="📍",
-            layout="wide"
-        )
-        
-        # Set app identifier for auth system
-        if "app" not in st.query_params:
-            st.query_params["app"] = "mapping"
-            
-        # Handle authentication
-        user = handle_auth()
-        if not user:
-            return
-            
-        # Manage page-specific session state
-        SessionStateManager.set_current_page("nominate")
-        
-        # User info displayed by other pages to avoid duplication
+    def _run_nominate_functionality(self, user, supabase):
+        """Run the core nominate functionality without page setup or auth."""
+        # Don't set current page when running as a tab to avoid clearing session state
+        # SessionStateManager.set_current_page("nominate")
         
         # Check range limit
         try:
-            url = st.secrets["supabase"]["url"]
-            key = st.secrets["supabase"]["key"]
-            supabase = create_client(url, key)
             range_count = self.model.get_user_range_count(user["email"], supabase)
             
             if range_count >= 40:
@@ -213,7 +208,6 @@ class NominateController:
         except Exception as e:
             st.error(f"Error checking range limit: {str(e)}")
             return
-        
 
         # Display title
         self.view.display_title()
@@ -262,6 +256,13 @@ class NominateController:
         # Get measurements from model state
         measurements = self.model.measurements if self.model.measurements else self.model._empty_measurements()
         
+        # Debug: Print measurements state
+        print(f"🔍 Model measurements: {bool(self.model.measurements)}")
+        print(f"🔍 Model points: {len(self.model.points)}")
+        print(f"🔍 Model disable_draw: {self.model.disable_draw}")
+        if self.model.measurements:
+            print(f"🔍 Sample measurement data: start_lat={self.model.measurements.get('start_lat', 'N/A')}")
+        
         # Display range form and measurements table
         submission_result = self.view.display_range_form_and_table(measurements)
         
@@ -271,3 +272,36 @@ class NominateController:
 
         # Debug session state
         self._debug_session_state()
+
+    def run(self) -> None:
+        """Main controller method to run the nomination application."""
+        # Set page configuration FIRST, before any other Streamlit operations
+        st.set_page_config(
+            page_title="Nominate - ChronoLog Mapping",
+            page_icon="📍",
+            layout="wide"
+        )
+        
+        # Set app identifier for auth system
+        if "app" not in st.query_params:
+            st.query_params["app"] = "mapping"
+            
+        # Handle authentication
+        user = handle_auth()
+        if not user:
+            return
+            
+        # Database connection
+        try:
+            url = st.secrets["supabase"]["url"]
+            key = st.secrets["supabase"]["key"]
+            supabase = create_client(url, key)
+        except Exception as e:
+            st.error(f"Error connecting to database: {str(e)}")
+            return
+            
+        # Manage page-specific session state for standalone nominate page
+        SessionStateManager.set_current_page("nominate")
+        
+        # Run the core functionality
+        self._run_nominate_functionality(user, supabase)

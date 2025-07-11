@@ -6,49 +6,20 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from mapping.public_ranges.public_ranges_controller import PublicRangesController
+from mapping.nominate.nominate_controller import NominateController
 from auth import handle_auth
 from supabase import create_client
 
-def main():
-    """Main function for the Public Ranges page."""
-    # Set page configuration FIRST, before any other Streamlit operations
-    st.set_page_config(
-        page_title="Ranges",
-        page_icon="🌍",
-        layout="wide"
-    )
-    
-    # Set app identifier for auth system
-    if "app" not in st.query_params:
-        st.query_params["app"] = "mapping"
-        
-    # Handle authentication
-    user = handle_auth()
-    if not user:
-        return
-        
-    # Display user info in sidebar (only on this page to avoid duplication)
-    if "user_info_displayed" not in st.session_state:
-        st.sidebar.success(f"Logged in as {user['name']}")
-        st.session_state["user_info_displayed"] = True
-    
+def render_public_ranges_tab(user, supabase):
+    """Render the Public Ranges tab content."""
     # Initialize controller
     controller = PublicRangesController()
     
     # Setup page-specific session state
     controller.setup_page_state()
     
-    # Database connection
-    try:
-        url = st.secrets["supabase"]["url"]
-        key = st.secrets["supabase"]["key"]
-        supabase = create_client(url, key)
-    except Exception as e:
-        st.error(f"Error connecting to database: {str(e)}")
-        return
-    
     # Display title
-    st.title("Ranges")
+    st.header("Public Ranges")
     st.subheader("Range data available to all users.")
     
     # Fetch all public ranges
@@ -59,7 +30,6 @@ def main():
             st.info("🌍 No public ranges available yet.")
             return
             
-
         # Check if user is admin
         is_admin = user["email"] == "johnduffie91@gmail.com"
         
@@ -128,6 +98,60 @@ def main():
     
     except Exception as e:
         st.error(f"Error loading public ranges: {str(e)}")
+
+def render_nominate_tab(user, supabase):
+    """Render the Nominate Range tab content."""
+    # Initialize nominate controller
+    controller = NominateController()
+    
+    # Run the nominate controller's core functionality
+    # Note: We need to handle the parts of controller.run() ourselves since
+    # page config and auth are already handled by the main page
+    controller._run_nominate_functionality(user, supabase)
+
+def main():
+    """Main function for the Ranges page."""
+    # Set page configuration FIRST, before any other Streamlit operations
+    st.set_page_config(
+        page_title="Ranges",
+        page_icon="🌍",
+        layout="wide"
+    )
+    
+    # Set app identifier for auth system
+    if "app" not in st.query_params:
+        st.query_params["app"] = "mapping"
+        
+    # Handle authentication
+    user = handle_auth()
+    if not user:
+        return
+        
+    # Display user info in sidebar (only on this page to avoid duplication)
+    if "user_info_displayed" not in st.session_state:
+        st.sidebar.success(f"Logged in as {user['name']}")
+        st.session_state["user_info_displayed"] = True
+    
+    # Database connection
+    try:
+        url = st.secrets["supabase"]["url"]
+        key = st.secrets["supabase"]["key"]
+        supabase = create_client(url, key)
+    except Exception as e:
+        st.error(f"Error connecting to database: {str(e)}")
+        return
+    
+    # Display main title
+    st.title("🌍 Ranges")
+    
+    # Create tabs
+    tab1, tab2 = st.tabs(["📋 Public Ranges", "📍 Nominate Range"])
+    
+    with tab1:
+        render_public_ranges_tab(user, supabase)
+    
+    with tab2:
+        render_nominate_tab(user, supabase)
 
 if __name__ == "__main__":
     main()
