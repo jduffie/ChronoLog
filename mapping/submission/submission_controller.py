@@ -79,26 +79,10 @@ class SubmissionController:
             self.view.display_error_message(f"Error checking range limit: {str(e)}")
             return False
 
-    def run(self) -> None:
-        """Main controller method to run the submissions page."""
-        # Set page configuration
-        st.set_page_config(
-            page_title="Submissions - ChronoLog Mapping",
-            page_icon="📋",
-            layout="wide"
-        )
-        
-        # Set app identifier for auth system
-        if "app" not in st.query_params:
-            st.query_params["app"] = "mapping"
-            
-        # Handle authentication
-        user = handle_auth()
-        if not user:
-            return
-
-        # Manage page-specific session state
-        SessionStateManager.set_current_page("submission")
+    def _run_submission_functionality(self, user, supabase):
+        """Run the core submission functionality without page setup or auth."""
+        # Don't set current page when running as a tab to avoid clearing session state
+        # SessionStateManager.set_current_page("submission")
 
         # Display title
         self.view.display_title()
@@ -108,8 +92,6 @@ class SubmissionController:
             return
 
         try:
-            supabase = self._get_supabase_client()
-            
             # Fetch user ranges
             user_ranges = self.model.get_user_ranges(user["email"], supabase)
             
@@ -136,6 +118,37 @@ class SubmissionController:
                 
         except Exception as e:
             self.view.display_error_message(f"Error loading your submitted ranges: {str(e)}")
+
+    def run(self) -> None:
+        """Main controller method to run the submissions page."""
+        # Set page configuration
+        st.set_page_config(
+            page_title="Submissions - ChronoLog Mapping",
+            page_icon="📋",
+            layout="wide"
+        )
+        
+        # Set app identifier for auth system
+        if "app" not in st.query_params:
+            st.query_params["app"] = "mapping"
+            
+        # Handle authentication
+        user = handle_auth()
+        if not user:
+            return
+
+        # Database connection
+        try:
+            supabase = self._get_supabase_client()
+        except Exception as e:
+            st.error(f"Error connecting to database: {str(e)}")
+            return
+
+        # Manage page-specific session state for standalone submission page
+        SessionStateManager.set_current_page("submission")
+
+        # Run the core functionality
+        self._run_submission_functionality(user, supabase)
 
     def get_user_ranges(self, user_email: str):
         """Get ranges for a specific user."""

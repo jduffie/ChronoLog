@@ -7,6 +7,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 from mapping.public_ranges.public_ranges_controller import PublicRangesController
 from mapping.nominate.nominate_controller import NominateController
+from mapping.submission.submission_controller import SubmissionController
 from auth import handle_auth
 from supabase import create_client
 
@@ -109,6 +110,16 @@ def render_nominate_tab(user, supabase):
     # page config and auth are already handled by the main page
     controller._run_nominate_functionality(user, supabase)
 
+def render_submissions_tab(user, supabase):
+    """Render the Submissions tab content."""
+    # Initialize submission controller
+    controller = SubmissionController()
+    
+    # Run the submission controller's core functionality
+    # Note: We need to handle the parts of controller.run() ourselves since
+    # page config and auth are already handled by the main page
+    controller._run_submission_functionality(user, supabase)
+
 def main():
     """Main function for the Ranges page."""
     # Set page configuration FIRST, before any other Streamlit operations
@@ -145,13 +156,16 @@ def main():
     st.title("🌍 Ranges")
     
     # Create tabs
-    tab1, tab2 = st.tabs(["📋 Public Ranges", "📍 Nominate Range"])
+    tab1, tab2, tab3 = st.tabs(["📋 Public Ranges", "📍 Nominate Range", "📋 My Submissions"])
     
     with tab1:
         render_public_ranges_tab(user, supabase)
     
     with tab2:
         render_nominate_tab(user, supabase)
+    
+    with tab3:
+        render_submissions_tab(user, supabase)
 
 if __name__ == "__main__":
     main()
