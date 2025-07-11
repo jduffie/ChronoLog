@@ -81,9 +81,8 @@ def render_create_session_tab(user, supabase):
             
             # Use chronograph session ID as unique tab name for DOPE session
             tab_name = f"chrono_session_{selected_session['id']}"
-            
-            # Step 2: Select range and weather sources
-            st.subheader("2. Select Range and Weather Sources")
+
+            st.subheader("2. Select Optional Sources")
             
             col1, col2 = st.columns(2)
             
@@ -98,7 +97,7 @@ def render_create_session_tab(user, supabase):
                         range_options[label] = range_sub
                     
                     selected_range_label = st.selectbox(
-                        "Choose a range:",
+                        "***Range:***",
                         options=list(range_options.keys()),
                         index=None,
                         placeholder="Select a range..."
@@ -118,7 +117,7 @@ def render_create_session_tab(user, supabase):
                         weather_options[label] = weather_source
                     
                     selected_weather_label = st.selectbox(
-                        "Choose weather source:",
+                        "***Weather source:***",
                         options=list(weather_options.keys()),
                         index=None,
                         placeholder="Select weather source..."
@@ -128,14 +127,11 @@ def render_create_session_tab(user, supabase):
                 else:
                     st.warning("No weather sources found.")
                     selected_weather = None
-            
-            # Step 2.5: Rifle and Ammo Selection
-            st.subheader("2.5. Select Rifle and Ammo")
+
             
             col3, col4 = st.columns(2)
             
             with col3:
-                st.markdown("**Rifle Selection**")
                 # Get rifles for the user
                 try:
                     rifles_response = supabase.table("rifles").select("*").eq("user_email", user["email"]).order("name").execute()
@@ -155,7 +151,7 @@ def render_create_session_tab(user, supabase):
                             rifle_options[label] = rifle
                         
                         selected_rifle_label = st.selectbox(
-                            "Choose a rifle:",
+                            "***Rifle:***",
                             options=list(rifle_options.keys()),
                             index=None,
                             placeholder="Select a rifle..."
@@ -170,7 +166,6 @@ def render_create_session_tab(user, supabase):
                     selected_rifle = None
             
             with col4:
-                st.markdown("**Ammo Selection**")
                 # Get ammo for the user
                 try:
                     ammo_response = supabase.table("ammo").select("*").eq("user_email", user["email"]).order("make").execute()
@@ -182,7 +177,7 @@ def render_create_session_tab(user, supabase):
                             ammo_options[label] = ammo
                         
                         selected_ammo_label = st.selectbox(
-                            "Choose ammo:",
+                            "***Cartridge:***:",
                             options=list(ammo_options.keys()),
                             index=None,
                             placeholder="Select ammo..."
@@ -247,10 +242,7 @@ def create_dope_session(user, supabase, chrono_session, range_data, weather_sour
                 "power_factor": measurement.get("power_factor", ""),
 
                 
-                # Range position data (repeated for each measurement)
-                "start_lat": range_data.get("start_lat", "") if range_data else "",
-                "start_lon": range_data.get("start_lon", "") if range_data else "",
-                "start_alt": range_data.get("start_altitude_m", "") if range_data else "",
+                # Range measurement data (per shot)
                 "azimuth": range_data.get("azimuth_deg", "") if range_data else "",
                 "elevation_angle": range_data.get("elevation_angle_deg", "") if range_data else "",
                 
@@ -289,9 +281,7 @@ def create_dope_session(user, supabase, chrono_session, range_data, weather_sour
             "ammo_description": f"{selected_ammo.get('make', '')} {selected_ammo.get('model', '')}".strip() if selected_ammo else ""
         }
         dope_model.set_tab_session_details(tab_name, session_details)
-        
-        st.success(f"✅ DOPE session created with {len(measurements_data)} measurements")
-        
+
     except Exception as e:
         st.error(f"Error creating DOPE session: {str(e)}")
 
@@ -308,22 +298,63 @@ def display_dope_session(user, supabase, dope_model, tab_name):
     
     st.subheader("3. DOPE Session")
     
-    # Component 1: DOPE Session Details
-    st.markdown("#### Session Details")
-    col1, col2, col3, col4, col5, col6 = st.columns(6)
+    # Component 1: Cartridge Details
+    st.markdown("#### Cartridge")
+    if session_details.get("ammo"):
+        ammo_data = session_details["ammo"]
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.markdown(f"<medium><strong>Make:</strong> {ammo_data.get('make', 'N/A')}</medium>", unsafe_allow_html=True)
+        with col2:
+            st.markdown(f"<medium><strong>Model:</strong> {ammo_data.get('model', 'N/A')}</medium>", unsafe_allow_html=True)
+        with col3:
+            st.markdown(f"<medium><strong>Caliber:</strong> {ammo_data.get('caliber', 'N/A')}</medium>", unsafe_allow_html=True)
+        with col4:
+            st.markdown(f"<medium><strong>Weight:</strong> {ammo_data.get('weight', 'N/A')}</medium>", unsafe_allow_html=True)
+    else:
+        # Fallback to chronograph session data
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown(f"<medium><strong>Bullet Type:</strong> {session_details.get('bullet_type', 'N/A')}</medium>", unsafe_allow_html=True)
+        with col2:
+            grain_text = f"{session_details.get('bullet_grain', 'N/A')}gr" if session_details.get('bullet_grain') else "N/A"
+            st.markdown(f"<medium><strong>Bullet Grain:</strong> {grain_text}</medium>", unsafe_allow_html=True)
     
-    with col1:
-        st.metric("Bullet Type", session_details.get("bullet_type", ""))
-    with col2:
-        st.metric("Bullet Grain", f"{session_details.get('bullet_grain', '')}gr")
-    with col3:
-        st.metric("Range", session_details.get("range_name", ""))
-    with col4:
-        st.metric("Weather Source", session_details.get("weather_source_name", ""))
-    with col5:
-        st.metric("Rifle", session_details.get("rifle_name", ""))
-    with col6:
-        st.metric("Ammo", session_details.get("ammo_description", ""))
+    # Component 2: Rifle Details
+    st.markdown("#### Rifle")
+    if session_details.get("rifle"):
+        rifle_data = session_details["rifle"]
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.markdown(f"<medium><strong>Name:</strong> {rifle_data.get('name', 'N/A')}</medium>", unsafe_allow_html=True)
+        with col2:
+            st.markdown(f"<medium><strong>Barrel Length:</strong> {rifle_data.get('barrel_length', 'N/A')}</medium>", unsafe_allow_html=True)
+        with col3:
+            st.markdown(f"<medium><strong>Twist Ratio:</strong> {rifle_data.get('barrel_twist_ratio', 'N/A')}</medium>", unsafe_allow_html=True)
+        with col4:
+            st.markdown(f"<medium><strong>Scope:</strong> {rifle_data.get('scope', 'N/A')}</medium>", unsafe_allow_html=True)
+    else:
+        st.info("No rifle data available for this session")
+    
+    # Component 3: Location Details
+    st.markdown("#### Firing Position")
+    if session_details.get("range_data"):
+        range_data = session_details["range_data"]
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            lat_text = f"{range_data.get('start_lat', 'N/A'):.6f}" if range_data.get('start_lat') else "N/A"
+            st.markdown(f"<medium><strong>Latitude:</strong> {lat_text}</medium>", unsafe_allow_html=True)
+        with col2:
+            lon_text = f"{range_data.get('start_lon', 'N/A'):.6f}" if range_data.get('start_lon') else "N/A"
+            st.markdown(f"<medium><strong>Longitude:</strong> {lon_text}</medium>", unsafe_allow_html=True)
+        with col3:
+            alt_text = f"{range_data.get('start_altitude_m', 'N/A'):.1f}" if range_data.get('start_altitude_m') else "N/A"
+            st.markdown(f"<medium><strong>Altitude (m):</strong> {alt_text}</medium>", unsafe_allow_html=True)
+    else:
+        st.info("No range data available for this session")
     
     # Component 2: DOPE Session Measurements Table
     st.markdown("#### Measurements")
@@ -341,10 +372,7 @@ def display_dope_session(user, supabase, dope_model, tab_name):
             "ke_ft_lb": st.column_config.NumberColumn("KE (ft-lb)", width="small", disabled=True),
             "power_factor": st.column_config.NumberColumn("PF", width="small", disabled=True),
             
-            # Read-only range data columns
-            "start_lat": st.column_config.NumberColumn("Start Lat", width="small", format="%.6f", disabled=True),
-            "start_lon": st.column_config.NumberColumn("Start Lon", width="small", format="%.6f", disabled=True),
-            "start_alt": st.column_config.NumberColumn("Start Alt (m)", width="small", disabled=True),
+            # Read-only range measurement columns
             "azimuth": st.column_config.NumberColumn("Azimuth (°)", width="small", format="%.2f", disabled=True),
             "elevation_angle": st.column_config.NumberColumn("Elevation Angle (°)", width="small", format="%.2f", disabled=True),
             
@@ -476,10 +504,7 @@ def save_dope_session(user, supabase, dope_model, tab_name):
                 "ke_ft_lb": safe_float(row.get("ke_ft_lb")),
                 "power_factor": safe_float(row.get("power_factor")),
                 
-                # Source range data
-                "start_lat": safe_float(row.get("start_lat")),
-                "start_lon": safe_float(row.get("start_lon")),
-                "start_altitude_m": safe_float(row.get("start_alt")),
+                # Source range data (per-shot directional data)
                 "azimuth_deg": safe_float(row.get("azimuth")),
                 "elevation_angle_deg": safe_float(row.get("elevation_angle")),
                 

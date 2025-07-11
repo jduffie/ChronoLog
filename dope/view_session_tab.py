@@ -2,266 +2,243 @@ import streamlit as st
 import pandas as pd
 
 def render_view_session_tab(user, supabase):
-    """Render the View Session tab"""
-    st.header("View Session")
+    """Render the View Session tab with selectable table and details"""
+    st.header("🔍 View Session")
     
     try:
-        # Get user's sessions for selection
-        sessions_response = supabase.table("sessions").select("*").eq("user_email", user["email"]).order("uploaded_at", desc=True).execute()
+        # Get user's sessions
+        sessions_response = supabase.table("dope_sessions").select("*").eq("user_email", user["email"]).order("created_at", desc=True).execute()
         sessions = sessions_response.data
         
         if sessions:
-            # Create session options for selectbox
-            session_options = {}
+            # Process sessions with aggregated measurement data
+            session_summaries = []
+            session_lookup = {}  # For mapping display rows to session data
+            
             for session in sessions:
-                # Use session_timestamp if available, otherwise fall back to uploaded_at
-                if 'session_timestamp' in session and session['session_timestamp']:
-                    session_time = pd.to_datetime(session['session_timestamp']).strftime('%Y-%m-%d %H:%M')
-                else:
-                    session_time = pd.to_datetime(session['uploaded_at']).strftime('%Y-%m-%d %H:%M')
-                display_name = f"{session_time} - {session['bullet_type']} ({session['bullet_grain']}gr) - {session['sheet_name']}"
-                session_options[display_name] = session
-            
-            # Check if a session was selected from the Sessions tab table
-            default_index = 0
-            if "selected_session_from_table" in st.session_state:
-                selected_from_table = st.session_state["selected_session_from_table"]
-                if selected_from_table in session_options:
-                    default_index = list(session_options.keys()).index(selected_from_table)
-                # Clear the selection so it doesn't interfere with normal usage
-                del st.session_state["selected_session_from_table"]
-            
-            # Make session selection more prominent
-            st.markdown("### Select Session to View")
-            selected_session_display = st.selectbox(
-                "Sessions:",
-                options=list(session_options.keys()),
-                index=default_index,
-                help="Sessions are ordered by upload time (newest first)",
-                key="session_selector"
-            )
-            
-            if selected_session_display:
-                selected_session = session_options[selected_session_display]
-                
-                # Prepare session details values
-                if 'session_timestamp' in selected_session and selected_session['session_timestamp']:
-                    session_dt = pd.to_datetime(selected_session['session_timestamp'])
-                    datetime_value = session_dt.strftime('%Y-%m-%d %H:%M:%S')
-                else:
-                    upload_dt = pd.to_datetime(selected_session['uploaded_at'])
-                    datetime_value = f"{upload_dt.strftime('%Y-%m-%d %H:%M:%S')} (upload)"
-                
-                # Create session details table
-                session_details_df = pd.DataFrame({
-                    'Date/Time': [datetime_value],
-                    'Bullet Type': [selected_session['bullet_type']],
-                    'Bullet Weight': [f"{selected_session['bullet_grain']} gr"],
-                    'Sheet Name': [selected_session['sheet_name']]
-                })
-                
-                st.dataframe(session_details_df, use_container_width=True, hide_index=True)
-                
-                # Data Entry Sub-section
-                st.subheader("📝 Data Entry")
-                
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    # Location dropdown
-                    try:
-                        locations_response = supabase.table("locations").select("*").execute()
-                        locations = locations_response.data if locations_response.data else []
-                        
-                        if locations:
-                            location_options = ["Select Location"] + [f"{loc['name']}" for loc in locations]
-                            location_ids = [None] + [loc['id'] for loc in locations]
-                            
-                            # Find current location index
-                            current_location_index = 0
-                            if selected_session.get('location_id'):
-                                try:
-                                    current_location_index = location_ids.index(selected_session['location_id'])
-                                except ValueError:
-                                    current_location_index = 0
-                            
-                            selected_location_entry = st.selectbox(
-                                "📍 Select Location", 
-                                location_options, 
-                                index=current_location_index,
-                                key="location_entry"
-                            )
-                            
-                            # Update location if changed
-                            if selected_location_entry != "Select Location":
-                                selected_location_id = location_ids[location_options.index(selected_location_entry)]
-                                if selected_location_id != selected_session.get('location_id'):
-                                    try:
-                                        supabase.table("sessions").update({"location_id": selected_location_id}).eq("id", selected_session['id']).execute()
-                                        st.success(f"Location updated to: {selected_location_entry}")
-                                        st.rerun()
-                                    except Exception as e:
-                                        st.error(f"Failed to update location: {e}")
-                            elif selected_session.get('location_id'):
-                                # User selected "Select Location" but session had a location - clear it
-                                try:
-                                    supabase.table("sessions").update({"location_id": None}).eq("id", selected_session['id']).execute()
-                                    st.success("Location cleared")
-                                    st.rerun()
-                                except Exception as e:
-                                    st.error(f"Failed to clear location: {e}")
-                        else:
-                            st.selectbox("📍 Select Location", ["No locations available - Add in Locations tab"], disabled=True, key="location_entry_disabled")
-                            
-                    except Exception as e:
-                        st.error(f"Error loading locations: {e}")
-                
-                with col2:
-                    # Weather Meter dropdown
-                    try:
-                        weather_response = supabase.table("weather_measurements").select("device_name").eq("user_email", user["email"]).execute()
-                        weather_data = weather_response.data if weather_response.data else []
-                        
-                        # Get unique device names
-                        unique_devices = list(set([w['device_name'] for w in weather_data if w.get('device_name')]))
-                        
-                        if unique_devices:
-                            weather_options = ["Select Weather Meter"] + unique_devices
-                            selected_weather_meter_entry = st.selectbox("🌤️ Select Weather Meter", weather_options, key="weather_entry")
-                        else:
-                            st.selectbox("🌤️ Select Weather Meter", ["No weather data available - Upload Kestrel files"], disabled=True, key="weather_entry_disabled")
-                            
-                    except Exception as e:
-                        st.error(f"Error loading weather meters: {e}")
-                
-                st.divider()
-                
-                # Add DELETE SESSION button
-                col1, col2 = st.columns([1, 4])
-                with col1:
-                    if st.button("🗑️ DELETE SESSION", type="secondary", key=f"delete_session_{selected_session['id']}"):
-                        st.session_state[f"confirm_delete_session_{selected_session['id']}"] = True
-                
-                # Show confirmation dialog
-                if st.session_state.get(f"confirm_delete_session_{selected_session['id']}", False):
-                    st.warning("⚠️ Are you sure you want to delete this entire session? This will permanently delete all measurements and cannot be undone!")
-                    col_yes, col_no = st.columns(2)
-                    
-                    with col_yes:
-                        if st.button("✅ Yes, Delete Session", key=f"confirm_yes_session_{selected_session['id']}", type="primary"):
-                            try:
-                                # Security: Verify session belongs to current user before deletion
-                                session_check = supabase.table("sessions").select("id").eq("id", selected_session['id']).eq("user_email", user["email"]).execute()
-                                
-                                if not session_check.data:
-                                    st.error("❌ Session not found or access denied")
-                                else:
-                                    # Delete all measurements for this session (CASCADE should handle this, but being explicit)
-                                    supabase.table("measurements").delete().eq("session_id", selected_session['id']).execute()
-                                    
-                                    # Delete the session
-                                    supabase.table("sessions").delete().eq("id", selected_session['id']).eq("user_email", user["email"]).execute()
-                                    
-                                    # Clear confirmation state
-                                    del st.session_state[f"confirm_delete_session_{selected_session['id']}"]
-                                    
-                                    st.success("✅ Session deleted successfully!")
-                                    st.rerun()
-                                
-                            except Exception as e:
-                                st.error(f"❌ Error deleting session: {e}")
-                    
-                    with col_no:
-                        if st.button("❌ Cancel", key=f"confirm_no_session_{selected_session['id']}"):
-                            del st.session_state[f"confirm_delete_session_{selected_session['id']}"]
-                            st.rerun()
-                
-                # Show current location details if assigned
-                if selected_session.get('location_id'):
-                    st.subheader("📍 Location Details")
-                    # Get full location details from database
-                    try:
-                        location_response = supabase.table("locations").select("*").eq("id", selected_session['location_id']).execute()
-                        if location_response.data:
-                            current_location = location_response.data[0]
-                            
-                            # Create location details table
-                            location_df = pd.DataFrame({
-                                'Name': [current_location['name']],
-                                'Altitude (ft)': [current_location['altitude']],
-                                'Azimuth (°)': [current_location['azimuth']],
-                                'Latitude': [f"{current_location['latitude']:.6f}" if current_location['latitude'] else ""],
-                                'Longitude': [f"{current_location['longitude']:.6f}" if current_location['longitude'] else ""]
-                            })
-                            
-                            st.dataframe(location_df, use_container_width=True, hide_index=True)
-                            
-                            # Add Google Maps link if available
-                            if current_location.get('google_maps_link'):
-                                st.markdown(f"📍 [View on Google Maps]({current_location['google_maps_link']})")
-                        
-                        else:
-                            st.info("Location details not found")
-                    except Exception as e:
-                        st.error(f"Error loading location details: {e}")
-                
-                # Get measurement count and statistics
-                measurements_response = supabase.table("measurements").select("*").eq("session_id", selected_session['id']).execute()
+                # Get measurements for this session
+                measurements_response = supabase.table("dope_measurements").select("*").eq("dope_session_id", session['id']).execute()
                 measurements = measurements_response.data
                 
-                if measurements:
-                    df = pd.DataFrame(measurements)
-                    
-                    # Format datetime_local for display if it exists
-                    if 'datetime_local' in df.columns:
-                        df['datetime_display'] = df['datetime_local'].apply(
-                            lambda x: pd.to_datetime(x).strftime('%Y-%m-%d %H:%M:%S') if pd.notna(x) and x else None
-                        )
-                    
-                    # Statistics
-                    st.subheader("Session Statistics")
-                    
-                    # Calculate statistics
-                    avg_velocity = df['speed_fps'].mean()
-                    std_velocity = df['speed_fps'].std()
-                    max_velocity = df['speed_fps'].max()
-                    min_velocity = df['speed_fps'].min()
-                    velocity_spread = max_velocity - min_velocity if not pd.isna(max_velocity) and not pd.isna(min_velocity) else None
-                    
-                    # Create statistics table
-                    statistics_df = pd.DataFrame({
-                        'Total Shots': [len(measurements)],
-                        'Avg Velocity (fps)': [f"{avg_velocity:.1f}" if not pd.isna(avg_velocity) else "N/A"],
-                        'Std Deviation (fps)': [f"{std_velocity:.1f}" if not pd.isna(std_velocity) else "N/A"],
-                        'Velocity Spread (fps)': [f"{velocity_spread:.1f}" if velocity_spread is not None else "N/A"]
-                    })
-                    
-                    st.dataframe(statistics_df, use_container_width=True, hide_index=True)
-                    
-                    # Display measurement data table
-                    st.subheader("Measurement Data")
-                    
-                    # Reorder columns for better display
-                    display_columns = ['shot_number', 'speed_fps', 'delta_avg_fps', 'ke_ft_lb', 'power_factor']
-                    
-                    # Use datetime_display if available
-                    if 'datetime_display' in df.columns:
-                        display_columns.append('datetime_display')
-                    
-                    if 'clean_bore' in df.columns:
-                        display_columns.append('clean_bore')
-                    if 'cold_bore' in df.columns:
-                        display_columns.append('cold_bore')
-                    if 'shot_notes' in df.columns:
-                        display_columns.append('shot_notes')
-                    
-                    # Only show columns that exist
-                    display_columns = [col for col in display_columns if col in df.columns]
-                    st.dataframe(df[display_columns], use_container_width=True)
+                # Prepare session timestamp
+                if session.get('created_at'):
+                    session_dt = pd.to_datetime(session['created_at'])
+                    session_date = session_dt.strftime('%Y-%m-%d')
+                    session_time = session_dt.strftime('%H:%M')
                 else:
-                    st.warning("No measurement data found for this session.")
+                    session_date = "N/A"
+                    session_time = "N/A"
+                
+                # Calculate statistics from measurements
+                shot_count = len(measurements) if measurements else 0
+                avg_velocity = std_velocity = velocity_spread = "N/A"
+                
+                if measurements and shot_count > 0:
+                    speeds = [m['speed_fps'] for m in measurements if m.get('speed_fps') is not None]
+                    if speeds:
+                        avg_velocity = f"{sum(speeds) / len(speeds):.1f}"
+                        if len(speeds) > 1:
+                            mean_speed = sum(speeds) / len(speeds)
+                            variance = sum((x - mean_speed) ** 2 for x in speeds) / len(speeds)
+                            std_velocity = f"{variance ** 0.5:.1f}"
+                            velocity_spread = f"{max(speeds) - min(speeds):.1f}"
+                        else:
+                            std_velocity = "0.0"
+                            velocity_spread = "0.0"
+                
+                row_data = {
+                    'Date': session_date,
+                    'Time': session_time,
+                    'Session Name': session.get('session_name', 'N/A'),
+                    'Bullet Type': session.get('bullet_type', 'N/A'),
+                    'Bullet Weight (gr)': session.get('bullet_grain', 'N/A'),
+                    'Shot Count': shot_count,
+                    'Avg Velocity (fps)': avg_velocity,
+                    'Std Dev (fps)': std_velocity,
+                    'Velocity Spread (fps)': velocity_spread
+                }
+                session_summaries.append(row_data)
+                
+                # Map this row to session data for lookup
+                session_lookup[len(session_summaries) - 1] = session
+            
+            # Create DataFrame and display
+            if session_summaries:
+                sessions_df = pd.DataFrame(session_summaries)
+                
+                st.markdown("### Select Session")
+                st.info("💡 Click on any row to view session details and measurements")
+                
+                # Display the sessions table with selection
+                selected_rows = st.dataframe(
+                    sessions_df,
+                    use_container_width=True,
+                    hide_index=True,
+                    on_select="rerun",
+                    selection_mode="single-row",
+                    column_config={
+                        'Date': st.column_config.DateColumn('Date'),
+                        'Time': st.column_config.TextColumn('Time'),
+                        'Session Name': st.column_config.TextColumn('Session Name'),
+                        'Bullet Type': st.column_config.TextColumn('Bullet Type'),
+                        'Bullet Weight (gr)': st.column_config.NumberColumn('Bullet Weight (gr)', format="%.1f"),
+                        'Shot Count': st.column_config.NumberColumn('Shot Count'),
+                        'Avg Velocity (fps)': st.column_config.TextColumn('Avg Velocity (fps)'),
+                        'Std Dev (fps)': st.column_config.TextColumn('Std Dev (fps)'),
+                        'Velocity Spread (fps)': st.column_config.TextColumn('Velocity Spread (fps)')
+                    }
+                )
+                
+                # Handle row selection - show session details
+                if selected_rows.selection.rows:
+                    selected_row_index = selected_rows.selection.rows[0]
+                    if selected_row_index in session_lookup:
+                        selected_session = session_lookup[selected_row_index]
+                        
+                        # Display session details
+                        st.markdown("---")
+                        st.markdown("### Session Details")
+                        
+                        # Session info
+                        col1, col2, col3, col4 = st.columns(4)
+                        with col1:
+                            st.metric("Session Name", selected_session.get('session_name', 'N/A'))
+                        with col2:
+                            st.metric("Bullet Type", selected_session.get('bullet_type', 'N/A'))
+                        with col3:
+                            st.metric("Bullet Weight", f"{selected_session.get('bullet_grain', 'N/A')} gr")
+                        with col4:
+                            if selected_session.get('created_at'):
+                                created_dt = pd.to_datetime(selected_session['created_at'])
+                                st.metric("Created", created_dt.strftime('%Y-%m-%d %H:%M'))
+                            else:
+                                st.metric("Created", "N/A")
+                        
+                        # Component 1: Cartridge Details
+                        st.markdown("#### Cartridge")
+                        if selected_session.get('ammo_id'):
+                            # Get ammo details
+                            ammo_response = supabase.table("ammo").select("*").eq("id", selected_session['ammo_id']).execute()
+                            if ammo_response.data:
+                                ammo_data = ammo_response.data[0]
+                                col1, col2, col3, col4 = st.columns(4)
+                                with col1:
+                                    st.markdown(f"<medium><strong>Make:</strong> {ammo_data.get('make', 'N/A')}</medium>", unsafe_allow_html=True)
+                                with col2:
+                                    st.markdown(f"<medium><strong>Model:</strong> {ammo_data.get('model', 'N/A')}</medium>", unsafe_allow_html=True)
+                                with col3:
+                                    st.markdown(f"<medium><strong>Caliber:</strong> {ammo_data.get('caliber', 'N/A')}</medium>", unsafe_allow_html=True)
+                                with col4:
+                                    st.markdown(f"<medium><strong>Weight:</strong> {ammo_data.get('weight', 'N/A')}</medium>", unsafe_allow_html=True)
+                            else:
+                                st.info("Ammo details not found")
+                        else:
+                            # Fallback to session data
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                st.markdown(f"<medium><strong>Bullet Type:</strong> {selected_session.get('bullet_type', 'N/A')}</medium>", unsafe_allow_html=True)
+                            with col2:
+                                grain_text = f"{selected_session.get('bullet_grain', 'N/A')}gr" if selected_session.get('bullet_grain') else "N/A"
+                                st.markdown(f"<medium><strong>Bullet Grain:</strong> {grain_text}</medium>", unsafe_allow_html=True)
+                        
+                        # Component 2: Rifle Details
+                        st.markdown("#### Rifle")
+                        if selected_session.get('rifle_id'):
+                            # Get rifle details
+                            rifle_response = supabase.table("rifles").select("*").eq("id", selected_session['rifle_id']).execute()
+                            if rifle_response.data:
+                                rifle_data = rifle_response.data[0]
+                                col1, col2, col3, col4 = st.columns(4)
+                                with col1:
+                                    st.markdown(f"<medium><strong>Name:</strong> {rifle_data.get('name', 'N/A')}</medium>", unsafe_allow_html=True)
+                                with col2:
+                                    st.markdown(f"<medium><strong>Barrel Length:</strong> {rifle_data.get('barrel_length', 'N/A')}</medium>", unsafe_allow_html=True)
+                                with col3:
+                                    st.markdown(f"<medium><strong>Twist Ratio:</strong> {rifle_data.get('barrel_twist_ratio', 'N/A')}</medium>", unsafe_allow_html=True)
+                                with col4:
+                                    st.markdown(f"<medium><strong>Scope:</strong> {rifle_data.get('scope', 'N/A')}</medium>", unsafe_allow_html=True)
+                            else:
+                                st.info("Rifle details not found")
+                        else:
+                            st.info("No rifle data available for this session")
+                        
+                        # Component 3: Firing Position Details
+                        st.markdown("#### Firing Position")
+                        if selected_session.get('range_submission_id'):
+                            # Get range details
+                            range_response = supabase.table("ranges_submissions").select("*").eq("id", selected_session['range_submission_id']).execute()
+                            if range_response.data:
+                                range_data = range_response.data[0]
+                                col1, col2, col3 = st.columns(3)
+                                with col1:
+                                    lat_text = f"{range_data.get('start_lat', 'N/A'):.6f}" if range_data.get('start_lat') else "N/A"
+                                    st.markdown(f"<medium><strong>Latitude:</strong> {lat_text}</medium>", unsafe_allow_html=True)
+                                with col2:
+                                    lon_text = f"{range_data.get('start_lon', 'N/A'):.6f}" if range_data.get('start_lon') else "N/A"
+                                    st.markdown(f"<medium><strong>Longitude:</strong> {lon_text}</medium>", unsafe_allow_html=True)
+                                with col3:
+                                    alt_text = f"{range_data.get('start_altitude_m', 'N/A'):.1f}" if range_data.get('start_altitude_m') else "N/A"
+                                    st.markdown(f"<medium><strong>Altitude (m):</strong> {alt_text}</medium>", unsafe_allow_html=True)
+                            else:
+                                st.info("Range details not found")
+                        else:
+                            st.info("No range data available for this session")
+                        
+                        # Get and display measurements
+                        measurements_response = supabase.table("dope_measurements").select("*").eq("dope_session_id", selected_session['id']).execute()
+                        measurements = measurements_response.data
+                        
+                        if measurements:
+                            st.markdown("### Measurements")
+                            
+                            # Convert to DataFrame
+                            measurements_df = pd.DataFrame(measurements)
+                            
+                            # Select and reorder columns for display
+                            display_columns = []
+                            if 'shot_number' in measurements_df.columns:
+                                display_columns.append('shot_number')
+                            if 'speed_fps' in measurements_df.columns:
+                                display_columns.append('speed_fps')
+                            if 'ke_ft_lb' in measurements_df.columns:
+                                display_columns.append('ke_ft_lb')
+                            if 'power_factor' in measurements_df.columns:
+                                display_columns.append('power_factor')
+                            if 'datetime_shot' in measurements_df.columns:
+                                display_columns.append('datetime_shot')
+                            if 'clean_bore' in measurements_df.columns:
+                                display_columns.append('clean_bore')
+                            if 'cold_bore' in measurements_df.columns:
+                                display_columns.append('cold_bore')
+                            if 'shot_notes' in measurements_df.columns:
+                                display_columns.append('shot_notes')
+                            
+                            # Display measurements table
+                            if display_columns:
+                                st.dataframe(
+                                    measurements_df[display_columns],
+                                    use_container_width=True,
+                                    hide_index=True,
+                                    column_config={
+                                        'shot_number': st.column_config.NumberColumn('Shot #'),
+                                        'speed_fps': st.column_config.NumberColumn('Speed (fps)', format="%.1f"),
+                                        'ke_ft_lb': st.column_config.NumberColumn('KE (ft-lb)', format="%.1f"),
+                                        'power_factor': st.column_config.NumberColumn('Power Factor', format="%.1f"),
+                                        'datetime_shot': st.column_config.DatetimeColumn('Date/Time'),
+                                        'clean_bore': st.column_config.TextColumn('Clean Bore'),
+                                        'cold_bore': st.column_config.TextColumn('Cold Bore'),
+                                        'shot_notes': st.column_config.TextColumn('Notes')
+                                    }
+                                )
+                            else:
+                                st.info("No measurement data columns found.")
+                        else:
+                            st.info("No measurements found for this session.")
+                        
+            else:
+                st.info("No sessions found.")
         else:
-            st.info("No sessions found. Upload a file first to create sessions.")
+            st.info("No sessions found. Upload files first to create sessions.")
             
     except Exception as e:
         st.error(f"Error loading sessions: {e}")

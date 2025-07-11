@@ -415,9 +415,6 @@ CREATE TABLE dope_measurements (
     power_factor REAL,
     
     -- Source range data (read-only)
-    start_lat REAL,
-    start_lon REAL,
-    start_altitude_m REAL,
     azimuth_deg REAL,
     elevation_angle_deg REAL,
     
