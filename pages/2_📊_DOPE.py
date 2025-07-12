@@ -40,37 +40,36 @@ def main():
     # Display title
     st.title("Data on Prior Engagements")
     
-    # Create tabs for Create, Sessions, and View Session
-    tab1, tab2, tab3 = st.tabs(["Create", "Sessions", "View Session"])
+    # Create tabs for Create, View, and Analytics
+    tab1, tab2, tab3 = st.tabs(["Create", "View", "Analytics"])
     
     with tab1:
         # Clear DOPE model state when Create tab is accessed
         if "dope_tab_create_visited" not in st.session_state:
             st.session_state.dope_tab_create_visited = True
+            
+            # Clear DOPE model data
             if "dope_model" in st.session_state:
                 for tab_name in list(st.session_state.dope_model.get_all_tabs()):
                     st.session_state.dope_model.clear_tab_data(tab_name)
+            
             # Reset other tab visit flags
             st.session_state.pop("dope_tab_sessions_visited", None)
             st.session_state.pop("dope_tab_view_visited", None)
+            
+            # Clear any Create tab related session state
+            keys_to_clear = []
+            for key in st.session_state.keys():
+                if key.startswith(('edit_range_', 'edit_weather_', 'edit_rifle_', 'edit_ammo_', 'dope_measurements_table_')):
+                    keys_to_clear.append(key)
+            
+            for key in keys_to_clear:
+                del st.session_state[key]
         
         render_create_session_tab(user, supabase)
     
     with tab2:
-        # Clear DOPE model state when Sessions tab is accessed
-        if "dope_tab_sessions_visited" not in st.session_state:
-            st.session_state.dope_tab_sessions_visited = True
-            if "dope_model" in st.session_state:
-                for tab_name in list(st.session_state.dope_model.get_all_tabs()):
-                    st.session_state.dope_model.clear_tab_data(tab_name)
-            # Reset other tab visit flags
-            st.session_state.pop("dope_tab_create_visited", None)
-            st.session_state.pop("dope_tab_view_visited", None)
-        
-        render_sessions_tab(user, supabase)
-    
-    with tab3:
-        # Clear DOPE model state when View Session tab is accessed
+        # Clear DOPE model state when View tab is accessed
         if "dope_tab_view_visited" not in st.session_state:
             st.session_state.dope_tab_view_visited = True
             if "dope_model" in st.session_state:
@@ -81,6 +80,19 @@ def main():
             st.session_state.pop("dope_tab_sessions_visited", None)
         
         render_view_session_tab(user, supabase)
+    
+    with tab3:
+        # Clear DOPE model state when Analytics tab is accessed
+        if "dope_tab_sessions_visited" not in st.session_state:
+            st.session_state.dope_tab_sessions_visited = True
+            if "dope_model" in st.session_state:
+                for tab_name in list(st.session_state.dope_model.get_all_tabs()):
+                    st.session_state.dope_model.clear_tab_data(tab_name)
+            # Reset other tab visit flags
+            st.session_state.pop("dope_tab_create_visited", None)
+            st.session_state.pop("dope_tab_view_visited", None)
+        
+        render_sessions_tab(user, supabase)
 
 if __name__ == "__main__":
     main()

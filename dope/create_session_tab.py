@@ -56,16 +56,29 @@ def render_create_session_tab(user, supabase):
     st.subheader("1. Select Chronograph Session")
     
     try:
-        # Get chronograph sessions for the user
+        # Get all chronograph sessions for the user
         chrono_sessions = supabase.table("chrono_sessions").select("*").eq("user_email", user["email"]).order("datetime_local", desc=True).execute()
         
-        if not chrono_sessions.data:
-            st.warning("No chronograph sessions found. Please upload chronograph data first.")
+        # Get existing DOPE sessions to find which chrono sessions are already used
+        existing_dope_sessions = supabase.table("dope_sessions").select("chrono_session_id").eq("user_email", user["email"]).execute()
+        used_chrono_session_ids = {session['chrono_session_id'] for session in existing_dope_sessions.data if session.get('chrono_session_id')}
+        
+        # Filter out chronograph sessions that are already linked to DOPE sessions
+        available_chrono_sessions = [
+            session for session in chrono_sessions.data 
+            if session['id'] not in used_chrono_session_ids
+        ]
+        
+        if not available_chrono_sessions:
+            if chrono_sessions.data:
+                st.warning("All chronograph sessions have already been used to create DOPE sessions. Please upload new chronograph data.")
+            else:
+                st.warning("No chronograph sessions found. Please upload chronograph data first.")
             return
         
-        # Create dropdown options
+        # Create dropdown options from available sessions only
         session_options = {}
-        for session in chrono_sessions.data:
+        for session in available_chrono_sessions:
             label = f"{session['datetime_local']} - {session['bullet_type']} - {session['bullet_grain']}gr "
             session_options[label] = session
         

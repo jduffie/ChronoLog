@@ -3,8 +3,8 @@ import pandas as pd
 import plotly.express as px
 
 def render_sessions_tab(user, supabase):
-    """Render the Session Metrics tab - table view with multi-selection and graphing"""
-    st.header("📊 Session Metrics")
+    """Render the Analytics tab - table view with multi-selection and graphing"""
+    st.header("📊 Analytics")
     
     try:
         # Get user's sessions with datetime_local from chrono_sessions
