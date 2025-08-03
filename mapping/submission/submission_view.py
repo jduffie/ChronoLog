@@ -30,45 +30,75 @@ class SubmissionView:
         # Convert to DataFrame for display with checkbox column
         display_data = []
         for i, range_data in enumerate(ranges):
-            display_data.append({
-                "Select": False,  # Checkbox column
-                "Index": i,
-                "Range Name": range_data.get('range_name', 'Unnamed'),
-                "Description": range_data.get('range_description', '')[:50] + "..." if range_data.get('range_description', '') and len(range_data.get('range_description', '')) > 50 else range_data.get('range_description', ''),
-                "Status": range_data.get('status', 'Unknown'),
-                "Distance (m)": f"{range_data.get('distance_m', 0):.1f}" if range_data.get('distance_m') else "N/A",
-                "Location": range_data.get('display_name', 'Unknown')[:85] + "..." if range_data.get('display_name', '') and len(range_data.get('display_name', '')) > 85 else range_data.get('display_name', 'Unknown'),
-                "Submitted": range_data.get('submitted_at', 'Unknown')
-            })
+            display_data.append(
+                {
+                    "Select": False,  # Checkbox column
+                    "Index": i,
+                    "Range Name": range_data.get("range_name", "Unnamed"),
+                    "Description": (
+                        range_data.get("range_description", "")[:50] + "..."
+                        if range_data.get("range_description", "")
+                        and len(range_data.get("range_description", "")) > 50
+                        else range_data.get("range_description", "")
+                    ),
+                    "Status": range_data.get("status", "Unknown"),
+                    "Distance (m)": (
+                        f"{range_data.get('distance_m', 0):.1f}"
+                        if range_data.get("distance_m")
+                        else "N/A"
+                    ),
+                    "Location": (
+                        range_data.get("display_name", "Unknown")[:85] + "..."
+                        if range_data.get("display_name", "")
+                        and len(range_data.get("display_name", "")) > 85
+                        else range_data.get("display_name", "Unknown")
+                    ),
+                    "Submitted": range_data.get("submitted_at", "Unknown"),
+                }
+            )
 
         df = pd.DataFrame(display_data)
-        
+
         # Display as an editable dataframe with checkboxes
         edited_df = st.data_editor(
-            df.drop('Index', axis=1),  # Don't show index column to user
+            df.drop("Index", axis=1),  # Don't show index column to user
             use_container_width=True,
             hide_index=True,
             column_config={
-                "Select": st.column_config.CheckboxColumn("Select", width="small", default=False),
-                "Range Name": st.column_config.TextColumn("Range Name", width="medium", disabled=True),
-                "Description": st.column_config.TextColumn("Description", width="large", disabled=True),
-                "Status": st.column_config.TextColumn("Status", width="small", disabled=True),
-                "Distance (m)": st.column_config.TextColumn("Distance (m)", width="small", disabled=True),
-                "Location": st.column_config.TextColumn("Location", width="large", disabled=True),
-                "Submitted": st.column_config.TextColumn("Submitted", width="medium", disabled=True)
+                "Select": st.column_config.CheckboxColumn(
+                    "Select", width="small", default=False
+                ),
+                "Range Name": st.column_config.TextColumn(
+                    "Range Name", width="medium", disabled=True
+                ),
+                "Description": st.column_config.TextColumn(
+                    "Description", width="large", disabled=True
+                ),
+                "Status": st.column_config.TextColumn(
+                    "Status", width="small", disabled=True
+                ),
+                "Distance (m)": st.column_config.TextColumn(
+                    "Distance (m)", width="small", disabled=True
+                ),
+                "Location": st.column_config.TextColumn(
+                    "Location", width="large", disabled=True
+                ),
+                "Submitted": st.column_config.TextColumn(
+                    "Submitted", width="medium", disabled=True
+                ),
             },
-            key="ranges_table_checkboxes"
+            key="ranges_table_checkboxes",
         )
-        
+
         # Get selected rows
         selected_indices = []
         if edited_df is not None:
-            selected_rows = edited_df[edited_df['Select'] == True]
+            selected_rows = edited_df[edited_df["Select"] == True]
             selected_indices = selected_rows.index.tolist()
 
         # Selection and action controls
         st.markdown("### Actions")
-        
+
         # Show selection status
         if selected_indices:
             st.info(f"📋 {len(selected_indices)} range(s) selected")
@@ -77,87 +107,95 @@ class SubmissionView:
 
         # Action buttons
         col1, col2, col3 = st.columns(3)
-        
+
         action = None
-        
+
         with col1:
-            if st.button("🗺️ Show on Map", disabled=not selected_indices, use_container_width=True):
+            if st.button(
+                "🗺️ Show on Map", disabled=not selected_indices, use_container_width=True
+            ):
                 action = "map"
-        
+
         with col2:
-            if st.button("🗑️ Delete Selected", disabled=not selected_indices, use_container_width=True, type="secondary"):
+            if st.button(
+                "🗑️ Delete Selected",
+                disabled=not selected_indices,
+                use_container_width=True,
+                type="secondary",
+            ):
                 action = "delete"
                 # Store selection in session state for confirmation dialog
                 st.session_state["delete_selected_ranges"] = selected_indices
-        
+
         with col3:
             if st.button("🔄 Refresh", use_container_width=True):
                 st.rerun()
 
-        return {
-            "action": action,
-            "selected_indices": selected_indices
-        }
+        return {"action": action, "selected_indices": selected_indices}
 
-    def display_delete_confirmation(self, ranges: List[Dict[str, Any]], selected_indices: List[int]) -> Optional[str]:
+    def display_delete_confirmation(
+        self, ranges: List[Dict[str, Any]], selected_indices: List[int]
+    ) -> Optional[str]:
         """Display delete confirmation dialog."""
         if not selected_indices:
             return None
 
-        selected_names = [ranges[i].get('range_name', f'Range {i+1}') for i in selected_indices]
-        
-        st.warning(f"⚠️ Are you sure you want to delete the following {len(selected_names)} range(s)?")
+        selected_names = [
+            ranges[i].get("range_name", f"Range {i+1}") for i in selected_indices
+        ]
+
+        st.warning(
+            f"⚠️ Are you sure you want to delete the following {len(selected_names)} range(s)?"
+        )
         for name in selected_names:
             st.write(f"• {name}")
-        
+
         col1, col2 = st.columns(2)
-        
+
         with col1:
             if st.button("✅ Confirm Delete", type="primary", use_container_width=True):
                 return "confirm"
-        
+
         with col2:
             if st.button("❌ Cancel", use_container_width=True):
                 return "cancel"
-        
+
         return None
 
-    def display_ranges_map(self, ranges: List[Dict[str, Any]], selected_indices: List[int]) -> folium.Map:
+    def display_ranges_map(
+        self, ranges: List[Dict[str, Any]], selected_indices: List[int]
+    ) -> folium.Map:
         """Create and return a folium map with selected ranges."""
         # Default center (can be adjusted based on ranges)
         map_center = [36.222278, -78.051833]
-        
+
         if ranges and selected_indices:
             # Calculate center based on selected ranges
-            lats = [ranges[i]['start_lat'] for i in selected_indices if i < len(ranges)]
-            lons = [ranges[i]['start_lon'] for i in selected_indices if i < len(ranges)]
+            lats = [ranges[i]["start_lat"] for i in selected_indices if i < len(ranges)]
+            lons = [ranges[i]["start_lon"] for i in selected_indices if i < len(ranges)]
             if lats and lons:
-                map_center = [sum(lats)/len(lats), sum(lons)/len(lons)]
+                map_center = [sum(lats) / len(lats), sum(lons) / len(lons)]
 
         # Create map
-        m = folium.Map(
-            location=map_center,
-            zoom_start=10,
-            tiles=None
-        )
+        m = folium.Map(location=map_center, zoom_start=10, tiles=None)
 
         # Add satellite imagery
         folium.TileLayer(
-            tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-            attr='Esri',
-            name='Satellite',
+            tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+            attr="Esri",
+            name="Satellite",
             overlay=False,
-            control=True
+            control=True,
         ).add_to(m)
 
         # Add road overlay
         folium.TileLayer(
-            tiles='https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}',
-            attr='Esri',
-            name='Roads',
+            tiles="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}",
+            attr="Esri",
+            name="Roads",
             overlay=True,
             control=True,
-            opacity=0.7
+            opacity=0.7,
         ).add_to(m)
 
         # Add layer control
@@ -167,38 +205,42 @@ class SubmissionView:
         for i in selected_indices:
             if i < len(ranges):
                 range_data = ranges[i]
-                
+
                 # Start point (firing position) - blue
                 folium.Marker(
-                    location=[range_data['start_lat'], range_data['start_lon']],
+                    location=[range_data["start_lat"], range_data["start_lon"]],
                     popup=f"🔫 Firing Position<br>{range_data.get('range_name', 'Unnamed Range')}<br>Status: {range_data.get('status', 'Unknown')}<br><a href='https://www.google.com/maps?q={range_data['start_lat']},{range_data['start_lon']}' target='_blank'>📍 View in Google Maps</a>",
-                    icon=folium.Icon(color='blue', icon='play')
+                    icon=folium.Icon(color="blue", icon="play"),
                 ).add_to(m)
 
                 # End point (target) - red
                 folium.Marker(
-                    location=[range_data['end_lat'], range_data['end_lon']],
+                    location=[range_data["end_lat"], range_data["end_lon"]],
                     popup=f"🎯 Target<br>{range_data.get('range_name', 'Unnamed Range')}<br>Distance: {range_data.get('distance_m', 0):.1f}m<br><a href='https://www.google.com/maps?q={range_data['end_lat']},{range_data['end_lon']}' target='_blank'>📍 View in Google Maps</a>",
-                    icon=folium.Icon(color='red', icon='stop')
+                    icon=folium.Icon(color="red", icon="stop"),
                 ).add_to(m)
 
                 # Line between points
                 folium.PolyLine(
-                    locations=[[range_data['start_lat'], range_data['start_lon']], 
-                              [range_data['end_lat'], range_data['end_lon']]],
-                    color='yellow',
+                    locations=[
+                        [range_data["start_lat"], range_data["start_lon"]],
+                        [range_data["end_lat"], range_data["end_lon"]],
+                    ],
+                    color="yellow",
                     weight=3,
                     opacity=0.8,
-                    popup=f"{range_data.get('range_name', 'Unnamed')}<br>Distance: {range_data.get('distance_m', 0):.1f}m<br>Azimuth: {range_data.get('azimuth_deg', 0):.1f}°"
+                    popup=f"{range_data.get('range_name', 'Unnamed')}<br>Distance: {range_data.get('distance_m', 0):.1f}m<br>Azimuth: {range_data.get('azimuth_deg', 0):.1f}°",
                 ).add_to(m)
 
         return m
 
-    def display_map_section(self, ranges: List[Dict[str, Any]], selected_indices: List[int]) -> None:
+    def display_map_section(
+        self, ranges: List[Dict[str, Any]], selected_indices: List[int]
+    ) -> None:
         """Display the map section with selected ranges."""
         st.markdown("---")
         st.markdown("### Range Map")
-        
+
         if not selected_indices:
             st.info("Select ranges from the table above to display them on the map.")
             # Show empty map

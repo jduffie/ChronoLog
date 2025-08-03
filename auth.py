@@ -7,11 +7,13 @@ from users import handle_user_profile
 AUTH0_DOMAIN = st.secrets["auth0"]["domain"]
 CLIENT_ID = st.secrets["auth0"]["client_id"]
 CLIENT_SECRET = st.secrets["auth0"]["client_secret"]
+
+
 def get_redirect_uri():
     """Get the appropriate redirect URI based on the current application."""
     # Check query params for app identifier
     query_params = st.query_params
-    
+
     # Determine if running locally or in production
     try:
         # In production, use the secrets URIs
@@ -30,6 +32,7 @@ def get_redirect_uri():
             # For main ChronoLog.py locally - port 8501
             return "http://localhost:8501"
 
+
 def get_app_name():
     """Get the current application name."""
     query_params = st.query_params
@@ -38,29 +41,33 @@ def get_app_name():
     else:
         return "ChronoLog"
 
+
 AUTH0_BASE_URL = f"https://{AUTH0_DOMAIN}"
+
 
 def show_login_button():
     redirect_uri = get_redirect_uri()
     app_name = get_app_name()
-    
-    query = urlencode({
-        "client_id": CLIENT_ID,
-        "response_type": "code",
-        "redirect_uri": redirect_uri,
-        "scope": "openid profile email",
-        "audience": f"{AUTH0_BASE_URL}/userinfo"
-    })
+
+    query = urlencode(
+        {
+            "client_id": CLIENT_ID,
+            "response_type": "code",
+            "redirect_uri": redirect_uri,
+            "scope": "openid profile email",
+            "audience": f"{AUTH0_BASE_URL}/userinfo",
+        }
+    )
     login_url = f"{AUTH0_BASE_URL}/authorize?{query}"
-    
+
     # Center the login form
     col1, col2, col3 = st.columns([1, 2, 1])
-    
+
     with col2:
         st.markdown(f"### Welcome to {app_name}")
         st.markdown("Please sign in to continue")
         st.markdown("")
-        
+
         # Google login button with styling
         google_button_html = f"""
         <div style="display: flex; justify-content: center; margin: 20px 0;">
@@ -91,8 +98,9 @@ def show_login_button():
             </a>
         </div>
         """
-        
+
         st.markdown(google_button_html, unsafe_allow_html=True)
+
 
 def get_user_info(code):
     redirect_uri = get_redirect_uri()
@@ -102,7 +110,7 @@ def get_user_info(code):
         "client_id": CLIENT_ID,
         "client_secret": CLIENT_SECRET,
         "code": code,
-        "redirect_uri": redirect_uri
+        "redirect_uri": redirect_uri,
     }
     token_resp = requests.post(token_url, json=token_payload).json()
     access_token = token_resp.get("access_token")
@@ -111,6 +119,7 @@ def get_user_info(code):
         userinfo_url, headers={"Authorization": f"Bearer {access_token}"}
     )
     return userinfo_resp.json()
+
 
 def handle_auth():
     """Handle authentication flow and return user profile or None"""
@@ -125,11 +134,11 @@ def handle_auth():
     if "user" not in st.session_state:
         show_login_button()
         return None
-    
+
     user = st.session_state["user"]
-    
+
     # Handle user profile setup/management
     user_profile = handle_user_profile(user)
-    
+
     # Return user profile (sidebar display is handled in users module)
     return user_profile

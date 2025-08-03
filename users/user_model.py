@@ -9,7 +9,7 @@ class UserModel:
 
     def __init__(self):
         self.supabase = None
-        
+
     def _get_supabase_client(self):
         """Get Supabase client."""
         if not self.supabase:
@@ -23,7 +23,7 @@ class UserModel:
         try:
             supabase = self._get_supabase_client()
             result = supabase.table("users").select("*").eq("email", email).execute()
-            
+
             if result.data and len(result.data) > 0:
                 return result.data[0]
             return None
@@ -35,7 +35,7 @@ class UserModel:
         """Create a new user profile."""
         try:
             supabase = self._get_supabase_client()
-            
+
             # Prepare user data
             profile_data = {
                 "email": user_data["email"],
@@ -46,11 +46,11 @@ class UserModel:
                 "unit_system": user_data["unit_system"],
                 "profile_complete": True,
                 "auth0_sub": user_data.get("sub", ""),
-                "picture": user_data.get("picture", "")
+                "picture": user_data.get("picture", ""),
             }
-            
+
             result = supabase.table("users").insert(profile_data).execute()
-            
+
             if result.data:
                 return True
             return False
@@ -62,18 +62,20 @@ class UserModel:
         """Update existing user profile."""
         try:
             supabase = self._get_supabase_client()
-            
+
             # Prepare update data
             update_data = {
                 "username": user_data["username"],
                 "state": user_data["state"],
                 "country": user_data["country"],
                 "unit_system": user_data["unit_system"],
-                "profile_complete": True
+                "profile_complete": True,
             }
-            
-            result = supabase.table("users").update(update_data).eq("email", email).execute()
-            
+
+            result = (
+                supabase.table("users").update(update_data).eq("email", email).execute()
+            )
+
             if result.data:
                 return True
             return False
@@ -86,13 +88,13 @@ class UserModel:
         try:
             supabase = self._get_supabase_client()
             query = supabase.table("users").select("email").eq("username", username)
-            
+
             # If updating existing user, exclude their current record
             if current_email:
                 query = query.neq("email", current_email)
-            
+
             result = query.execute()
-            
+
             return len(result.data) == 0
         except Exception as e:
             st.error(f"Error checking username availability: {str(e)}")
@@ -105,22 +107,30 @@ class UserModel:
             return False, "Username must be at least 3 characters long"
         if len(username) > 30:
             return False, "Username must be 30 characters or less"
-        
+
         # Check format (alphanumeric, underscore, hyphen)
-        if not re.match(r'^[a-zA-Z0-9_-]+$', username):
-            return False, "Username can only contain letters, numbers, underscores, and hyphens"
-        
+        if not re.match(r"^[a-zA-Z0-9_-]+$", username):
+            return (
+                False,
+                "Username can only contain letters, numbers, underscores, and hyphens",
+            )
+
         # Check if starts with letter or number
         if not username[0].isalnum():
             return False, "Username must start with a letter or number"
-        
+
         return True, ""
 
     def get_all_users(self) -> list[Dict[str, Any]]:
         """Get all users (admin function)."""
         try:
             supabase = self._get_supabase_client()
-            result = supabase.table("users").select("*").order("created_at", desc=True).execute()
+            result = (
+                supabase.table("users")
+                .select("*")
+                .order("created_at", desc=True)
+                .execute()
+            )
             return result.data if result.data else []
         except Exception as e:
             st.error(f"Error fetching users: {str(e)}")

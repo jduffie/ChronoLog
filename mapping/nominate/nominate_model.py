@@ -7,7 +7,7 @@ from typing import List, Dict, Any
 
 class NominateModel:
     """Model for range nomination functionality including point management and calculations."""
-    
+
     def __init__(self):
         self.points: List[List[float]] = []
         self.elevations_m: List[float] = []
@@ -35,7 +35,7 @@ class NominateModel:
             response = requests.get(url, timeout=10)
             response.raise_for_status()
             data = response.json()
-            elevation_m = data['results'][0]['elevation']
+            elevation_m = data["results"][0]["elevation"]
             return elevation_m
         except Exception:
             return 0.0
@@ -53,7 +53,9 @@ class NominateModel:
         lat2, lon2 = math.radians(point_b[0]), math.radians(point_b[1])
         dLon = lon2 - lon1
         x = math.sin(dLon) * math.cos(lat2)
-        y = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(dLon)
+        y = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(
+            lat2
+        ) * math.cos(dLon)
         initial_bearing = math.atan2(x, y)
         return (math.degrees(initial_bearing) + 360) % 360
 
@@ -64,12 +66,12 @@ class NominateModel:
 
         p1, p2 = self.points[0], self.points[1]
         start_alt, end_alt = self.elevations_m[0], self.elevations_m[1]
-        
+
         # Calculate 2D and 3D distances
         distance_2d_m = geodesic(p1, p2).m
         elevation_diff_m = end_alt - start_alt
         distance_3d_m = math.sqrt(distance_2d_m**2 + elevation_diff_m**2)
-        
+
         azimuth = self.calculate_bearing(p1, p2)
         elevation_angle = math.degrees(math.atan2(elevation_diff_m, distance_2d_m))
 
@@ -84,7 +86,7 @@ class NominateModel:
         max_lat = max(p1[0], p2[0])
         min_alt = min(start_alt, end_alt)
         max_alt = max(start_alt, end_alt)
-        
+
         # Create comprehensive GeoJSON FeatureCollection
         geojson_features = {
             "type": "FeatureCollection",
@@ -94,7 +96,7 @@ class NominateModel:
                     "type": "Feature",
                     "geometry": {
                         "type": "Point",
-                        "coordinates": [p1[1], p1[0], start_alt]  # [lon, lat, alt]
+                        "coordinates": [p1[1], p1[0], start_alt],  # [lon, lat, alt]
                     },
                     "properties": {
                         "type": "firing_position",
@@ -102,20 +104,24 @@ class NominateModel:
                         "azimuth_deg": azimuth,
                         "elevation_angle_deg": elevation_angle,
                         "elevation_change_m": elevation_diff_m,
-                        **start_address_data.get('geojson', {}).get('features', [{}])[0].get('properties', {})
-                    }
+                        **start_address_data.get("geojson", {})
+                        .get("features", [{}])[0]
+                        .get("properties", {}),
+                    },
                 },
                 {
-                    "type": "Feature", 
+                    "type": "Feature",
                     "geometry": {
                         "type": "Point",
-                        "coordinates": [p2[1], p2[0], end_alt]  # [lon, lat, alt]
+                        "coordinates": [p2[1], p2[0], end_alt],  # [lon, lat, alt]
                     },
                     "properties": {
                         "type": "target_position",
                         "altitude_m": end_alt,
-                        **end_address_data.get('geojson', {}).get('features', [{}])[0].get('properties', {})
-                    }
+                        **end_address_data.get("geojson", {})
+                        .get("features", [{}])[0]
+                        .get("properties", {}),
+                    },
                 },
                 {
                     "type": "Feature",
@@ -123,36 +129,35 @@ class NominateModel:
                         "type": "LineString",
                         "coordinates": [
                             [p1[1], p1[0], start_alt],  # [lon, lat, alt]
-                            [p2[1], p2[0], end_alt]     # [lon, lat, alt]
-                        ]
+                            [p2[1], p2[0], end_alt],  # [lon, lat, alt]
+                        ],
                     },
                     "properties": {
                         "type": "range_line",
                         "distance_2d_m": distance_2d_m,
-                        "distance_3d_m": distance_3d_m
-                    }
-                }
-            ]
+                        "distance_3d_m": distance_3d_m,
+                    },
+                },
+            ],
         }
 
         return {
             "start_lat": f"{p1[0]:.6f}",
             "start_lon": f"{p1[1]:.6f}",
             "start_alt": f"{start_alt:.1f}",
-            "start_address": start_address_data.get('display_name', ''),
+            "start_address": start_address_data.get("display_name", ""),
             "end_lat": f"{p2[0]:.6f}",
             "end_lon": f"{p2[1]:.6f}",
             "end_alt": f"{end_alt:.1f}",
-            "end_address": end_address_data.get('display_name', ''),
+            "end_address": end_address_data.get("display_name", ""),
             "distance_2d": f"{distance_2d_m:.2f} m",
             "distance_3d": f"{distance_3d_m:.2f} m",
             "azimuth": f"{azimuth:.2f}°",
             "elevation_angle": f"{elevation_angle:.2f}°",
             "elevation_change": f"{elevation_diff_m:.1f} m",
             "address_geojson": geojson_features,
-            "display_name": start_address_data.get('display_name', ''),
+            "display_name": start_address_data.get("display_name", ""),
         }
-
 
     def _empty_measurements(self) -> Dict[str, Any]:
         """Return empty measurements template."""
@@ -174,7 +179,9 @@ class NominateModel:
             "display_name": "",
         }
 
-    def update_map_state(self, center: Dict[str, float] = None, zoom: int = None) -> None:
+    def update_map_state(
+        self, center: Dict[str, float] = None, zoom: int = None
+    ) -> None:
         """Update map center and zoom level."""
         if center:
             self.map_center = [center["lat"], center["lng"]]
@@ -193,57 +200,69 @@ class NominateModel:
             # Use OpenStreetMap Nominatim API for reverse geocoding
             url = f"https://nominatim.openstreetmap.org/reverse"
             params = {
-                'format': 'geojson',
-                'lat': lat,
-                'lon': lon,
-                'zoom': 18,
-                'addressdetails': 1
+                "format": "geojson",
+                "lat": lat,
+                "lon": lon,
+                "zoom": 18,
+                "addressdetails": 1,
             }
-            headers = {
-                'User-Agent': 'ChronoLog-App/1.0 (mapping application)'
-            }
-            
+            headers = {"User-Agent": "ChronoLog-App/1.0 (mapping application)"}
+
             response = requests.get(url, params=params, headers=headers, timeout=10)
             response.raise_for_status()
             data = response.json()
 
             # pretty print the response
             import json
+
             print(f"Reverse geocoding API response for {lat}, {lon}:")
             print(json.dumps(data, indent=2, ensure_ascii=False))
             print("=" * 50)
 
             # Return the full GeoJSON with metadata
-            feature_properties = data.get('features', [{}])[0].get('properties', {}) if data.get('features') else {}
-            address_obj = feature_properties.get('address', {})
-            
+            feature_properties = (
+                data.get("features", [{}])[0].get("properties", {})
+                if data.get("features")
+                else {}
+            )
+            address_obj = feature_properties.get("address", {})
+
             return {
-                'lat': lat,
-                'lon': lon,
-                'display_name': feature_properties.get('display_name', ''),
-                'county': address_obj.get('county', ''),
-                'state': address_obj.get('state', ''),
-                'country': address_obj.get('country', ''),
-                'geojson': data
+                "lat": lat,
+                "lon": lon,
+                "display_name": feature_properties.get("display_name", ""),
+                "county": address_obj.get("county", ""),
+                "state": address_obj.get("state", ""),
+                "country": address_obj.get("country", ""),
+                "geojson": data,
             }
-                
+
         except Exception as e:
             print(f"Error fetching address: {e}")
             return {
-                'lat': lat,
-                'lon': lon,
-                'display_name': '',
-                'county': '',
-                'state': '',
-                'country': '',
-                'geojson': {}
+                "lat": lat,
+                "lon": lon,
+                "display_name": "",
+                "county": "",
+                "state": "",
+                "country": "",
+                "geojson": {},
             }
 
-    def get_address_geojson_with_rate_limit(self, lat: float, lon: float) -> Dict[str, any]:
+    def get_address_geojson_with_rate_limit(
+        self, lat: float, lon: float
+    ) -> Dict[str, any]:
         """Get address GeoJSON with caching (rate limiting handled by Streamlit cache)."""
         return self.fetch_address_geojson(lat, lon)
 
-    def save_range_submission(self, user_email: str, range_name: str, range_description: str, measurements: Dict[str, Any], supabase_client) -> bool:
+    def save_range_submission(
+        self,
+        user_email: str,
+        range_name: str,
+        range_description: str,
+        measurements: Dict[str, Any],
+        supabase_client,
+    ) -> bool:
         """Save range submission to the database."""
         try:
             # Parse numeric values from string representations
@@ -251,25 +270,31 @@ class NominateModel:
             start_lon = float(measurements.get("start_lon", 0))
             end_lat = float(measurements.get("end_lat", 0))
             end_lon = float(measurements.get("end_lon", 0))
-            
+
             # Parse altitude values (remove " m" suffix if present)
             start_alt_str = measurements.get("start_alt", "0")
             end_alt_str = measurements.get("end_alt", "0")
             start_alt = float(start_alt_str.replace(" m", "")) if start_alt_str else 0
             end_alt = float(end_alt_str.replace(" m", "")) if end_alt_str else 0
-            
+
             # Parse distance (remove " m" suffix) - use 2D distance for compatibility
             distance_2d_str = measurements.get("distance_2d", "0")
             distance_3d_str = measurements.get("distance_3d", "0")
-            distance_2d = float(distance_2d_str.replace(" m", "")) if distance_2d_str else 0
-            distance_3d = float(distance_3d_str.replace(" m", "")) if distance_3d_str else 0
-            
+            distance_2d = (
+                float(distance_2d_str.replace(" m", "")) if distance_2d_str else 0
+            )
+            distance_3d = (
+                float(distance_3d_str.replace(" m", "")) if distance_3d_str else 0
+            )
+
             # Parse angles (remove "°" suffix)
             azimuth_str = measurements.get("azimuth", "0")
             elevation_str = measurements.get("elevation_angle", "0")
             azimuth = float(azimuth_str.replace("°", "")) if azimuth_str else 0
-            elevation_angle = float(elevation_str.replace("°", "")) if elevation_str else 0
-            
+            elevation_angle = (
+                float(elevation_str.replace("°", "")) if elevation_str else 0
+            )
+
             # Prepare data for insertion
             range_data = {
                 "user_email": user_email,
@@ -287,19 +312,21 @@ class NominateModel:
                 "address_geojson": measurements.get("address_geojson", {}),
                 "display_name": measurements.get("display_name", ""),
                 "status": "Under Review",
-                "review_reason": None
+                "review_reason": None,
             }
-            
+
             # Insert into database
-            result = supabase_client.table("ranges_submissions").insert(range_data).execute()
-            
+            result = (
+                supabase_client.table("ranges_submissions").insert(range_data).execute()
+            )
+
             if result.data:
                 print(f"Successfully saved range submission: {range_name}")
                 return True
             else:
                 print(f"Failed to save range submission: {range_name}")
                 return False
-                
+
         except Exception as e:
             print(f"Error saving range submission: {e}")
             return False
@@ -307,7 +334,12 @@ class NominateModel:
     def get_user_range_count(self, user_email: str, supabase_client) -> int:
         """Get the count of ranges submitted by a user."""
         try:
-            result = supabase_client.table("ranges_submissions").select("id").eq("user_email", user_email).execute()
+            result = (
+                supabase_client.table("ranges_submissions")
+                .select("id")
+                .eq("user_email", user_email)
+                .execute()
+            )
             return len(result.data) if result.data else 0
         except Exception as e:
             print(f"Error getting user range count: {e}")

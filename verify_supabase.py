@@ -1,4 +1,3 @@
-
 from supabase import create_client
 import os
 
@@ -13,11 +12,14 @@ if not SUPABASE_KEY:
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+
 def test_connection():
     try:
         # Test DB query
         tables = supabase.table("sessions").select("*").limit(1).execute()
-        print("✅ Database connection succeeded. 'sessions' table exists or is accessible.")
+        print(
+            "✅ Database connection succeeded. 'sessions' table exists or is accessible."
+        )
     except Exception as e:
         print("❌ Database connection failed:")
         print(e)
@@ -26,7 +28,9 @@ def test_connection():
         # Upload a small test file
         file_content = b"Test file content"
         file_path = f"test_upload.txt"
-        supabase.storage.from_(BUCKET_NAME).upload(file_path, file_content, {"content-type": "text/plain"})
+        supabase.storage.from_(BUCKET_NAME).upload(
+            file_path, file_content, {"content-type": "text/plain"}
+        )
         print(f"✅ Upload to bucket '{BUCKET_NAME}' succeeded.")
 
         # Clean up
@@ -35,6 +39,7 @@ def test_connection():
     except Exception as e:
         print(f"❌ Upload to bucket '{BUCKET_NAME}' failed:")
         print(e)
+
 
 if __name__ == "__main__":
     test_connection()
