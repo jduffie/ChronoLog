@@ -5,7 +5,8 @@ from datetime import datetime, timezone
 import sys
 import os
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Add the root directory to the path so we can import our modules
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from chronograph.service import ChronographService
 from chronograph.models import ChronographSession, ChronographMeasurement
@@ -284,6 +285,48 @@ class TestChronographImportTab(unittest.TestCase):
         self.assertIsNone(result)
         mock_error.assert_called()
         mock_excel.assert_not_called()
+
+
+class TestChronographPageStructure(unittest.TestCase):
+    """Test the chronograph page structure and configuration"""
+    
+    def test_chronograph_page_exists(self):
+        """Test that the chronograph page file exists"""
+        page_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "pages", "3_⏱️_Chronograph.py")
+        self.assertTrue(os.path.exists(page_path), "Chronograph page should exist")
+    
+    def test_chronograph_page_has_required_imports(self):
+        """Test that chronograph page has required imports"""
+        page_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "pages", "3_⏱️_Chronograph.py")
+        if os.path.exists(page_path):
+            with open(page_path, 'r') as f:
+                content = f.read()
+            
+            required_imports = ["streamlit", "handle_auth", "create_client", "render_chronograph_import_tab"]
+            for required_import in required_imports:
+                self.assertIn(required_import, content, f"Chronograph page should import {required_import}")
+    
+    def test_chronograph_page_has_correct_tabs(self):
+        """Test that chronograph page has expected tabs"""
+        page_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "pages", "3_⏱️_Chronograph.py")
+        if os.path.exists(page_path):
+            with open(page_path, 'r') as f:
+                content = f.read()
+            
+            expected_tabs = ["Import", "View", "Edit", "My Files"]
+            for tab in expected_tabs:
+                self.assertIn(f'"{tab}"', content, f"Chronograph page should have {tab} tab")
+    
+    def test_chronograph_page_configuration(self):
+        """Test chronograph page configuration"""
+        page_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "pages", "3_⏱️_Chronograph.py")
+        if os.path.exists(page_path):
+            with open(page_path, 'r') as f:
+                content = f.read()
+            
+            self.assertIn('page_title="Chronograph"', content)
+            self.assertIn('page_icon="📁"', content)
+            self.assertIn('layout="wide"', content)
 
 
 if __name__ == '__main__':
