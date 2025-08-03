@@ -8,8 +8,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from mapping.admin.admin_controller import AdminController
 from mapping.nominate.nominate_controller import NominateController
-from mapping.public_ranges.public_ranges_controller import \
-    PublicRangesController
+from mapping.public_ranges.public_ranges_controller import PublicRangesController
 
 
 class TestPublicRangesController(unittest.TestCase):
@@ -293,8 +292,9 @@ class TestMappingIntegration(unittest.TestCase):
         try:
             from mapping.admin.admin_controller import AdminController
             from mapping.nominate.nominate_controller import NominateController
-            from mapping.public_ranges.public_ranges_controller import \
-                PublicRangesController
+            from mapping.public_ranges.public_ranges_controller import (
+                PublicRangesController,
+            )
 
             # If we get here, imports succeeded
             self.assertTrue(True)

@@ -11,8 +11,7 @@ sys.path.append(
 from supabase import create_client
 
 from auth import handle_auth
-from mapping.public_ranges.public_ranges_controller import \
-    PublicRangesController
+from mapping.public_ranges.public_ranges_controller import PublicRangesController
 
 
 def main():
