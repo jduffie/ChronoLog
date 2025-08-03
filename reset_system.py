@@ -2,6 +2,7 @@
 
 import os
 import sys
+
 from supabase import create_client
 
 SUPABASE_URL = "https://qnzioartedlrithdxszx.supabase.co"

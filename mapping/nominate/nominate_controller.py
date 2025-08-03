@@ -1,18 +1,22 @@
-import streamlit as st
-import sys
 import os
+import sys
+
+import streamlit as st
 
 # Add the parent directory to the path so we can import shared modules
 sys.path.append(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
 
+from typing import Any, Dict
+
+from supabase import create_client
+
+from auth import handle_auth
+from mapping.session_state_manager import SessionStateManager
+
 from .nominate_model import NominateModel
 from .nominate_view import NominateView
-from mapping.session_state_manager import SessionStateManager
-from auth import handle_auth
-from supabase import create_client
-from typing import Dict, Any
 
 
 class NominateController:

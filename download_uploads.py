@@ -2,9 +2,10 @@
 
 import os
 import sys
-from pathlib import Path
-from supabase import create_client
 from datetime import datetime
+from pathlib import Path
+
+from supabase import create_client
 
 SUPABASE_URL = "https://qnzioartedlrithdxszx.supabase.co"
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")

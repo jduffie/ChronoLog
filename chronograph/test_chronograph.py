@@ -1,16 +1,17 @@
-import unittest
-from unittest.mock import Mock, patch, MagicMock
-import pandas as pd
-from datetime import datetime, timezone
-import sys
 import os
+import sys
+import unittest
+from datetime import datetime, timezone
+from unittest.mock import MagicMock, Mock, patch
+
+import pandas as pd
 
 # Add the root directory to the path so we can import our modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from chronograph.service import ChronographService
-from chronograph.models import ChronographSession, ChronographMeasurement
 from chronograph.import_tab import render_chronograph_import_tab
+from chronograph.models import ChronographMeasurement, ChronographSession
+from chronograph.service import ChronographService
 
 
 class TestChronographService(unittest.TestCase):

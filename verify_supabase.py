@@ -1,5 +1,6 @@
-from supabase import create_client
 import os
+
+from supabase import create_client
 
 # Read values from environment
 SUPABASE_URL = "https://qnzioartedlrithdxszx.supabase.co"

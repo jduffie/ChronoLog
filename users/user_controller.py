@@ -1,5 +1,7 @@
+from typing import Any, Dict, Optional
+
 import streamlit as st
-from typing import Dict, Any, Optional
+
 from .user_model import UserModel
 from .user_view import UserView
 

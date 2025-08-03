@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 
 # Add the root directory to the path so we can import our modules
 sys.path.append(

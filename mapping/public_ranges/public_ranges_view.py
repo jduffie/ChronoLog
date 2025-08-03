@@ -1,6 +1,7 @@
-import streamlit as st
+from typing import Any, Dict, List
+
 import folium
-from typing import List, Dict, Any
+import streamlit as st
 
 
 class PublicRangesView:

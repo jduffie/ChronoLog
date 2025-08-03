@@ -1,5 +1,6 @@
 from typing import List, Optional
-from .models import WeatherSource, WeatherMeasurement
+
+from .models import WeatherMeasurement, WeatherSource
 
 
 class WeatherService:

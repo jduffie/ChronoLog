@@ -1,14 +1,15 @@
-import unittest
-from unittest.mock import Mock, patch, MagicMock
-import sys
 import os
+import sys
+import unittest
+from unittest.mock import MagicMock, Mock, patch
 
 # Add the root directory to the path so we can import our modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from mapping.public_ranges.public_ranges_controller import PublicRangesController
-from mapping.nominate.nominate_controller import NominateController
 from mapping.admin.admin_controller import AdminController
+from mapping.nominate.nominate_controller import NominateController
+from mapping.public_ranges.public_ranges_controller import \
+    PublicRangesController
 
 
 class TestPublicRangesController(unittest.TestCase):
@@ -290,11 +291,10 @@ class TestMappingIntegration(unittest.TestCase):
     def test_controllers_can_be_imported(self):
         """Test that all controllers can be imported"""
         try:
-            from mapping.public_ranges.public_ranges_controller import (
-                PublicRangesController,
-            )
-            from mapping.nominate.nominate_controller import NominateController
             from mapping.admin.admin_controller import AdminController
+            from mapping.nominate.nominate_controller import NominateController
+            from mapping.public_ranges.public_ranges_controller import \
+                PublicRangesController
 
             # If we get here, imports succeeded
             self.assertTrue(True)

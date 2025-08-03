@@ -1,8 +1,9 @@
-import streamlit as st
+from typing import Any, Dict, List, Optional
+
 import folium
-from streamlit_folium import st_folium
-from typing import List, Dict, Any, Optional
 import pandas as pd
+import streamlit as st
+from streamlit_folium import st_folium
 
 
 class AdminView:

@@ -1,42 +1,24 @@
-import unittest
-from unittest.mock import Mock, patch, MagicMock
-import sys
 import os
+import sys
+import unittest
+from unittest.mock import MagicMock, Mock, patch
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+from ammo.test_ammo import (TestAmmoCreateTab, TestAmmoDataValidation,
+                            TestAmmoPageStructure, TestAmmoViewTab)
 # Import modular tests from subdirectories
-from chronograph.test_chronograph import (
-    TestChronographService,
-    TestChronographModels,
-    TestChronographImportTab,
-    TestChronographPageStructure,
-)
-
+from chronograph.test_chronograph import (TestChronographImportTab,
+                                          TestChronographModels,
+                                          TestChronographPageStructure,
+                                          TestChronographService)
 # from weather.test_weather import TestWeatherSource, TestWeatherMeasurement, TestWeatherImportTab, TestWeatherPageStructure  # Temporarily disabled
-from dope.test_dope import (
-    TestDopeModel,
-    TestDopeCreateSessionTab,
-    TestDopePageStructure,
-    TestDopeSessionManagement,
-)
-from ammo.test_ammo import (
-    TestAmmoCreateTab,
-    TestAmmoViewTab,
-    TestAmmoPageStructure,
-    TestAmmoDataValidation,
-)
-from rifles.test_rifles import (
-    TestRiflesCreateTab,
-    TestRiflesViewTab,
-    TestRiflesPageStructure,
-    TestRifleDataValidation,
-)
-from mapping.test_mapping import (
-    TestPublicRangesController,
-    TestMappingPageStructure,
-    TestMappingModels,
-)
+from dope.test_dope import (TestDopeCreateSessionTab, TestDopeModel,
+                            TestDopePageStructure, TestDopeSessionManagement)
+from mapping.test_mapping import (TestMappingModels, TestMappingPageStructure,
+                                  TestPublicRangesController)
+from rifles.test_rifles import (TestRifleDataValidation, TestRiflesCreateTab,
+                                TestRiflesPageStructure, TestRiflesViewTab)
 
 
 class TestPageStructure(unittest.TestCase):

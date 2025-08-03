@@ -1,15 +1,16 @@
-import unittest
-from unittest.mock import Mock, patch, MagicMock
-import pandas as pd
-from datetime import datetime, timezone
-import sys
 import os
+import sys
+import unittest
+from datetime import datetime, timezone
+from unittest.mock import MagicMock, Mock, patch
+
+import pandas as pd
 
 # Add the root directory to the path so we can import our modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from weather.models import WeatherSource, WeatherMeasurement
 from weather.import_tab import render_weather_import_tab
+from weather.models import WeatherMeasurement, WeatherSource
 
 
 class TestWeatherSource(unittest.TestCase):

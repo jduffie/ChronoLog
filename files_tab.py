@@ -1,7 +1,8 @@
-import streamlit as st
-import pandas as pd
-from collections import defaultdict
 import os
+from collections import defaultdict
+
+import pandas as pd
+import streamlit as st
 
 
 def render_files_tab(user, supabase, bucket, file_type_filter=None):

@@ -1,14 +1,16 @@
-import streamlit as st
-import sys
 import os
+import sys
+
+import streamlit as st
 
 # Add the root directory to the path so we can import our modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from auth import handle_auth
 from supabase import create_client
+
 from ammo.create_tab import render_create_ammo_tab
 from ammo.view_tab import render_view_ammo_tab
+from auth import handle_auth
 
 
 def main():

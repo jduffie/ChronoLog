@@ -1,6 +1,7 @@
-import streamlit as st
-import pandas as pd
 from datetime import datetime
+
+import pandas as pd
+import streamlit as st
 
 
 def render_view_rifle_tab(user, supabase):

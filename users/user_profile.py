@@ -5,7 +5,8 @@ This module provides the main interface for user profile management
 that integrates with the authentication system.
 """
 
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
 from .user_controller import UserController
 
 

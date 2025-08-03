@@ -4,9 +4,9 @@ Comprehensive test runner for ChronoLog application.
 Runs all modular tests from their respective subdirectories.
 """
 
-import unittest
-import sys
 import os
+import sys
+import unittest
 
 # Add the root directory to the path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))

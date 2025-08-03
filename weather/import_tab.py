@@ -1,6 +1,8 @@
-import streamlit as st
-import pandas as pd
 from datetime import datetime, timezone
+
+import pandas as pd
+import streamlit as st
+
 from .service import WeatherService
 
 

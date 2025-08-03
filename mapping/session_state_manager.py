@@ -1,5 +1,6 @@
+from typing import Any, Dict, List
+
 import streamlit as st
-from typing import List, Dict, Any
 
 
 class SessionStateManager:

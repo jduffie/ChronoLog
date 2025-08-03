@@ -1,5 +1,6 @@
 from typing import List, Optional
-from .models import ChronographSession, ChronographMeasurement
+
+from .models import ChronographMeasurement, ChronographSession
 
 
 class ChronographService:

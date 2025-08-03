@@ -1,12 +1,12 @@
-import streamlit as st
+from typing import Any, Dict, List, Optional, Tuple
+
 import folium
-from streamlit_folium import st_folium
+import streamlit as st
 from branca.element import MacroElement
-from jinja2 import Template
-from folium.plugins import LocateControl
-from typing import List, Dict, Any, Tuple, Optional
+from folium.plugins import Draw, LocateControl
 from geopy.geocoders import Nominatim
-from folium.plugins import Draw
+from jinja2 import Template
+from streamlit_folium import st_folium
 
 
 class CssInjector(MacroElement):

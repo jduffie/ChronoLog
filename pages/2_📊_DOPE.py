@@ -1,12 +1,14 @@
-import streamlit as st
-import sys
 import os
+import sys
+
+import streamlit as st
 
 # Add the root directory to the path so we can import our modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from auth import handle_auth
 from supabase import create_client
+
+from auth import handle_auth
 from dope.create_session_tab import render_create_session_tab
 from dope.sessions_tab import render_sessions_tab
 from dope.view_session_tab import render_view_session_tab

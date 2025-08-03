@@ -1,6 +1,7 @@
-import streamlit as st
-import sys
 import os
+import sys
+
+import streamlit as st
 
 # Add the root directory to the path so we can import our modules
 sys.path.append(

@@ -1,6 +1,8 @@
-import streamlit as st
-import requests
 from urllib.parse import urlencode
+
+import requests
+import streamlit as st
+
 from users import handle_user_profile
 
 # Auth0 settings

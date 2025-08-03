@@ -1,8 +1,9 @@
 import math
+from typing import Any, Dict, List
+
 import requests
 import streamlit as st
 from geopy.distance import geodesic
-from typing import List, Dict, Any
 
 
 class NominateModel:
