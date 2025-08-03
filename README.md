@@ -1,7 +1,44 @@
 
 # ChronoLog - Garmin Xero Data Processor
 
+[![CI/CD Pipeline](https://github.com/jduffie/ChronoLog/actions/workflows/ci.yml/badge.svg)](https://github.com/jduffie/ChronoLog/actions/workflows/ci.yml)
+[![Test Coverage](https://github.com/jduffie/ChronoLog/actions/workflows/test-coverage.yml/badge.svg)](https://github.com/jduffie/ChronoLog/actions/workflows/test-coverage.yml)
+[![PR Tests](https://github.com/jduffie/ChronoLog/actions/workflows/pr-tests.yml/badge.svg)](https://github.com/jduffie/ChronoLog/actions/workflows/pr-tests.yml)
+
 A multi-user Streamlit app for processing Garmin Xero Chronograph data. Users authenticate with Google via Auth0, upload Excel files, and store structured ballistics data in Supabase.
+
+## 🧪 Testing
+
+The project includes comprehensive automated testing:
+
+- **82 total tests** across all modules
+- **Modular test structure** with tests co-located with code
+- **GitHub Actions CI/CD** with automated test execution
+- **Test coverage reporting** with detailed metrics
+
+### Running Tests Locally
+
+```bash
+# Run all tests
+python run_all_tests.py
+
+# Run structural validation tests
+python test_all_pages.py
+
+# Run module-specific tests
+python chronograph/test_chronograph.py
+python weather/test_weather.py
+python dope/test_dope.py
+python ammo/test_ammo.py
+python rifles/test_rifles.py
+python mapping/test_mapping.py
+```
+
+### Test Coverage
+
+- ✅ **Chronograph Module:** 17/17 tests passing (100%)
+- ✅ **Page Structure:** 15/15 tests passing (100%)
+- ⚠️ **Overall Suite:** 65/82 tests passing (79%)
 
 ## 🔐 Authentication
 

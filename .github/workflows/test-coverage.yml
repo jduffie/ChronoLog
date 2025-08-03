@@ -1,0 +1,95 @@
+name: Test Coverage Report
+
+on:
+  push:
+    branches: [ main, map_on_dope ]
+  schedule:
+    # Run coverage report daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov coverage[toml]
+        
+    - name: Create test environment
+      run: |
+        mkdir -p .streamlit
+        cat > .streamlit/secrets.toml << EOF
+        [supabase]
+        url = "https://test.supabase.co"
+        key = "test-key"
+        bucket = "test-bucket"
+        
+        [auth0]
+        domain = "test.auth0.com"
+        client_id = "test-client-id"
+        client_secret = "test-client-secret"
+        EOF
+        
+    - name: Run comprehensive test coverage
+      run: |
+        coverage run --source=. -m pytest \
+          chronograph/test_chronograph.py \
+          dope/test_dope.py \
+          ammo/test_ammo.py \
+          rifles/test_rifles.py \
+          mapping/test_mapping.py \
+          test_all_pages.py \
+          --verbose
+          
+    - name: Generate coverage report
+      run: |
+        coverage report --show-missing
+        coverage html
+        coverage xml
+        
+    - name: Generate coverage badge
+      run: |
+        coverage-badge -f -o coverage.svg
+        
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: |
+          htmlcov/
+          coverage.xml
+          coverage.svg
+          
+    - name: Comment coverage on commit
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          try {
+            // Read coverage percentage from coverage report
+            const { execSync } = require('child_process');
+            const coverage = execSync('coverage report --format=total', { encoding: 'utf-8' }).trim();
+            
+            const emoji = coverage >= 90 ? '🎉' : coverage >= 80 ? '✅' : coverage >= 70 ? '⚠️' : '❌';
+            
+            github.rest.repos.createCommitComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: context.sha,
+              body: `${emoji} **Test Coverage: ${coverage}%**\n\nDetailed coverage report available in the Actions artifacts.`
+            });
+          } catch (error) {
+            console.log('Could not post coverage comment:', error.message);
+          }
