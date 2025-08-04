@@ -8,10 +8,10 @@ sys.path.append(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
 
-from supabase import create_client
-
 from auth import handle_auth
-from mapping.public_ranges.public_ranges_controller import PublicRangesController
+from mapping.public_ranges.public_ranges_controller import \
+    PublicRangesController
+from supabase import create_client
 
 
 def main():

@@ -5,39 +5,20 @@ from unittest.mock import MagicMock, Mock, patch
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from ammo.test_ammo import (
-    TestAmmoCreateTab,
-    TestAmmoDataValidation,
-    TestAmmoPageStructure,
-    TestAmmoViewTab,
-)
-
+from ammo.test_ammo import (TestAmmoCreateTab, TestAmmoDataValidation,
+                            TestAmmoPageStructure, TestAmmoViewTab)
 # Import modular tests from subdirectories
-from chronograph.test_chronograph import (
-    TestChronographImportTab,
-    TestChronographModels,
-    TestChronographPageStructure,
-    TestChronographService,
-)
-
+from chronograph.test_chronograph import (TestChronographImportTab,
+                                          TestChronographModels,
+                                          TestChronographPageStructure,
+                                          TestChronographService)
 # from weather.test_weather import TestWeatherSource, TestWeatherMeasurement, TestWeatherImportTab, TestWeatherPageStructure  # Temporarily disabled
-from dope.test_dope import (
-    TestDopeCreateSessionTab,
-    TestDopeModel,
-    TestDopePageStructure,
-    TestDopeSessionManagement,
-)
-from mapping.test_mapping import (
-    TestMappingModels,
-    TestMappingPageStructure,
-    TestPublicRangesController,
-)
-from rifles.test_rifles import (
-    TestRifleDataValidation,
-    TestRiflesCreateTab,
-    TestRiflesPageStructure,
-    TestRiflesViewTab,
-)
+from dope.test_dope import (TestDopeCreateSessionTab, TestDopeModel,
+                            TestDopePageStructure, TestDopeSessionManagement)
+from mapping.test_mapping import (TestMappingModels, TestMappingPageStructure,
+                                  TestPublicRangesController)
+from rifles.test_rifles import (TestRifleDataValidation, TestRiflesCreateTab,
+                                TestRiflesPageStructure, TestRiflesViewTab)
 
 
 class TestPageStructure(unittest.TestCase):
