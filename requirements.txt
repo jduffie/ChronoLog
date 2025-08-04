@@ -1,12 +1,23 @@
 
-streamlit
-pandas
-openpyxl
-requests
-supabase
-folium
-streamlit-folium
-geopy
-urllib3<2.0
+# Core application dependencies
+streamlit==1.46.0
+pandas==2.3.0
+openpyxl==3.1.5
+requests==2.32.4
+supabase==2.15.3
+
+# Mapping and visualization
+folium==0.20.0
+streamlit-folium==0.25.0
+geopy==2.4.1
 matplotlib
 plotly
+
+# Development and testing
+pytest==8.4.1
+pytest-mock==3.14.1
+black==25.1.0
+isort==6.0.1
+
+# Security constraint
+urllib3==2.0.0
