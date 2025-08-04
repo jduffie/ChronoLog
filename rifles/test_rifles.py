@@ -49,12 +49,12 @@ class TestRiflesCreateTab(unittest.TestCase):
 
         # Mock form inputs (6 text inputs based on actual function)
         mock_text_input.side_effect = [
-            "My Test Rifle",       # name
-            "1:10",               # barrel_twist_ratio  
-            "24 inches",          # barrel_length
-            "1.5 inches",         # sight_offset
-            "Timney",             # trigger
-            "Leupold Mark 4"      # scope
+            "My Test Rifle",  # name
+            "1:10",  # barrel_twist_ratio
+            "24 inches",  # barrel_length
+            "1.5 inches",  # sight_offset
+            "Timney",  # trigger
+            "Leupold Mark 4",  # scope
         ]
         mock_submit.return_value = False  # Not submitted
 
@@ -122,12 +122,12 @@ class TestRiflesCreateTab(unittest.TestCase):
 
         # Mock form inputs (6 text inputs based on actual function)
         mock_text_input.side_effect = [
-            "My Test Rifle",       # name
-            "1:10",               # barrel_twist_ratio  
-            "24 inches",          # barrel_length
-            "1.5 inches",         # sight_offset
-            "Timney",             # trigger
-            "Leupold Mark 4"      # scope
+            "My Test Rifle",  # name
+            "1:10",  # barrel_twist_ratio
+            "24 inches",  # barrel_length
+            "1.5 inches",  # sight_offset
+            "Timney",  # trigger
+            "Leupold Mark 4",  # scope
         ]
         mock_selectbox.return_value = ".308 Winchester"
         mock_number_input.side_effect = [24, 1.0, 10.0, 2.5]
@@ -173,7 +173,22 @@ class TestRiflesViewTab(unittest.TestCase):
     @patch("streamlit.subheader")
     @patch("streamlit.header")
     @patch("streamlit.dataframe")
-    def test_render_view_rifle_tab_with_rifles(self, mock_dataframe, mock_header, mock_subheader, mock_metric, mock_columns, mock_selectbox, mock_expander, mock_button, mock_info, mock_warning, mock_download_button, mock_column_config, mock_to_datetime):
+    def test_render_view_rifle_tab_with_rifles(
+        self,
+        mock_dataframe,
+        mock_header,
+        mock_subheader,
+        mock_metric,
+        mock_columns,
+        mock_selectbox,
+        mock_expander,
+        mock_button,
+        mock_info,
+        mock_warning,
+        mock_download_button,
+        mock_column_config,
+        mock_to_datetime,
+    ):
         user = {"email": "test@example.com", "name": "Test User"}
         mock_supabase = Mock()
 
@@ -206,7 +221,11 @@ class TestRiflesViewTab(unittest.TestCase):
         mock_col.__enter__ = Mock(return_value=mock_col)
         mock_col.__exit__ = Mock(return_value=None)
         mock_columns.return_value = [mock_col, mock_col, mock_col, mock_col]
-        mock_selectbox.side_effect = ["All", "All", "rifle-1"]  # For twist, completeness filters, and detailed view
+        mock_selectbox.side_effect = [
+            "All",
+            "All",
+            "rifle-1",
+        ]  # For twist, completeness filters, and detailed view
         mock_expander.return_value.__enter__ = Mock(return_value=Mock())
         mock_expander.return_value.__exit__ = Mock(return_value=None)
         mock_button.return_value = False

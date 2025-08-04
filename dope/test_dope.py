@@ -69,11 +69,13 @@ class TestDopeModel(unittest.TestCase):
         self.model.set_tab_measurements(self.test_tab, initial_data)
 
         # Create edited DataFrame
-        edited_df = pd.DataFrame([
-            {"shot": 1, "velocity": 2805},
-            {"shot": 2, "velocity": 2815},
-            {"shot": 3, "velocity": 2820},
-        ])
+        edited_df = pd.DataFrame(
+            [
+                {"shot": 1, "velocity": 2805},
+                {"shot": 2, "velocity": 2815},
+                {"shot": 3, "velocity": 2820},
+            ]
+        )
 
         # Update measurements
         self.model.update_tab_measurements(self.test_tab, edited_df)
@@ -113,11 +115,16 @@ class TestDopeModel(unittest.TestCase):
     def test_tab_data_structure(self):
         # Test the internal tab data structure
         tab_data = self.model.get_tab_data(self.test_tab)
-        
+
         # Should have the expected keys
-        expected_keys = {"measurements_data", "edited_measurements", "session_details", "is_created"}
+        expected_keys = {
+            "measurements_data",
+            "edited_measurements",
+            "session_details",
+            "is_created",
+        }
         self.assertEqual(set(tab_data.keys()), expected_keys)
-        
+
         # Initial values should be correct
         self.assertEqual(tab_data["measurements_data"], [])
         self.assertIsNone(tab_data["edited_measurements"])
@@ -251,7 +258,7 @@ class TestDopeSessionManagement(unittest.TestCase):
         # Set different measurements for each tab
         data1 = [{"session_id": "chrono-1", "velocity": 2800}]
         data2 = [{"session_id": "chrono-2", "velocity": 2900}]
-        
+
         model.set_tab_measurements(tab1, data1)
         model.set_tab_measurements(tab2, data2)
 
@@ -262,13 +269,13 @@ class TestDopeSessionManagement(unittest.TestCase):
         # Verify data isolation
         df1 = model.get_tab_measurements_df(tab1)
         df2 = model.get_tab_measurements_df(tab2)
-        
+
         self.assertEqual(df1.iloc[0]["session_id"], "chrono-1")
         self.assertEqual(df2.iloc[0]["session_id"], "chrono-2")
 
         details1 = model.get_tab_session_details(tab1)
         details2 = model.get_tab_session_details(tab2)
-        
+
         self.assertEqual(details1["range_id"], "range-1")
         self.assertEqual(details2["range_id"], "range-2")
 
