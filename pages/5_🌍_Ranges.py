@@ -10,8 +10,7 @@ sys.path.append(
 
 from auth import handle_auth
 from mapping.nominate.nominate_controller import NominateController
-from mapping.public_ranges.public_ranges_controller import \
-    PublicRangesController
+from mapping.public_ranges.public_ranges_controller import PublicRangesController
 from mapping.submission.submission_controller import SubmissionController
 from supabase import create_client
 

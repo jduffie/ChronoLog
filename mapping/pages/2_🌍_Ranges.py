@@ -9,8 +9,7 @@ sys.path.append(
 )
 
 from auth import handle_auth
-from mapping.public_ranges.public_ranges_controller import \
-    PublicRangesController
+from mapping.public_ranges.public_ranges_controller import PublicRangesController
 from supabase import create_client
 
 
