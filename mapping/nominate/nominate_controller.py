@@ -10,10 +10,9 @@ sys.path.append(
 
 from typing import Any, Dict
 
-from supabase import create_client
-
 from auth import handle_auth
 from mapping.session_state_manager import SessionStateManager
+from supabase import create_client
 
 from .nominate_model import NominateModel
 from .nominate_view import NominateView

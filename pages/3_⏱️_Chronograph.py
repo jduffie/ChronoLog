@@ -6,12 +6,11 @@ import streamlit as st
 # Add the root directory to the path so we can import our modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from supabase import create_client
-
 from auth import handle_auth
 from chronograph.import_tab import render_chronograph_import_tab
 from chronograph.logs_tab import render_logs_tab
 from files_tab import render_files_tab
+from supabase import create_client
 
 
 def main():

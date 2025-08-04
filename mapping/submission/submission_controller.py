@@ -10,10 +10,9 @@ sys.path.append(
 
 from typing import Any, Dict, List
 
-from supabase import create_client
-
 from auth import handle_auth
 from mapping.session_state_manager import SessionStateManager
+from supabase import create_client
 
 from .submission_model import SubmissionModel
 from .submission_view import SubmissionView
