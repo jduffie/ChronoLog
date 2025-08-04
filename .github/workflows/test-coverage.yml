@@ -8,6 +8,12 @@ on:
     - cron: '0 2 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+  statuses: write
+
 jobs:
   coverage:
     runs-on: ubuntu-latest

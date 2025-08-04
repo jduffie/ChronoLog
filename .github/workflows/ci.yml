@@ -7,6 +7,12 @@ on:
     branches: [ main, map_on_dope ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+  statuses: write
+
 jobs:
   test:
     runs-on: ubuntu-latest

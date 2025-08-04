@@ -5,6 +5,12 @@ on:
     branches: [ main, map_on_dope ]
     types: [opened, synchronize, reopened]
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+  statuses: write
+
 jobs:
   test-pr:
     runs-on: ubuntu-latest
