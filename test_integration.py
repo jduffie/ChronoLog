@@ -10,18 +10,19 @@ import sys
 import tempfile
 import unittest
 from datetime import datetime, timezone
-from unittest.mock import MagicMock, Mock, patch
 from io import StringIO
+from unittest.mock import MagicMock, Mock, patch
 
 import pandas as pd
 import pytest
+
 from supabase import create_client
 
 # Add the root directory to the path so we can import our modules
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+from chronograph.models import ChronographMeasurement, ChronographSession
 from chronograph.service import ChronographService
-from chronograph.models import ChronographSession, ChronographMeasurement
 
 
 class BaseIntegrationTest(unittest.TestCase):

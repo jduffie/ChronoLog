@@ -16,6 +16,8 @@ plotly
 # Development and testing
 pytest==8.4.1
 pytest-mock==3.14.1
+pytest-cov==6.0.0
+pytest-html==4.1.1
 black==25.1.0
 isort==6.0.1
 
