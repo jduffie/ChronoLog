@@ -24,125 +24,110 @@ class TestDopeModel(unittest.TestCase):
         tabs = self.model.get_all_tabs()
         self.assertEqual(len(tabs), 0)
 
-        # Add some data to a tab
-        self.model.set_chronograph_data(self.test_tab, {"session_id": "test-session"})
+        # Add some data to a tab (this should create the tab)
+        test_data = [{"session_id": "test-session", "velocity": 2800}]
+        self.model.set_tab_measurements(self.test_tab, test_data)
 
         tabs = self.model.get_all_tabs()
         self.assertEqual(len(tabs), 1)
         self.assertIn(self.test_tab, tabs)
 
     def test_set_and_get_chronograph_data(self):
-        test_data = {
-            "session_id": "test-session",
-            "bullet_type": "9mm FMJ",
-            "avg_speed": 1200.5,
-        }
+        test_data = [
+            {
+                "session_id": "test-session",
+                "bullet_type": "9mm FMJ",
+                "avg_speed": 1200.5,
+            }
+        ]
 
         # Set data
-        self.model.set_chronograph_data(self.test_tab, test_data)
+        self.model.set_tab_measurements(self.test_tab, test_data)
 
         # Get data
-        retrieved_data = self.model.get_chronograph_data(self.test_tab)
-        self.assertEqual(retrieved_data, test_data)
+        retrieved_df = self.model.get_tab_measurements_df(self.test_tab)
+        self.assertIsNotNone(retrieved_df)
+        self.assertEqual(len(retrieved_df), 1)
+        self.assertEqual(retrieved_df.iloc[0]["session_id"], "test-session")
 
-    def test_set_and_get_weather_data(self):
+    def test_set_and_get_session_details(self):
         test_data = {"log_id": "weather-log-1", "temperature": 72.5, "humidity": 65}
 
         # Set data
-        self.model.set_weather_data(self.test_tab, test_data)
+        self.model.set_tab_session_details(self.test_tab, test_data)
 
         # Get data
-        retrieved_data = self.model.get_weather_data(self.test_tab)
+        retrieved_data = self.model.get_tab_session_details(self.test_tab)
         self.assertEqual(retrieved_data, test_data)
 
-    def test_set_and_get_range_data(self):
-        test_data = {
-            "range_id": "range-1",
-            "distance_yards": 100,
-            "elevation_angle": 2.5,
-        }
+    def test_update_tab_measurements(self):
+        # First set initial data
+        initial_data = [
+            {"shot": 1, "velocity": 2800},
+            {"shot": 2, "velocity": 2810},
+        ]
+        self.model.set_tab_measurements(self.test_tab, initial_data)
 
-        # Set data
-        self.model.set_range_data(self.test_tab, test_data)
+        # Create edited DataFrame
+        edited_df = pd.DataFrame([
+            {"shot": 1, "velocity": 2805},
+            {"shot": 2, "velocity": 2815},
+            {"shot": 3, "velocity": 2820},
+        ])
 
-        # Get data
-        retrieved_data = self.model.get_range_data(self.test_tab)
-        self.assertEqual(retrieved_data, test_data)
+        # Update measurements
+        self.model.update_tab_measurements(self.test_tab, edited_df)
 
-    def test_set_and_get_rifle_data(self):
-        test_data = {
-            "rifle_id": "rifle-1",
-            "make": "Remington",
-            "model": "700",
-            "caliber": ".308 Winchester",
-        }
+        # Get updated data
+        retrieved_df = self.model.get_tab_measurements_df(self.test_tab)
+        self.assertIsNotNone(retrieved_df)
+        self.assertEqual(len(retrieved_df), 3)
+        self.assertEqual(retrieved_df.iloc[2]["velocity"], 2820)
 
-        # Set data
-        self.model.set_rifle_data(self.test_tab, test_data)
+    def test_is_tab_created(self):
+        # Initially should be False
+        self.assertFalse(self.model.is_tab_created(self.test_tab))
 
-        # Get data
-        retrieved_data = self.model.get_rifle_data(self.test_tab)
-        self.assertEqual(retrieved_data, test_data)
-
-    def test_set_and_get_ammo_data(self):
-        test_data = {
-            "ammo_id": "ammo-1",
-            "make": "Federal",
-            "model": "Gold Medal",
-            "grain": 168,
-        }
-
-        # Set data
-        self.model.set_ammo_data(self.test_tab, test_data)
-
-        # Get data
-        retrieved_data = self.model.get_ammo_data(self.test_tab)
-        self.assertEqual(retrieved_data, test_data)
+        # After setting measurements, should be True
+        test_data = [{"shot": 1, "velocity": 2800}]
+        self.model.set_tab_measurements(self.test_tab, test_data)
+        self.assertTrue(self.model.is_tab_created(self.test_tab))
 
     def test_clear_tab_data(self):
-        # Add data to multiple categories
-        self.model.set_chronograph_data(self.test_tab, {"session_id": "test"})
-        self.model.set_weather_data(self.test_tab, {"log_id": "test"})
-        self.model.set_range_data(self.test_tab, {"range_id": "test"})
+        # Add data to tab
+        test_data = [{"shot": 1, "velocity": 2800}]
+        self.model.set_tab_measurements(self.test_tab, test_data)
+        self.model.set_tab_session_details(self.test_tab, {"range_id": "test"})
 
-        # Verify data exists
-        self.assertIsNotNone(self.model.get_chronograph_data(self.test_tab))
-        self.assertIsNotNone(self.model.get_weather_data(self.test_tab))
-        self.assertIsNotNone(self.model.get_range_data(self.test_tab))
+        # Verify tab exists
+        self.assertIn(self.test_tab, self.model.get_all_tabs())
+        self.assertIsNotNone(self.model.get_tab_measurements_df(self.test_tab))
 
         # Clear tab data
         self.model.clear_tab_data(self.test_tab)
 
         # Verify data is cleared
-        self.assertIsNone(self.model.get_chronograph_data(self.test_tab))
-        self.assertIsNone(self.model.get_weather_data(self.test_tab))
-        self.assertIsNone(self.model.get_range_data(self.test_tab))
+        self.assertNotIn(self.test_tab, self.model.get_all_tabs())
+        self.assertIsNone(self.model.get_tab_measurements_df(self.test_tab))
 
-    def test_is_tab_complete(self):
-        # Initially incomplete
-        self.assertFalse(self.model.is_tab_complete(self.test_tab))
+    def test_tab_data_structure(self):
+        # Test the internal tab data structure
+        tab_data = self.model.get_tab_data(self.test_tab)
+        
+        # Should have the expected keys
+        expected_keys = {"measurements_data", "edited_measurements", "session_details", "is_created"}
+        self.assertEqual(set(tab_data.keys()), expected_keys)
+        
+        # Initial values should be correct
+        self.assertEqual(tab_data["measurements_data"], [])
+        self.assertIsNone(tab_data["edited_measurements"])
+        self.assertEqual(tab_data["session_details"], {})
+        self.assertFalse(tab_data["is_created"])
 
-        # Add required data
-        self.model.set_chronograph_data(self.test_tab, {"session_id": "test"})
-        self.model.set_range_data(self.test_tab, {"range_id": "test"})
-        self.model.set_rifle_data(self.test_tab, {"rifle_id": "test"})
-        self.model.set_ammo_data(self.test_tab, {"ammo_id": "test"})
-
-        # Should be complete now
-        self.assertTrue(self.model.is_tab_complete(self.test_tab))
-
-    def test_get_tab_summary(self):
-        # Set some data
-        self.model.set_chronograph_data(self.test_tab, {"bullet_type": "9mm FMJ"})
-        self.model.set_range_data(self.test_tab, {"distance_yards": 25})
-
-        summary = self.model.get_tab_summary(self.test_tab)
-
-        self.assertIsInstance(summary, dict)
-        self.assertIn("chronograph", summary)
-        self.assertIn("range", summary)
-        self.assertEqual(summary["chronograph"]["bullet_type"], "9mm FMJ")
-        self.assertEqual(summary["range"]["distance_yards"], 25)
+    def test_empty_measurements_df(self):
+        # When no measurements are set, should return None
+        df = self.model.get_tab_measurements_df(self.test_tab)
+        self.assertIsNone(df)
 
 
 class TestDopeCreateSessionTab(unittest.TestCase):
@@ -263,25 +248,35 @@ class TestDopeSessionManagement(unittest.TestCase):
         tab1 = "session_1"
         tab2 = "session_2"
 
-        # Set different data for each tab
-        model.set_chronograph_data(tab1, {"session_id": "chrono-1"})
-        model.set_chronograph_data(tab2, {"session_id": "chrono-2"})
+        # Set different measurements for each tab
+        data1 = [{"session_id": "chrono-1", "velocity": 2800}]
+        data2 = [{"session_id": "chrono-2", "velocity": 2900}]
+        
+        model.set_tab_measurements(tab1, data1)
+        model.set_tab_measurements(tab2, data2)
 
-        model.set_range_data(tab1, {"range_id": "range-1"})
-        model.set_range_data(tab2, {"range_id": "range-2"})
+        # Set different session details
+        model.set_tab_session_details(tab1, {"range_id": "range-1"})
+        model.set_tab_session_details(tab2, {"range_id": "range-2"})
 
         # Verify data isolation
-        self.assertEqual(model.get_chronograph_data(tab1)["session_id"], "chrono-1")
-        self.assertEqual(model.get_chronograph_data(tab2)["session_id"], "chrono-2")
+        df1 = model.get_tab_measurements_df(tab1)
+        df2 = model.get_tab_measurements_df(tab2)
+        
+        self.assertEqual(df1.iloc[0]["session_id"], "chrono-1")
+        self.assertEqual(df2.iloc[0]["session_id"], "chrono-2")
 
-        self.assertEqual(model.get_range_data(tab1)["range_id"], "range-1")
-        self.assertEqual(model.get_range_data(tab2)["range_id"], "range-2")
+        details1 = model.get_tab_session_details(tab1)
+        details2 = model.get_tab_session_details(tab2)
+        
+        self.assertEqual(details1["range_id"], "range-1")
+        self.assertEqual(details2["range_id"], "range-2")
 
         # Clear one tab shouldn't affect the other
         model.clear_tab_data(tab1)
 
-        self.assertIsNone(model.get_chronograph_data(tab1))
-        self.assertIsNotNone(model.get_chronograph_data(tab2))
+        self.assertIsNone(model.get_tab_measurements_df(tab1))
+        self.assertIsNotNone(model.get_tab_measurements_df(tab2))
 
 
 if __name__ == "__main__":

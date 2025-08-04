@@ -59,7 +59,7 @@ class TestPublicRangesController(unittest.TestCase):
 
         mock_response = Mock()
         mock_response.data = mock_data
-        mock_supabase.table.return_value.select.return_value.eq.return_value.execute.return_value = (
+        mock_supabase.table.return_value.select.return_value.order.return_value.execute.return_value = (
             mock_response
         )
 
