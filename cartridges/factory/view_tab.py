@@ -4,15 +4,28 @@ import pandas as pd
 import streamlit as st
 
 
-def render_view_bullets_tab(user, supabase):
-    """Render the View Bullets tab"""
-    st.header("📋 View Bullets Entries")
+def render_view_cartridge_tab(user, supabase):
+    """Render the View Factory Cartridges tab"""
+    st.header("📋 View Factory Cartridge Entries")
 
     try:
-        # Get all bullets entries for the user
+        # Get all factory cartridge entries for the user with bullet details
         response = (
-            supabase.table("bullets")
-            .select("*")
+            supabase.table("factory_cartridge_specs")
+            .select(
+                """
+                *,
+                bullets!inner(
+                    manufacturer,
+                    model,
+                    weight_grains,
+                    bullet_diameter_groove_mm,
+                    bore_diameter_land_mm,
+                    ballistic_coefficient_g1,
+                    ballistic_coefficient_g7
+                )
+                """
+            )
             .eq("user_id", user["id"])
             .order("id", desc=True)
             .execute()
@@ -20,12 +33,31 @@ def render_view_bullets_tab(user, supabase):
 
         if not response.data:
             st.info(
-                "📭 No bullets entries found. Go to the 'Create' tab to add your first bullets entry."
+                "📭 No factory cartridge entries found. Go to the 'Create' tab to add your first factory cartridge."
             )
             return
 
+        # Process the data to flatten the nested bullet information
+        processed_data = []
+        for item in response.data:
+            bullet_info = item["bullets"]
+            processed_item = {
+                "id": item["id"],
+                "make": item["make"],
+                "model": item["model"],
+                "bullet_id": item["bullet_id"],
+                "bullet_manufacturer": bullet_info["manufacturer"],
+                "bullet_model": bullet_info["model"],
+                "bullet_weight_grains": bullet_info["weight_grains"],
+                "bullet_diameter_groove_mm": bullet_info["bullet_diameter_groove_mm"],
+                "bore_diameter_land_mm": bullet_info["bore_diameter_land_mm"],
+                "ballistic_coefficient_g1": bullet_info.get("ballistic_coefficient_g1"),
+                "ballistic_coefficient_g7": bullet_info.get("ballistic_coefficient_g7"),
+            }
+            processed_data.append(processed_item)
+
         # Convert to DataFrame for better display
-        df = pd.DataFrame(response.data)
+        df = pd.DataFrame(processed_data)
 
         # Display summary stats
         st.subheader("📊 Summary")
@@ -35,51 +67,48 @@ def render_view_bullets_tab(user, supabase):
             st.metric("Total Entries", len(df))
 
         with col2:
-            unique_manufacturers = df["manufacturer"].nunique()
-            st.metric("Manufacturers", unique_manufacturers)
+            unique_makes = df["make"].nunique()
+            st.metric("Manufacturers", unique_makes)
 
         with col3:
             unique_calibers = df["bullet_diameter_groove_mm"].nunique()
             st.metric("Calibers", unique_calibers)
 
         with col4:
-            avg_bc_g1 = df["ballistic_coefficient_g1"].mean()
-            if pd.notna(avg_bc_g1):
-                st.metric("Avg BC (G1)", f"{avg_bc_g1:.3f}")
-            else:
-                st.metric("Avg BC (G1)", "N/A")
+            unique_bullets = df["bullet_id"].nunique()
+            st.metric("Unique Bullets", unique_bullets)
 
         # Add filters
         st.subheader("🔍 Filter Options")
         col1, col2, col3 = st.columns(3)
 
         with col1:
-            manufacturers = ["All"] + sorted(df["manufacturer"].unique().tolist())
-            selected_manufacturer = st.selectbox("Filter by Manufacturer:", manufacturers)
+            makes = ["All"] + sorted(df["make"].unique().tolist())
+            selected_make = st.selectbox("Filter by Make:", makes)
 
         with col2:
             calibers = ["All"] + sorted(df["bore_diameter_land_mm"].unique().tolist())
             selected_bore_diameter_mm = st.selectbox("Filter by Bore Diameter:", calibers)
 
         with col3:
-            weights = ["All"] + sorted(df["weight_grains"].unique().tolist())
-            selected_weight = st.selectbox("Filter by Weight:", weights)
+            bullet_manufacturers = ["All"] + sorted(df["bullet_manufacturer"].unique().tolist())
+            selected_bullet_manufacturer = st.selectbox("Filter by Bullet Manufacturer:", bullet_manufacturers)
 
         # Apply filters
         filtered_df = df.copy()
-        if selected_manufacturer != "All":
-            filtered_df = filtered_df[filtered_df["manufacturer"] == selected_manufacturer]
+        if selected_make != "All":
+            filtered_df = filtered_df[filtered_df["make"] == selected_make]
         if selected_bore_diameter_mm != "All":
             filtered_df = filtered_df[filtered_df["bore_diameter_land_mm"] == selected_bore_diameter_mm]
-        if selected_weight != "All":
-            filtered_df = filtered_df[filtered_df["weight_grains"] == selected_weight]
+        if selected_bullet_manufacturer != "All":
+            filtered_df = filtered_df[filtered_df["bullet_manufacturer"] == selected_bullet_manufacturer]
 
         # Display filtered results count
         if len(filtered_df) != len(df):
             st.info(f"Showing {len(filtered_df)} of {len(df)} entries")
 
         # Display the table
-        st.subheader("📝 Bullets Entries")
+        st.subheader("📦 Factory Cartridge Entries")
 
         if len(filtered_df) == 0:
             st.warning("No entries match the selected filters.")
@@ -88,44 +117,34 @@ def render_view_bullets_tab(user, supabase):
         # Prepare display DataFrame
         display_df = filtered_df.copy()
 
-        # No date formatting needed since we removed created_at and updated_at
-
         # Handle nullable fields by filling NaN values
-        display_df["bullet_length_mm"] = display_df["bullet_length_mm"].fillna("N/A")
         display_df["ballistic_coefficient_g1"] = display_df["ballistic_coefficient_g1"].fillna("N/A")
         display_df["ballistic_coefficient_g7"] = display_df["ballistic_coefficient_g7"].fillna("N/A")
-        display_df["sectional_density"] = display_df["sectional_density"].fillna("N/A")
-        display_df["min_req_twist_rate_in_per_rev"] = display_df["min_req_twist_rate_in_per_rev"].fillna("N/A")
-        display_df["pref_twist_rate_in_per_rev"] = display_df["pref_twist_rate_in_per_rev"].fillna("N/A")
 
         # Select and rename columns for display
         display_df = display_df[
             [
-                "manufacturer", 
-                "model", 
-                "weight_grains", 
-                "bullet_diameter_groove_mm", 
+                "make",
+                "model",
+                "bullet_manufacturer",
+                "bullet_model",
+                "bullet_weight_grains",
+                "bullet_diameter_groove_mm",
                 "bore_diameter_land_mm",
-                "bullet_length_mm", 
-                "ballistic_coefficient_g1", 
-                "ballistic_coefficient_g7",
-                "sectional_density",
-                "min_req_twist_rate_in_per_rev",
-                "pref_twist_rate_in_per_rev"
+                "ballistic_coefficient_g1",
+                "ballistic_coefficient_g7"
             ]
         ].rename(
             columns={
-                "manufacturer": "Manufacturer",
-                "model": "Model",
-                "weight_grains": "Weight (gr)",
+                "make": "Cartridge Make",
+                "model": "Cartridge Model",
+                "bullet_manufacturer": "Bullet Make",
+                "bullet_model": "Bullet Model",
+                "bullet_weight_grains": "Weight (gr)",
                 "bullet_diameter_groove_mm": "Diameter (mm)",
                 "bore_diameter_land_mm": "Bore Dia (mm)",
-                "bullet_length_mm": "Length (mm)",
                 "ballistic_coefficient_g1": "BC G1",
-                "ballistic_coefficient_g7": "BC G7",
-                "sectional_density": "Sectional Density",
-                "min_req_twist_rate_in_per_rev": "Min Twist Rate",
-                "pref_twist_rate_in_per_rev": "Pref Twist Rate"
+                "ballistic_coefficient_g7": "BC G7"
             }
         )
 
@@ -135,17 +154,15 @@ def render_view_bullets_tab(user, supabase):
             use_container_width=True,
             hide_index=True,
             column_config={
-                "Manufacturer": st.column_config.TextColumn("Manufacturer", width="small"),
-                "Model": st.column_config.TextColumn("Model", width="small"),
+                "Cartridge Make": st.column_config.TextColumn("Cartridge Make", width="small"),
+                "Cartridge Model": st.column_config.TextColumn("Cartridge Model", width="medium"),
+                "Bullet Make": st.column_config.TextColumn("Bullet Make", width="small"),
+                "Bullet Model": st.column_config.TextColumn("Bullet Model", width="small"),
                 "Weight (gr)": st.column_config.NumberColumn("Weight (gr)", width="small"),
                 "Diameter (mm)": st.column_config.NumberColumn("Diameter (mm)", width="small", format="%.3f"),
                 "Bore Dia (mm)": st.column_config.NumberColumn("Bore Dia (mm)", width="small", format="%.3f"),
-                "Length (mm)": st.column_config.TextColumn("Length (mm)", width="small"),
                 "BC G1": st.column_config.TextColumn("BC G1", width="small"),
-                "BC G7": st.column_config.TextColumn("BC G7", width="small"),
-                "Sectional Density": st.column_config.TextColumn("Sectional Density", width="small"),
-                "Min Twist Rate": st.column_config.TextColumn("Min Twist Rate", width="small"),
-                "Pref Twist Rate": st.column_config.TextColumn("Pref Twist Rate", width="small")
+                "BC G7": st.column_config.TextColumn("BC G7", width="small")
             },
         )
 
@@ -156,20 +173,20 @@ def render_view_bullets_tab(user, supabase):
             st.download_button(
                 label="💾 Download CSV",
                 data=csv,
-                file_name=f"bullets_entries_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                file_name=f"factory_cartridge_entries_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
                 mime="text/csv",
             )
 
         # Delete functionality
         st.subheader("🗑️ Delete Entry")
-        with st.expander("Delete an bullets entry"):
+        with st.expander("Delete a factory cartridge entry"):
             st.warning("⚠️ This action cannot be undone!")
 
             # Create list of entries for deletion
             entry_options = []
             for _, row in filtered_df.iterrows():
                 entry_label = (
-                    f"{row['manufacturer']} {row['model']} - {row['weight_grains']}gr - {row['bullet_diameter_groove_mm']}mm"
+                    f"{row['make']} {row['model']} - {row['bullet_manufacturer']} {row['bullet_model']} {row['bullet_weight_grains']}gr"
                 )
                 entry_options.append((entry_label, row["id"]))
 
@@ -187,7 +204,7 @@ def render_view_bullets_tab(user, supabase):
                             try:
                                 # Delete the entry
                                 delete_response = (
-                                    supabase.table("bullets")
+                                    supabase.table("factory_cartridge_specs")
                                     .delete()
                                     .eq("id", selected_entry[1])
                                     .execute()
@@ -204,5 +221,5 @@ def render_view_bullets_tab(user, supabase):
                 st.info("No entries available for deletion with current filters.")
 
     except Exception as e:
-        st.error(f"❌ Error loading bullets entries: {str(e)}")
+        st.error(f"❌ Error loading factory cartridge entries: {str(e)}")
         st.info("Please check your database connection and try again.")
