@@ -8,7 +8,7 @@ create table public.bullets (
   bore_diameter_land_mm double precision not null,
   bullet_length_mm double precision null,
   ballistic_coefficient_g1 double precision null,
-  ballistic_coefficient_g7 double precision null,
+  ballistic_coefficient_g7 double precision null,rep
   sectional_density double precision null,
   min_req_twist_rate_in_per_rev double precision null,
   pref_twist_rate_in_per_rev double precision null,
