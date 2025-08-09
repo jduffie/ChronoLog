@@ -13,7 +13,7 @@ def render_view_bullets_tab(user, supabase):
         response = (
             supabase.table("bullets")
             .select("*")
-            .eq("user_id", user["email"])
+            .eq("user_id", user["id"])
             .order("id", desc=True)
             .execute()
         )
@@ -39,12 +39,15 @@ def render_view_bullets_tab(user, supabase):
             st.metric("Manufacturers", unique_manufacturers)
 
         with col3:
-            unique_bullet_length = df["bullet_length_mm"].nunique()
-            st.metric("Bullet Length", unique_bullet_length)
+            unique_calibers = df["bullet_diameter_groove_mm"].nunique()
+            st.metric("Calibers", unique_calibers)
 
         with col4:
-            weight_grains = df["weight_grains"].nunique()
-            st.metric("Weights", weight_grains)
+            avg_bc_g1 = df["ballistic_coefficient_g1"].mean()
+            if pd.notna(avg_bc_g1):
+                st.metric("Avg BC (G1)", f"{avg_bc_g1:.3f}")
+            else:
+                st.metric("Avg BC (G1)", "N/A")
 
         # Add filters
         st.subheader("🔍 Filter Options")
@@ -55,8 +58,8 @@ def render_view_bullets_tab(user, supabase):
             selected_manufacturer = st.selectbox("Filter by Manufacturer:", manufacturers)
 
         with col2:
-            bullet_length_mms = ["All"] + sorted(df["bullet_length_mm"].unique().tolist())
-            selected_bullet_length_mm = st.selectbox("Filter by Bullet Length:", bullet_length_mms)
+            calibers = ["All"] + sorted(df["bore_diameter_land_mm"].unique().tolist())
+            selected_caliber = st.selectbox("Filter by Bore Diameter:", calibers)
 
         with col3:
             weights = ["All"] + sorted(df["weight_grains"].unique().tolist())
@@ -66,8 +69,8 @@ def render_view_bullets_tab(user, supabase):
         filtered_df = df.copy()
         if selected_manufacturer != "All":
             filtered_df = filtered_df[filtered_df["manufacturer"] == selected_manufacturer]
-        if selected_bullet_length_mm != "All":
-            filtered_df = filtered_df[filtered_df["bullet_length_mm"] == selected_bullet_length_mm]
+        if selected_caliber != "All":
+            filtered_df = filtered_df[filtered_df["bullet_diameter_groove_mm"] == selected_caliber]
         if selected_weight != "All":
             filtered_df = filtered_df[filtered_df["weight_grains"] == selected_weight]
 
@@ -87,15 +90,42 @@ def render_view_bullets_tab(user, supabase):
 
         # No date formatting needed since we removed created_at and updated_at
 
+        # Handle nullable fields by filling NaN values
+        display_df["bullet_length_mm"] = display_df["bullet_length_mm"].fillna("N/A")
+        display_df["ballistic_coefficient_g1"] = display_df["ballistic_coefficient_g1"].fillna("N/A")
+        display_df["ballistic_coefficient_g7"] = display_df["ballistic_coefficient_g7"].fillna("N/A")
+        display_df["sectional_density"] = display_df["sectional_density"].fillna("N/A")
+        display_df["min_req_twist_rate_in_per_rev"] = display_df["min_req_twist_rate_in_per_rev"].fillna("N/A")
+        display_df["pref_twist_rate_in_per_rev"] = display_df["pref_twist_rate_in_per_rev"].fillna("N/A")
+
         # Select and rename columns for display
         display_df = display_df[
-            ["manufacturer", "model", "bullet_length_mm", "weight_grains"]
+            [
+                "manufacturer", 
+                "model", 
+                "weight_grains", 
+                "bullet_diameter_groove_mm", 
+                "bore_diameter_land_mm",
+                "bullet_length_mm", 
+                "ballistic_coefficient_g1", 
+                "ballistic_coefficient_g7",
+                "sectional_density",
+                "min_req_twist_rate_in_per_rev",
+                "pref_twist_rate_in_per_rev"
+            ]
         ].rename(
             columns={
                 "manufacturer": "Manufacturer",
                 "model": "Model",
-                "bullet_length_mm": "Bullet Length",
-                "weight_grains": "Weight",
+                "weight_grains": "Weight (gr)",
+                "bullet_diameter_groove_mm": "Diameter (mm)",
+                "bore_diameter_land_mm": "Bore Dia (mm)",
+                "bullet_length_mm": "Length (mm)",
+                "ballistic_coefficient_g1": "BC G1",
+                "ballistic_coefficient_g7": "BC G7",
+                "sectional_density": "Sectional Density",
+                "min_req_twist_rate_in_per_rev": "Min Twist Rate",
+                "pref_twist_rate_in_per_rev": "Pref Twist Rate"
             }
         )
 
@@ -105,12 +135,17 @@ def render_view_bullets_tab(user, supabase):
             use_container_width=True,
             hide_index=True,
             column_config={
-                "Manufacturer": st.column_config.TextColumn(
-                    "Manufacturer", width="medium"
-                ),
-                "Model": st.column_config.TextColumn("Model", width="medium"),
-                "Bullet Length": st.column_config.TextColumn("Bullet Length", width="medium"),
-                "Weight": st.column_config.TextColumn("Weight", width="small"),
+                "Manufacturer": st.column_config.TextColumn("Manufacturer", width="small"),
+                "Model": st.column_config.TextColumn("Model", width="small"),
+                "Weight (gr)": st.column_config.NumberColumn("Weight (gr)", width="small"),
+                "Diameter (mm)": st.column_config.NumberColumn("Diameter (mm)", width="small", format="%.3f"),
+                "Bore Dia (mm)": st.column_config.NumberColumn("Bore Dia (mm)", width="small", format="%.3f"),
+                "Length (mm)": st.column_config.TextColumn("Length (mm)", width="small"),
+                "BC G1": st.column_config.TextColumn("BC G1", width="small"),
+                "BC G7": st.column_config.TextColumn("BC G7", width="small"),
+                "Sectional Density": st.column_config.TextColumn("Sectional Density", width="small"),
+                "Min Twist Rate": st.column_config.TextColumn("Min Twist Rate", width="small"),
+                "Pref Twist Rate": st.column_config.TextColumn("Pref Twist Rate", width="small")
             },
         )
 
@@ -134,7 +169,7 @@ def render_view_bullets_tab(user, supabase):
             entry_options = []
             for _, row in filtered_df.iterrows():
                 entry_label = (
-                    f"{row['manufacturer']} {row['model']} - {row['bullet_length_mm']} - {row['weight_grains']}"
+                    f"{row['manufacturer']} {row['model']} - {row['weight_grains']}gr - {row['bullet_diameter_groove_mm']}mm"
                 )
                 entry_options.append((entry_label, row["id"]))
 
