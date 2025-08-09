@@ -79,3 +79,43 @@ streamlit run ChronoLog.py
 - Extracts bullet type and grain weight from comma-separated values
 - Processes measurement data starting from row 2
 - Handles optional fields like Clean Bore, Cold Bore, and Shot Notes
+
+## Key Development Patterns
+
+### Service Layer Pattern
+All database operations go through service classes:
+```python
+from feature.service import FeatureService
+service = FeatureService(supabase_client)
+results = service.get_data_for_user(user_email)
+```
+
+### Model Classes
+Use dataclasses for data entities with Supabase integration:
+```python
+@dataclass
+class FeatureModel:
+    @classmethod
+    def from_supabase_record(cls, record: dict):
+        # Convert Supabase record to model instance
+```
+
+### User Isolation
+All database queries must filter by `user_email` for data isolation:
+```python
+.eq("user_email", user_email)
+```
+
+### Testing Patterns
+- Mock Supabase client in tests
+- Use `unittest.mock` for external dependencies
+- Follow naming convention: `test_*.py`
+- Include both unit and integration tests
+
+### Import Structure
+Add root directory to path for module imports:
+```python
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+```
