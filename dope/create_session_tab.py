@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime, timedelta
 
+import pandas as pd
 import streamlit as st
 
 from .dope_model import DopeModel
@@ -232,40 +233,12 @@ def render_create_session_tab(user, supabase):
                     selected_rifle = None
 
             with col4:
-                # Get ammo for the user
+                # Cartridge selection workflow
                 try:
-                    ammo_response = (
-                        supabase.table("ammo")
-                        .select("*")
-                        .eq("user_email", user["email"])
-                        .order("make")
-                        .execute()
-                    )
-
-                    ammo_options = {}
-                    if ammo_response.data:
-                        for ammo in ammo_response.data:
-                            label = f"{ammo['make']} {ammo['model']} - {ammo['caliber']} - {ammo['weight']}"
-                            ammo_options[label] = ammo
-
-                        selected_ammo_label = st.selectbox(
-                            "***Cartridge:***:",
-                            options=list(ammo_options.keys()),
-                            index=None,
-                            placeholder="Select ammo...",
-                        )
-
-                        selected_ammo = (
-                            ammo_options[selected_ammo_label]
-                            if selected_ammo_label
-                            else None
-                        )
-                    else:
-                        st.warning("No ammo found. Please add ammo first.")
-                        selected_ammo = None
+                    selected_cartridge = render_cartridge_selection(user, supabase)
                 except Exception as e:
-                    st.error(f"Error loading ammo: {str(e)}")
-                    selected_ammo = None
+                    st.error(f"Error loading cartridges: {str(e)}")
+                    selected_cartridge = None
 
             # Prepare selected range and weather data
             selected_range = (
@@ -280,7 +253,7 @@ def render_create_session_tab(user, supabase):
                 selected_range,
                 selected_weather,
                 selected_rifle,
-                selected_ammo,
+                selected_cartridge,
                 dope_model,
                 tab_name,
             )
@@ -304,7 +277,7 @@ def create_dope_session(
     range_data,
     weather_source,
     selected_rifle,
-    selected_ammo,
+    selected_cartridge,
     dope_model,
     tab_name,
 ):
@@ -388,8 +361,6 @@ def create_dope_session(
 
         # Store session details
         session_details = {
-            "bullet_type": chrono_session.get("bullet_type", ""),
-            "bullet_grain": chrono_session.get("bullet_grain", ""),
             "range_name": range_data.get("range_name", "") if range_data else "",
             "weather_source": weather_source,  # Store entire weather source object
             "weather_source_name": (
@@ -400,10 +371,10 @@ def create_dope_session(
             "range_data": range_data,  # Store entire range data object
             "rifle": selected_rifle,  # Store entire rifle object
             "rifle_name": selected_rifle.get("name", "") if selected_rifle else "",
-            "ammo": selected_ammo,  # Store entire ammo object
-            "ammo_description": (
-                f"{selected_ammo.get('make', '')} {selected_ammo.get('model', '')}".strip()
-                if selected_ammo
+            "cartridge": selected_cartridge,  # Store entire cartridge object
+            "cartridge_description": (
+                selected_cartridge.get("description", "")
+                if selected_cartridge
                 else ""
             ),
         }
@@ -428,48 +399,32 @@ def display_dope_session(user, supabase, dope_model, tab_name):
 
     # Component 1: Cartridge Details
     st.markdown("#### Cartridge")
-    if session_details.get("ammo"):
-        ammo_data = session_details["ammo"]
+    if session_details.get("cartridge"):
+        cartridge_data = session_details["cartridge"]
         col1, col2, col3, col4 = st.columns(4)
 
         with col1:
             st.markdown(
-                f"<medium><strong>Make:</strong> {ammo_data.get('make', 'N/A')}</medium>",
+                f"<medium><strong>Make:</strong> {cartridge_data.get('manufacturer', 'N/A')}</medium>",
                 unsafe_allow_html=True,
             )
         with col2:
             st.markdown(
-                f"<medium><strong>Model:</strong> {ammo_data.get('model', 'N/A')}</medium>",
+                f"<medium><strong>Model:</strong> {cartridge_data.get('model', 'N/A')}</medium>",
                 unsafe_allow_html=True,
             )
         with col3:
             st.markdown(
-                f"<medium><strong>Caliber:</strong> {ammo_data.get('caliber', 'N/A')}</medium>",
+                f"<medium><strong>Bullet:</strong> {cartridge_data.get('bullet_name', 'N/A')}</medium>",
                 unsafe_allow_html=True,
             )
         with col4:
             st.markdown(
-                f"<medium><strong>Weight:</strong> {ammo_data.get('weight', 'N/A')}</medium>",
+                f"<medium><strong>Weight:</strong> {cartridge_data.get('bullet_weight_grains', 'N/A')}gr</medium>",
                 unsafe_allow_html=True,
             )
     else:
-        # Fallback to chronograph session data
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown(
-                f"<medium><strong>Bullet Type:</strong> {session_details.get('bullet_type', 'N/A')}</medium>",
-                unsafe_allow_html=True,
-            )
-        with col2:
-            grain_text = (
-                f"{session_details.get('bullet_grain', 'N/A')}gr"
-                if session_details.get("bullet_grain")
-                else "N/A"
-            )
-            st.markdown(
-                f"<medium><strong>Bullet Grain:</strong> {grain_text}</medium>",
-                unsafe_allow_html=True,
-            )
+        st.info("No cartridge data available for this session")
 
     # Component 2: Rifle Details
     st.markdown("#### Rifle")
@@ -648,8 +603,12 @@ def save_dope_session(user, supabase, dope_model, tab_name):
             .execute()
         )
 
-        # Generate session name based on bullet type and timestamp
-        session_name = f"{session_details.get('bullet_type', 'Unknown')}-{session_details.get('bullet_grain', '')}gr-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+        # Generate session name based on cartridge info and timestamp
+        cartridge_data = session_details.get("cartridge", {})
+        cartridge_name = cartridge_data.get("description", "Unknown")
+        bullet_weight = cartridge_data.get("bullet_weight_grains", "")
+        weight_text = f"-{bullet_weight}gr" if bullet_weight else ""
+        session_name = f"{cartridge_name}{weight_text}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
         if existing_dope_session.data:
             # Update existing DOPE session
@@ -673,17 +632,30 @@ def save_dope_session(user, supabase, dope_model, tab_name):
             weather_source = session_details.get("weather_source")
             range_data = session_details.get("range_data")
             rifle_data = session_details.get("rifle")
-            ammo_data = session_details.get("ammo")
+            cartridge_data = session_details.get("cartridge")
+            
+            # Extract cartridge reference data instead of copying all details
+            cartridge_type = None
+            cartridge_spec_id = None
+            cartridge_lot_number = None
+            
+            if cartridge_data:
+                # Determine cartridge type and get the appropriate ID
+                cartridge_source = cartridge_data.get("source", "")
+                if cartridge_source == "factory":
+                    cartridge_type = "factory"
+                    cartridge_spec_id = cartridge_data.get("spec_id")  # factory_cartridge_specs.id
+                elif cartridge_source == "custom":
+                    cartridge_type = "custom"
+                    cartridge_spec_id = cartridge_data.get("spec_id")  # custom_cartridge_specs.id
+                
+                # Get lot number from the selection workflow
+                cartridge_lot_number = cartridge_data.get("factory_lot")
+            
             session_data = {
                 "id": dope_session_id,
                 "user_email": user["email"],
                 "session_name": session_name,
-                "bullet_type": session_details.get("bullet_type", ""),
-                "bullet_grain": (
-                    int(session_details.get("bullet_grain", 0))
-                    if session_details.get("bullet_grain")
-                    else None
-                ),
                 "range_name": session_details.get("range_name", ""),
                 "distance_m": (
                     float(session_details.get("distance_m", 0))
@@ -696,7 +668,9 @@ def save_dope_session(user, supabase, dope_model, tab_name):
                     weather_source.get("id") if weather_source else None
                 ),
                 "rifle_id": rifle_data.get("id") if rifle_data else None,
-                "ammo_id": ammo_data.get("id") if ammo_data else None,
+                "cartridge_type": cartridge_type,
+                "cartridge_spec_id": cartridge_spec_id,
+                "cartridge_lot_number": cartridge_lot_number,
                 "notes": f"Created from DOPE session on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
             }
 
@@ -779,3 +753,137 @@ def save_dope_session(user, supabase, dope_model, tab_name):
     except Exception as e:
         st.error(f"Error saving DOPE session: {str(e)}")
         print(f"Save error details: {e}")  # For debugging
+
+
+def render_cartridge_selection(user, supabase):
+    """Render the cartridge selection workflow"""
+    st.markdown("***Cartridge:***")
+    
+    # Step 1: Cartridge type selection
+    cartridge_type = st.selectbox(
+        "Cartridge Type:",
+        options=["", "factory"],
+        format_func=lambda x: "Select type..." if x == "" else x.title(),
+        help="Select cartridge type (custom coming later)"
+    )
+    
+    if cartridge_type == "":
+        return None
+    
+    if cartridge_type == "factory":
+        # Get factory cartridge specs from cartridge_details view (globally available)
+        try:
+            response = (
+                supabase.table("cartridge_details")
+                .select("*")
+                .eq("source", "factory")
+                .execute()
+            )
+            
+            if not response.data:
+                st.warning("⚠️ No factory cartridge specifications available.")
+                return None
+            
+            # Convert to DataFrame for filtering
+            df = pd.DataFrame(response.data)
+            
+            # Add filters
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                manufacturers = ["All"] + sorted(df["manufacturer"].dropna().unique().tolist())
+                selected_manufacturer = st.selectbox("Cartridge Manufacturer:", manufacturers)
+            
+            with col2:
+                bore_diameters = ["All"] + sorted(df["bore_diameter_land_mm"].dropna().unique().tolist())
+                selected_bore_diameter = st.selectbox("Bullet Bore Diameter (mm):", bore_diameters)
+            
+            with col3:
+                weights = ["All"] + sorted(df["bullet_weight_grains"].dropna().unique().tolist())
+                selected_weight = st.selectbox("Bullet Weight (gr):", weights)
+                
+            with col4:
+                bullet_models = ["All"] + sorted(df["bullet_model"].dropna().unique().tolist())
+                selected_bullet_model = st.selectbox("Bullet Model:", bullet_models)
+            
+            # Apply filters
+            filtered_df = df.copy()
+            if selected_manufacturer != "All":
+                filtered_df = filtered_df[filtered_df["manufacturer"] == selected_manufacturer]
+            if selected_bore_diameter != "All":
+                filtered_df = filtered_df[filtered_df["bore_diameter_land_mm"] == selected_bore_diameter]
+            if selected_weight != "All":
+                filtered_df = filtered_df[filtered_df["bullet_weight_grains"] == selected_weight]
+            if selected_bullet_model != "All":
+                filtered_df = filtered_df[filtered_df["bullet_model"] == selected_bullet_model]
+            
+            if len(filtered_df) == 0:
+                st.warning("No factory cartridges match the selected filters.")
+                return None
+            
+            # Display the filtered table for selection
+            st.markdown(f"**Available Factory Cartridges ({len(filtered_df)} found)**")
+            
+            # Prepare display DataFrame
+            display_df = filtered_df[[
+                "manufacturer", "model", "bullet_model", "bullet_weight_grains", "bore_diameter_land_mm"
+            ]].rename(columns={
+                "manufacturer": "Cartridge Make",
+                "model": "Cartridge Model", 
+                "bullet_model": "Bullet Model",
+                "bullet_weight_grains": "Weight (gr)",
+                "bore_diameter_land_mm": "Bore Ø (mm)"
+            })
+            
+            # Use session state for selection
+            cartridge_key = f"dope_cartridge_selection_{cartridge_type}"
+            if cartridge_key not in st.session_state:
+                st.session_state[cartridge_key] = None
+            
+            # Display table with selection
+            selected_rows = st.dataframe(
+                display_df,
+                use_container_width=True,
+                hide_index=True,
+                on_select="rerun",
+                selection_mode="single-row"
+            )
+            
+            # Get selected cartridge
+            if selected_rows["selection"]["rows"]:
+                selected_row_idx = selected_rows["selection"]["rows"][0]
+                selected_cartridge_data = filtered_df.iloc[selected_row_idx]
+                st.session_state[cartridge_key] = selected_cartridge_data.to_dict()
+                
+                # Show selected cartridge details
+                st.success(f"✅ Selected: {selected_cartridge_data['manufacturer']} {selected_cartridge_data['model']} - {selected_cartridge_data['bullet_model']} ({selected_cartridge_data['bullet_weight_grains']}gr)")
+                
+                # Factory lot number input
+                factory_lot = st.text_input(
+                    "Factory Lot Number (optional):",
+                    placeholder="e.g., LOT-2024-001",
+                    help="Optional factory lot number for this cartridge batch"
+                )
+                
+                # Return complete cartridge info
+                cartridge_info = selected_cartridge_data.to_dict()
+                cartridge_info["factory_lot"] = factory_lot.strip() if factory_lot.strip() else None
+                cartridge_info["description"] = f"{selected_cartridge_data['manufacturer']} {selected_cartridge_data['model']}"
+                
+                return cartridge_info
+            
+            elif st.session_state[cartridge_key]:
+                # Show previously selected cartridge
+                prev_cartridge = st.session_state[cartridge_key]
+                st.info(f"Previously selected: {prev_cartridge.get('manufacturer', '')} {prev_cartridge.get('model', '')}")
+                return prev_cartridge
+                
+        except Exception as e:
+            st.error(f"Error loading factory cartridges: {str(e)}")
+            return None
+    
+    else:  # custom type (future implementation)
+        st.info("🚧 Custom cartridge functionality will be implemented later.")
+        return None
+    
+    return None

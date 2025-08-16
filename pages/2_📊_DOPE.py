@@ -63,7 +63,8 @@ def main():
                         "edit_range_",
                         "edit_weather_",
                         "edit_rifle_",
-                        "edit_ammo_",
+                        "edit_cartridge_",
+                        "dope_cartridge_selection_",
                         "dope_measurements_table_",
                     )
                 ):
