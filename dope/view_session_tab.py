@@ -25,8 +25,7 @@ def render_view_session_tab(user, supabase):
             chrono_sessions(datetime_local),
             ranges_submissions(range_name),
             weather_source(name),
-            rifles(name),
-            ammo(make, model)
+            rifles(name)
         """
             )
             .eq("user_email", user["email"])
@@ -72,7 +71,7 @@ def render_view_session_tab(user, supabase):
                 range_name = "N/A"
                 weather_name = "N/A"
                 rifle_name = "N/A"
-                ammo_name = "N/A"
+                cartridge_name = "N/A"
 
                 # Get range name from joined data
                 ranges_data = session.get("ranges_submissions")
@@ -89,25 +88,25 @@ def render_view_session_tab(user, supabase):
                 if rifle_data:
                     rifle_name = rifle_data.get("name", "N/A")
 
-                # Get ammo name from joined data
-                ammo_data = session.get("ammo")
-                if ammo_data:
-                    ammo_name = (
-                        f"{ammo_data.get('make', '')} {ammo_data.get('model', '')}".strip()
-                        or "N/A"
-                    )
+                # Get cartridge information using cartridge_type and cartridge_spec_id
+                cartridge_type = session.get("cartridge_type", "")
+                cartridge_lot = session.get("cartridge_lot_number", "")
+                if cartridge_type:
+                    cartridge_name = cartridge_type.title()
+                    if cartridge_lot:
+                        cartridge_name += f" (Lot: {cartridge_lot})"
 
                 row_data = {
                     "Date": session_date,
                     "Time": session_time,
                     "Session Name": session.get("session_name", "N/A"),
-                    "Bullet Type": session.get("bullet_type", "N/A"),
-                    "Bullet Weight (gr)": session.get("bullet_grain", "N/A"),
+                    "Cartridge Type": cartridge_type.title() if cartridge_type else "N/A",
+                    "Lot Number": cartridge_lot if cartridge_lot else "N/A",
                     "Shot Count": shot_count,
                     "Range": range_name,
                     "Weather Source": weather_name,
                     "Rifle": rifle_name,
-                    "Ammo": ammo_name,
+                    "Cartridge": cartridge_name,
                 }
                 session_summaries.append(row_data)
 
@@ -160,20 +159,20 @@ def render_view_session_tab(user, supabase):
                         )
 
                     with col3:
-                        # Get unique ammo for filter
-                        unique_ammo = sorted(
-                            [a for a in sessions_df["Ammo"].unique() if a != "N/A"]
+                        # Get unique cartridge types for filter
+                        unique_cartridge_types = sorted(
+                            [c for c in sessions_df["Cartridge Type"].unique() if c != "N/A"]
                         )
-                        if "N/A" in sessions_df["Ammo"].unique():
-                            unique_ammo = ["All"] + unique_ammo + ["N/A"]
+                        if "N/A" in sessions_df["Cartridge Type"].unique():
+                            unique_cartridge_types = ["All"] + unique_cartridge_types + ["N/A"]
                         else:
-                            unique_ammo = ["All"] + unique_ammo
+                            unique_cartridge_types = ["All"] + unique_cartridge_types
 
-                        selected_ammo = st.selectbox(
-                            "Filter by Ammo:",
-                            options=unique_ammo,
+                        selected_cartridge_type = st.selectbox(
+                            "Filter by Cartridge Type:",
+                            options=unique_cartridge_types,
                             index=0,
-                            key="view_session_ammo_filter",
+                            key="view_session_cartridge_filter",
                         )
 
                 # Apply filters
@@ -185,8 +184,8 @@ def render_view_session_tab(user, supabase):
                 if selected_rifle != "All":
                     filtered_df = filtered_df[filtered_df["Rifle"] == selected_rifle]
 
-                if selected_ammo != "All":
-                    filtered_df = filtered_df[filtered_df["Ammo"] == selected_ammo]
+                if selected_cartridge_type != "All":
+                    filtered_df = filtered_df[filtered_df["Cartridge Type"] == selected_cartridge_type]
 
                 # Update session lookup for filtered results
                 filtered_session_lookup = {}
@@ -218,15 +217,13 @@ def render_view_session_tab(user, supabase):
                         "Date": st.column_config.DateColumn("Date"),
                         "Time": st.column_config.TextColumn("Time"),
                         "Session Name": st.column_config.TextColumn("Session Name"),
-                        "Bullet Type": st.column_config.TextColumn("Bullet Type"),
-                        "Bullet Weight (gr)": st.column_config.NumberColumn(
-                            "Bullet Weight (gr)", format="%.1f"
-                        ),
+                        "Cartridge Type": st.column_config.TextColumn("Cartridge Type"),
+                        "Lot Number": st.column_config.TextColumn("Lot Number"),
                         "Shot Count": st.column_config.NumberColumn("Shot Count"),
                         "Range": st.column_config.TextColumn("Range"),
                         "Weather Source": st.column_config.TextColumn("Weather Source"),
                         "Rifle": st.column_config.TextColumn("Rifle"),
-                        "Ammo": st.column_config.TextColumn("Ammo"),
+                        "Cartridge": st.column_config.TextColumn("Cartridge"),
                     },
                 )
 
@@ -289,14 +286,16 @@ def render_view_session_tab(user, supabase):
                                 cached_session_details.get("session_name", "N/A"),
                             )
                         with col2:
+                            cartridge_type = selected_session.get("cartridge_type", "N/A")
                             st.metric(
-                                "Bullet Type",
-                                cached_session_details.get("bullet_type", "N/A"),
+                                "Cartridge Type",
+                                cartridge_type.title() if cartridge_type != "N/A" else "N/A",
                             )
                         with col3:
+                            cartridge_lot = selected_session.get("cartridge_lot_number", "N/A")
                             st.metric(
-                                "Bullet Weight",
-                                f"{cached_session_details.get('bullet_grain', 'N/A')} gr",
+                                "Lot Number",
+                                cartridge_lot if cartridge_lot else "N/A",
                             )
                         with col4:
                             # Use datetime_local from chrono_sessions for the session date/time
@@ -324,61 +323,50 @@ def render_view_session_tab(user, supabase):
 
                         # Component 1: Cartridge Details
                         st.markdown("#### Cartridge")
-                        ammo_data = selected_session.get("ammo")
-                        if ammo_data:
-                            # We need full ammo details, so make a single query for additional fields
-                            if selected_session.get("ammo_id"):
-                                ammo_response = (
-                                    supabase.table("ammo")
-                                    .select("*")
-                                    .eq("id", selected_session["ammo_id"])
-                                    .execute()
-                                )
-                                if ammo_response.data:
-                                    full_ammo_data = ammo_response.data[0]
-                                    col1, col2, col3, col4 = st.columns(4)
-                                    with col1:
-                                        st.markdown(
-                                            f"<medium><strong>Make:</strong> {full_ammo_data.get('make', 'N/A')}</medium>",
-                                            unsafe_allow_html=True,
-                                        )
-                                    with col2:
-                                        st.markdown(
-                                            f"<medium><strong>Model:</strong> {full_ammo_data.get('model', 'N/A')}</medium>",
-                                            unsafe_allow_html=True,
-                                        )
-                                    with col3:
-                                        st.markdown(
-                                            f"<medium><strong>Caliber:</strong> {full_ammo_data.get('caliber', 'N/A')}</medium>",
-                                            unsafe_allow_html=True,
-                                        )
-                                    with col4:
-                                        st.markdown(
-                                            f"<medium><strong>Weight:</strong> {full_ammo_data.get('weight', 'N/A')}</medium>",
-                                            unsafe_allow_html=True,
-                                        )
-                                else:
-                                    st.info("Ammo details not found")
+                        cartridge_type = selected_session.get("cartridge_type")
+                        cartridge_spec_id = selected_session.get("cartridge_spec_id")
+                        
+                        if cartridge_type and cartridge_spec_id:
+                            # Get cartridge details from cartridge_details view
+                            cartridge_response = (
+                                supabase.table("cartridge_details")
+                                .select("*")
+                                .eq("spec_id", cartridge_spec_id)
+                                .eq("source", cartridge_type)
+                                .execute()
+                            )
+                            if cartridge_response.data:
+                                cartridge_data = cartridge_response.data[0]
+                                col1, col2, col3, col4 = st.columns(4)
+                                with col1:
+                                    st.markdown(
+                                        f"<medium><strong>Make:</strong> {cartridge_data.get('manufacturer', 'N/A')}</medium>",
+                                        unsafe_allow_html=True,
+                                    )
+                                with col2:
+                                    st.markdown(
+                                        f"<medium><strong>Model:</strong> {cartridge_data.get('model', 'N/A')}</medium>",
+                                        unsafe_allow_html=True,
+                                    )
+                                with col3:
+                                    st.markdown(
+                                        f"<medium><strong>Bullet:</strong> {cartridge_data.get('bullet_model', 'N/A')}</medium>",
+                                        unsafe_allow_html=True,
+                                    )
+                                with col4:
+                                    st.markdown(
+                                        f"<medium><strong>Weight:</strong> {cartridge_data.get('bullet_weight_grains', 'N/A')}gr</medium>",
+                                        unsafe_allow_html=True,
+                                    )
+                                
+                                # Display lot number if available
+                                lot_number = selected_session.get("cartridge_lot_number")
+                                if lot_number:
+                                    st.markdown(f"**Lot Number:** {lot_number}")
                             else:
-                                st.info("Ammo details not found")
+                                st.info("Cartridge details not found")
                         else:
-                            # Fallback to session data
-                            col1, col2 = st.columns(2)
-                            with col1:
-                                st.markdown(
-                                    f"<medium><strong>Bullet Type:</strong> {selected_session.get('bullet_type', 'N/A')}</medium>",
-                                    unsafe_allow_html=True,
-                                )
-                            with col2:
-                                grain_text = (
-                                    f"{selected_session.get('bullet_grain', 'N/A')}gr"
-                                    if selected_session.get("bullet_grain")
-                                    else "N/A"
-                                )
-                                st.markdown(
-                                    f"<medium><strong>Bullet Grain:</strong> {grain_text}</medium>",
-                                    unsafe_allow_html=True,
-                                )
+                            st.info("No cartridge data available for this session")
 
                         # Component 2: Rifle Details
                         st.markdown("#### Rifle")
@@ -651,38 +639,80 @@ def edit_optional_sources(user, supabase, selected_session):
             )
             new_rifle_id = rifle_options[selected_rifle_label]
 
-            # Ammo dropdown
-            ammo_response = (
-                supabase.table("ammo")
-                .select("*")
-                .eq("user_email", user["email"])
-                .order("make")
-                .execute()
+            # Cartridge selection
+            st.markdown("**Cartridge:**")
+            
+            # Get current cartridge values
+            current_cartridge_type = selected_session.get("cartridge_type", "")
+            current_cartridge_spec_id = selected_session.get("cartridge_spec_id")
+            current_cartridge_lot = selected_session.get("cartridge_lot_number", "")
+            
+            # Cartridge type selection
+            cartridge_type_options = ["None", "factory"]
+            current_type_index = 0
+            if current_cartridge_type == "factory":
+                current_type_index = 1
+                
+            selected_cartridge_type = st.selectbox(
+                "Cartridge Type:",
+                options=cartridge_type_options,
+                index=current_type_index,
+                key=f"edit_cartridge_type_{selected_session['id']}",
             )
-
-            ammo_options = {"None": None}
-            current_ammo_index = 0
-            if ammo_response.data:
-                for i, ammo in enumerate(ammo_response.data):
-                    label = f"{ammo['make']} {ammo['model']} - {ammo['caliber']} - {ammo['weight']}"
-                    ammo_options[label] = ammo["id"]
-                    if current_ammo_id and ammo["id"] == current_ammo_id:
-                        current_ammo_index = i + 1
-
-            selected_ammo_label = st.selectbox(
-                "Cartridge:",
-                options=list(ammo_options.keys()),
-                index=current_ammo_index,
-                key=f"edit_ammo_{selected_session['id']}",
-            )
-            new_ammo_id = ammo_options[selected_ammo_label]
+            
+            new_cartridge_type = selected_cartridge_type if selected_cartridge_type != "None" else None
+            new_cartridge_spec_id = None
+            new_cartridge_lot = None
+            
+            if selected_cartridge_type == "factory":
+                # Get factory cartridges from cartridge_details view
+                factory_response = (
+                    supabase.table("cartridge_details")
+                    .select("*")
+                    .eq("source", "factory")
+                    .execute()
+                )
+                
+                if factory_response.data:
+                    cartridge_options = {"None": None}
+                    current_cartridge_index = 0
+                    
+                    for i, cartridge in enumerate(factory_response.data):
+                        label = f"{cartridge['manufacturer']} {cartridge['model']} - {cartridge['bullet_model']} ({cartridge['bullet_weight_grains']}gr)"
+                        cartridge_options[label] = cartridge["spec_id"]
+                        if current_cartridge_spec_id and cartridge["spec_id"] == current_cartridge_spec_id:
+                            current_cartridge_index = i + 1
+                    
+                    selected_cartridge_label = st.selectbox(
+                        "Factory Cartridge:",
+                        options=list(cartridge_options.keys()),
+                        index=current_cartridge_index,
+                        key=f"edit_factory_cartridge_{selected_session['id']}",
+                    )
+                    new_cartridge_spec_id = cartridge_options[selected_cartridge_label]
+                    
+                    # Lot number input
+                    new_cartridge_lot = st.text_input(
+                        "Lot Number (optional):",
+                        value=current_cartridge_lot,
+                        key=f"edit_cartridge_lot_{selected_session['id']}",
+                    )
+                    new_cartridge_lot = new_cartridge_lot.strip() if new_cartridge_lot.strip() else None
+                else:
+                    st.warning("No factory cartridges available.")
+            elif selected_cartridge_type == "None":
+                new_cartridge_type = None
+                new_cartridge_spec_id = None
+                new_cartridge_lot = None
 
         # Check if any changes were made
         changes_made = (
             new_range_id != current_range_id
             or new_weather_id != current_weather_id
             or new_rifle_id != current_rifle_id
-            or new_ammo_id != current_ammo_id
+            or new_cartridge_type != current_cartridge_type
+            or new_cartridge_spec_id != current_cartridge_spec_id
+            or new_cartridge_lot != current_cartridge_lot
         )
 
         if changes_made:
@@ -700,7 +730,9 @@ def edit_optional_sources(user, supabase, selected_session):
                     "range_submission_id": new_range_id,
                     "weather_source_id": new_weather_id,
                     "rifle_id": new_rifle_id,
-                    "ammo_id": new_ammo_id,
+                    "cartridge_type": new_cartridge_type,
+                    "cartridge_spec_id": new_cartridge_spec_id,
+                    "cartridge_lot_number": new_cartridge_lot,
                     "updated_at": datetime.now().isoformat(),
                 }
 
@@ -731,12 +763,12 @@ def load_session_into_cache(view_model, selected_session, tab_name):
     session_details = {
         "session_id": selected_session["id"],
         "session_name": selected_session.get("session_name", ""),
-        "bullet_type": selected_session.get("bullet_type", ""),
-        "bullet_grain": selected_session.get("bullet_grain", ""),
+        "cartridge_type": selected_session.get("cartridge_type", ""),
+        "cartridge_spec_id": selected_session.get("cartridge_spec_id", ""),
+        "cartridge_lot_number": selected_session.get("cartridge_lot_number", ""),
         "range_submission_id": selected_session.get("range_submission_id"),
         "weather_source_id": selected_session.get("weather_source_id"),
         "rifle_id": selected_session.get("rifle_id"),
-        "ammo_id": selected_session.get("ammo_id"),
         "created_at": selected_session.get("created_at", ""),
         "updated_at": selected_session.get("updated_at", ""),
     }
@@ -851,38 +883,80 @@ def edit_optional_sources_cached(
             )
             new_rifle_id = rifle_options[selected_rifle_label]
 
-            # Ammo dropdown
-            ammo_response = (
-                supabase.table("ammo")
-                .select("*")
-                .eq("user_email", user["email"])
-                .order("make")
-                .execute()
+            # Cartridge selection
+            st.markdown("**Cartridge:**")
+            
+            # Get current cartridge values from cache
+            current_cartridge_type = cached_session_details.get("cartridge_type", "")
+            current_cartridge_spec_id = cached_session_details.get("cartridge_spec_id")
+            current_cartridge_lot = cached_session_details.get("cartridge_lot_number", "")
+            
+            # Cartridge type selection
+            cartridge_type_options = ["None", "factory"]
+            current_type_index = 0
+            if current_cartridge_type == "factory":
+                current_type_index = 1
+                
+            selected_cartridge_type = st.selectbox(
+                "Cartridge Type:",
+                options=cartridge_type_options,
+                index=current_type_index,
+                key=f"cached_edit_cartridge_type_{cached_session_details['session_id']}",
             )
-
-            ammo_options = {"None": None}
-            current_ammo_index = 0
-            if ammo_response.data:
-                for i, ammo in enumerate(ammo_response.data):
-                    label = f"{ammo['make']} {ammo['model']} - {ammo['caliber']} - {ammo['weight']}"
-                    ammo_options[label] = ammo["id"]
-                    if current_ammo_id and ammo["id"] == current_ammo_id:
-                        current_ammo_index = i + 1
-
-            selected_ammo_label = st.selectbox(
-                "Cartridge:",
-                options=list(ammo_options.keys()),
-                index=current_ammo_index,
-                key=f"cached_edit_ammo_{cached_session_details['session_id']}",
-            )
-            new_ammo_id = ammo_options[selected_ammo_label]
+            
+            new_cartridge_type = selected_cartridge_type if selected_cartridge_type != "None" else None
+            new_cartridge_spec_id = None
+            new_cartridge_lot = None
+            
+            if selected_cartridge_type == "factory":
+                # Get factory cartridges from cartridge_details view
+                factory_response = (
+                    supabase.table("cartridge_details")
+                    .select("*")
+                    .eq("source", "factory")
+                    .execute()
+                )
+                
+                if factory_response.data:
+                    cartridge_options = {"None": None}
+                    current_cartridge_index = 0
+                    
+                    for i, cartridge in enumerate(factory_response.data):
+                        label = f"{cartridge['manufacturer']} {cartridge['model']} - {cartridge['bullet_model']} ({cartridge['bullet_weight_grains']}gr)"
+                        cartridge_options[label] = cartridge["spec_id"]
+                        if current_cartridge_spec_id and cartridge["spec_id"] == current_cartridge_spec_id:
+                            current_cartridge_index = i + 1
+                    
+                    selected_cartridge_label = st.selectbox(
+                        "Factory Cartridge:",
+                        options=list(cartridge_options.keys()),
+                        index=current_cartridge_index,
+                        key=f"cached_edit_factory_cartridge_{cached_session_details['session_id']}",
+                    )
+                    new_cartridge_spec_id = cartridge_options[selected_cartridge_label]
+                    
+                    # Lot number input
+                    new_cartridge_lot = st.text_input(
+                        "Lot Number (optional):",
+                        value=current_cartridge_lot,
+                        key=f"cached_edit_cartridge_lot_{cached_session_details['session_id']}",
+                    )
+                    new_cartridge_lot = new_cartridge_lot.strip() if new_cartridge_lot.strip() else None
+                else:
+                    st.warning("No factory cartridges available.")
+            elif selected_cartridge_type == "None":
+                new_cartridge_type = None
+                new_cartridge_spec_id = None
+                new_cartridge_lot = None
 
         # Check if any changes were made (compared to current cache, not original DB)
         changes_made = (
             new_range_id != current_range_id
             or new_weather_id != current_weather_id
             or new_rifle_id != current_rifle_id
-            or new_ammo_id != current_ammo_id
+            or new_cartridge_type != current_cartridge_type
+            or new_cartridge_spec_id != current_cartridge_spec_id
+            or new_cartridge_lot != current_cartridge_lot
         )
 
         # Update cache immediately when changes are made
@@ -894,7 +968,9 @@ def edit_optional_sources_cached(
                     "range_submission_id": new_range_id,
                     "weather_source_id": new_weather_id,
                     "rifle_id": new_rifle_id,
-                    "ammo_id": new_ammo_id,
+                    "cartridge_type": new_cartridge_type,
+                    "cartridge_spec_id": new_cartridge_spec_id,
+                    "cartridge_lot_number": new_cartridge_lot,
                     "updated_at": datetime.now().isoformat(),
                 }
             )
@@ -907,7 +983,7 @@ def edit_optional_sources_cached(
         # Check if there are any unsaved changes in cache vs database
         session_response = (
             supabase.table("dope_sessions")
-            .select("range_submission_id, weather_source_id, rifle_id, ammo_id")
+            .select("range_submission_id, weather_source_id, rifle_id, cartridge_type, cartridge_spec_id, cartridge_lot_number")
             .eq("id", cached_session_details["session_id"])
             .execute()
         )
@@ -919,7 +995,9 @@ def edit_optional_sources_cached(
                 or cached_session_details.get("weather_source_id")
                 != db_data.get("weather_source_id")
                 or cached_session_details.get("rifle_id") != db_data.get("rifle_id")
-                or cached_session_details.get("ammo_id") != db_data.get("ammo_id")
+                or cached_session_details.get("cartridge_type") != db_data.get("cartridge_type")
+                or cached_session_details.get("cartridge_spec_id") != db_data.get("cartridge_spec_id")
+                or cached_session_details.get("cartridge_lot_number") != db_data.get("cartridge_lot_number")
             )
 
             if unsaved_changes:
@@ -941,7 +1019,9 @@ def edit_optional_sources_cached(
                         "weather_source_id"
                     ),
                     "rifle_id": cached_session_details.get("rifle_id"),
-                    "ammo_id": cached_session_details.get("ammo_id"),
+                    "cartridge_type": cached_session_details.get("cartridge_type"),
+                    "cartridge_spec_id": cached_session_details.get("cartridge_spec_id"),
+                    "cartridge_lot_number": cached_session_details.get("cartridge_lot_number"),
                     "updated_at": datetime.now().isoformat(),
                 }
 
