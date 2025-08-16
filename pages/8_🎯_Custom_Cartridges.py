@@ -6,16 +6,14 @@ import streamlit as st
 # Add the root directory to the path so we can import our modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from ammo.create_tab import render_create_ammo_tab
-from ammo.view_tab import render_view_ammo_tab
 from auth import handle_auth
 from supabase import create_client
 
 
 def main():
-    """Main function for the Ammo page."""
+    """Main function for the Custom Cartridges page."""
     # Set page configuration FIRST, before any other Streamlit operations
-    st.set_page_config(page_title="Ammo", page_icon="📦", layout="wide")
+    st.set_page_config(page_title="Custom Cartridges", page_icon="🎯", layout="wide")
 
     # Handle authentication
     user = handle_auth()
@@ -35,16 +33,19 @@ def main():
         return
 
     # Display title
-    st.title("🔫 Ammunition Management")
-
-    # Create tabs for Create and View
-    tab1, tab2 = st.tabs(["Create", "View"])
-
-    with tab1:
-        render_create_ammo_tab(user, supabase)
-
-    with tab2:
-        render_view_ammo_tab(user, supabase)
+    st.title("🎯 Custom Cartridges Management")
+    
+    # TBD placeholder
+    st.info("🚧 **Custom Cartridges functionality is coming soon!**")
+    st.markdown("""
+    This page will allow you to:
+    - Create custom cartridge specifications
+    - Manage your personal cartridge library
+    - Define custom loads and configurations
+    - Track lot numbers and performance data
+    
+    **Status:** To Be Developed (TBD)
+    """)
 
 
 if __name__ == "__main__":

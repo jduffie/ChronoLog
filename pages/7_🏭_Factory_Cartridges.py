@@ -38,7 +38,7 @@ def main():
     st.title("🏭 Factory Cartridges Management")
 
     # Create tabs for Create and View
-    tab1, tab2 = st.tabs(["View", "Cretae"])
+    tab1, tab2 = st.tabs(["View", "Create"])
 
     with tab1:
         render_view_cartridge_tab(user, supabase)
