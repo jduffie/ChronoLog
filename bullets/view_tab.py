@@ -9,18 +9,17 @@ def render_view_bullets_tab(user, supabase):
     st.header("📋 View Bullets Entries")
 
     try:
-        # Get all bullets entries for the user
+        # Get all bullets entries (globally available, admin-maintained)
         response = (
             supabase.table("bullets")
             .select("*")
-            .eq("user_id", user["id"])
-            .order("id", desc=True)
+            .order("manufacturer, model, weight_grains")
             .execute()
         )
 
         if not response.data:
             st.info(
-                "📭 No bullets entries found. Go to the 'Create' tab to add your first bullets entry."
+                "📭 No bullets available in the database. Please contact an administrator to add bullet specifications."
             )
             return
 
@@ -29,7 +28,7 @@ def render_view_bullets_tab(user, supabase):
 
         # Display summary stats
         st.subheader("📊 Summary")
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3 = st.columns(3)
 
         with col1:
             st.metric("Total Entries", len(df))
@@ -42,12 +41,6 @@ def render_view_bullets_tab(user, supabase):
             unique_calibers = df["bullet_diameter_groove_mm"].nunique()
             st.metric("Calibers", unique_calibers)
 
-        with col4:
-            avg_bc_g1 = df["ballistic_coefficient_g1"].mean()
-            if pd.notna(avg_bc_g1):
-                st.metric("Avg BC (G1)", f"{avg_bc_g1:.3f}")
-            else:
-                st.metric("Avg BC (G1)", "N/A")
 
         # Add filters
         st.subheader("🔍 Filter Options")
@@ -160,48 +153,55 @@ def render_view_bullets_tab(user, supabase):
                 mime="text/csv",
             )
 
-        # Delete functionality
-        st.subheader("🗑️ Delete Entry")
-        with st.expander("Delete an bullets entry"):
-            st.warning("⚠️ This action cannot be undone!")
+        # Admin-only functionality
+        is_admin = user.get("user_metadata", {}).get("is_admin", False) or user.get("email") == "johnduffie91@gmail.com"
+        
+        if is_admin:
+            # Delete functionality (admin only)
+            st.subheader("🗑️ Delete Entry (Admin Only)")
+            with st.expander("Delete a bullet entry"):
+                st.warning("⚠️ This action cannot be undone!")
 
-            # Create list of entries for deletion
-            entry_options = []
-            for _, row in filtered_df.iterrows():
-                entry_label = (
-                    f"{row['manufacturer']} {row['model']} - {row['weight_grains']}gr - {row['bullet_diameter_groove_mm']}mm"
-                )
-                entry_options.append((entry_label, row["id"]))
+                # Create list of entries for deletion
+                entry_options = []
+                for _, row in filtered_df.iterrows():
+                    entry_label = (
+                        f"{row['manufacturer']} {row['model']} - {row['weight_grains']}gr - {row['bullet_diameter_groove_mm']}mm"
+                    )
+                    entry_options.append((entry_label, row["id"]))
 
-            if entry_options:
-                selected_entry = st.selectbox(
-                    "Select entry to delete:",
-                    options=[None] + entry_options,
-                    format_func=lambda x: "Select an entry..." if x is None else x[0],
-                )
+                if entry_options:
+                    selected_entry = st.selectbox(
+                        "Select entry to delete:",
+                        options=[None] + entry_options,
+                        format_func=lambda x: "Select an entry..." if x is None else x[0],
+                    )
 
-                if selected_entry:
-                    col1, col2 = st.columns([1, 4])
-                    with col1:
-                        if st.button("🗑️ Delete", type="secondary"):
-                            try:
-                                # Delete the entry
-                                delete_response = (
-                                    supabase.table("bullets")
-                                    .delete()
-                                    .eq("id", selected_entry[1])
-                                    .execute()
-                                )
+                    if selected_entry:
+                        col1, col2 = st.columns([1, 4])
+                        with col1:
+                            if st.button("🗑️ Delete", type="secondary"):
+                                try:
+                                    # Delete the entry
+                                    delete_response = (
+                                        supabase.table("bullets")
+                                        .delete()
+                                        .eq("id", selected_entry[1])
+                                        .execute()
+                                    )
 
-                                if delete_response.data:
-                                    st.success(f"✅ Deleted: {selected_entry[0]}")
-                                    st.rerun()
-                                else:
-                                    st.error("❌ Failed to delete entry.")
-                            except Exception as e:
-                                st.error(f"❌ Error deleting entry: {str(e)}")
-            else:
-                st.info("No entries available for deletion with current filters.")
+                                    if delete_response.data:
+                                        st.success(f"✅ Deleted: {selected_entry[0]}")
+                                        st.rerun()
+                                    else:
+                                        st.error("❌ Failed to delete entry.")
+                                except Exception as e:
+                                    st.error(f"❌ Error deleting entry: {str(e)}")
+                else:
+                    st.info("No entries available for deletion with current filters.")
+        else:
+            # Info for non-admin users
+            st.info("ℹ️ This is a read-only view of the global bullet database maintained by administrators.")
 
     except Exception as e:
         st.error(f"❌ Error loading bullets entries: {str(e)}")

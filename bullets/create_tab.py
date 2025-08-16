@@ -6,6 +6,14 @@ import streamlit as st
 def render_create_bullets_tab(user, supabase):
     """Render the Create Bullets tab"""
     st.header("➕ Create New Bullets Entry")
+    
+    # Check if user is admin
+    is_admin = user.get("user_metadata", {}).get("is_admin", False) or user.get("email") == "johnduffie91@gmail.com"
+    
+    if not is_admin:
+        st.warning("🔒 Access Denied: Only administrators can create bullet entries.")
+        st.info("This global bullet database is maintained by administrators to ensure data quality and consistency.")
+        return
 
     # Create form for bullets entry
     with st.form("create_bullets_form"):

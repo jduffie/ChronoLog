@@ -9,7 +9,7 @@ def render_view_cartridge_tab(user, supabase):
     st.header("📋 View Factory Cartridge Entries")
 
     try:
-        # Get all factory cartridge entries for the user with bullet details
+        # Get all factory cartridge entries (globally available, admin-maintained)
         response = (
             supabase.table("factory_cartridge_specs")
             .select(
@@ -19,21 +19,19 @@ def render_view_cartridge_tab(user, supabase):
                     manufacturer,
                     model,
                     weight_grains,
-                    bullet_diameter_groove_mm,
                     bore_diameter_land_mm,
                     ballistic_coefficient_g1,
                     ballistic_coefficient_g7
                 )
                 """
             )
-            .eq("user_id", user["id"])
-            .order("id", desc=True)
+            .order("make, model")
             .execute()
         )
 
         if not response.data:
             st.info(
-                "📭 No factory cartridge entries found. Go to the 'Create' tab to add your first factory cartridge."
+                "📭 No factory cartridge specifications available in the database. Please contact an administrator to add factory cartridge specifications."
             )
             return
 
@@ -43,13 +41,12 @@ def render_view_cartridge_tab(user, supabase):
             bullet_info = item["bullets"]
             processed_item = {
                 "id": item["id"],
-                "make": item["make"],
-                "model": item["model"],
+                "cartridge_make": item["make"],
+                "cartridge_model": item["model"],
                 "bullet_id": item["bullet_id"],
                 "bullet_manufacturer": bullet_info["manufacturer"],
                 "bullet_model": bullet_info["model"],
                 "bullet_weight_grains": bullet_info["weight_grains"],
-                "bullet_diameter_groove_mm": bullet_info["bullet_diameter_groove_mm"],
                 "bore_diameter_land_mm": bullet_info["bore_diameter_land_mm"],
                 "ballistic_coefficient_g1": bullet_info.get("ballistic_coefficient_g1"),
                 "ballistic_coefficient_g7": bullet_info.get("ballistic_coefficient_g7"),
@@ -67,11 +64,11 @@ def render_view_cartridge_tab(user, supabase):
             st.metric("Total Entries", len(df))
 
         with col2:
-            unique_makes = df["make"].nunique()
+            unique_makes = df["cartridge_make"].nunique()
             st.metric("Manufacturers", unique_makes)
 
         with col3:
-            unique_calibers = df["bullet_diameter_groove_mm"].nunique()
+            unique_calibers = df["bore_diameter_land_mm"].nunique()
             st.metric("Calibers", unique_calibers)
 
         with col4:
@@ -80,28 +77,40 @@ def render_view_cartridge_tab(user, supabase):
 
         # Add filters
         st.subheader("🔍 Filter Options")
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4, col5 = st.columns(5)
 
         with col1:
-            makes = ["All"] + sorted(df["make"].unique().tolist())
-            selected_make = st.selectbox("Filter by Make:", makes)
+            calibers = ["All"] + sorted(df["bore_diameter_land_mm"].unique().tolist())
+            selected_bore_diameter_mm = st.selectbox("Bore Diameter:", calibers)
 
         with col2:
-            calibers = ["All"] + sorted(df["bore_diameter_land_mm"].unique().tolist())
-            selected_bore_diameter_mm = st.selectbox("Filter by Bore Diameter:", calibers)
+            cartridge_makes = ["All"] + sorted(df["cartridge_make"].unique().tolist())
+            selected_cartridge_make = st.selectbox("Cartridge Manufacturer:", cartridge_makes)
 
         with col3:
+            cartridge_models = ["All"] + sorted(df["cartridge_model"].unique().tolist())
+            selected_cartridge_model = st.selectbox("Cartridge Model:", cartridge_models)
+
+        with col4:
             bullet_manufacturers = ["All"] + sorted(df["bullet_manufacturer"].unique().tolist())
-            selected_bullet_manufacturer = st.selectbox("Filter by Bullet Manufacturer:", bullet_manufacturers)
+            selected_bullet_manufacturer = st.selectbox("Bullet Manufacturer:", bullet_manufacturers)
+
+        with col5:
+            bullet_models = ["All"] + sorted(df["bullet_model"].unique().tolist())
+            selected_bullet_model = st.selectbox("Bullet Model:", bullet_models)
 
         # Apply filters
         filtered_df = df.copy()
-        if selected_make != "All":
-            filtered_df = filtered_df[filtered_df["make"] == selected_make]
         if selected_bore_diameter_mm != "All":
             filtered_df = filtered_df[filtered_df["bore_diameter_land_mm"] == selected_bore_diameter_mm]
+        if selected_cartridge_make != "All":
+            filtered_df = filtered_df[filtered_df["cartridge_make"] == selected_cartridge_make]
+        if selected_cartridge_model != "All":
+            filtered_df = filtered_df[filtered_df["cartridge_model"] == selected_cartridge_model]
         if selected_bullet_manufacturer != "All":
             filtered_df = filtered_df[filtered_df["bullet_manufacturer"] == selected_bullet_manufacturer]
+        if selected_bullet_model != "All":
+            filtered_df = filtered_df[filtered_df["bullet_model"] == selected_bullet_model]
 
         # Display filtered results count
         if len(filtered_df) != len(df):
@@ -124,24 +133,22 @@ def render_view_cartridge_tab(user, supabase):
         # Select and rename columns for display
         display_df = display_df[
             [
-                "make",
-                "model",
+                "cartridge_make",
+                "cartridge_model",
                 "bullet_manufacturer",
                 "bullet_model",
                 "bullet_weight_grains",
-                "bullet_diameter_groove_mm",
                 "bore_diameter_land_mm",
                 "ballistic_coefficient_g1",
                 "ballistic_coefficient_g7"
             ]
         ].rename(
             columns={
-                "make": "Cartridge Make",
-                "model": "Cartridge Model",
+                "cartridge_make": "Cartridge Make",
+                "cartridge_model": "Cartridge Model",
                 "bullet_manufacturer": "Bullet Make",
                 "bullet_model": "Bullet Model",
                 "bullet_weight_grains": "Weight (gr)",
-                "bullet_diameter_groove_mm": "Diameter (mm)",
                 "bore_diameter_land_mm": "Bore Dia (mm)",
                 "ballistic_coefficient_g1": "BC G1",
                 "ballistic_coefficient_g7": "BC G7"
@@ -177,48 +184,55 @@ def render_view_cartridge_tab(user, supabase):
                 mime="text/csv",
             )
 
-        # Delete functionality
-        st.subheader("🗑️ Delete Entry")
-        with st.expander("Delete a factory cartridge entry"):
-            st.warning("⚠️ This action cannot be undone!")
+        # Admin-only functionality
+        is_admin = user.get("user_metadata", {}).get("is_admin", False) or user.get("email") == "johnduffie91@gmail.com"
+        
+        if is_admin:
+            # Delete functionality (admin only)
+            st.subheader("🗑️ Delete Entry (Admin Only)")
+            with st.expander("Delete a factory cartridge entry"):
+                st.warning("⚠️ This action cannot be undone!")
 
-            # Create list of entries for deletion
-            entry_options = []
-            for _, row in filtered_df.iterrows():
-                entry_label = (
-                    f"{row['make']} {row['model']} - {row['bullet_manufacturer']} {row['bullet_model']} {row['bullet_weight_grains']}gr"
-                )
-                entry_options.append((entry_label, row["id"]))
+                # Create list of entries for deletion
+                entry_options = []
+                for _, row in filtered_df.iterrows():
+                    entry_label = (
+                        f"{row['cartridge_make']} {row['cartridge_model']} - {row['bullet_manufacturer']} {row['bullet_model']} {row['bullet_weight_grains']}gr"
+                    )
+                    entry_options.append((entry_label, row["id"]))
 
-            if entry_options:
-                selected_entry = st.selectbox(
-                    "Select entry to delete:",
-                    options=[None] + entry_options,
-                    format_func=lambda x: "Select an entry..." if x is None else x[0],
-                )
+                if entry_options:
+                    selected_entry = st.selectbox(
+                        "Select entry to delete:",
+                        options=[None] + entry_options,
+                        format_func=lambda x: "Select an entry..." if x is None else x[0],
+                    )
 
-                if selected_entry:
-                    col1, col2 = st.columns([1, 4])
-                    with col1:
-                        if st.button("🗑️ Delete", type="secondary"):
-                            try:
-                                # Delete the entry
-                                delete_response = (
-                                    supabase.table("factory_cartridge_specs")
-                                    .delete()
-                                    .eq("id", selected_entry[1])
-                                    .execute()
-                                )
+                    if selected_entry:
+                        col1, col2 = st.columns([1, 4])
+                        with col1:
+                            if st.button("🗑️ Delete", type="secondary"):
+                                try:
+                                    # Delete the entry
+                                    delete_response = (
+                                        supabase.table("factory_cartridge_specs")
+                                        .delete()
+                                        .eq("id", selected_entry[1])
+                                        .execute()
+                                    )
 
-                                if delete_response.data:
-                                    st.success(f"✅ Deleted: {selected_entry[0]}")
-                                    st.rerun()
-                                else:
-                                    st.error("❌ Failed to delete entry.")
-                            except Exception as e:
-                                st.error(f"❌ Error deleting entry: {str(e)}")
-            else:
-                st.info("No entries available for deletion with current filters.")
+                                    if delete_response.data:
+                                        st.success(f"✅ Deleted: {selected_entry[0]}")
+                                        st.rerun()
+                                    else:
+                                        st.error("❌ Failed to delete entry.")
+                                except Exception as e:
+                                    st.error(f"❌ Error deleting entry: {str(e)}")
+                else:
+                    st.info("No entries available for deletion with current filters.")
+        else:
+            # Info for non-admin users
+            st.info("ℹ️ This is a read-only view of the global factory cartridge database maintained by administrators.")
 
     except Exception as e:
         st.error(f"❌ Error loading factory cartridge entries: {str(e)}")

@@ -4,6 +4,14 @@ import streamlit as st
 def  render_create_cartridge_tab(user, supabase):
     """Render the Create Factory Cartridge tab"""
     st.header("➕ Create New Factory Cartridge")
+    
+    # Check if user is admin
+    is_admin = user.get("user_metadata", {}).get("is_admin", False) or user.get("email") == "johnduffie91@gmail.com"
+    
+    if not is_admin:
+        st.warning("🔒 Access Denied: Only administrators can create factory cartridge entries.")
+        st.info("This global factory cartridge database is maintained by administrators to ensure data quality and consistency.")
+        return
 
     # Create form for factory cartridge entry
     with st.form("create_cartridge_form"):
@@ -26,12 +34,11 @@ def  render_create_cartridge_tab(user, supabase):
 
         st.subheader("🎯 Bullet Selection")
         
-        # Get available bullets for the user to create a dropdown
+        # Get available bullets from global database to create a dropdown
         try:
             bullets_response = (
                 supabase.table("bullets")
                 .select("id, manufacturer, model, weight_grains, bullet_diameter_groove_mm")
-                .eq("user_id", user["id"])
                 .order("manufacturer, model, weight_grains")
                 .execute()
             )
@@ -56,7 +63,7 @@ def  render_create_cartridge_tab(user, supabase):
                 selected_bullet_id = bullet_lookup.get(selected_bullet_label) if selected_bullet_label else None
                 
             else:
-                st.warning("⚠️ No bullets found in your database. Please add bullets first before creating factory cartridges.")
+                st.warning("⚠️ No bullets found in the global database. Please add bullets first before creating factory cartridges.")
                 selected_bullet_id = None
                 
         except Exception as e:
