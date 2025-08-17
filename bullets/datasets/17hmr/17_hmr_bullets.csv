@@ -1,9 +1,0 @@
-user_id,manufacturer,model,weight_grains,bullet_diameter_groove_mm,bore_diameter_land_mm,bullet_length_mm,ballistic_coefficient_g1,ballistic_coefficient_g7,sectional_density,min_req_twist_rate_in_per_rev,pref_twist_rate_in_per_rev
-google-oauth2|111273793361054745867,Hornady,V-MAX,17,4.394,4.267,12.70,0.125,0.063,0.073,12.0,10.0
-google-oauth2|111273793361054745867,CCI,V-MAX,17,4.394,4.267,12.70,0.125,0.063,0.073,12.0,10.0
-google-oauth2|111273793361054745867,Federal,V-Shok V-MAX,17,4.394,4.267,12.70,0.125,0.063,0.073,12.0,10.0
-google-oauth2|111273793361054745867,Winchester,Super-X V-MAX,17,4.394,4.267,12.70,0.125,0.063,0.073,12.0,10.0
-google-oauth2|111273793361054745867,Remington,Premier V-MAX,17,4.394,4.267,12.70,0.125,0.063,0.073,12.0,10.0
-google-oauth2|111273793361054745867,Hornady,XTP,20,4.394,4.267,14.22,0.130,0.065,0.086,12.0,10.0
-google-oauth2|111273793361054745867,CCI,TNT Green,16,4.394,4.267,11.43,0.120,0.060,0.069,12.0,10.0
-google-oauth2|111273793361054745867,Federal,Game-Shok JHP,20,4.394,4.267,13.97,0.128,0.064,0.086,12.0,10.0

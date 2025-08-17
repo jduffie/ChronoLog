@@ -390,3 +390,19 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ### Database Schema Maintenance
 **IMPORTANT**: Whenever table schemas are modified (adding columns, changing types, creating new tables, etc.), the Database Schema section in this CLAUDE.md file MUST be updated to reflect the changes. This ensures documentation stays current and accurate for development work.
 - to memorize
+
+
+# Next Steps
+
+- Update bullets table.  
+  - Today, it uses an id that is monotonically increasing.  
+  - Instead, I want it to use a UUID.  Be sure to address the foreign key references and to migrate existing data
+- Create a bullets_types table.  It will have one column:
+  - bore_diameter_land_mm - a float value
+- Create a cartridge_types table.  The columns are:
+  - cartridge_type - text string
+  - bore_diameter_land_mm - a float value
+- Update factory_cartridge_specs table. Today, the 'cartridge_type' column is a text string and all values are null. I want it to be an enumeration.  
+  - The possible values are derived from the cartridge_type column in the cartridge_types table. 
+- Update the View and Create tab on the factory cartridges page to include cartridge_type
+    - need to ensure the create and filtering logic respect the 1 to 1 relationship between cartridge_type and bore_diameter_land_mm
