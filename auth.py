@@ -58,6 +58,7 @@ def show_login_button():
             "redirect_uri": redirect_uri,
             "scope": "openid profile email",
             "audience": f"{AUTH0_BASE_URL}/userinfo",
+            "connection": "google-oauth2",  # Force Google login only
         }
     )
     login_url = f"{AUTH0_BASE_URL}/authorize?{query}"
