@@ -1,0 +1,12 @@
+user_id,manufacturer,model,weight_grains,bullet_diameter_groove_mm,bore_diameter_land_mm,bullet_length_mm,ballistic_coefficient_g1,ballistic_coefficient_g7,sectional_density,min_req_twist_rate_in_per_rev,pref_twist_rate_in_per_rev,data_source_name,data_source_url
+google-oauth2|111273793361054745867,Barnes,TSX,120,6.71,6.50,30.48,0.412,0.206,0.246,8.0,8.0,Barnes Bullets Official,https://www.barnesbullets.com/products/rifle/tsx/6-5mm-120gr-tsx/
+google-oauth2|111273793361054745867,Barnes,TSX,130,6.71,6.50,32.26,0.453,0.227,0.267,8.0,8.0,Barnes TSX Product Line,https://www.barnesbullets.com/products/rifle/tsx/6-5mm-130gr-tsx/
+google-oauth2|111273793361054745867,Barnes,TTSX,120,6.71,6.50,30.48,0.420,0.210,0.246,8.0,8.0,Barnes Tipped TSX,https://www.barnesbullets.com/products/rifle/ttsx/6-5mm-120gr-ttsx/
+google-oauth2|111273793361054745867,Barnes,TTSX,127,6.71,6.50,31.75,0.468,0.235,0.261,8.0,8.0,Barnes TTSX Specifications,https://www.barnesbullets.com/products/rifle/ttsx/6-5mm-127gr-ttsx/
+google-oauth2|111273793361054745867,Barnes,TTSX,130,6.71,6.50,32.26,0.485,0.244,0.267,8.0,8.0,Barnes Product Data,https://www.barnesbullets.com/products/rifle/ttsx/6-5mm-130gr-ttsx/
+google-oauth2|111273793361054745867,Barnes,LRX,127,6.71,6.50,31.75,0.468,0.235,0.261,8.0,8.0,Barnes Long Range X,https://www.barnesbullets.com/products/rifle/lrx/6-5mm-127gr-lrx/
+google-oauth2|111273793361054745867,Barnes,LRX,129,6.71,6.50,32.00,0.485,0.244,0.265,8.0,8.0,Barnes LRX Line,https://www.barnesbullets.com/products/rifle/lrx/6-5mm-129gr-lrx/
+google-oauth2|111273793361054745867,Barnes,Match Burner,120,6.71,6.50,28.19,0.465,0.234,0.246,8.0,8.0,Barnes Match Burner,https://www.barnesbullets.com/products/rifle/match-burner/6-5mm-120gr-match-burner/
+google-oauth2|111273793361054745867,Barnes,Match Burner,140,6.71,6.50,33.53,0.595,0.300,0.287,8.0,7.5,Barnes Target Bullets,https://www.barnesbullets.com/products/rifle/match-burner/6-5mm-140gr-match-burner/
+google-oauth2|111273793361054745867,Barnes,Vor-TX,120,6.71,6.50,30.48,0.420,0.210,0.246,8.0,8.0,Barnes Vor-TX Line,https://www.barnesbullets.com/ammunition/rifle/vor-tx/6-5mm-creedmoor-120gr-ttsx/
+google-oauth2|111273793361054745867,Barnes,Vor-TX,127,6.71,6.50,31.75,0.468,0.235,0.261,8.0,8.0,Barnes Premium Hunting,https://www.barnesbullets.com/ammunition/rifle/vor-tx/6-5mm-creedmoor-127gr-lrx/

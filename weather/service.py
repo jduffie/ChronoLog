@@ -10,13 +10,13 @@ class WeatherService:
         self.supabase = supabase_client
 
     # Weather Source Management
-    def get_sources_for_user(self, user_email: str) -> List[WeatherSource]:
+    def get_sources_for_user(self, user_id: str) -> List[WeatherSource]:
         """Get all weather sources for a user"""
         try:
             response = (
                 self.supabase.table("weather_source")
                 .select("*")
-                .eq("user_email", user_email)
+                .eq("user_id", user_id)
                 .order("name")
                 .execute()
             )
@@ -30,7 +30,7 @@ class WeatherService:
             raise Exception(f"Error fetching weather sources: {str(e)}")
 
     def get_source_by_id(
-        self, source_id: str, user_email: str
+        self, source_id: str, user_id: str
     ) -> Optional[WeatherSource]:
         """Get a specific weather source by ID"""
         try:
@@ -38,7 +38,7 @@ class WeatherService:
                 self.supabase.table("weather_source")
                 .select("*")
                 .eq("id", source_id)
-                .eq("user_email", user_email)
+                .eq("user_id", user_id)
                 .single()
                 .execute()
             )
@@ -51,13 +51,13 @@ class WeatherService:
         except Exception as e:
             raise Exception(f"Error fetching weather source: {str(e)}")
 
-    def get_source_by_name(self, user_email: str, name: str) -> Optional[WeatherSource]:
+    def get_source_by_name(self, user_id: str, name: str) -> Optional[WeatherSource]:
         """Get a weather source by name"""
         try:
             response = (
                 self.supabase.table("weather_source")
                 .select("*")
-                .eq("user_email", user_email)
+                .eq("user_id", user_id)
                 .eq("name", name)
                 .single()
                 .execute()
@@ -87,18 +87,18 @@ class WeatherService:
         except Exception as e:
             raise Exception(f"Error creating weather source: {str(e)}")
 
-    def update_source(self, source_id: str, user_email: str, updates: dict) -> None:
+    def update_source(self, source_id: str, user_id: str, updates: dict) -> None:
         """Update weather source information"""
         try:
             updates["updated_at"] = "NOW()"
             self.supabase.table("weather_source").update(updates).eq(
                 "id", source_id
-            ).eq("user_email", user_email).execute()
+            ).eq("user_id", user_id).execute()
 
         except Exception as e:
             raise Exception(f"Error updating weather source: {str(e)}")
 
-    def delete_source(self, source_id: str, user_email: str) -> None:
+    def delete_source(self, source_id: str, user_id: str) -> None:
         """Delete a weather source and all its measurements"""
         try:
             self.supabase.table("weather_source").delete().eq("id", source_id).eq(
@@ -110,7 +110,7 @@ class WeatherService:
 
     # Weather Measurements
     def get_measurements_for_source(
-        self, source_id: str, user_email: str
+        self, source_id: str, user_id: str
     ) -> List[WeatherMeasurement]:
         """Get all measurements for a specific weather source"""
         try:
@@ -118,7 +118,7 @@ class WeatherService:
                 self.supabase.table("weather_measurements")
                 .select("*")
                 .eq("weather_source_id", source_id)
-                .eq("user_email", user_email)
+                .eq("user_id", user_id)
                 .order("measurement_timestamp")
                 .execute()
             )
@@ -132,14 +132,14 @@ class WeatherService:
             raise Exception(f"Error fetching measurements: {str(e)}")
 
     def get_all_measurements_for_user(
-        self, user_email: str
+        self, user_id: str
     ) -> List[WeatherMeasurement]:
         """Get all weather measurements for a user"""
         try:
             response = (
                 self.supabase.table("weather_measurements")
                 .select("*")
-                .eq("user_email", user_email)
+                .eq("user_id", user_id)
                 .order("measurement_timestamp", desc=True)
                 .execute()
             )
@@ -154,7 +154,7 @@ class WeatherService:
 
     def get_measurements_filtered(
         self,
-        user_email: str,
+        user_id: str,
         source_id: Optional[str] = None,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
@@ -164,7 +164,7 @@ class WeatherService:
             query = (
                 self.supabase.table("weather_measurements")
                 .select("*")
-                .eq("user_email", user_email)
+                .eq("user_id", user_id)
             )
 
             if source_id:
@@ -204,14 +204,14 @@ class WeatherService:
             raise Exception(f"Error creating measurement: {str(e)}")
 
     def measurement_exists(
-        self, user_email: str, source_id: str, measurement_timestamp: str
+        self, user_id: str, source_id: str, measurement_timestamp: str
     ) -> bool:
         """Check if a measurement already exists"""
         try:
             response = (
                 self.supabase.table("weather_measurements")
                 .select("id")
-                .eq("user_email", user_email)
+                .eq("user_id", user_id)
                 .eq("weather_source_id", source_id)
                 .eq("measurement_timestamp", measurement_timestamp)
                 .execute()
@@ -225,7 +225,7 @@ class WeatherService:
     def update_source_with_device_info(
         self,
         source_id: str,
-        user_email: str,
+        user_id: str,
         device_name: str,
         device_model: str,
         serial_number: str,
@@ -241,13 +241,13 @@ class WeatherService:
 
             self.supabase.table("weather_source").update(updates).eq(
                 "id", source_id
-            ).eq("user_email", user_email).execute()
+            ).eq("user_id", user_id).execute()
 
         except Exception as e:
             raise Exception(f"Error updating weather source with device info: {str(e)}")
 
     def create_or_get_source_from_device_info(
-        self, user_email: str, device_name: str, device_model: str, serial_number: str
+        self, user_id: str, device_name: str, device_model: str, serial_number: str
     ) -> str:
         """Create or get existing weather source from device information"""
         try:
@@ -256,7 +256,7 @@ class WeatherService:
                 response = (
                     self.supabase.table("weather_source")
                     .select("*")
-                    .eq("user_email", user_email)
+                    .eq("user_id", user_id)
                     .eq("serial_number", serial_number)
                     .execute()
                 )
@@ -269,13 +269,13 @@ class WeatherService:
                 source_name += f" ({serial_number[-4:]})"  # Last 4 digits of serial
 
             # Check if source with this name already exists
-            existing = self.get_source_by_name(user_email, source_name)
+            existing = self.get_source_by_name(user_id, source_name)
             if existing:
                 return existing.id
 
             # Create new source
             source_data = {
-                "user_email": user_email,
+                "user_id": user_id,
                 "name": source_name,
                 "device_name": device_name,
                 "model": device_model,

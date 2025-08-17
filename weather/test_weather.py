@@ -18,14 +18,14 @@ class TestWeatherSource(unittest.TestCase):
     def test_weather_source_from_device_info(self):
         """Test creating WeatherSource from device info"""
         source = WeatherSource.from_device_info(
-            user_email="test@example.com",
+            user_id="test@example.com",
             name="Test Kestrel",
             device_name="Kestrel 5700",
             device_model="5700 Elite",
             serial_number="K123456",
         )
 
-        self.assertEqual(source.user_email, "test@example.com")
+        self.assertEqual(source.user_id, "test@example.com")
         self.assertEqual(source.name, "Test Kestrel")
         self.assertEqual(source.device_name, "Kestrel 5700")
         self.assertEqual(source.model, "5700 Elite")
@@ -35,7 +35,7 @@ class TestWeatherSource(unittest.TestCase):
         """Test creating WeatherSource from Supabase record"""
         record = {
             "id": "source-1",
-            "user_email": "test@example.com",
+            "user_id": "test@example.com",
             "name": "Test Kestrel",
             "source_type": "meter",
             "device_name": "Kestrel 5700",
@@ -49,7 +49,7 @@ class TestWeatherSource(unittest.TestCase):
         source = WeatherSource.from_supabase_record(record)
 
         self.assertEqual(source.id, "source-1")
-        self.assertEqual(source.user_email, "test@example.com")
+        self.assertEqual(source.user_id, "test@example.com")
         self.assertEqual(source.name, "Test Kestrel")
         self.assertEqual(source.make, "Kestrel")
         self.assertEqual(source.model, "5700 Elite")
@@ -59,7 +59,7 @@ class TestWeatherSource(unittest.TestCase):
         """Test WeatherSource display methods"""
         source = WeatherSource(
             id="source-1",
-            user_email="test@example.com",
+            user_id="test@example.com",
             name="Test Kestrel",
             make="Kestrel",
             model="5700 Elite",
@@ -75,7 +75,7 @@ class TestWeatherSource(unittest.TestCase):
     def test_weather_source_display_methods_minimal(self):
         """Test WeatherSource display methods with minimal data"""
         source = WeatherSource(
-            id="source-1", user_email="test@example.com", name="Basic Meter"
+            id="source-1", user_id="test@example.com", name="Basic Meter"
         )
 
         self.assertEqual(source.display_name(), "Basic Meter")
@@ -89,7 +89,7 @@ class TestWeatherMeasurement(unittest.TestCase):
         """Test creating WeatherMeasurement from Supabase record"""
         record = {
             "id": "measurement-1",
-            "user_email": "test@example.com",
+            "user_id": "test@example.com",
             "weather_source_id": "source-1",
             "measurement_timestamp": "2023-12-01T10:00:00",
             "uploaded_at": "2023-12-01T10:01:00",
@@ -107,7 +107,7 @@ class TestWeatherMeasurement(unittest.TestCase):
         measurement = WeatherMeasurement.from_supabase_record(record)
 
         self.assertEqual(measurement.id, "measurement-1")
-        self.assertEqual(measurement.user_email, "test@example.com")
+        self.assertEqual(measurement.user_id, "test@example.com")
         self.assertEqual(measurement.weather_source_id, "source-1")
         self.assertEqual(measurement.temperature_f, 72.5)
         self.assertEqual(measurement.relative_humidity_pct, 65.0)
@@ -120,7 +120,7 @@ class TestWeatherMeasurement(unittest.TestCase):
         """Test WeatherMeasurement display methods"""
         measurement = WeatherMeasurement(
             id="measurement-1",
-            user_email="test@example.com",
+            user_id="test@example.com",
             weather_source_id="source-1",
             measurement_timestamp=pd.to_datetime("2023-12-01T10:00:00"),
             uploaded_at=pd.to_datetime("2023-12-01T10:01:00"),
@@ -145,7 +145,7 @@ class TestWeatherMeasurement(unittest.TestCase):
         """Test WeatherMeasurement data detection methods"""
         measurement = WeatherMeasurement(
             id="measurement-1",
-            user_email="test@example.com",
+            user_id="test@example.com",
             weather_source_id="source-1",
             measurement_timestamp=pd.to_datetime("2023-12-01T10:00:00"),
             uploaded_at=pd.to_datetime("2023-12-01T10:01:00"),
@@ -161,7 +161,7 @@ class TestWeatherMeasurement(unittest.TestCase):
         """Test WeatherMeasurement display methods with None values"""
         measurement = WeatherMeasurement(
             id="measurement-1",
-            user_email="test@example.com",
+            user_id="test@example.com",
             weather_source_id="source-1",
             measurement_timestamp=pd.to_datetime("2023-12-01T10:00:00"),
             uploaded_at=pd.to_datetime("2023-12-01T10:01:00"),
@@ -186,7 +186,7 @@ class TestWeatherImportTab(unittest.TestCase):
     ):
         mock_file_uploader.return_value = None
 
-        user = {"email": "test@example.com"}
+        user = {"email": "test@example.com", "id": "google-oauth2|111273793361054745867"}
         mock_supabase = Mock()
 
         # Mock empty weather sources response
@@ -214,7 +214,7 @@ class TestWeatherImportTab(unittest.TestCase):
         mock_file.getvalue.return_value = b"fake_csv_data"
         mock_file_uploader.return_value = mock_file
 
-        user = {"email": "test@example.com"}
+        user = {"email": "test@example.com", "id": "google-oauth2|111273793361054745867"}
         mock_supabase = Mock()
 
         # Mock empty weather sources response

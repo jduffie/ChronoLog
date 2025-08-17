@@ -4,13 +4,13 @@ from typing import Any, Dict, List
 class SubmissionModel:
     """Model for user range submission management."""
 
-    def get_user_range_count(self, user_email: str, supabase_client) -> int:
+    def get_user_range_count(self, user_id: str, supabase_client) -> int:
         """Get the count of ranges submitted by a user."""
         try:
             result = (
                 supabase_client.table("ranges_submissions")
                 .select("id")
-                .eq("user_email", user_email)
+                .eq("user_id", user_id)
                 .execute()
             )
             return len(result.data) if result.data else 0
@@ -18,7 +18,7 @@ class SubmissionModel:
             print(f"Error getting user range count: {e}")
             return 0
 
-    def get_user_ranges(self, user_email: str, supabase_client) -> List[Dict[str, Any]]:
+    def get_user_ranges(self, user_id: str, supabase_client) -> List[Dict[str, Any]]:
         """Get all ranges submitted by a user."""
         try:
             result = (
@@ -26,7 +26,7 @@ class SubmissionModel:
                 .select(
                     "id, range_name, range_description, start_lat, start_lon, end_lat, end_lon, distance_m, azimuth_deg, elevation_angle_deg, display_name, submitted_at, status, review_reason, start_altitude_m, end_altitude_m, address_geojson"
                 )
-                .eq("user_email", user_email)
+                .eq("user_id", user_id)
                 .order("submitted_at", desc=True)
                 .execute()
             )
@@ -36,7 +36,7 @@ class SubmissionModel:
             return []
 
     def delete_user_ranges(
-        self, user_email: str, range_ids: List[str], supabase_client
+        self, user_id: str, range_ids: List[str], supabase_client
     ) -> bool:
         """Delete selected ranges for a user."""
         try:
@@ -51,7 +51,7 @@ class SubmissionModel:
                     supabase_client.table("ranges_submissions")
                     .select("id")
                     .eq("id", range_id)
-                    .eq("user_email", user_email)
+                    .eq("user_id", user_id)
                     .execute()
                 )
                 print(f"Range exists check: {check_result.data}")
@@ -67,7 +67,7 @@ class SubmissionModel:
                     supabase_client.table("ranges_submissions")
                     .delete()
                     .eq("id", range_id)
-                    .eq("user_email", user_email)
+                    .eq("user_id", user_id)
                     .execute()
                 )
                 print(f"Delete result for {range_id}: {result}")
@@ -95,7 +95,7 @@ class SubmissionModel:
             return False
 
     def get_user_submission_by_id(
-        self, user_email: str, submission_id: str, supabase_client
+        self, user_id: str, submission_id: str, supabase_client
     ) -> Dict[str, Any]:
         """Get a specific submission by ID for a user."""
         try:
@@ -103,7 +103,7 @@ class SubmissionModel:
                 supabase_client.table("ranges_submissions")
                 .select("*")
                 .eq("id", submission_id)
-                .eq("user_email", user_email)
+                .eq("user_id", user_id)
                 .execute()
             )
             return result.data[0] if result.data else {}
@@ -113,7 +113,7 @@ class SubmissionModel:
 
     def update_user_submission(
         self,
-        user_email: str,
+        user_id: str,
         submission_id: str,
         updates: Dict[str, Any],
         supabase_client,
@@ -124,7 +124,7 @@ class SubmissionModel:
                 supabase_client.table("ranges_submissions")
                 .update(updates)
                 .eq("id", submission_id)
-                .eq("user_email", user_email)
+                .eq("user_id", user_id)
                 .execute()
             )
 

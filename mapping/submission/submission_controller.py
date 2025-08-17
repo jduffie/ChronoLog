@@ -50,7 +50,7 @@ class SubmissionController:
 
                 with self.view.display_loading_spinner("Deleting ranges..."):
                     success = self.model.delete_user_ranges(
-                        user["email"], range_ids, supabase
+                        user["id"], range_ids, supabase
                     )
 
                 if success:
@@ -81,7 +81,7 @@ class SubmissionController:
         """Check user's range limit and display count. Returns True if under limit."""
         try:
             supabase = self._get_supabase_client()
-            range_count = self.model.get_user_range_count(user["email"], supabase)
+            range_count = self.model.get_user_range_count(user["id"], supabase)
 
             # Display current count
             self.view.display_range_count(range_count, max_count=40)
@@ -106,7 +106,7 @@ class SubmissionController:
 
         try:
             # Fetch user ranges
-            user_ranges = self.model.get_user_ranges(user["email"], supabase)
+            user_ranges = self.model.get_user_ranges(user["id"], supabase)
 
             # Check if we're in delete confirmation mode
             if "delete_selected_ranges" in st.session_state:
@@ -167,20 +167,20 @@ class SubmissionController:
         # Run the core functionality
         self._run_submission_functionality(user, supabase)
 
-    def get_user_ranges(self, user_email: str):
+    def get_user_ranges(self, user_id: str):
         """Get ranges for a specific user."""
         try:
             supabase = self._get_supabase_client()
-            return self.model.get_user_ranges(user_email, supabase)
+            return self.model.get_user_ranges(user_id, supabase)
         except Exception as e:
             self.view.display_error_message(f"Error fetching user ranges: {str(e)}")
             return []
 
-    def delete_ranges(self, user_email: str, range_ids: List[str]) -> bool:
+    def delete_ranges(self, user_id: str, range_ids: List[str]) -> bool:
         """Delete user ranges."""
         try:
             supabase = self._get_supabase_client()
-            return self.model.delete_user_ranges(user_email, range_ids, supabase)
+            return self.model.delete_user_ranges(user_id, range_ids, supabase)
         except Exception as e:
             self.view.display_error_message(f"Error deleting ranges: {str(e)}")
             return False

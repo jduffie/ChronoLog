@@ -133,7 +133,7 @@ def render_create_session_tab(user, supabase):
                 range_submissions = (
                     supabase.table("ranges_submissions")
                     .select("*")
-                    .eq("user_email", user["email"])
+                    .eq("user_id", user["id"])
                     .order("submitted_at", desc=True)
                     .execute()
                 )
@@ -159,7 +159,7 @@ def render_create_session_tab(user, supabase):
                 weather_sources = (
                     supabase.table("weather_source")
                     .select("*")
-                    .eq("user_email", user["email"])
+                    .eq("user_id", user["id"])
                     .order("created_at", desc=True)
                     .execute()
                 )
@@ -194,7 +194,7 @@ def render_create_session_tab(user, supabase):
                     rifles_response = (
                         supabase.table("rifles")
                         .select("*")
-                        .eq("user_email", user["email"])
+                        .eq("user_id", user["id"])
                         .order("name")
                         .execute()
                     )
@@ -654,7 +654,7 @@ def save_dope_session(user, supabase, dope_model, tab_name):
             
             session_data = {
                 "id": dope_session_id,
-                "user_email": user["email"],
+                "user_id": user["id"],
                 "session_name": session_name,
                 "range_name": session_details.get("range_name", ""),
                 "distance_m": (
@@ -710,7 +710,7 @@ def save_dope_session(user, supabase, dope_model, tab_name):
         for _, row in measurements_df.iterrows():
             measurement_data = {
                 "dope_session_id": dope_session_id,
-                "user_email": user["email"],
+                "user_id": user["id"],
                 "shot_number": safe_int(row.get("shot_number")),
                 "datetime_shot": row.get("datetime") if row.get("datetime") else None,
                 # Source chronograph data

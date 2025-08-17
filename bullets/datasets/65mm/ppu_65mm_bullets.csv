@@ -1,0 +1,5 @@
+user_id,manufacturer,model,weight_grains,bullet_diameter_groove_mm,bore_diameter_land_mm,bullet_length_mm,ballistic_coefficient_g1,ballistic_coefficient_g7,sectional_density,min_req_twist_rate_in_per_rev,pref_twist_rate_in_per_rev,data_source_name,data_source_url
+google-oauth2|111273793361054745867,PPU,SP,140,6.71,6.50,33.02,0.465,0.234,0.287,8.0,8.0,Prvi Partizan USA,https://www.prvipartizan.com/ammunition/rifle/6-5mm-creedmoor-140gr-sp/
+google-oauth2|111273793361054745867,PPU,FMJBT,140,6.71,6.50,33.53,0.485,0.244,0.287,8.0,8.0,PPU Match Ammunition,https://www.prvipartizan.com/ammunition/rifle/6-5mm-creedmoor-140gr-fmjbt/
+google-oauth2|111273793361054745867,PPU,HP-BT,140,6.71,6.50,33.53,0.485,0.244,0.287,8.0,8.0,PPU Precision Line,https://www.prvipartizan.com/ammunition/rifle/6-5mm-creedmoor-140gr-hpbt/
+google-oauth2|111273793361054745867,PPU,SPBT,139,6.71,6.50,33.27,0.475,0.239,0.285,8.0,8.0,PPU Hunting Line,https://www.prvipartizan.com/ammunition/rifle/6-5mm-creedmoor-139gr-spbt/

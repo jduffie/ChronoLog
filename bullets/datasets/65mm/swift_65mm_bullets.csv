@@ -1,0 +1,5 @@
+user_id,manufacturer,model,weight_grains,bullet_diameter_groove_mm,bore_diameter_land_mm,bullet_length_mm,ballistic_coefficient_g1,ballistic_coefficient_g7,sectional_density,min_req_twist_rate_in_per_rev,pref_twist_rate_in_per_rev,data_source_name,data_source_url
+google-oauth2|111273793361054745867,Swift,Scirocco II,130,6.71,6.50,31.75,0.571,0.287,0.267,8.0,8.0,Swift Bullet Company,https://www.swiftbullets.com/bullet/scirocco-ii/6-5mm-130gr-scirocco-ii/
+google-oauth2|111273793361054745867,Swift,Scirocco II,140,6.71,6.50,33.53,0.612,0.308,0.287,8.0,7.5,Swift Premium Bullets,https://www.swiftbullets.com/bullet/scirocco-ii/6-5mm-140gr-scirocco-ii/
+google-oauth2|111273793361054745867,Swift,A-Frame,140,6.71,6.50,33.02,0.485,0.244,0.287,8.0,8.0,Swift A-Frame Line,https://www.swiftbullets.com/bullet/a-frame/6-5mm-140gr-a-frame/
+google-oauth2|111273793361054745867,Swift,A-Frame,160,6.71,6.50,36.83,0.545,0.274,0.328,7.5,7.0,Swift Heavy Bullets,https://www.swiftbullets.com/bullet/a-frame/6-5mm-160gr-a-frame/

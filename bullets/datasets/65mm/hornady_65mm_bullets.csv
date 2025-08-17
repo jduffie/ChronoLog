@@ -1,0 +1,17 @@
+user_id,manufacturer,model,weight_grains,bullet_diameter_groove_mm,bore_diameter_land_mm,bullet_length_mm,ballistic_coefficient_g1,ballistic_coefficient_g7,sectional_density,min_req_twist_rate_in_per_rev,pref_twist_rate_in_per_rev,data_source_name,data_source_url
+google-oauth2|111273793361054745867,Hornady,ELD-M,120,6.71,6.50,28.19,0.449,0.225,0.246,8.0,8.0,Hornady Official Website,https://www.hornady.com/bullets/rifle/6-5mm-264-caliber-120-gr-eld-match
+google-oauth2|111273793361054745867,Hornady,ELD-M,123,6.71,6.50,29.21,0.506,0.255,0.252,8.0,8.0,Hornady Ballistics Calculator,https://www.hornady.com/ballistics-resource/ballistics-calculator
+google-oauth2|111273793361054745867,Hornady,ELD-M,130,6.71,6.50,31.75,0.552,0.277,0.267,8.0,8.0,Hornady Product Page,https://www.hornady.com/bullets/rifle/6-5mm-264-caliber-130-gr-eld-match
+google-oauth2|111273793361054745867,Hornady,ELD-M,140,6.71,6.50,33.53,0.646,0.326,0.287,8.0,7.5,Hornady Official Website,https://www.hornady.com/bullets/rifle/6-5mm-264-caliber-140-gr-eld-match
+google-oauth2|111273793361054745867,Hornady,ELD-M,147,6.71,6.50,35.31,0.697,0.351,0.302,8.0,7.5,Hornady Product Specifications,https://www.hornady.com/bullets/rifle/6-5mm-264-caliber-147-gr-eld-match
+google-oauth2|111273793361054745867,Hornady,ELD-X,120,6.71,6.50,28.19,0.441,0.221,0.246,8.0,8.0,Hornady Hunting Bullets,https://www.hornady.com/bullets/rifle/6-5mm-264-caliber-120-gr-eld-x
+google-oauth2|111273793361054745867,Hornady,ELD-X,129,6.71,6.50,30.99,0.525,0.264,0.265,8.0,8.0,Hornady Product Page,https://www.hornady.com/bullets/rifle/6-5mm-264-caliber-129-gr-eld-x
+google-oauth2|111273793361054745867,Hornady,ELD-X,143,6.71,6.50,34.29,0.625,0.315,0.293,8.0,7.5,Hornady Official Website,https://www.hornady.com/bullets/rifle/6-5mm-264-caliber-143-gr-eld-x
+google-oauth2|111273793361054745867,Hornady,A-MAX,140,6.71,6.50,33.53,0.585,0.295,0.287,8.0,8.0,Hornady Legacy Products,https://www.hornady.com/support/ballistic-coefficient-database
+google-oauth2|111273793361054745867,Hornady,SST,129,6.71,6.50,30.99,0.485,0.244,0.265,8.0,8.0,Hornady SST Product Line,https://www.hornady.com/bullets/rifle/6-5mm-264-caliber-129-gr-sst
+google-oauth2|111273793361054745867,Hornady,SST,140,6.71,6.50,33.02,0.520,0.262,0.287,8.0,8.0,Hornady Product Page,https://www.hornady.com/bullets/rifle/6-5mm-264-caliber-140-gr-sst
+google-oauth2|111273793361054745867,Hornady,InterLock,129,6.71,6.50,30.99,0.445,0.223,0.265,8.0,8.0,Hornady Traditional Bullets,https://www.hornady.com/bullets/rifle/6-5mm-264-caliber-129-gr-interlock-sp
+google-oauth2|111273793361054745867,Hornady,InterLock,140,6.71,6.50,33.02,0.465,0.234,0.287,8.0,8.0,Hornady Component Guide,https://www.hornady.com/bullets/rifle/6-5mm-264-caliber-140-gr-interlock-btsp
+google-oauth2|111273793361054745867,Hornady,V-MAX,95,6.71,6.50,24.13,0.365,0.183,0.195,9.0,8.5,Hornady Varmint Bullets,https://www.hornady.com/bullets/rifle/6-5mm-264-caliber-95-gr-v-max
+google-oauth2|111273793361054745867,Hornady,CX,120,6.71,6.50,30.48,0.400,0.200,0.246,8.0,8.0,Hornady CX Bullet Line,https://www.hornady.com/bullets/rifle/6-5mm-264-caliber-120-gr-cx
+google-oauth2|111273793361054745867,Hornady,CX,130,6.71,6.50,32.26,0.445,0.223,0.267,8.0,8.0,Hornady Lead-Free Bullets,https://www.hornady.com/bullets/rifle/6-5mm-264-caliber-130-gr-cx

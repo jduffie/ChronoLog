@@ -1,0 +1,6 @@
+user_id,manufacturer,model,weight_grains,bullet_diameter_groove_mm,bore_diameter_land_mm,bullet_length_mm,ballistic_coefficient_g1,ballistic_coefficient_g7,sectional_density,min_req_twist_rate_in_per_rev,pref_twist_rate_in_per_rev,data_source_name,data_source_url
+google-oauth2|111273793361054745867,Cutting Edge,MTH,120,6.71,6.50,30.48,0.485,0.244,0.246,8.0,8.0,Cutting Edge Bullets,https://www.cuttingedgebullets.com/6-5mm-120gr-mth-lazer/
+google-oauth2|111273793361054745867,Cutting Edge,MTH,140,6.71,6.50,32.26,0.565,0.284,0.287,8.0,8.0,CEB Monolithic Line,https://www.cuttingedgebullets.com/6-5mm-140gr-mth-lazer/
+google-oauth2|111273793361054745867,Cutting Edge,Lazer,125,6.71,6.50,30.99,0.515,0.259,0.256,8.0,8.0,CEB Lazer Series,https://www.cuttingedgebullets.com/6-5mm-125gr-lazer/
+google-oauth2|111273793361054745867,Cutting Edge,ESP Raptor,130,6.71,6.50,32.26,0.485,0.244,0.267,8.0,8.0,CEB Hunting Bullets,https://www.cuttingedgebullets.com/6-5mm-130gr-esp-raptor/
+google-oauth2|111273793361054745867,Cutting Edge,Single Feed,140,6.71,6.50,32.26,0.575,0.289,0.287,8.0,8.0,CEB Long Range,https://www.cuttingedgebullets.com/6-5mm-140gr-single-feed-mth/

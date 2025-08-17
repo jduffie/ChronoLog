@@ -99,7 +99,7 @@ class TestChronographService(unittest.TestCase):
         mock_data = [
             {
                 "id": "measurement-1",
-                "user_email": self.user_id,
+                "user_id": self.user_id,
                 "chrono_session_id": session_id,
                 "shot_number": 1,
                 "speed_fps": 1200.5,
@@ -251,7 +251,6 @@ class TestChronographModels(unittest.TestCase):
     def test_chronograph_measurement_from_supabase_record(self):
         record = {
             "id": "measurement-1",
-            "user_email": "test@example.com",
             "user_id": "google-oauth2|111273793361054745867",
             "chrono_session_id": "session-1",
             "shot_number": 1,

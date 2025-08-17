@@ -92,8 +92,7 @@ class ChronographMeasurement:
     """Entity representing a single chronograph measurement"""
 
     id: str
-    user_email: str
-    user_id: Optional[str]
+    user_id: str
     chrono_session_id: str
     shot_number: int
     speed_fps: float
@@ -110,8 +109,7 @@ class ChronographMeasurement:
         """Create a ChronographMeasurement from a Supabase record"""
         return cls(
             id=record["id"],
-            user_email=record["user_email"],
-            user_id=record.get("user_id"),
+            user_id=record["user_id"],
             chrono_session_id=record["chrono_session_id"],
             shot_number=record["shot_number"],
             speed_fps=record["speed_fps"],

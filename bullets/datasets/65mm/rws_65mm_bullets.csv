@@ -1,0 +1,6 @@
+user_id,manufacturer,model,weight_grains,bullet_diameter_groove_mm,bore_diameter_land_mm,bullet_length_mm,ballistic_coefficient_g1,ballistic_coefficient_g7,sectional_density,min_req_twist_rate_in_per_rev,pref_twist_rate_in_per_rev,data_source_name,data_source_url
+google-oauth2|111273793361054745867,RWS,KS,123,6.71,6.50,29.21,0.485,0.244,0.252,8.0,8.0,RWS Ammunition,https://www.rws-ammunition.com/en-us/products/bullets/ks/6-5mm-123gr-ks/
+google-oauth2|111273793361054745867,RWS,UNI Classic,140,6.71,6.50,33.02,0.465,0.234,0.287,8.0,8.0,RWS Traditional Line,https://www.rws-ammunition.com/en-us/products/bullets/uni-classic/6-5mm-140gr-uni-classic/
+google-oauth2|111273793361054745867,RWS,Evolution Green,130,6.71,6.50,32.26,0.445,0.223,0.267,8.0,8.0,RWS Lead-Free Bullets,https://www.rws-ammunition.com/en-us/products/bullets/evolution-green/6-5mm-130gr-evolution-green/
+google-oauth2|111273793361054745867,RWS,HIT,131,6.71,6.50,31.50,0.485,0.244,0.269,8.0,8.0,RWS HIT Series,https://www.rws-ammunition.com/en-us/products/bullets/hit/6-5mm-131gr-hit/
+google-oauth2|111273793361054745867,RWS,Speed Tip Pro,130,6.71,6.50,31.75,0.525,0.264,0.267,8.0,8.0,RWS Premium Line,https://www.rws-ammunition.com/en-us/products/bullets/speed-tip-pro/6-5mm-130gr-speed-tip-pro/

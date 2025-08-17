@@ -1,0 +1,5 @@
+user_id,manufacturer,model,weight_grains,bullet_diameter_groove_mm,bore_diameter_land_mm,bullet_length_mm,ballistic_coefficient_g1,ballistic_coefficient_g7,sectional_density,min_req_twist_rate_in_per_rev,pref_twist_rate_in_per_rev,data_source_name,data_source_url
+google-oauth2|111273793361054745867,Sellier & Bellot,SPCE,131,6.71,6.50,31.50,0.465,0.234,0.269,8.0,8.0,Sellier & Bellot USA,https://www.sellier-bellot.cz/en/products/rifle-ammunition/6-5mm-creedmoor-131gr-spce/
+google-oauth2|111273793361054745867,Sellier & Bellot,FMJ,140,6.71,6.50,33.53,0.445,0.223,0.287,8.0,8.0,S&B Target Line,https://www.sellier-bellot.cz/en/products/rifle-ammunition/6-5mm-creedmoor-140gr-fmj/
+google-oauth2|111273793361054745867,Sellier & Bellot,SP,140,6.71,6.50,33.02,0.465,0.234,0.287,8.0,8.0,S&B Hunting Bullets,https://www.sellier-bellot.cz/en/products/rifle-ammunition/6-5mm-creedmoor-140gr-sp/
+google-oauth2|111273793361054745867,Sellier & Bellot,HP-BT,140,6.71,6.50,33.53,0.485,0.244,0.287,8.0,8.0,S&B Match Line,https://www.sellier-bellot.cz/en/products/rifle-ammunition/6-5mm-creedmoor-140gr-hpbt/

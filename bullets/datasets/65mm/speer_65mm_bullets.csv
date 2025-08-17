@@ -1,0 +1,9 @@
+user_id,manufacturer,model,weight_grains,bullet_diameter_groove_mm,bore_diameter_land_mm,bullet_length_mm,ballistic_coefficient_g1,ballistic_coefficient_g7,sectional_density,min_req_twist_rate_in_per_rev,pref_twist_rate_in_per_rev,data_source_name,data_source_url
+google-oauth2|111273793361054745867,Speer,Grand Slam,120,6.71,6.50,28.19,0.435,0.218,0.246,8.0,8.0,Speer Bullets Official,https://www.speer-bullets.com/bullets/rifle/grand-slam/6-5mm-120gr-grand-slam/
+google-oauth2|111273793361054745867,Speer,Grand Slam,140,6.71,6.50,33.02,0.485,0.244,0.287,8.0,8.0,Speer Grand Slam Line,https://www.speer-bullets.com/bullets/rifle/grand-slam/6-5mm-140gr-grand-slam/
+google-oauth2|111273793361054745867,Speer,Hot-Cor,120,6.71,6.50,28.19,0.425,0.213,0.246,8.0,8.0,Speer Hot-Cor Series,https://www.speer-bullets.com/bullets/rifle/hot-cor/6-5mm-120gr-hot-cor/
+google-oauth2|111273793361054745867,Speer,Hot-Cor,140,6.71,6.50,33.02,0.465,0.234,0.287,8.0,8.0,Speer Traditional Bullets,https://www.speer-bullets.com/bullets/rifle/hot-cor/6-5mm-140gr-hot-cor/
+google-oauth2|111273793361054745867,Speer,Gold Dot,120,6.71,6.50,28.19,0.445,0.223,0.246,8.0,8.0,Speer Gold Dot Line,https://www.speer-bullets.com/bullets/rifle/gold-dot/6-5mm-120gr-gold-dot/
+google-oauth2|111273793361054745867,Speer,Gold Dot,140,6.71,6.50,33.02,0.485,0.244,0.287,8.0,8.0,Speer Premium Bullets,https://www.speer-bullets.com/bullets/rifle/gold-dot/6-5mm-140gr-gold-dot/
+google-oauth2|111273793361054745867,Speer,TNT,120,6.71,6.50,28.19,0.395,0.198,0.246,8.0,8.0,Speer Varmint Bullets,https://www.speer-bullets.com/bullets/rifle/tnt/6-5mm-120gr-tnt/
+google-oauth2|111273793361054745867,Speer,Boat Tail,140,6.71,6.50,33.53,0.505,0.254,0.287,8.0,8.0,Speer Match Bullets,https://www.speer-bullets.com/bullets/rifle/boat-tail/6-5mm-140gr-boat-tail/

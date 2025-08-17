@@ -1,0 +1,15 @@
+user_id,manufacturer,model,weight_grains,bullet_diameter_groove_mm,bore_diameter_land_mm,bullet_length_mm,ballistic_coefficient_g1,ballistic_coefficient_g7,sectional_density,min_req_twist_rate_in_per_rev,pref_twist_rate_in_per_rev,data_source_name,data_source_url
+google-oauth2|111273793361054745867,Berger,VLD Target,130,6.71,6.50,31.75,0.563,0.283,0.267,8.0,8.0,Berger Bullets Official,https://bergerbullets.com/product/6-5mm-130-grain-vld-target/
+google-oauth2|111273793361054745867,Berger,VLD Target,140,6.71,6.50,33.53,0.618,0.311,0.287,8.0,7.5,Berger Target Line,https://bergerbullets.com/product/6-5mm-140-grain-vld-target/
+google-oauth2|111273793361054745867,Berger,VLD Hunting,130,6.71,6.50,31.75,0.555,0.279,0.267,8.0,8.0,Berger Hunting Bullets,https://bergerbullets.com/product/6-5mm-130-grain-vld-hunting/
+google-oauth2|111273793361054745867,Berger,VLD Hunting,140,6.71,6.50,33.53,0.612,0.308,0.287,8.0,7.5,Berger VLD Hunting Line,https://bergerbullets.com/product/6-5mm-140-grain-vld-hunting/
+google-oauth2|111273793361054745867,Berger,Hybrid Target,130,6.71,6.50,31.75,0.568,0.285,0.267,8.0,8.0,Berger Hybrid Technology,https://bergerbullets.com/product/6-5mm-130-grain-hybrid-target/
+google-oauth2|111273793361054745867,Berger,Hybrid Target,140,6.71,6.50,33.53,0.625,0.315,0.287,8.0,7.5,Berger Target Bullets,https://bergerbullets.com/product/6-5mm-140-grain-hybrid-target/
+google-oauth2|111273793361054745867,Berger,Hybrid Target,156,6.71,6.50,36.58,0.679,0.342,0.320,7.5,7.0,Berger Long Range Target,https://bergerbullets.com/product/6-5mm-156-grain-hybrid-target/
+google-oauth2|111273793361054745867,Berger,Classic Hunter,130,6.71,6.50,31.75,0.540,0.271,0.267,8.0,8.0,Berger Classic Line,https://bergerbullets.com/product/6-5mm-130-grain-classic-hunter/
+google-oauth2|111273793361054745867,Berger,Classic Hunter,140,6.71,6.50,33.53,0.595,0.300,0.287,8.0,7.5,Berger Hunter Series,https://bergerbullets.com/product/6-5mm-140-grain-classic-hunter/
+google-oauth2|111273793361054745867,Berger,Elite Hunter,130,6.71,6.50,31.75,0.545,0.274,0.267,8.0,8.0,Berger Elite Hunter Line,https://bergerbullets.com/product/6-5mm-130-grain-elite-hunter/
+google-oauth2|111273793361054745867,Berger,Elite Hunter,135,6.71,6.50,32.51,0.581,0.292,0.277,8.0,7.5,Berger Premium Hunting,https://bergerbullets.com/product/6-5mm-135-grain-elite-hunter/
+google-oauth2|111273793361054745867,Berger,Elite Hunter,140,6.71,6.50,33.53,0.607,0.305,0.287,8.0,7.5,Berger Elite Series,https://bergerbullets.com/product/6-5mm-140-grain-elite-hunter/
+google-oauth2|111273793361054745867,Berger,Match Grade Target,120,6.71,6.50,28.19,0.485,0.244,0.246,8.0,8.0,Berger Match Grade,https://bergerbullets.com/product/6-5mm-120-grain-match-grade-target/
+google-oauth2|111273793361054745867,Berger,Match Grade Target,123,6.71,6.50,29.21,0.515,0.259,0.252,8.0,8.0,Berger Competition Bullets,https://bergerbullets.com/product/6-5mm-123-grain-match-grade-target/

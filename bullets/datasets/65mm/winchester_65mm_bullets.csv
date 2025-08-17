@@ -1,0 +1,8 @@
+user_id,manufacturer,model,weight_grains,bullet_diameter_groove_mm,bore_diameter_land_mm,bullet_length_mm,ballistic_coefficient_g1,ballistic_coefficient_g7,sectional_density,min_req_twist_rate_in_per_rev,pref_twist_rate_in_per_rev,data_source_name,data_source_url
+google-oauth2|111273793361054745867,Winchester,Power-Point,120,6.71,6.50,28.19,0.425,0.213,0.246,8.0,8.0,Winchester Ammunition,https://www.winchester.com/Products/Ammunition/Rifle/Super-X/X65CM1
+google-oauth2|111273793361054745867,Winchester,Power-Point,140,6.71,6.50,33.02,0.465,0.234,0.287,8.0,8.0,Winchester Super-X Line,https://www.winchester.com/Products/Ammunition/Rifle/Super-X/X65CM2
+google-oauth2|111273793361054745867,Winchester,Ballistic Silvertip,120,6.71,6.50,28.19,0.458,0.230,0.246,8.0,8.0,Winchester Supreme Line,https://www.winchester.com/Products/Ammunition/Rifle/Supreme/SBST65CM1
+google-oauth2|111273793361054745867,Winchester,Ballistic Silvertip,140,6.71,6.50,33.02,0.509,0.256,0.287,8.0,8.0,Winchester Premium Bullets,https://www.winchester.com/Products/Ammunition/Rifle/Supreme/SBST65CM2
+google-oauth2|111273793361054745867,Winchester,AccuBond CT,142,6.71,6.50,34.04,0.719,0.362,0.291,8.0,7.5,Winchester Expedition Line,https://www.winchester.com/Products/Ammunition/Rifle/Expedition/S65CMAB
+google-oauth2|111273793361054745867,Winchester,Deer Season XP,125,6.71,6.50,29.72,0.465,0.234,0.256,8.0,8.0,Winchester Deer Season,https://www.winchester.com/Products/Ammunition/Rifle/Deer-Season-XP/X65CMDS
+google-oauth2|111273793361054745867,Winchester,Super-X,140,6.71,6.50,33.02,0.465,0.234,0.287,8.0,8.0,Winchester Budget Line,https://www.winchester.com/Products/Ammunition/Rifle/Super-X/X65CM3

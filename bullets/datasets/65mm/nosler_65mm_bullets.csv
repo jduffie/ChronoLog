@@ -1,0 +1,17 @@
+user_id,manufacturer,model,weight_grains,bullet_diameter_groove_mm,bore_diameter_land_mm,bullet_length_mm,ballistic_coefficient_g1,ballistic_coefficient_g7,sectional_density,min_req_twist_rate_in_per_rev,pref_twist_rate_in_per_rev,data_source_name,data_source_url
+google-oauth2|111273793361054745867,Nosler,Ballistic Tip,120,6.71,6.50,28.19,0.458,0.230,0.246,8.0,8.0,Nosler Official Website,https://www.nosler.com/bullets/ballistic-tip/6-5mm-120gr-ballistic-tip
+google-oauth2|111273793361054745867,Nosler,Ballistic Tip,129,6.71,6.50,30.99,0.485,0.244,0.265,8.0,8.0,Nosler Product Specifications,https://www.nosler.com/bullets/ballistic-tip/6-5mm-129gr-ballistic-tip
+google-oauth2|111273793361054745867,Nosler,Ballistic Tip,140,6.71,6.50,33.02,0.509,0.256,0.287,8.0,8.0,Nosler Ballistic Data,https://www.nosler.com/bullets/ballistic-tip/6-5mm-140gr-ballistic-tip
+google-oauth2|111273793361054745867,Nosler,AccuBond,120,6.71,6.50,28.19,0.465,0.234,0.246,8.0,8.0,Nosler AccuBond Line,https://www.nosler.com/bullets/accubond/6-5mm-120gr-accubond
+google-oauth2|111273793361054745867,Nosler,AccuBond,129,6.71,6.50,30.99,0.495,0.249,0.265,8.0,8.0,Nosler Product Page,https://www.nosler.com/bullets/accubond/6-5mm-129gr-accubond
+google-oauth2|111273793361054745867,Nosler,AccuBond,140,6.71,6.50,33.02,0.509,0.256,0.287,8.0,8.0,Nosler Technical Data,https://www.nosler.com/bullets/accubond/6-5mm-140gr-accubond
+google-oauth2|111273793361054745867,Nosler,AccuBond LR,129,6.71,6.50,30.99,0.588,0.296,0.265,8.0,8.0,Nosler Long Range,https://www.nosler.com/bullets/accubond-lr/6-5mm-129gr-accubond-lr
+google-oauth2|111273793361054745867,Nosler,AccuBond LR,142,6.71,6.50,34.04,0.719,0.362,0.291,8.0,7.5,Nosler LR Specifications,https://www.nosler.com/bullets/accubond-lr/6-5mm-142gr-accubond-lr
+google-oauth2|111273793361054745867,Nosler,Partition,120,6.71,6.50,28.19,0.435,0.218,0.246,8.0,8.0,Nosler Partition Line,https://www.nosler.com/bullets/partition/6-5mm-120gr-partition
+google-oauth2|111273793361054745867,Nosler,Partition,140,6.71,6.50,33.02,0.485,0.244,0.287,8.0,8.0,Nosler Classic Bullets,https://www.nosler.com/bullets/partition/6-5mm-140gr-partition
+google-oauth2|111273793361054745867,Nosler,Custom Competition,123,6.71,6.50,29.21,0.520,0.262,0.252,8.0,8.0,Nosler Competition Line,https://www.nosler.com/bullets/custom-competition/6-5mm-123gr-custom-competition
+google-oauth2|111273793361054745867,Nosler,Custom Competition,140,6.71,6.50,33.53,0.595,0.300,0.287,8.0,7.5,Nosler Match Bullets,https://www.nosler.com/bullets/custom-competition/6-5mm-140gr-custom-competition
+google-oauth2|111273793361054745867,Nosler,RDF,130,6.71,6.50,31.75,0.563,0.283,0.267,8.0,8.0,Nosler RDF Product Page,https://www.nosler.com/bullets/rdf/6-5mm-130gr-rdf
+google-oauth2|111273793361054745867,Nosler,RDF,140,6.71,6.50,33.53,0.615,0.310,0.287,8.0,7.5,Nosler Reduced Drag Factor,https://www.nosler.com/bullets/rdf/6-5mm-140gr-rdf
+google-oauth2|111273793361054745867,Nosler,E-Tip,120,6.71,6.50,30.48,0.410,0.205,0.246,8.0,8.0,Nosler Lead-Free Line,https://www.nosler.com/bullets/e-tip/6-5mm-120gr-e-tip
+google-oauth2|111273793361054745867,Nosler,E-Tip,130,6.71,6.50,32.26,0.445,0.223,0.267,8.0,8.0,Nosler E-Tip Specifications,https://www.nosler.com/bullets/e-tip/6-5mm-130gr-e-tip

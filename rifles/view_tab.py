@@ -13,7 +13,7 @@ def render_view_rifle_tab(user, supabase):
         response = (
             supabase.table("rifles")
             .select("*")
-            .eq("user_email", user["email"])
+            .eq("user_id", user["id"])
             .order("created_at", desc=True)
             .execute()
         )

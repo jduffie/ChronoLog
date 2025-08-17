@@ -1,0 +1,8 @@
+user_id,manufacturer,model,weight_grains,bullet_diameter_groove_mm,bore_diameter_land_mm,bullet_length_mm,ballistic_coefficient_g1,ballistic_coefficient_g7,sectional_density,min_req_twist_rate_in_per_rev,pref_twist_rate_in_per_rev,data_source_name,data_source_url
+google-oauth2|111273793361054745867,Norma,Golden Target,130,6.71,6.50,31.75,0.555,0.279,0.267,8.0,8.0,Norma Precision AB,https://www.norma-precision.com/en/product/6-5mm-130gr-golden-target/
+google-oauth2|111273793361054745867,Norma,Golden Target,140,6.71,6.50,33.53,0.595,0.300,0.287,8.0,7.5,Norma Match Bullets,https://www.norma-precision.com/en/product/6-5mm-140gr-golden-target/
+google-oauth2|111273793361054745867,Norma,Oryx,156,6.71,6.50,35.81,0.525,0.264,0.320,7.5,7.0,Norma Hunting Line,https://www.norma-precision.com/en/product/6-5mm-156gr-oryx/
+google-oauth2|111273793361054745867,Norma,Vulkan,140,6.71,6.50,33.02,0.485,0.244,0.287,8.0,8.0,Norma Vulkan Series,https://www.norma-precision.com/en/product/6-5mm-140gr-vulkan/
+google-oauth2|111273793361054745867,Norma,TipStrike,143,6.71,6.50,34.29,0.625,0.315,0.293,8.0,7.5,Norma TipStrike Line,https://www.norma-precision.com/en/product/6-5mm-143gr-tipstrike/
+google-oauth2|111273793361054745867,Norma,Diamond Line,130,6.71,6.50,31.75,0.545,0.274,0.267,8.0,8.0,Norma Diamond Series,https://www.norma-precision.com/en/product/6-5mm-130gr-diamond-line/
+google-oauth2|111273793361054745867,Norma,Plastic Point,156,6.71,6.50,35.81,0.515,0.259,0.320,7.5,7.0,Norma Traditional Line,https://www.norma-precision.com/en/product/6-5mm-156gr-plastic-point/

@@ -38,7 +38,7 @@ def  render_create_cartridge_tab(user, supabase):
         try:
             bullets_response = (
                 supabase.table("bullets")
-                .select("id, manufacturer, model, weight_grains, bullet_diameter_groove_mm")
+                .select("id, manufacturer, model, weight_grains, bullet_diameter_groove_mm, bore_diameter_land_mm")
                 .order("manufacturer, model, weight_grains")
                 .execute()
             )
@@ -49,7 +49,7 @@ def  render_create_cartridge_tab(user, supabase):
                 bullet_lookup = {}
                 
                 for bullet in bullets_response.data:
-                    label = f"{bullet['manufacturer']} {bullet['model']} - {bullet['weight_grains']}gr - {bullet['bullet_diameter_groove_mm']}mm"
+                    label = f"{bullet['manufacturer']} - {bullet['bore_diameter_land_mm']}mm - {bullet['model']} - {bullet['weight_grains']}gr "
                     bullet_options.append(label)
                     bullet_lookup[label] = bullet['id']
                 

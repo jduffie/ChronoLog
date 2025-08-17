@@ -13,7 +13,7 @@ def render_sessions_tab(user, supabase):
         sessions_response = (
             supabase.table("dope_sessions")
             .select("*, chrono_sessions(datetime_local)")
-            .eq("user_email", user["email"])
+            .eq("user_id", user["id"])
             .order("created_at", desc=True)
             .execute()
         )

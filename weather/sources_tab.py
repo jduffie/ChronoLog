@@ -15,7 +15,7 @@ def render_weather_sources_tab(user, supabase):
         weather_service = WeatherService(supabase)
 
         # Get all weather sources for the user
-        sources = weather_service.get_sources_for_user(user["email"])
+        sources = weather_service.get_sources_for_user(user["id"])
 
         # Create tabs for manage and add sources
         manage_tab, add_tab = st.tabs(["Manage Sources", "Add Source"])
@@ -29,7 +29,7 @@ def render_weather_sources_tab(user, supabase):
                 )
 
             # Get measurements for statistics
-            measurements = weather_service.get_all_measurements_for_user(user["email"])
+            measurements = weather_service.get_all_measurements_for_user(user["id"])
 
             # Display sources with their statistics
             for source in sources:
@@ -155,7 +155,7 @@ def render_weather_sources_tab(user, supabase):
                                             ),
                                         }
                                         weather_service.update_source(
-                                            source.id, user["email"], updates
+                                            source.id, user["id"], updates
                                         )
                                         st.success(
                                             "Weather source updated successfully!"
@@ -192,7 +192,7 @@ def render_weather_sources_tab(user, supabase):
                             ):
                                 try:
                                     weather_service.delete_source(
-                                        source.id, user["email"]
+                                        source.id, user["id"]
                                     )
                                     st.success(
                                         f"Weather source '{source.name}' deleted successfully!"
@@ -244,7 +244,7 @@ def render_weather_sources_tab(user, supabase):
                         try:
                             # Check if name already exists
                             existing = weather_service.get_source_by_name(
-                                user["email"], name.strip()
+                                user["id"], name.strip()
                             )
                             if existing:
                                 st.error(
@@ -252,7 +252,7 @@ def render_weather_sources_tab(user, supabase):
                                 )
                             else:
                                 source_data = {
-                                    "user_email": user["email"],
+                                    "user_id": user["id"],
                                     "name": name.strip(),
                                     "make": source_make,
                                     "source_type": source_type.lower(),

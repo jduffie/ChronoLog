@@ -258,7 +258,7 @@ class NominateModel:
 
     def save_range_submission(
         self,
-        user_email: str,
+        user_id: str,
         range_name: str,
         range_description: str,
         measurements: Dict[str, Any],
@@ -298,7 +298,7 @@ class NominateModel:
 
             # Prepare data for insertion
             range_data = {
-                "user_email": user_email,
+                "user_id": user_id,
                 "range_name": range_name,
                 "range_description": range_description,
                 "start_lat": start_lat,
@@ -332,13 +332,13 @@ class NominateModel:
             print(f"Error saving range submission: {e}")
             return False
 
-    def get_user_range_count(self, user_email: str, supabase_client) -> int:
+    def get_user_range_count(self, user_id: str, supabase_client) -> int:
         """Get the count of ranges submitted by a user."""
         try:
             result = (
                 supabase_client.table("ranges_submissions")
                 .select("id")
-                .eq("user_email", user_email)
+                .eq("user_id", user_id)
                 .execute()
             )
             return len(result.data) if result.data else 0

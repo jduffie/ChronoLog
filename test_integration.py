@@ -35,6 +35,7 @@ class BaseIntegrationTest(unittest.TestCase):
         cls.supabase_url = os.getenv("SUPABASE_URL", "https://test.supabase.co")
         cls.supabase_key = os.getenv("SUPABASE_KEY", "test-key")
         cls.test_user_email = "integration-test@chronolog.test"
+        cls.test_user_id = "google-oauth2|111273793361054745867"
 
         # Create test Supabase client (or mock for CI)
         if cls.supabase_url == "https://test.supabase.co":
@@ -144,7 +145,7 @@ class TestFileUploadIntegration(BaseIntegrationTest):
             # Create session
             session = ChronographSession(
                 id="test-session-123",
-                user_email=self.test_user_email,
+                user_id=self.test_user_id,
                 tab_name="Sheet1",
                 bullet_type=bullet_type,
                 bullet_grain=float(grain),
@@ -166,7 +167,7 @@ class TestFileUploadIntegration(BaseIntegrationTest):
             for _, row in df.iterrows():
                 measurement = ChronographMeasurement(
                     id=f'test-measurement-{int(row["Shot"])}',
-                    user_email=self.test_user_email,
+                    user_id=self.test_user_id,
                     chrono_session_id=session_id,
                     shot_number=int(row["Shot"]),
                     speed_fps=float(row["Velocity (fps)"]),
@@ -210,7 +211,7 @@ class TestCrossModuleIntegration(BaseIntegrationTest):
         # Create test session
         session = ChronographSession(
             id="test-session-123",
-            user_email=self.test_user_email,
+            user_id=self.test_user_id,
             tab_name="Integration Test",
             bullet_type="9mm FMJ",
             bullet_grain=124.0,
@@ -222,7 +223,7 @@ class TestCrossModuleIntegration(BaseIntegrationTest):
         # Create test measurement
         measurement = ChronographMeasurement(
             id="test-measurement-1",
-            user_email=self.test_user_email,
+            user_id=self.test_user_id,
             chrono_session_id="test-session-123",
             shot_number=1,
             speed_fps=2850.0,
@@ -267,7 +268,7 @@ class TestAuthenticationIntegration(BaseIntegrationTest):
             mock_response.data = [
                 {
                     "id": "session-1",
-                    "user_email": self.test_user_email,
+                    "user_id": self.test_user_id,
                     "bullet_type": "9mm FMJ",
                 }
             ]
@@ -316,7 +317,7 @@ class TestDatabaseTransactionIntegration(BaseIntegrationTest):
 
         session = ChronographSession(
             id="test-rollback-session",
-            user_email=self.test_user_email,
+            user_id=self.test_user_id,
             tab_name="Rollback Test",
             bullet_type="Test Bullet",
             bullet_grain=150.0,

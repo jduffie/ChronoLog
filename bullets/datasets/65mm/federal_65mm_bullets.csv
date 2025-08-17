@@ -1,0 +1,11 @@
+user_id,manufacturer,model,weight_grains,bullet_diameter_groove_mm,bore_diameter_land_mm,bullet_length_mm,ballistic_coefficient_g1,ballistic_coefficient_g7,sectional_density,min_req_twist_rate_in_per_rev,pref_twist_rate_in_per_rev,data_source_name,data_source_url
+google-oauth2|111273793361054745867,Federal,Terminal Ascent,130,6.71,6.50,31.75,0.533,0.268,0.267,8.0,8.0,Federal Premium Website,https://www.federalpremium.com/rifle/terminal-ascent/6-5-creedmoor-130gr-terminal-ascent/
+google-oauth2|111273793361054745867,Federal,Terminal Ascent,140,6.71,6.50,33.53,0.608,0.306,0.287,8.0,7.5,Federal Terminal Ascent Line,https://www.federalpremium.com/rifle/terminal-ascent/6-5-creedmoor-140gr-terminal-ascent/
+google-oauth2|111273793361054745867,Federal,Trophy Bonded Tip,140,6.71,6.50,33.02,0.495,0.249,0.287,8.0,8.0,Federal Trophy Bonded,https://www.federalpremium.com/rifle/trophy-bonded-tip/6-5-creedmoor-140gr-trophy-bonded-tip/
+google-oauth2|111273793361054745867,Federal,Trophy Copper,130,6.71,6.50,32.26,0.465,0.234,0.267,8.0,8.0,Federal Lead-Free Line,https://www.federalpremium.com/rifle/trophy-copper/6-5-creedmoor-130gr-trophy-copper/
+google-oauth2|111273793361054745867,Federal,Gold Medal,130,6.71,6.50,31.75,0.555,0.279,0.267,8.0,8.0,Federal Gold Medal Match,https://www.federalpremium.com/rifle/gold-medal/6-5-creedmoor-130gr-berger-hybrid-otm/
+google-oauth2|111273793361054745867,Federal,Gold Medal,140,6.71,6.50,33.53,0.595,0.300,0.287,8.0,7.5,Federal Match Ammunition,https://www.federalpremium.com/rifle/gold-medal/6-5-creedmoor-140gr-sierra-matchking/
+google-oauth2|111273793361054745867,Federal,Power-Shok,120,6.71,6.50,28.19,0.425,0.213,0.246,8.0,8.0,Federal Power-Shok Line,https://www.federalpremium.com/rifle/power-shok/6-5-creedmoor-120gr-soft-point/
+google-oauth2|111273793361054745867,Federal,Power-Shok,140,6.71,6.50,33.02,0.465,0.234,0.287,8.0,8.0,Federal Budget Line,https://www.federalpremium.com/rifle/power-shok/6-5-creedmoor-140gr-soft-point/
+google-oauth2|111273793361054745867,Federal,Fusion,140,6.71,6.50,33.02,0.485,0.244,0.287,8.0,8.0,Federal Fusion Hunting,https://www.federalpremium.com/rifle/fusion/6-5-creedmoor-140gr-fusion/
+google-oauth2|111273793361054745867,Federal,Premium,130,6.71,6.50,31.75,0.545,0.274,0.267,8.0,8.0,Federal Premium Line,https://www.federalpremium.com/rifle/premium/6-5-creedmoor-130gr-nosler-partition/

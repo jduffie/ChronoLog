@@ -207,7 +207,6 @@ def render_chronograph_import_tab(user, supabase, bucket):
                                 time_local = None
 
                     measurement_data = {
-                        "user_email": user["email"],
                         "user_id": user["id"],
                         "chrono_session_id": session_id,
                         "shot_number": shot_number,

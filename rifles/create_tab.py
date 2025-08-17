@@ -75,7 +75,7 @@ def render_create_rifle_tab(user, supabase):
                 # Create rifle entry
                 rifle_data = {
                     "id": str(uuid.uuid4()),
-                    "user_email": user["email"],
+                    "user_id": user["id"],
                     "name": name,
                     "barrel_twist_ratio": barrel_twist_ratio,
                     "barrel_length": barrel_length,

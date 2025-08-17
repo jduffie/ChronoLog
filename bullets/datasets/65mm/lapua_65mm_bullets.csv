@@ -1,0 +1,11 @@
+user_id,manufacturer,model,weight_grains,bullet_diameter_groove_mm,bore_diameter_land_mm,bullet_length_mm,ballistic_coefficient_g1,ballistic_coefficient_g7,sectional_density,min_req_twist_rate_in_per_rev,pref_twist_rate_in_per_rev,data_source_name,data_source_url
+google-oauth2|111273793361054745867,Lapua,Scenar,123,6.71,6.50,29.21,0.527,0.265,0.252,8.0,8.0,Lapua Official Website,https://www.lapua.com/product/6-5mm-123gr-scenar/
+google-oauth2|111273793361054745867,Lapua,Scenar,136,6.71,6.50,32.77,0.607,0.305,0.279,8.0,7.5,Lapua Scenar Line,https://www.lapua.com/product/6-5mm-136gr-scenar/
+google-oauth2|111273793361054745867,Lapua,Scenar,139,6.71,6.50,33.27,0.615,0.310,0.285,8.0,7.5,Lapua Target Bullets,https://www.lapua.com/product/6-5mm-139gr-scenar/
+google-oauth2|111273793361054745867,Lapua,Scenar-L,130,6.71,6.50,31.75,0.555,0.279,0.267,8.0,8.0,Lapua Scenar-L Series,https://www.lapua.com/product/6-5mm-130gr-scenar-l/
+google-oauth2|111273793361054745867,Lapua,Scenar-L,136,6.71,6.50,32.77,0.607,0.305,0.279,8.0,7.5,Lapua Match Bullets,https://www.lapua.com/product/6-5mm-136gr-scenar-l/
+google-oauth2|111273793361054745867,Lapua,Scenar-L,139,6.71,6.50,33.27,0.615,0.310,0.285,8.0,7.5,Lapua Premium Line,https://www.lapua.com/product/6-5mm-139gr-scenar-l/
+google-oauth2|111273793361054745867,Lapua,Mega,140,6.71,6.50,33.02,0.485,0.244,0.287,8.0,8.0,Lapua Mega Hunting,https://www.lapua.com/product/6-5mm-140gr-mega/
+google-oauth2|111273793361054745867,Lapua,Mega,155,6.71,6.50,35.81,0.525,0.264,0.318,7.5,7.0,Lapua Hunting Bullets,https://www.lapua.com/product/6-5mm-155gr-mega/
+google-oauth2|111273793361054745867,Lapua,Lock Base,120,6.71,6.50,28.19,0.435,0.218,0.246,8.0,8.0,Lapua Lock Base Line,https://www.lapua.com/product/6-5mm-120gr-lock-base/
+google-oauth2|111273793361054745867,Lapua,Lock Base,140,6.71,6.50,33.02,0.485,0.244,0.287,8.0,8.0,Lapua Traditional Bullets,https://www.lapua.com/product/6-5mm-140gr-lock-base/

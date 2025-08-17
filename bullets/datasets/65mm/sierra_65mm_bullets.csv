@@ -1,0 +1,13 @@
+user_id,manufacturer,model,weight_grains,bullet_diameter_groove_mm,bore_diameter_land_mm,bullet_length_mm,ballistic_coefficient_g1,ballistic_coefficient_g7,sectional_density,min_req_twist_rate_in_per_rev,pref_twist_rate_in_per_rev,data_source_name,data_source_url
+google-oauth2|111273793361054745867,Sierra,MatchKing,123,6.71,6.50,29.21,0.510,0.257,0.252,8.0,8.0,Sierra Bullets Official Website,https://www.sierrabullets.com/product/6-5mm-264-cal-123-gr-matchking-hpbt/
+google-oauth2|111273793361054745867,Sierra,MatchKing,130,6.71,6.50,31.75,0.555,0.279,0.267,8.0,8.0,Sierra Ballistics Data,https://www.sierrabullets.com/product/6-5mm-264-cal-130-gr-matchking-hpbt/
+google-oauth2|111273793361054745867,Sierra,MatchKing,140,6.71,6.50,33.53,0.595,0.300,0.287,8.0,7.5,Sierra Product Specifications,https://www.sierrabullets.com/product/6-5mm-264-cal-140-gr-matchking-hpbt/
+google-oauth2|111273793361054745867,Sierra,MatchKing,142,6.71,6.50,34.04,0.605,0.305,0.291,8.0,7.5,Sierra Technical Data,https://www.sierrabullets.com/product/6-5mm-264-cal-142-gr-matchking-hpbt/
+google-oauth2|111273793361054745867,Sierra,Tipped MatchKing,130,6.71,6.50,31.75,0.565,0.284,0.267,8.0,8.0,Sierra TMK Product Page,https://www.sierrabullets.com/product/6-5mm-264-cal-130-gr-tipped-matchking/
+google-oauth2|111273793361054745867,Sierra,Tipped MatchKing,140,6.71,6.50,33.53,0.608,0.306,0.287,8.0,7.5,Sierra Bullets Website,https://www.sierrabullets.com/product/6-5mm-264-cal-140-gr-tipped-matchking/
+google-oauth2|111273793361054745867,Sierra,GameKing,120,6.71,6.50,28.19,0.435,0.218,0.246,8.0,8.0,Sierra Hunting Bullets,https://www.sierrabullets.com/product/6-5mm-264-cal-120-gr-gameking-spbt/
+google-oauth2|111273793361054745867,Sierra,GameKing,140,6.71,6.50,33.02,0.495,0.249,0.287,8.0,8.0,Sierra Product Data,https://www.sierrabullets.com/product/6-5mm-264-cal-140-gr-gameking-spbt/
+google-oauth2|111273793361054745867,Sierra,Pro-Hunter,120,6.71,6.50,28.19,0.425,0.213,0.246,8.0,8.0,Sierra Traditional Line,https://www.sierrabullets.com/product/6-5mm-264-cal-120-gr-pro-hunter-sp/
+google-oauth2|111273793361054745867,Sierra,Pro-Hunter,140,6.71,6.50,33.02,0.485,0.244,0.287,8.0,8.0,Sierra Bullets Catalog,https://www.sierrabullets.com/product/6-5mm-264-cal-140-gr-pro-hunter-spbt/
+google-oauth2|111273793361054745867,Sierra,BlitzKing,100,6.71,6.50,25.40,0.395,0.198,0.205,9.0,8.5,Sierra Varmint Bullets,https://www.sierrabullets.com/product/6-5mm-264-cal-100-gr-blitzking/
+google-oauth2|111273793361054745867,Sierra,BlitzKing,120,6.71,6.50,28.19,0.445,0.223,0.246,8.0,8.0,Sierra BlitzKing Line,https://www.sierrabullets.com/product/6-5mm-264-cal-120-gr-blitzking/

@@ -152,7 +152,7 @@ class NominateController:
             # Save to database
             with st.spinner("Saving range data..."):
                 success = self.model.save_range_submission(
-                    user_email=user["email"],
+                    user_id=user["id"],
                     range_name=range_name,
                     range_description=range_description,
                     measurements=measurements,
@@ -211,7 +211,7 @@ class NominateController:
 
         # Check range limit
         try:
-            range_count = self.model.get_user_range_count(user["email"], supabase)
+            range_count = self.model.get_user_range_count(user["id"], supabase)
 
             if range_count >= 40:
                 st.error("🚫 **Maximum range limit reached**")

@@ -13,7 +13,7 @@ def render_weather_import_tab(user, supabase, bucket):
     weather_service = WeatherService(supabase)
 
     # Get existing weather sources for the user
-    sources = weather_service.get_sources_for_user(user["email"])
+    sources = weather_service.get_sources_for_user(user["id"])
 
     st.write("Import weather data from your weather devices.")
 
@@ -64,7 +64,7 @@ def render_file_upload(user, supabase, bucket, weather_service, selected_meter_i
     """Render the file upload section"""
 
     # Get selected meter
-    selected_source = weather_service.get_source_by_id(selected_meter_id, user["email"])
+    selected_source = weather_service.get_source_by_id(selected_meter_id, user["id"])
 
     if not selected_source:
         st.error("❌ Selected weather source not found. Please refresh the page.")
@@ -185,7 +185,7 @@ def render_file_upload(user, supabase, bucket, weather_service, selected_meter_i
             try:
                 weather_service.update_source_with_device_info(
                     selected_meter_id,
-                    user["email"],
+                    user["id"],
                     device_name,
                     device_model,
                     serial_number,
@@ -212,7 +212,7 @@ def render_file_upload(user, supabase, bucket, weather_service, selected_meter_i
 
                     # Check if measurement already exists using service
                     if weather_service.measurement_exists(
-                        user["email"], source_id, measurement_timestamp
+                        user["id"], source_id, measurement_timestamp
                     ):
                         skipped_measurements += 1
                         continue
@@ -228,7 +228,7 @@ def render_file_upload(user, supabase, bucket, weather_service, selected_meter_i
 
                     # Create measurement record with all available fields
                     measurement_data = {
-                        "user_email": user["email"],
+                        "user_id": user["id"],
                         "weather_source_id": source_id,
                         "measurement_timestamp": measurement_timestamp,
                         "uploaded_at": datetime.now(timezone.utc).isoformat(),
@@ -321,7 +321,7 @@ def render_file_upload(user, supabase, bucket, weather_service, selected_meter_i
 
             # Display source information
             try:
-                source = weather_service.get_source_by_id(source_id, user["email"])
+                source = weather_service.get_source_by_id(source_id, user["id"])
                 if source:
                     st.info(
                         f"📱 Weather Source: {source.display_name()} - {source.device_display()}"

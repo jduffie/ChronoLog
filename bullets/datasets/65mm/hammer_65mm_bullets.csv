@@ -1,0 +1,6 @@
+user_id,manufacturer,model,weight_grains,bullet_diameter_groove_mm,bore_diameter_land_mm,bullet_length_mm,ballistic_coefficient_g1,ballistic_coefficient_g7,sectional_density,min_req_twist_rate_in_per_rev,pref_twist_rate_in_per_rev,data_source_name,data_source_url
+google-oauth2|111273793361054745867,Hammer,Hunter,124,6.71,6.50,30.48,0.465,0.234,0.254,8.0,8.0,Hammer Bullets Official,https://hammerbullets.com/6-5mm-124gr-hunter/
+google-oauth2|111273793361054745867,Hammer,Hunter,131,6.71,6.50,31.75,0.485,0.244,0.269,8.0,8.0,Hammer Hunter Series,https://hammerbullets.com/6-5mm-131gr-hunter/
+google-oauth2|111273793361054745867,Hammer,Sledge Hammer,109,6.71,6.50,28.70,0.425,0.213,0.224,8.0,8.0,Hammer High Velocity,https://hammerbullets.com/6-5mm-109gr-sledge-hammer/
+google-oauth2|111273793361054745867,Hammer,Sledge Hammer,121,6.71,6.50,30.48,0.465,0.234,0.248,8.0,8.0,Hammer Light Bullets,https://hammerbullets.com/6-5mm-121gr-sledge-hammer/
+google-oauth2|111273793361054745867,Hammer,Absolute Hammer,123,6.71,6.50,30.48,0.475,0.239,0.252,8.0,8.0,Hammer Premium Line,https://hammerbullets.com/6-5mm-123gr-absolute-hammer/

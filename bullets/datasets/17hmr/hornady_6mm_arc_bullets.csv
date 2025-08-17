@@ -1,0 +1,7 @@
+user_id,manufacturer,model,weight_grains,bullet_diameter_groove_mm,bore_diameter_land_mm,bullet_length_mm,ballistic_coefficient_g1,ballistic_coefficient_g7,sectional_density,min_req_twist_rate_in_per_rev,pref_twist_rate_in_per_rev
+google-oauth2|111273793361054745867,Hornady,ELD Match,108,6.172,5.918,33.02,0.536,0.270,0.233,8.5,7.5
+google-oauth2|111273793361054745867,Hornady,ELD-X,103,6.172,5.918,31.75,0.512,0.258,0.222,9.0,8.0
+google-oauth2|111273793361054745867,Hornady,V-MAX,87,6.172,5.918,25.91,0.400,0.200,0.188,10.0,9.0
+google-oauth2|111273793361054745867,Hornady,BTHP Match,105,6.172,5.918,32.26,0.530,0.267,0.226,8.5,7.5
+google-oauth2|111273793361054745867,Hornady,SST,95,6.172,5.918,28.70,0.465,0.235,0.205,9.5,8.5
+google-oauth2|111273793361054745867,Hornady,CX,90,6.172,5.918,30.48,0.400,0.200,0.194,9.5,8.5

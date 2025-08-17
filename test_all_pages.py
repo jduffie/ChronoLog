@@ -5,13 +5,6 @@ from unittest.mock import MagicMock, Mock, patch
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from ammo.test_ammo import (
-    TestAmmoCreateTab,
-    TestAmmoDataValidation,
-    TestAmmoPageStructure,
-    TestAmmoViewTab,
-)
-
 # Import modular tests from subdirectories
 from chronograph.test_chronograph import (
     TestChronographImportTab,
@@ -51,7 +44,6 @@ class TestPageStructure(unittest.TestCase):
             "pages/3_⏱️_Chronograph.py",
             "pages/4_🌤️_Weather.py",
             "pages/5_🌍_Ranges.py",
-            "pages/6_📦_Ammo.py",
             "pages/7_📏_Rifles.py",
         ]
 
@@ -69,7 +61,6 @@ class TestPageStructure(unittest.TestCase):
             "pages/3_⏱️_Chronograph.py": ["streamlit", "handle_auth", "create_client"],
             "pages/4_🌤️_Weather.py": ["streamlit", "handle_auth", "create_client"],
             "pages/5_🌍_Ranges.py": ["streamlit", "handle_auth", "create_client"],
-            "pages/6_📦_Ammo.py": ["streamlit", "handle_auth", "create_client"],
             "pages/7_📏_Rifles.py": ["streamlit", "handle_auth", "create_client"],
         }
 
@@ -94,7 +85,6 @@ class TestPageStructure(unittest.TestCase):
             "pages/3_⏱️_Chronograph.py",
             "pages/4_🌤️_Weather.py",
             "pages/5_🌍_Ranges.py",
-            "pages/6_📦_Ammo.py",
             "pages/7_📏_Rifles.py",
         ]
 
@@ -120,7 +110,6 @@ class TestPageStructure(unittest.TestCase):
             "pages/3_⏱️_Chronograph.py",
             "pages/4_🌤️_Weather.py",
             "pages/5_🌍_Ranges.py",
-            "pages/6_📦_Ammo.py",
             "pages/7_📏_Rifles.py",
         ]
 
@@ -144,7 +133,6 @@ class TestPageStructure(unittest.TestCase):
             "pages/3_⏱️_Chronograph.py",
             "pages/4_🌤️_Weather.py",
             "pages/5_🌍_Ranges.py",
-            "pages/6_📦_Ammo.py",
             "pages/7_📏_Rifles.py",
         ]
 
@@ -179,7 +167,6 @@ class TestPageConfiguration(unittest.TestCase):
             "pages/3_⏱️_Chronograph.py": ("Chronograph", "📁"),
             "pages/4_🌤️_Weather.py": ("Weather - ChronoLog", "🌤️"),
             "pages/5_🌍_Ranges.py": ("Ranges", "🌍"),
-            "pages/6_📦_Ammo.py": ("Ammo", "📦"),
             "pages/7_📏_Rifles.py": ("Rifles", "📏"),
         }
 
@@ -208,7 +195,6 @@ class TestPageConfiguration(unittest.TestCase):
             "pages/3_⏱️_Chronograph.py",
             "pages/4_🌤️_Weather.py",
             "pages/5_🌍_Ranges.py",
-            "pages/6_📦_Ammo.py",
             "pages/7_📏_Rifles.py",
         ]
 
@@ -312,7 +298,6 @@ class TestDatabaseConnections(unittest.TestCase):
             "pages/3_⏱️_Chronograph.py",
             "pages/4_🌤️_Weather.py",
             "pages/5_🌍_Ranges.py",
-            "pages/6_📦_Ammo.py",
             "pages/7_📏_Rifles.py",
         ]
 
@@ -340,7 +325,6 @@ class TestDatabaseConnections(unittest.TestCase):
             "pages/3_⏱️_Chronograph.py",
             "pages/4_🌤️_Weather.py",
             "pages/5_🌍_Ranges.py",
-            "pages/6_📦_Ammo.py",
             "pages/7_📏_Rifles.py",
         ]
 

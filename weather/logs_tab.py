@@ -15,7 +15,7 @@ def render_weather_logs_tab(user, supabase):
         weather_service = WeatherService(supabase)
 
         # Get all weather sources for the user
-        sources = weather_service.get_sources_for_user(user["email"])
+        sources = weather_service.get_sources_for_user(user["id"])
 
         if not sources:
             st.info(
@@ -24,7 +24,7 @@ def render_weather_logs_tab(user, supabase):
             return
 
         # Get all measurements for the user
-        measurements = weather_service.get_all_measurements_for_user(user["email"])
+        measurements = weather_service.get_all_measurements_for_user(user["id"])
 
         # Create a summary table by weather source
         st.subheader("📋 Weather Sources Summary")

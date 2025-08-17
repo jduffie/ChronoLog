@@ -1,0 +1,8 @@
+user_id,manufacturer,model,weight_grains,bullet_diameter_groove_mm,bore_diameter_land_mm,bullet_length_mm,ballistic_coefficient_g1,ballistic_coefficient_g7,sectional_density,min_req_twist_rate_in_per_rev,pref_twist_rate_in_per_rev,data_source_name,data_source_url
+google-oauth2|111273793361054745867,Remington,Core-Lokt,120,6.71,6.50,28.19,0.425,0.213,0.246,8.0,8.0,Remington Ammunition,https://www.remington.com/ammunition/rifle/core-lokt/6-5mm-creedmoor-120gr-core-lokt
+google-oauth2|111273793361054745867,Remington,Core-Lokt,140,6.71,6.50,33.02,0.465,0.234,0.287,8.0,8.0,Remington Core-Lokt Line,https://www.remington.com/ammunition/rifle/core-lokt/6-5mm-creedmoor-140gr-core-lokt
+google-oauth2|111273793361054745867,Remington,Premier,130,6.71,6.50,31.75,0.545,0.274,0.267,8.0,8.0,Remington Premier Match,https://www.remington.com/ammunition/rifle/premier/6-5mm-creedmoor-130gr-premier-match
+google-oauth2|111273793361054745867,Remington,Premier,140,6.71,6.50,33.53,0.585,0.295,0.287,8.0,7.5,Remington Premium Line,https://www.remington.com/ammunition/rifle/premier/6-5mm-creedmoor-140gr-premier-accutip
+google-oauth2|111273793361054745867,Remington,UMC,120,6.71,6.50,28.19,0.415,0.208,0.246,8.0,8.0,Remington UMC Value Line,https://www.remington.com/ammunition/rifle/umc/6-5mm-creedmoor-120gr-umc
+google-oauth2|111273793361054745867,Remington,UMC,140,6.71,6.50,33.02,0.455,0.229,0.287,8.0,8.0,Remington Budget Ammunition,https://www.remington.com/ammunition/rifle/umc/6-5mm-creedmoor-140gr-umc
+google-oauth2|111273793361054745867,Remington,Express,120,6.71,6.50,28.19,0.425,0.213,0.246,8.0,8.0,Remington Express Line,https://www.remington.com/ammunition/rifle/express/6-5mm-creedmoor-120gr-express
