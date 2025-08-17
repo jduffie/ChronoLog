@@ -9,13 +9,13 @@ class ChronographService:
     def __init__(self, supabase_client):
         self.supabase = supabase_client
 
-    def get_sessions_for_user(self, user_email: str) -> List[ChronographSession]:
+    def get_sessions_for_user(self, user_id: str) -> List[ChronographSession]:
         """Get all chronograph sessions for a user, ordered by date descending"""
         try:
             response = (
                 self.supabase.table("chrono_sessions")
                 .select("*")
-                .eq("user_email", user_email)
+                .eq("user_id", user_id)
                 .order("datetime_local", desc=True)
                 .execute()
             )
@@ -29,7 +29,7 @@ class ChronographService:
             raise Exception(f"Error fetching sessions: {str(e)}")
 
     def get_session_by_id(
-        self, session_id: str, user_email: str
+        self, session_id: str, user_id: str
     ) -> Optional[ChronographSession]:
         """Get a specific chronograph session by ID"""
         try:
@@ -37,7 +37,7 @@ class ChronographService:
                 self.supabase.table("chrono_sessions")
                 .select("*")
                 .eq("id", session_id)
-                .eq("user_email", user_email)
+                .eq("user_id", user_id)
                 .single()
                 .execute()
             )
@@ -51,14 +51,14 @@ class ChronographService:
             raise Exception(f"Error fetching session: {str(e)}")
 
     def get_measurements_for_session(
-        self, user_email: str, session_id: str
+        self, user_id: str, session_id: str
     ) -> List[ChronographMeasurement]:
         """Get all measurements for a specific session"""
         try:
             response = (
                 self.supabase.table("chrono_measurements")
                 .select("*")
-                .eq("user_email", user_email)
+                .eq("user_id", user_id)
                 .eq("chrono_session_id", session_id)
                 .order("shot_number")
                 .execute()
@@ -73,18 +73,18 @@ class ChronographService:
             raise Exception(f"Error fetching measurements: {str(e)}")
 
     def get_measurements_by_session_id(
-        self, session_id: str, user_email: str
+        self, session_id: str, user_id: str
     ) -> List[ChronographMeasurement]:
         """Get measurements for a session by session ID"""
         try:
-            return self.get_measurements_for_session(user_email, session_id)
+            return self.get_measurements_for_session(user_id, session_id)
 
         except Exception as e:
             raise Exception(f"Error fetching measurements by session ID: {str(e)}")
 
     def get_sessions_filtered(
         self,
-        user_email: str,
+        user_id: str,
         bullet_type: Optional[str] = None,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
@@ -94,7 +94,7 @@ class ChronographService:
             query = (
                 self.supabase.table("chrono_sessions")
                 .select("*")
-                .eq("user_email", user_email)
+                .eq("user_id", user_id)
             )
 
             if bullet_type and bullet_type != "All":
@@ -116,13 +116,13 @@ class ChronographService:
         except Exception as e:
             raise Exception(f"Error fetching filtered sessions: {str(e)}")
 
-    def get_unique_bullet_types(self, user_email: str) -> List[str]:
+    def get_unique_bullet_types(self, user_id: str) -> List[str]:
         """Get unique bullet types for a user"""
         try:
             response = (
                 self.supabase.table("chrono_sessions")
                 .select("bullet_type")
-                .eq("user_email", user_email)
+                .eq("user_id", user_id)
                 .execute()
             )
 
@@ -144,14 +144,14 @@ class ChronographService:
             raise Exception(f"Error fetching bullet types: {str(e)}")
 
     def session_exists(
-        self, user_email: str, tab_name: str, datetime_local: str
+        self, user_id: str, tab_name: str, datetime_local: str
     ) -> bool:
         """Check if a session already exists"""
         try:
             response = (
                 self.supabase.table("chrono_sessions")
                 .select("id")
-                .eq("user_email", user_email)
+                .eq("user_id", user_id)
                 .eq("tab_name", tab_name)
                 .eq("datetime_local", datetime_local)
                 .execute()
@@ -205,14 +205,14 @@ class ChronographService:
             raise Exception(f"Error creating measurement: {str(e)}")
 
     def get_measurements_for_stats(
-        self, user_email: str, session_id: str
+        self, user_id: str, session_id: str
     ) -> List[float]:
         """Get speed measurements for calculating session statistics"""
         try:
             response = (
                 self.supabase.table("chrono_measurements")
                 .select("speed_fps")
-                .eq("user_email", user_email)
+                .eq("user_id", user_id)
                 .eq("chrono_session_id", session_id)
                 .execute()
             )

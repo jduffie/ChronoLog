@@ -87,7 +87,6 @@ The application uses a comprehensive Supabase database with the following tables
 - **cartridges**: User cartridge inventory linking factory/custom specs
 
 #### Legacy Tables
-- **ammo**: Legacy ammo table (deprecated, replaced by cartridge system)
 - **measurements**: Legacy measurements table (replaced by chrono_measurements)
 
 #### Views
@@ -111,7 +110,7 @@ The application uses a comprehensive Supabase database with the following tables
 
 **chrono_sessions**
 - id (uuid, PK): Session identifier
-- user_email (text, NOT NULL): Session owner
+- user_id (text, NOT NULL): Auth0 user identifier
 - tab_name (text, NOT NULL): UI tab identifier
 - bullet_type (text, NOT NULL): Bullet type/model
 - bullet_grain (numeric): Bullet weight in grains
@@ -128,6 +127,7 @@ The application uses a comprehensive Supabase database with the following tables
 **chrono_measurements**
 - id (uuid, PK): Measurement identifier
 - user_email (text, NOT NULL): Measurement owner
+- user_id (text): Auth0 user identifier
 - chrono_session_id (uuid, FK): Parent session
 - shot_number (integer, NOT NULL): Shot sequence number
 - speed_fps (numeric, NOT NULL): Velocity in feet per second
@@ -142,6 +142,7 @@ The application uses a comprehensive Supabase database with the following tables
 **dope_sessions**
 - id (uuid, PK): DOPE session identifier
 - user_email (text, NOT NULL): Session owner
+- user_id (text): Auth0 user identifier
 - session_name (text): Descriptive session name
 - chrono_session_id (uuid, FK): Linked chronograph session
 - range_submission_id (uuid, FK): Associated range
@@ -161,6 +162,7 @@ The application uses a comprehensive Supabase database with the following tables
 - id (uuid, PK): DOPE measurement identifier
 - dope_session_id (uuid, FK, NOT NULL): Parent session
 - user_email (text, NOT NULL): Measurement owner
+- user_id (text): Auth0 user identifier
 - shot_number (integer): Shot sequence
 - datetime_shot (timestamptz): Shot timestamp
 - speed_fps (real): Chronograph velocity
@@ -183,6 +185,7 @@ The application uses a comprehensive Supabase database with the following tables
 **weather_source**
 - id (uuid, PK): Weather source identifier
 - user_email (text, NOT NULL): Device owner
+- user_id (text): Auth0 user identifier
 - name (text, NOT NULL): Device name
 - source_type (text, DEFAULT 'meter'): Source type
 - make (text): Manufacturer
@@ -195,6 +198,7 @@ The application uses a comprehensive Supabase database with the following tables
 **weather_measurements**
 - id (uuid, PK): Weather measurement identifier
 - user_email (text, NOT NULL): Measurement owner
+- user_id (text): Auth0 user identifier
 - weather_source_id (uuid, FK): Source device
 - measurement_timestamp (timestamptz, NOT NULL): Measurement time
 - uploaded_at (timestamptz): Upload timestamp
@@ -226,6 +230,7 @@ The application uses a comprehensive Supabase database with the following tables
 **rifles**
 - id (uuid, PK): Rifle identifier
 - user_email (text, NOT NULL): Rifle owner
+- user_id (text): Auth0 user identifier
 - name (text, NOT NULL): Rifle name/model
 - barrel_twist_ratio (text): Twist rate (e.g., "1:8")
 - barrel_length (text): Barrel length
@@ -278,6 +283,7 @@ The application uses a comprehensive Supabase database with the following tables
 **ranges**
 - id (uuid, PK): Range identifier
 - user_email (text, NOT NULL): Range submitter
+- user_id (text): Auth0 user identifier
 - range_name (text, NOT NULL): Range name
 - range_description (text): Range description
 - start_lat (numeric, NOT NULL): Firing position latitude
@@ -297,6 +303,7 @@ The application uses a comprehensive Supabase database with the following tables
 **ranges_submissions**
 - id (uuid, PK): Range submission identifier
 - user_email (text, NOT NULL): Submitter
+- user_id (text): Auth0 user identifier
 - range_name (text, NOT NULL): Proposed range name
 - range_description (text): Range description
 - start_lat (numeric, NOT NULL): Firing position latitude

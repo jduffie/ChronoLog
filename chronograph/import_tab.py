@@ -101,7 +101,7 @@ def render_chronograph_import_tab(user, supabase, bucket):
             chrono_service = ChronographService(supabase)
 
             # Check if a session already exists at this date/time for this user
-            if chrono_service.session_exists(user["email"], sheet, session_timestamp):
+            if chrono_service.session_exists(user["id"], sheet, session_timestamp):
                 st.warning(
                     f"⚠️ Session already exists for {pd.to_datetime(session_timestamp).strftime('%Y-%m-%d %H:%M')} - skipping sheet '{sheet}'"
                 )
@@ -133,7 +133,7 @@ def render_chronograph_import_tab(user, supabase, bucket):
             session_id = str(uuid.uuid4())
             session_data = {
                 "id": session_id,
-                "user_email": user["email"],
+                "user_id": user["id"],
                 "tab_name": sheet,
                 "bullet_type": bullet_type,
                 "bullet_grain": bullet_grain,
@@ -208,6 +208,7 @@ def render_chronograph_import_tab(user, supabase, bucket):
 
                     measurement_data = {
                         "user_email": user["email"],
+                        "user_id": user["id"],
                         "chrono_session_id": session_id,
                         "shot_number": shot_number,
                         "speed_fps": speed_fps,
@@ -247,7 +248,7 @@ def render_chronograph_import_tab(user, supabase, bucket):
             if valid_measurements > 0:
                 # Get all measurements for this session to calculate stats
                 speeds = chrono_service.get_measurements_for_stats(
-                    user["email"], session_id
+                    user["id"], session_id
                 )
 
                 if speeds:

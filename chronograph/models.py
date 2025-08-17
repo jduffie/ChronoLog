@@ -10,7 +10,7 @@ class ChronographSession:
     """Entity representing a chronograph session"""
 
     id: str
-    user_email: str
+    user_id: str
     tab_name: str
     bullet_type: str
     bullet_grain: Optional[float]
@@ -29,7 +29,7 @@ class ChronographSession:
         """Create a ChronographSession from a Supabase record"""
         return cls(
             id=record["id"],
-            user_email=record["user_email"],
+            user_id=record["user_id"],
             tab_name=record["tab_name"],
             bullet_type=record["bullet_type"],
             bullet_grain=record.get("bullet_grain"),
@@ -93,6 +93,7 @@ class ChronographMeasurement:
 
     id: str
     user_email: str
+    user_id: Optional[str]
     chrono_session_id: str
     shot_number: int
     speed_fps: float
@@ -110,6 +111,7 @@ class ChronographMeasurement:
         return cls(
             id=record["id"],
             user_email=record["user_email"],
+            user_id=record.get("user_id"),
             chrono_session_id=record["chrono_session_id"],
             shot_number=record["shot_number"],
             speed_fps=record["speed_fps"],

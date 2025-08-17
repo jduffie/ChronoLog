@@ -19,13 +19,14 @@ class TestChronographService(unittest.TestCase):
     def setUp(self):
         self.mock_supabase = Mock()
         self.service = ChronographService(self.mock_supabase)
-        self.user_email = "test@example.com"
+        self.user_id = "test@example.com"
+        self.user_id = "google-oauth2|111273793361054745867"
 
     def test_get_sessions_for_user(self):
         mock_data = [
             {
                 "id": "session-1",
-                "user_email": "test@example.com",
+                "user_id": "google-oauth2|111273793361054745867",
                 "tab_name": "Sheet1",
                 "bullet_type": "9mm FMJ",
                 "bullet_grain": 115.0,
@@ -48,7 +49,7 @@ class TestChronographService(unittest.TestCase):
             mock_response
         )
 
-        sessions = self.service.get_sessions_for_user(self.user_email)
+        sessions = self.service.get_sessions_for_user(self.user_id)
 
         self.assertEqual(len(sessions), 1)
         self.assertIsInstance(sessions[0], ChronographSession)
@@ -63,7 +64,7 @@ class TestChronographService(unittest.TestCase):
             mock_response
         )
 
-        sessions = self.service.get_sessions_for_user(self.user_email)
+        sessions = self.service.get_sessions_for_user(self.user_id)
 
         self.assertEqual(len(sessions), 0)
 
@@ -71,7 +72,7 @@ class TestChronographService(unittest.TestCase):
         session_id = "session-1"
         mock_data = {
             "id": session_id,
-            "user_email": self.user_email,
+            "user_id": self.user_id,
             "tab_name": "Sheet1",
             "bullet_type": "9mm FMJ",
             "bullet_grain": 115.0,
@@ -87,7 +88,7 @@ class TestChronographService(unittest.TestCase):
             mock_response
         )
 
-        session = self.service.get_session_by_id(session_id, self.user_email)
+        session = self.service.get_session_by_id(session_id, self.user_id)
 
         self.assertIsInstance(session, ChronographSession)
         self.assertEqual(session.id, session_id)
@@ -98,7 +99,7 @@ class TestChronographService(unittest.TestCase):
         mock_data = [
             {
                 "id": "measurement-1",
-                "user_email": self.user_email,
+                "user_email": self.user_id,
                 "chrono_session_id": session_id,
                 "shot_number": 1,
                 "speed_fps": 1200.5,
@@ -117,7 +118,7 @@ class TestChronographService(unittest.TestCase):
         )
 
         measurements = self.service.get_measurements_for_session(
-            self.user_email, session_id
+            self.user_id, session_id
         )
 
         self.assertEqual(len(measurements), 1)
@@ -134,7 +135,7 @@ class TestChronographService(unittest.TestCase):
         )
 
         exists = self.service.session_exists(
-            self.user_email, "Sheet1", "2023-12-01T10:00:00"
+            self.user_id, "Sheet1", "2023-12-01T10:00:00"
         )
 
         self.assertTrue(exists)
@@ -148,14 +149,14 @@ class TestChronographService(unittest.TestCase):
         )
 
         exists = self.service.session_exists(
-            self.user_email, "Sheet1", "2023-12-01T10:00:00"
+            self.user_id, "Sheet1", "2023-12-01T10:00:00"
         )
 
         self.assertFalse(exists)
 
     def test_create_session(self):
         session_data = {
-            "user_email": self.user_email,
+            "user_email": self.user_id,
             "tab_name": "Sheet1",
             "bullet_type": "9mm FMJ",
         }
@@ -187,7 +188,7 @@ class TestChronographService(unittest.TestCase):
             mock_response
         )
 
-        bullet_types = self.service.get_unique_bullet_types(self.user_email)
+        bullet_types = self.service.get_unique_bullet_types(self.user_id)
 
         expected_types = [".380 Auto", ".45 ACP", "9mm FMJ"]
         self.assertEqual(bullet_types, expected_types)
@@ -199,6 +200,7 @@ class TestChronographModels(unittest.TestCase):
         record = {
             "id": "session-1",
             "user_email": "test@example.com",
+            "user_id": "google-oauth2|111273793361054745867",
             "tab_name": "Sheet1",
             "bullet_type": "9mm FMJ",
             "bullet_grain": 115.0,
@@ -224,7 +226,7 @@ class TestChronographModels(unittest.TestCase):
     def test_chronograph_session_display_methods(self):
         session = ChronographSession(
             id="session-1",
-            user_email="test@example.com",
+            user_id="google-oauth2|111273793361054745867",
             tab_name="Sheet1",
             bullet_type="9mm FMJ",
             bullet_grain=115.0,
@@ -250,6 +252,7 @@ class TestChronographModels(unittest.TestCase):
         record = {
             "id": "measurement-1",
             "user_email": "test@example.com",
+            "user_id": "google-oauth2|111273793361054745867",
             "chrono_session_id": "session-1",
             "shot_number": 1,
             "speed_fps": 1200.5,

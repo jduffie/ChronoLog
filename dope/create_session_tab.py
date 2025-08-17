@@ -69,7 +69,7 @@ def render_create_session_tab(user, supabase):
         chrono_sessions = (
             supabase.table("chrono_sessions")
             .select("*")
-            .eq("user_email", user["email"])
+            .eq("user_id", user["id"])
             .order("datetime_local", desc=True)
             .execute()
         )
@@ -78,7 +78,7 @@ def render_create_session_tab(user, supabase):
         existing_dope_sessions = (
             supabase.table("dope_sessions")
             .select("chrono_session_id")
-            .eq("user_email", user["email"])
+            .eq("user_id", user["id"])
             .execute()
         )
         used_chrono_session_ids = {

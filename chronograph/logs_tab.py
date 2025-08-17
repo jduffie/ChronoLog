@@ -15,7 +15,7 @@ def render_logs_tab(user, supabase):
         chrono_service = ChronographService(supabase)
 
         # Get all sessions for the user
-        sessions = chrono_service.get_sessions_for_user(user["email"])
+        sessions = chrono_service.get_sessions_for_user(user["id"])
 
         if not sessions:
             st.info("No chronograph logs found. Import some data files to get started!")
@@ -171,7 +171,7 @@ def render_logs_tab(user, supabase):
                 session = filtered_sessions[idx]
                 try:
                     measurements = chrono_service.get_measurements_by_session_id(
-                        session.id, user["email"]
+                        session.id, user["id"]
                     )
                     for measurement in measurements:
                         all_measurements.append(

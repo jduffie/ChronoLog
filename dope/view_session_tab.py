@@ -28,7 +28,7 @@ def render_view_session_tab(user, supabase):
             rifles(name)
         """
             )
-            .eq("user_email", user["email"])
+            .eq("user_id", user["id"])
             .order("created_at", desc=True)
             .execute()
         )
