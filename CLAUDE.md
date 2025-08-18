@@ -44,6 +44,29 @@ python verify_supabase.py
 streamlit run ChronoLog.py
 ```
 
+### Testing Commands
+
+**IMPORTANT**: All tests must pass before committing code. Run both unit and integration tests:
+
+```bash
+# Run all unit tests
+source venv/bin/activate
+python run_all_tests.py
+
+# Run integration tests
+python run_integration_tests.py
+
+# Both test suites must pass before any commit
+```
+
+### Commit Requirements
+
+Before committing any code changes:
+1. **Run all tests** - Both unit and integration tests must pass
+2. **Verify functionality** - Test the specific features you modified
+3. **Check for breaking changes** - Ensure existing functionality still works
+4. **Only commit if all tests pass** - Never commit code with failing tests
+
 ## Architecture Overview
 
 ### Core Components
