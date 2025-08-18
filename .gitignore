@@ -201,3 +201,4 @@ cython_debug/
 
 **/node_modules/**
 **/package*.json
+.streamlit/secrets.toml

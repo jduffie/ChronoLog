@@ -1,30 +1,30 @@
-from datetime import datetime
-
 import pandas as pd
 import streamlit as st
+
+from .models import BulletModel
+from .service import BulletsService
 
 
 def render_view_bullets_tab(user, supabase):
     """Render the View Bullets tab"""
     st.header("📋 View Bullets Entries")
 
+    # Initialize service
+    bullets_service = BulletsService(supabase)
+
     try:
         # Get all bullets entries (globally available, admin-maintained)
-        response = (
-            supabase.table("bullets")
-            .select("*")
-            .order("manufacturer, model, weight_grains")
-            .execute()
-        )
+        bullets = bullets_service.get_all_bullets()
 
-        if not response.data:
+        if not bullets:
             st.info(
                 "📭 No bullets available in the database. Please contact an administrator to add bullet specifications."
             )
             return
 
         # Convert to DataFrame for better display
-        df = pd.DataFrame(response.data)
+        bullet_dicts = [bullet.__dict__ for bullet in bullets]
+        df = pd.DataFrame(bullet_dicts)
 
         # Display summary stats
         st.subheader("📊 Summary")
@@ -58,18 +58,23 @@ def render_view_bullets_tab(user, supabase):
             weights = ["All"] + sorted(df["weight_grains"].unique().tolist())
             selected_weight = st.selectbox("Filter by Weight:", weights)
 
-        # Apply filters
-        filtered_df = df.copy()
-        if selected_manufacturer != "All":
-            filtered_df = filtered_df[filtered_df["manufacturer"] == selected_manufacturer]
-        if selected_bore_diameter_mm != "All":
-            filtered_df = filtered_df[filtered_df["bore_diameter_land_mm"] == selected_bore_diameter_mm]
-        if selected_weight != "All":
-            filtered_df = filtered_df[filtered_df["weight_grains"] == selected_weight]
+        # Apply filters using service
+        if selected_manufacturer == "All" and selected_bore_diameter_mm == "All" and selected_weight == "All":
+            filtered_bullets = bullets
+        else:
+            filtered_bullets = bullets_service.filter_bullets(
+                manufacturer=selected_manufacturer if selected_manufacturer != "All" else None,
+                bore_diameter_mm=selected_bore_diameter_mm if selected_bore_diameter_mm != "All" else None,
+                weight_grains=selected_weight if selected_weight != "All" else None
+            )
+        
+        # Convert filtered results to DataFrame
+        filtered_bullet_dicts = [bullet.__dict__ for bullet in filtered_bullets]
+        filtered_df = pd.DataFrame(filtered_bullet_dicts) if filtered_bullets else pd.DataFrame()
 
         # Display filtered results count
-        if len(filtered_df) != len(df):
-            st.info(f"Showing {len(filtered_df)} of {len(df)} entries")
+        if len(filtered_bullets) != len(bullets):
+            st.info(f"Showing {len(filtered_bullets)} of {len(bullets)} entries")
 
         # Display the table
         st.subheader("📝 Bullets Entries")
@@ -160,12 +165,8 @@ def render_view_bullets_tab(user, supabase):
             with st.expander("Edit a bullet entry"):
                 # Create list of entries for editing
                 entry_options = []
-                for _, row in filtered_df.iterrows():
-                    entry_label = (
-                        f"{row['manufacturer']} {row['model']} - {row['weight_grains']}gr - {row['bullet_diameter_groove_mm']}mm"
-                    )
-                    # Convert Series to dict to avoid pandas Series comparison issues in Streamlit
-                    entry_options.append((entry_label, row.to_dict()))
+                for bullet in filtered_bullets:
+                    entry_options.append((bullet.display_name, bullet))
 
                 if entry_options:
                     selected_entry = st.selectbox(
@@ -176,7 +177,7 @@ def render_view_bullets_tab(user, supabase):
                     )
 
                     if selected_entry:
-                        entry_data = selected_entry[1]
+                        bullet_model = selected_entry[1]
                         
                         # Create edit form
                         with st.form("edit_bullet_form"):
@@ -186,13 +187,13 @@ def render_view_bullets_tab(user, supabase):
                             with col1:
                                 manufacturer = st.text_input(
                                     "Manufacturer/Brand *",
-                                    value=entry_data["manufacturer"],
+                                    value=bullet_model.manufacturer,
                                     help="The bullet manufacturer or brand name",
                                 )
 
                                 model = st.text_input(
                                     "Model/Type *",
-                                    value=entry_data["model"],
+                                    value=bullet_model.model,
                                     help="The specific bullet model or type",
                                 )
 
@@ -201,7 +202,7 @@ def render_view_bullets_tab(user, supabase):
                                     min_value=1,
                                     max_value=1000,
                                     step=1,
-                                    value=int(entry_data["weight_grains"]),
+                                    value=bullet_model.weight_grains,
                                     help="The bullet weight in grains",
                                 )
 
@@ -212,7 +213,7 @@ def render_view_bullets_tab(user, supabase):
                                     max_value=50.0,
                                     step=0.001,
                                     format="%.3f",
-                                    value=float(entry_data["bullet_diameter_groove_mm"]),
+                                    value=bullet_model.bullet_diameter_groove_mm,
                                     help="The bullet diameter at the groove in millimeters",
                                 )
 
@@ -222,7 +223,7 @@ def render_view_bullets_tab(user, supabase):
                                     max_value=50.0,
                                     step=0.001,
                                     format="%.3f",
-                                    value=float(entry_data["bore_diameter_land_mm"]),
+                                    value=bullet_model.bore_diameter_land_mm,
                                     help="The bore diameter at the land in millimeters",
                                 )
 
@@ -236,7 +237,7 @@ def render_view_bullets_tab(user, supabase):
                                     max_value=200.0,
                                     step=0.1,
                                     format="%.1f",
-                                    value=float(entry_data["bullet_length_mm"]) if pd.notna(entry_data["bullet_length_mm"]) and str(entry_data["bullet_length_mm"]) != "N/A" else 0.0,
+                                    value=bullet_model.bullet_length_mm if bullet_model.bullet_length_mm is not None else 0.0,
                                     help="The bullet length in millimeters (optional)",
                                 )
 
@@ -246,7 +247,7 @@ def render_view_bullets_tab(user, supabase):
                                     max_value=2.0,
                                     step=0.001,
                                     format="%.3f",
-                                    value=float(entry_data["sectional_density"]) if pd.notna(entry_data["sectional_density"]) and str(entry_data["sectional_density"]) != "N/A" else 0.0,
+                                    value=bullet_model.sectional_density if bullet_model.sectional_density is not None else 0.0,
                                     help="The sectional density (weight/diameter²) (optional)",
                                 )
 
@@ -257,7 +258,7 @@ def render_view_bullets_tab(user, supabase):
                                     max_value=2.0,
                                     step=0.001,
                                     format="%.3f",
-                                    value=float(entry_data["ballistic_coefficient_g1"]) if pd.notna(entry_data["ballistic_coefficient_g1"]) and str(entry_data["ballistic_coefficient_g1"]) != "N/A" else 0.0,
+                                    value=bullet_model.ballistic_coefficient_g1 if bullet_model.ballistic_coefficient_g1 is not None else 0.0,
                                     help="The G1 ballistic coefficient (optional)",
                                 )
 
@@ -267,7 +268,7 @@ def render_view_bullets_tab(user, supabase):
                                     max_value=2.0,
                                     step=0.001,
                                     format="%.3f",
-                                    value=float(entry_data["ballistic_coefficient_g7"]) if pd.notna(entry_data["ballistic_coefficient_g7"]) and str(entry_data["ballistic_coefficient_g7"]) != "N/A" else 0.0,
+                                    value=bullet_model.ballistic_coefficient_g7 if bullet_model.ballistic_coefficient_g7 is not None else 0.0,
                                     help="The G7 ballistic coefficient (optional)",
                                 )
 
@@ -281,7 +282,7 @@ def render_view_bullets_tab(user, supabase):
                                     max_value=50.0,
                                     step=0.1,
                                     format="%.1f",
-                                    value=float(entry_data["min_req_twist_rate_in_per_rev"]) if pd.notna(entry_data["min_req_twist_rate_in_per_rev"]) and str(entry_data["min_req_twist_rate_in_per_rev"]) != "N/A" else 0.0,
+                                    value=bullet_model.min_req_twist_rate_in_per_rev if bullet_model.min_req_twist_rate_in_per_rev is not None else 0.0,
                                     help="Minimum required twist rate in inches per revolution (optional)",
                                 )
 
@@ -292,7 +293,7 @@ def render_view_bullets_tab(user, supabase):
                                     max_value=50.0,
                                     step=0.1,
                                     format="%.1f",
-                                    value=float(entry_data["pref_twist_rate_in_per_rev"]) if pd.notna(entry_data["pref_twist_rate_in_per_rev"]) and str(entry_data["pref_twist_rate_in_per_rev"]) != "N/A" else 0.0,
+                                    value=bullet_model.pref_twist_rate_in_per_rev if bullet_model.pref_twist_rate_in_per_rev is not None else 0.0,
                                     help="Preferred twist rate in inches per revolution (optional)",
                                 )
 
@@ -302,14 +303,14 @@ def render_view_bullets_tab(user, supabase):
                             with col7:
                                 data_source_name = st.text_input(
                                     "Data Source Name",
-                                    value=str(entry_data["data_source_name"]) if pd.notna(entry_data["data_source_name"]) and str(entry_data["data_source_name"]) != "N/A" else "",
+                                    value=bullet_model.data_source_name if bullet_model.data_source_name is not None else "",
                                     help="Name or description of where this data came from (optional)",
                                 )
 
                             with col8:
                                 data_source_url = st.text_input(
                                     "Data Source URL",
-                                    value=str(entry_data["data_source_url"]) if pd.notna(entry_data["data_source_url"]) and str(entry_data["data_source_url"]) != "N/A" else "",
+                                    value=bullet_model.data_source_url if bullet_model.data_source_url is not None else "",
                                     help="URL or reference to the original data source (optional)",
                                 )
 
@@ -359,18 +360,10 @@ def render_view_bullets_tab(user, supabase):
                                             "data_source_url": data_source_url_value,
                                         }
 
-                                        response = (
-                                            supabase.table("bullets")
-                                            .update(update_data)
-                                            .eq("id", entry_data["id"])
-                                            .execute()
-                                        )
-
-                                        if response.data:
-                                            st.success(f"✅ Updated: {manufacturer} {model} - {weight_grains}gr")
-                                            st.rerun()
-                                        else:
-                                            st.error("❌ Failed to update entry.")
+                                        updated_bullet = bullets_service.update_bullet(bullet_model.id, update_data)
+                                        st.success(f"✅ Updated: {updated_bullet.display_name}")
+                                        st.rerun()
+                                        
                                     except Exception as e:
                                         st.error(f"❌ Error updating entry: {str(e)}")
                 else:
@@ -383,11 +376,8 @@ def render_view_bullets_tab(user, supabase):
 
                 # Create list of entries for deletion
                 entry_options = []
-                for _, row in filtered_df.iterrows():
-                    entry_label = (
-                        f"{row['manufacturer']} {row['model']} - {row['weight_grains']}gr - {row['bullet_diameter_groove_mm']}mm"
-                    )
-                    entry_options.append((entry_label, row["id"]))
+                for bullet in filtered_bullets:
+                    entry_options.append((bullet.display_name, bullet.id))
 
                 if entry_options:
                     selected_entry = st.selectbox(
@@ -403,14 +393,7 @@ def render_view_bullets_tab(user, supabase):
                             if st.button("🗑️ Delete", type="secondary"):
                                 try:
                                     # Delete the entry
-                                    delete_response = (
-                                        supabase.table("bullets")
-                                        .delete()
-                                        .eq("id", selected_entry[1])
-                                        .execute()
-                                    )
-
-                                    if delete_response.data:
+                                    if bullets_service.delete_bullet(selected_entry[1]):
                                         st.success(f"✅ Deleted: {selected_entry[0]}")
                                         st.rerun()
                                     else:

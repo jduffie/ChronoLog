@@ -1,11 +1,14 @@
-from datetime import datetime, timezone
-
 import streamlit as st
+
+from .service import BulletsService
 
 
 def render_create_bullets_tab(user, supabase):
     """Render the Create Bullets tab"""
     st.header("➕ Create New Bullets Entry")
+    
+    # Initialize service
+    bullets_service = BulletsService(supabase)
     
     # Check if user is admin
     is_admin = user.get("user_metadata", {}).get("is_admin", False) or user.get("email") == "johnduffie91@gmail.com"
@@ -193,25 +196,17 @@ def render_create_bullets_tab(user, supabase):
                     "data_source_url": data_source_url_value,
                 }
 
-                # Insert into database
-                response = supabase.table("bullets").insert(bullets_data).execute()
+                # Create bullet through service
+                bullet = bullets_service.create_bullet(bullets_data)
+                
+                st.success(f"✅ Bullet entry created successfully!")
+                st.info(f"📋 **{bullet.display_name}**")
 
-                if response.data:
-                    st.success(f"✅ Bullet entry created successfully!")
-                    st.info(f"📋 **{manufacturer} {model}** - {weight_grains}gr - {bullet_diameter_groove_mm}mm")
-
-                    # Clear form by rerunning (this will reset the form)
-                    st.rerun()
-                else:
-                    st.error("❌ Failed to create bullet entry. Please try again.")
+                # Clear form by rerunning (this will reset the form)
+                st.rerun()
 
             except Exception as e:
-                if "duplicate key value violates unique constraint" in str(e):
-                    st.error(
-                        "❌ This bullets entry already exists. Please check your entries."
-                    )
-                else:
-                    st.error(f"❌ Error creating bullets entry: {str(e)}")
+                st.error(f"❌ Error creating bullets entry: {str(e)}")
 
     # Display helpful information
     st.markdown("---")
