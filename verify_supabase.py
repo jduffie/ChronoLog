@@ -17,7 +17,7 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 def test_connection():
     try:
         # Test DB query
-        tables = supabase.table("sessions").select("*").limit(1).execute()
+        tables = supabase.table("bullets").select("*").limit(1).execute()
         print(
             "✅ Database connection succeeded. 'sessions' table exists or is accessible."
         )

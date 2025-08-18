@@ -5,10 +5,12 @@ import streamlit as st
 
 from users import handle_user_profile
 
-# Auth0 settings
-AUTH0_DOMAIN = st.secrets["auth0"]["domain"]
-CLIENT_ID = st.secrets["auth0"]["client_id"]
-CLIENT_SECRET = st.secrets["auth0"]["client_secret"]
+# Auth0 settings - support both secrets.toml and environment variables
+import os
+
+AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN") or st.secrets["auth0"]["domain"]
+CLIENT_ID = os.getenv("AUTH0_CLIENT_ID") or st.secrets["auth0"]["client_id"]
+CLIENT_SECRET = os.getenv("AUTH0_CLIENT_SECRET") or st.secrets["auth0"]["client_secret"]
 
 
 def get_redirect_uri():
