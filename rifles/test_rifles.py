@@ -33,7 +33,7 @@ class TestRiflesCreateTab(unittest.TestCase):
         mock_columns,
         mock_markdown,
     ):
-        user = {"email": "test@example.com", "name": "Test User"}
+        user = {"id": "test-user-id", "email": "test@example.com", "name": "Test User"}
         mock_supabase = Mock()
 
         # Mock form context manager
@@ -95,7 +95,7 @@ class TestRiflesCreateTab(unittest.TestCase):
         mock_expander,
         mock_rerun,
     ):
-        user = {"email": "test@example.com", "name": "Test User"}
+        user = {"id": "test-user-id", "email": "test@example.com", "name": "Test User"}
         mock_supabase = Mock()
 
         # Mock successful database insertion
@@ -144,7 +144,7 @@ class TestRiflesViewTab(unittest.TestCase):
     @patch("streamlit.subheader")
     @patch("streamlit.info")
     def test_render_view_rifle_tab_no_rifles(self, mock_info, mock_subheader):
-        user = {"email": "test@example.com", "name": "Test User"}
+        user = {"id": "test-user-id", "email": "test@example.com", "name": "Test User"}
         mock_supabase = Mock()
 
         # Mock empty rifles list
@@ -189,22 +189,20 @@ class TestRiflesViewTab(unittest.TestCase):
         mock_column_config,
         mock_to_datetime,
     ):
-        user = {"email": "test@example.com", "name": "Test User"}
+        user = {"id": "test-user-id", "email": "test@example.com", "name": "Test User"}
         mock_supabase = Mock()
 
         # Mock rifle data with all required fields
         mock_data = [
             {
                 "id": "rifle-1",
-                "user_email": "test@example.com",
-                "make": "Remington",
-                "model": "700",
-                "caliber": ".308 Winchester",
-                "barrel_length_inches": 24,
-                "barrel_twist_ratio": "1:10",  # Updated field name
+                "user_id": "test-user-id",
+                "name": "Test Rifle",
+                "barrel_twist_ratio": "1:10",
+                "barrel_length": "24 inches",
+                "sight_offset": "1.5 inches",
                 "scope": "Leupold Mark 4",
                 "trigger": "Timney",
-                "notes": "Custom build",
                 "created_at": "2023-12-01T10:00:00",
                 "updated_at": "2023-12-01T10:00:00",
             }
@@ -250,14 +248,14 @@ class TestRiflesPageStructure(unittest.TestCase):
     def test_rifles_page_exists(self):
         """Test that the rifles page file exists"""
         page_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "pages", "7_📏_Rifles.py"
+            os.path.dirname(os.path.dirname(__file__)), "pages", "6_📏_Rifles.py"
         )
         self.assertTrue(os.path.exists(page_path), "Rifles page should exist")
 
     def test_rifles_page_has_required_imports(self):
         """Test that rifles page has required imports"""
         page_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "pages", "7_📏_Rifles.py"
+            os.path.dirname(os.path.dirname(__file__)), "pages", "6_📏_Rifles.py"
         )
         if os.path.exists(page_path):
             with open(page_path, "r") as f:
@@ -279,7 +277,7 @@ class TestRiflesPageStructure(unittest.TestCase):
     def test_rifles_page_has_correct_tabs(self):
         """Test that rifles page has expected tabs"""
         page_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "pages", "7_📏_Rifles.py"
+            os.path.dirname(os.path.dirname(__file__)), "pages", "6_📏_Rifles.py"
         )
         if os.path.exists(page_path):
             with open(page_path, "r") as f:
@@ -292,7 +290,7 @@ class TestRiflesPageStructure(unittest.TestCase):
     def test_rifles_page_configuration(self):
         """Test rifles page configuration"""
         page_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "pages", "7_📏_Rifles.py"
+            os.path.dirname(os.path.dirname(__file__)), "pages", "6_📏_Rifles.py"
         )
         if os.path.exists(page_path):
             with open(page_path, "r") as f:
@@ -305,7 +303,7 @@ class TestRiflesPageStructure(unittest.TestCase):
     def test_rifles_page_title(self):
         """Test rifles page displays correct title"""
         page_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "pages", "7_📏_Rifles.py"
+            os.path.dirname(os.path.dirname(__file__)), "pages", "6_📏_Rifles.py"
         )
         if os.path.exists(page_path):
             with open(page_path, "r") as f:

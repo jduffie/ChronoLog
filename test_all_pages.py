@@ -44,7 +44,7 @@ class TestPageStructure(unittest.TestCase):
             "pages/3_⏱️_Chronograph.py",
             "pages/4_🌤️_Weather.py",
             "pages/5_🌍_Ranges.py",
-            "pages/7_📏_Rifles.py",
+            "pages/6_📏_Rifles.py",
         ]
 
         for page_file in expected_pages:
@@ -61,7 +61,7 @@ class TestPageStructure(unittest.TestCase):
             "pages/3_⏱️_Chronograph.py": ["streamlit", "handle_auth", "create_client"],
             "pages/4_🌤️_Weather.py": ["streamlit", "handle_auth", "create_client"],
             "pages/5_🌍_Ranges.py": ["streamlit", "handle_auth", "create_client"],
-            "pages/7_📏_Rifles.py": ["streamlit", "handle_auth", "create_client"],
+            "pages/6_📏_Rifles.py": ["streamlit", "handle_auth", "create_client"],
         }
 
         for page_file, required_imports in page_imports.items():
@@ -85,7 +85,7 @@ class TestPageStructure(unittest.TestCase):
             "pages/3_⏱️_Chronograph.py",
             "pages/4_🌤️_Weather.py",
             "pages/5_🌍_Ranges.py",
-            "pages/7_📏_Rifles.py",
+            "pages/6_📏_Rifles.py",
         ]
 
         for page_file in page_files:
@@ -110,7 +110,7 @@ class TestPageStructure(unittest.TestCase):
             "pages/3_⏱️_Chronograph.py",
             "pages/4_🌤️_Weather.py",
             "pages/5_🌍_Ranges.py",
-            "pages/7_📏_Rifles.py",
+            "pages/6_📏_Rifles.py",
         ]
 
         for page_file in page_files:
@@ -133,7 +133,7 @@ class TestPageStructure(unittest.TestCase):
             "pages/3_⏱️_Chronograph.py",
             "pages/4_🌤️_Weather.py",
             "pages/5_🌍_Ranges.py",
-            "pages/7_📏_Rifles.py",
+            "pages/6_📏_Rifles.py",
         ]
 
         for page_file in page_files:
@@ -167,7 +167,7 @@ class TestPageConfiguration(unittest.TestCase):
             "pages/3_⏱️_Chronograph.py": ("Chronograph", "📁"),
             "pages/4_🌤️_Weather.py": ("Weather - ChronoLog", "🌤️"),
             "pages/5_🌍_Ranges.py": ("Ranges", "🌍"),
-            "pages/7_📏_Rifles.py": ("Rifles", "📏"),
+            "pages/6_📏_Rifles.py": ("Rifles", "📏"),
         }
 
         for page_file, (expected_title, expected_icon) in expected_configs.items():
@@ -195,7 +195,7 @@ class TestPageConfiguration(unittest.TestCase):
             "pages/3_⏱️_Chronograph.py",
             "pages/4_🌤️_Weather.py",
             "pages/5_🌍_Ranges.py",
-            "pages/7_📏_Rifles.py",
+            "pages/6_📏_Rifles.py",
         ]
 
         for page_file in page_files:
@@ -298,7 +298,7 @@ class TestDatabaseConnections(unittest.TestCase):
             "pages/3_⏱️_Chronograph.py",
             "pages/4_🌤️_Weather.py",
             "pages/5_🌍_Ranges.py",
-            "pages/7_📏_Rifles.py",
+            "pages/6_📏_Rifles.py",
         ]
 
         for page_file in pages_with_db:
@@ -325,7 +325,7 @@ class TestDatabaseConnections(unittest.TestCase):
             "pages/3_⏱️_Chronograph.py",
             "pages/4_🌤️_Weather.py",
             "pages/5_🌍_Ranges.py",
-            "pages/7_📏_Rifles.py",
+            "pages/6_📏_Rifles.py",
         ]
 
         for page_file in pages_with_db:
