@@ -49,30 +49,39 @@ def load():
     """, unsafe_allow_html=True)
     
     # App title
-    st.sidebar.title("ChronoLog")
+    st.sidebar.header("ChronoLog")
 
     # Data on Prior Engagements section
     st.sidebar.divider()
-    st.sidebar.header("Data on Prior Engagements")
+    st.sidebar.subheader("Data on Prior Engagements")
     
-    # Use columns for layout
+    # Overview
     cols = st.sidebar.columns([1, 9], gap="small")
     with cols[0]:
         st.markdown("&nbsp;", unsafe_allow_html=True)
     with cols[1]:
-        st.page_link("pages/2_📊_DOPE.py", label="Overview")
+        st.page_link("pages/2a_📊_DOPE_Overview.py", label="Overview")
     
+    # Create
     cols = st.sidebar.columns([1, 9], gap="small")
     with cols[0]:
         st.markdown("&nbsp;", unsafe_allow_html=True)
     with cols[1]:
-        st.page_link("pages/2_📊_DOPE.py", label="Create")
+        st.page_link("pages/2b_📊_DOPE_Create.py", label="Create")
     
+    # View
     cols = st.sidebar.columns([1, 9], gap="small")
     with cols[0]:
         st.markdown("&nbsp;", unsafe_allow_html=True)
     with cols[1]:
-        st.page_link("pages/2_📊_DOPE.py", label="View")
+        st.page_link("pages/2c_📊_DOPE_View.py", label="View")
+    
+    # Analytics
+    cols = st.sidebar.columns([1, 9], gap="small")
+    with cols[0]:
+        st.markdown("&nbsp;", unsafe_allow_html=True)
+    with cols[1]:
+        st.page_link("pages/2d_📊_DOPE_Analytics.py", label="Analytics")
 
     st.sidebar.divider()
     st.sidebar.header("Data Sets")

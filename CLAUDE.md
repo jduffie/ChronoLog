@@ -432,3 +432,4 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 - Update the View and Create tab on the factory cartridges page to include cartridge_type
     - need to ensure the create and filtering logic respect the 1 to 1 relationship between cartridge_type and bore_diameter_land_mm
 - to memorize
+- to memorize
