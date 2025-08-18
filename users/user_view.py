@@ -164,8 +164,7 @@ class UserView:
     def display_sidebar_info(self, profile: Dict[str, Any]) -> None:
         """Display user info in sidebar."""
         st.sidebar.success(f"Logged in as {profile['name']}")
-        if profile.get("username"):
-            st.sidebar.info(f"Username: {profile['username']}")
+
 
     def display_user_management_admin(
         self, users: list[Dict[str, Any]]

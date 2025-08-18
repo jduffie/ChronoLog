@@ -25,11 +25,6 @@ def run():
     if not user:
         return
 
-    # Display user info in sidebar (only on this page to avoid duplication)
-    if "user_info_displayed" not in st.session_state:
-        st.sidebar.success(f"Logged in as {user['name']}")
-        st.session_state["user_info_displayed"] = True
-
     # Display landing page content
     st.title("🎯 ChronoLog")
     st.subheader("Automated DOPE Construction from Multiple Data Sources")

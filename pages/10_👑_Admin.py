@@ -64,9 +64,6 @@ def main():
         st.info("Contact an administrator if you believe you should have access to this page.")
         return
 
-    # Display user info in sidebar
-    st.sidebar.success(f"Logged in as {user['name']} (Admin)")
-
     # Display title
     st.title("👑 Administration Panel")
     

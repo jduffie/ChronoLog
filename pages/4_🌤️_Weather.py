@@ -25,9 +25,6 @@ def main():
     if not user:
         return
 
-    # Display user info in sidebar
-    st.sidebar.success(f"Logged in as {user['name']}")
-
     # Supabase setup
     try:
         url = st.secrets["supabase"]["url"]
