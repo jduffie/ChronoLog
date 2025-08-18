@@ -783,31 +783,31 @@ def render_cartridge_selection(user, supabase):
             col1, col2, col3, col4 = st.columns(4)
             
             with col1:
+                cartridge_types = ["All"] + sorted([ct for ct in df["cartridge_type"].dropna().unique().tolist() if ct])
+                selected_cartridge_type = st.selectbox("Cartridge Type:", cartridge_types)
+            
+            with col2:
                 manufacturers = ["All"] + sorted(df["manufacturer"].dropna().unique().tolist())
                 selected_manufacturer = st.selectbox("Cartridge Manufacturer:", manufacturers)
             
-            with col2:
-                bore_diameters = ["All"] + sorted(df["bore_diameter_land_mm"].dropna().unique().tolist())
-                selected_bore_diameter = st.selectbox("Bullet Bore Diameter (mm):", bore_diameters)
-            
             with col3:
-                weights = ["All"] + sorted(df["bullet_weight_grains"].dropna().unique().tolist())
-                selected_weight = st.selectbox("Bullet Weight (gr):", weights)
+                models = ["All"] + sorted(df["model"].dropna().unique().tolist())
+                selected_model = st.selectbox("Cartridge Model:", models)
                 
             with col4:
-                bullet_models = ["All"] + sorted(df["bullet_model"].dropna().unique().tolist())
-                selected_bullet_model = st.selectbox("Bullet Model:", bullet_models)
+                weights = ["All"] + sorted(df["bullet_weight_grains"].dropna().unique().tolist())
+                selected_weight = st.selectbox("Bullet Weight:", weights)
             
             # Apply filters
             filtered_df = df.copy()
+            if selected_cartridge_type != "All":
+                filtered_df = filtered_df[filtered_df["cartridge_type"] == selected_cartridge_type]
             if selected_manufacturer != "All":
                 filtered_df = filtered_df[filtered_df["manufacturer"] == selected_manufacturer]
-            if selected_bore_diameter != "All":
-                filtered_df = filtered_df[filtered_df["bore_diameter_land_mm"] == selected_bore_diameter]
+            if selected_model != "All":
+                filtered_df = filtered_df[filtered_df["model"] == selected_model]
             if selected_weight != "All":
                 filtered_df = filtered_df[filtered_df["bullet_weight_grains"] == selected_weight]
-            if selected_bullet_model != "All":
-                filtered_df = filtered_df[filtered_df["bullet_model"] == selected_bullet_model]
             
             if len(filtered_df) == 0:
                 st.warning("No factory cartridges match the selected filters.")

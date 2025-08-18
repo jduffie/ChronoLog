@@ -90,17 +90,42 @@ def render_view_session_tab(user, supabase):
 
                 # Get cartridge information using cartridge_type and cartridge_spec_id
                 cartridge_type = session.get("cartridge_type", "")
+                cartridge_spec_id = session.get("cartridge_spec_id")
                 cartridge_lot = session.get("cartridge_lot_number", "")
+                cartridge_manufacturer = "N/A"
+                cartridge_model = "N/A"
+                bullet_weight = "N/A"
+                
+                if cartridge_type and cartridge_spec_id:
+                    # Get detailed cartridge info from cartridge_details view
+                    cartridge_details_response = (
+                        supabase.table("cartridge_details")
+                        .select("manufacturer, model, bullet_weight_grains")
+                        .eq("spec_id", cartridge_spec_id)
+                        .eq("source", cartridge_type)
+                        .execute()
+                    )
+                    if cartridge_details_response.data:
+                        cartridge_data = cartridge_details_response.data[0]
+                        cartridge_manufacturer = cartridge_data.get("manufacturer", "N/A")
+                        cartridge_model = cartridge_data.get("model", "N/A")
+                        bullet_weight = cartridge_data.get("bullet_weight_grains", "N/A")
+                
                 if cartridge_type:
                     cartridge_name = cartridge_type.title()
                     if cartridge_lot:
                         cartridge_name += f" (Lot: {cartridge_lot})"
+                else:
+                    cartridge_name = "N/A"
 
                 row_data = {
                     "Date": session_date,
                     "Time": session_time,
                     "Session Name": session.get("session_name", "N/A"),
                     "Cartridge Type": cartridge_type.title() if cartridge_type else "N/A",
+                    "Cartridge Manufacturer": cartridge_manufacturer,
+                    "Cartridge Model": cartridge_model,
+                    "Bullet Weight": bullet_weight,
                     "Lot Number": cartridge_lot if cartridge_lot else "N/A",
                     "Shot Count": shot_count,
                     "Range": range_name,
@@ -218,6 +243,9 @@ def render_view_session_tab(user, supabase):
                         "Time": st.column_config.TextColumn("Time"),
                         "Session Name": st.column_config.TextColumn("Session Name"),
                         "Cartridge Type": st.column_config.TextColumn("Cartridge Type"),
+                        "Cartridge Manufacturer": st.column_config.TextColumn("Cartridge Manufacturer"),
+                        "Cartridge Model": st.column_config.TextColumn("Cartridge Model"),
+                        "Bullet Weight": st.column_config.TextColumn("Bullet Weight"),
                         "Lot Number": st.column_config.TextColumn("Lot Number"),
                         "Shot Count": st.column_config.NumberColumn("Shot Count"),
                         "Range": st.column_config.TextColumn("Range"),
