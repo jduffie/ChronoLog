@@ -173,17 +173,6 @@ def render_view_cartridge_tab(user, supabase):
             },
         )
 
-        # Export option
-        st.subheader("📤 Export")
-        if st.button("📥 Download as CSV"):
-            csv = display_df.to_csv(index=False)
-            st.download_button(
-                label="💾 Download CSV",
-                data=csv,
-                file_name=f"factory_cartridge_entries_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                mime="text/csv",
-            )
-
         # Admin-only functionality
         is_admin = user.get("user_metadata", {}).get("is_admin", False) or user.get("email") == "johnduffie91@gmail.com"
         

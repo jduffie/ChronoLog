@@ -235,7 +235,7 @@ The application uses a comprehensive Supabase database with the following tables
 - updated_at (timestamptz): Last modification
 
 **bullets**
-- id (integer, PK): Bullet identifier
+- id (uuid, PK): Bullet identifier
 - user_id (text, NOT NULL): Bullet owner
 - manufacturer (text, NOT NULL): Bullet manufacturer
 - model (text, NOT NULL): Bullet model
@@ -248,13 +248,15 @@ The application uses a comprehensive Supabase database with the following tables
 - sectional_density (double precision): Sectional density
 - min_req_twist_rate_in_per_rev (double precision): Minimum twist rate
 - pref_twist_rate_in_per_rev (double precision): Preferred twist rate
+- data_source_name (text): Name or description of the data source
+- data_source_url (text): URL or reference to the original data source
 
 **factory_cartridge_specs**
 - id (uuid, PK): Factory cartridge spec identifier
 - user_id (text, NOT NULL): Spec creator (admin)
 - make (text, NOT NULL): Cartridge manufacturer
 - model (text, NOT NULL): Cartridge model
-- bullet_id (integer, FK, NOT NULL): Associated bullet
+- bullet_id (uuid, FK, NOT NULL): Associated bullet
 - cartridge_type (text): Cartridge type designation
 
 **custom_cartridge_specs**
@@ -262,7 +264,7 @@ The application uses a comprehensive Supabase database with the following tables
 - user_id (text, NOT NULL): Spec owner
 - name (text, NOT NULL): Load name
 - cartridge (text, NOT NULL): Cartridge case type
-- bullet_id (integer, FK, NOT NULL): Bullet selection
+- bullet_id (uuid, FK, NOT NULL): Bullet selection
 - powder (text): Powder type
 - powder_charge_gr (numeric): Powder charge in grains
 - casing_make (text): Case manufacturer
@@ -320,7 +322,7 @@ The application uses a comprehensive Supabase database with the following tables
 - cartridge_type (text): Cartridge type designation
 - manufacturer (text): Cartridge manufacturer
 - model (text): Cartridge model
-- bullet_id (integer): Associated bullet ID
+- bullet_id (uuid): Associated bullet ID
 - bullet_name (text): Computed bullet name
 - bullet_manufacturer (text): Bullet manufacturer
 - bullet_model (text): Bullet model
@@ -406,3 +408,4 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
   - The possible values are derived from the cartridge_type column in the cartridge_types table. 
 - Update the View and Create tab on the factory cartridges page to include cartridge_type
     - need to ensure the create and filtering logic respect the 1 to 1 relationship between cartridge_type and bore_diameter_land_mm
+- to memorize

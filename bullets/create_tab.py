@@ -130,6 +130,23 @@ def render_create_bullets_tab(user, supabase):
                 help="Preferred twist rate in inches per revolution (optional)",
             )
 
+        st.subheader("📄 Data Source (Optional)")
+        col7, col8 = st.columns(2)
+
+        with col7:
+            data_source_name = st.text_input(
+                "Data Source Name",
+                placeholder="e.g., Hornady Official Website, Sierra Manual",
+                help="Name or description of where this data came from (optional)",
+            )
+
+        with col8:
+            data_source_url = st.text_input(
+                "Data Source URL",
+                placeholder="e.g., https://www.hornady.com/bullets/...",
+                help="URL or reference to the original data source (optional)",
+            )
+
         # Submit button
         submitted = st.form_submit_button("💾 Create Bullets Entry", type="primary")
 
@@ -142,6 +159,8 @@ def render_create_bullets_tab(user, supabase):
             # Clean up text inputs
             manufacturer = manufacturer.strip()
             model = model.strip()
+            data_source_name_cleaned = data_source_name.strip() if data_source_name else None
+            data_source_url_cleaned = data_source_url.strip() if data_source_url else None
             
             # Convert zero values to None for optional fields
             bullet_length_mm_value = bullet_length_mm if bullet_length_mm > 0 else None
@@ -150,6 +169,10 @@ def render_create_bullets_tab(user, supabase):
             sectional_density_value = sectional_density if sectional_density > 0 else None
             min_req_twist_rate_value = min_req_twist_rate_in_per_rev if min_req_twist_rate_in_per_rev > 0 else None
             pref_twist_rate_value = pref_twist_rate_in_per_rev if pref_twist_rate_in_per_rev > 0 else None
+            
+            # Convert empty strings to None for data source fields
+            data_source_name_value = data_source_name_cleaned if data_source_name_cleaned else None
+            data_source_url_value = data_source_url_cleaned if data_source_url_cleaned else None
 
             try:
                 # Create bullets entry
@@ -166,6 +189,8 @@ def render_create_bullets_tab(user, supabase):
                     "sectional_density": sectional_density_value,
                     "min_req_twist_rate_in_per_rev": min_req_twist_rate_value,
                     "pref_twist_rate_in_per_rev": pref_twist_rate_value,
+                    "data_source_name": data_source_name_value,
+                    "data_source_url": data_source_url_value,
                 }
 
                 # Insert into database
