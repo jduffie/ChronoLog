@@ -126,119 +126,111 @@ def render_create_session_tab(user, supabase):
 
             st.subheader("2. Select Optional Sources")
 
-            col1, col2 = st.columns(2)
+            # Get range submissions for the user
+            range_submissions = (
+                supabase.table("ranges_submissions")
+                .select("*")
+                .eq("user_id", user["id"])
+                .order("submitted_at", desc=True)
+                .execute()
+            )
 
-            with col1:
-                # Get range submissions for the user
-                range_submissions = (
-                    supabase.table("ranges_submissions")
+            range_options = {}
+            if range_submissions.data:
+                for range_sub in range_submissions.data:
+                    label = f"{range_sub['range_name']} - {range_sub['distance_m']:.1f}m ({range_sub['submitted_at'][:10]})"
+                    range_options[label] = range_sub
+
+                selected_range_label = st.selectbox(
+                    "***Range:***",
+                    options=list(range_options.keys()),
+                    index=None,
+                    placeholder="Select a range...",
+                )
+            else:
+                st.warning("No range submissions found.")
+                selected_range_label = None
+
+            # Get weather sources for the user
+            weather_sources = (
+                supabase.table("weather_source")
+                .select("*")
+                .eq("user_id", user["id"])
+                .order("created_at", desc=True)
+                .execute()
+            )
+
+            if weather_sources.data:
+                weather_options = {}
+                for weather_source in weather_sources.data:
+                    label = f"{weather_source['name']} ({weather_source['make'] or 'Unknown'})"
+                    weather_options[label] = weather_source
+
+                selected_weather_label = st.selectbox(
+                    "***Weather source:***",
+                    options=list(weather_options.keys()),
+                    index=None,
+                    placeholder="Select weather source...",
+                )
+
+                selected_weather = (
+                    weather_options[selected_weather_label]
+                    if selected_weather_label
+                    else None
+                )
+            else:
+                st.warning("No weather sources found.")
+                selected_weather = None
+
+            # Get rifles for the user
+            try:
+                rifles_response = (
+                    supabase.table("rifles")
                     .select("*")
                     .eq("user_id", user["id"])
-                    .order("submitted_at", desc=True)
+                    .order("name")
                     .execute()
                 )
 
-                range_options = {}
-                if range_submissions.data:
-                    for range_sub in range_submissions.data:
-                        label = f"{range_sub['range_name']} - {range_sub['distance_m']:.1f}m ({range_sub['submitted_at'][:10]})"
-                        range_options[label] = range_sub
+                rifle_options = {}
+                if rifles_response.data:
+                    for rifle in rifles_response.data:
+                        # Create a descriptive label
+                        label = f"{rifle['name']}"
+                        details = []
+                        if rifle.get("barrel_length"):
+                            details.append(f"Length: {rifle['barrel_length']}")
+                        if rifle.get("barrel_twist_ratio"):
+                            details.append(f"Twist: {rifle['barrel_twist_ratio']}")
+                        if details:
+                            label += f" ({', '.join(details)})"
+                        rifle_options[label] = rifle
 
-                    selected_range_label = st.selectbox(
-                        "***Range:***",
-                        options=list(range_options.keys()),
+                    selected_rifle_label = st.selectbox(
+                        "***Rifle:***",
+                        options=list(rifle_options.keys()),
                         index=None,
-                        placeholder="Select a range...",
-                    )
-                else:
-                    st.warning("No range submissions found.")
-                    selected_range_label = None
-
-            with col2:
-                # Get weather sources for the user
-                weather_sources = (
-                    supabase.table("weather_source")
-                    .select("*")
-                    .eq("user_id", user["id"])
-                    .order("created_at", desc=True)
-                    .execute()
-                )
-
-                if weather_sources.data:
-                    weather_options = {}
-                    for weather_source in weather_sources.data:
-                        label = f"{weather_source['name']} ({weather_source['make'] or 'Unknown'})"
-                        weather_options[label] = weather_source
-
-                    selected_weather_label = st.selectbox(
-                        "***Weather source:***",
-                        options=list(weather_options.keys()),
-                        index=None,
-                        placeholder="Select weather source...",
+                        placeholder="Select a rifle...",
                     )
 
-                    selected_weather = (
-                        weather_options[selected_weather_label]
-                        if selected_weather_label
+                    selected_rifle = (
+                        rifle_options[selected_rifle_label]
+                        if selected_rifle_label
                         else None
                     )
                 else:
-                    st.warning("No weather sources found.")
-                    selected_weather = None
-
-            col3, col4 = st.columns(2)
-
-            with col3:
-                # Get rifles for the user
-                try:
-                    rifles_response = (
-                        supabase.table("rifles")
-                        .select("*")
-                        .eq("user_id", user["id"])
-                        .order("name")
-                        .execute()
-                    )
-
-                    rifle_options = {}
-                    if rifles_response.data:
-                        for rifle in rifles_response.data:
-                            # Create a descriptive label
-                            label = f"{rifle['name']}"
-                            details = []
-                            if rifle.get("barrel_length"):
-                                details.append(f"Length: {rifle['barrel_length']}")
-                            if rifle.get("barrel_twist_ratio"):
-                                details.append(f"Twist: {rifle['barrel_twist_ratio']}")
-                            if details:
-                                label += f" ({', '.join(details)})"
-                            rifle_options[label] = rifle
-
-                        selected_rifle_label = st.selectbox(
-                            "***Rifle:***",
-                            options=list(rifle_options.keys()),
-                            index=None,
-                            placeholder="Select a rifle...",
-                        )
-
-                        selected_rifle = (
-                            rifle_options[selected_rifle_label]
-                            if selected_rifle_label
-                            else None
-                        )
-                    else:
-                        st.warning("No rifles found. Please add rifles first.")
-                        selected_rifle = None
-                except Exception as e:
-                    st.error(f"Error loading rifles: {str(e)}")
+                    st.warning("No rifles found. Please add rifles first.")
                     selected_rifle = None
+            except Exception as e:
+                st.error(f"Error loading rifles: {str(e)}")
+                selected_rifle = None
 
-            with col4:
-                # Cartridge selection workflow
-                try:
-                    selected_cartridge = render_cartridge_selection(user, supabase)
-                except Exception as e:
-                    st.error(f"Error loading cartridges: {str(e)}")
-                    selected_cartridge = None
+            # Cartridge selection workflow
+            try:
+                selected_cartridge = render_cartridge_selection(user, supabase)
+            except Exception as e:
+                st.error(f"Error loading cartridges: {str(e)}")
+                selected_cartridge = None
 
             # Prepare selected range and weather data
             selected_range = (

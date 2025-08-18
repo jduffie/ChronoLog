@@ -10,7 +10,7 @@ class PublicRangesModel:
             result = (
                 supabase_client.table("ranges")
                 .select(
-                    "id, user_email, range_name, range_description, start_lat, start_lon, end_lat, end_lon, "
+                    "id, range_name, range_description, start_lat, start_lon, end_lat, end_lon, "
                     "start_altitude_m, end_altitude_m, distance_m, azimuth_deg, elevation_angle_deg, "
                     "display_name, submitted_at, address_geojson"
                 )
@@ -60,7 +60,7 @@ class PublicRangesModel:
             result = (
                 supabase_client.table("ranges")
                 .select(
-                    "id, user_email, range_name, range_description, start_lat, start_lon, end_lat, end_lon, "
+                    "id, range_name, range_description, start_lat, start_lon, end_lat, end_lon, "
                     "start_altitude_m, end_altitude_m, distance_m, azimuth_deg, elevation_angle_deg, "
                     "display_name, submitted_at, address_geojson"
                 )
@@ -88,7 +88,7 @@ class PublicRangesModel:
             result = (
                 supabase_client.table("ranges")
                 .select(
-                    "id, user_email, range_name, range_description, start_lat, start_lon, end_lat, end_lon, "
+                    "id, range_name, range_description, start_lat, start_lon, end_lat, end_lon, "
                     "start_altitude_m, end_altitude_m, distance_m, azimuth_deg, elevation_angle_deg, "
                     "display_name, submitted_at, address_geojson"
                 )
@@ -112,7 +112,7 @@ class PublicRangesModel:
             result = (
                 supabase_client.table("ranges")
                 .select(
-                    "id, user_email, range_name, range_description, start_lat, start_lon, end_lat, end_lon, "
+                    "id, range_name, range_description, start_lat, start_lon, end_lat, end_lon, "
                     "start_altitude_m, end_altitude_m, distance_m, azimuth_deg, elevation_angle_deg, "
                     "display_name, submitted_at, address_geojson"
                 )
