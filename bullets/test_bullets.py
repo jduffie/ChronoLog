@@ -188,16 +188,14 @@ class TestBulletsService(unittest.TestCase):
         self.assertIsInstance(bullet, BulletModel)
         self.assertEqual(bullet.manufacturer, "Hornady")
 
-    def test_create_bullet_filters_out_id_field(self):
-        """Test that create_bullet filters out 'id' field from insert data"""
+    def test_create_bullet_generates_uuid(self):
+        """Test that create_bullet generates a UUID for the 'id' field"""
         mock_response = Mock()
         mock_response.data = self.sample_data
         
         self.mock_supabase.table.return_value.insert.return_value.execute.return_value = mock_response
         
-        # Include an 'id' field that should be filtered out
         bullet_data = {
-            "id": "should-be-filtered",
             "user_id": "user-123",
             "manufacturer": "Hornady",
             "model": "ELD-M",
@@ -208,9 +206,10 @@ class TestBulletsService(unittest.TestCase):
         
         bullet = self.service.create_bullet(bullet_data)
         
-        # Verify that insert was called without the 'id' field
+        # Verify that insert was called with a generated UUID
         insert_call_args = self.mock_supabase.table.return_value.insert.call_args[0][0]
-        self.assertNotIn("id", insert_call_args)
+        self.assertIn("id", insert_call_args)
+        self.assertEqual(len(insert_call_args["id"]), 36)  # UUID4 length with hyphens
         self.assertEqual(insert_call_args["manufacturer"], "Hornady")
         
         self.assertIsInstance(bullet, BulletModel)

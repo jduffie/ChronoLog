@@ -48,9 +48,12 @@ class BulletsService:
 
     def create_bullet(self, bullet_data: dict) -> BulletModel:
         """Create a new bullet entry"""
+        import uuid
+        
         try:
-            # Ensure 'id' field is not included in insert data (database should auto-generate UUID)
-            insert_data = {k: v for k, v in bullet_data.items() if k != 'id'}
+            # Generate UUID for the bullet entry (database expects explicit UUID)
+            insert_data = bullet_data.copy()
+            insert_data['id'] = str(uuid.uuid4())
             
             response = (
                 self.supabase.table("bullets")
