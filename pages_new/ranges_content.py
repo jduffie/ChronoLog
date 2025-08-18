@@ -1,20 +1,52 @@
 import os
 import sys
-
 import streamlit as st
-import navigation
 
 # Add the root directory to the path so we can import our modules
 sys.path.append(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
 
-from auth import handle_auth
 from mapping.nominate.nominate_controller import NominateController
 from mapping.public_ranges.public_ranges_controller import PublicRangesController
 from mapping.submission.submission_controller import SubmissionController
 from supabase import create_client
 
+def render_ranges_content():
+    """Render the ranges page content."""
+    
+    # Get user from session state (should be set by main app)
+    if "user" not in st.session_state:
+        st.error("User not authenticated")
+        return
+    
+    user = st.session_state.user
+    
+    # Database connection
+    try:
+        url = st.secrets["supabase"]["url"]
+        key = st.secrets["supabase"]["key"]
+        supabase = create_client(url, key)
+    except Exception as e:
+        st.error(f"Error connecting to database: {str(e)}")
+        return
+
+    # Display main title
+    st.title("🌍 Ranges")
+
+    # Create tabs
+    tab1, tab2, tab3 = st.tabs(
+        ["📋 Public Ranges", "📍 Nominate Range", "📋 My Submissions"]
+    )
+
+    with tab1:
+        render_public_ranges_tab(user, supabase)
+
+    with tab2:
+        render_nominate_tab(user, supabase)
+
+    with tab3:
+        render_submissions_tab(user, supabase)
 
 def render_public_ranges_tab(user, supabase):
     """Render the Public Ranges tab content."""
@@ -121,7 +153,6 @@ def render_public_ranges_tab(user, supabase):
     except Exception as e:
         st.error(f"Error loading public ranges: {str(e)}")
 
-
 def render_nominate_tab(user, supabase):
     """Render the Nominate Range tab content."""
     # Initialize nominate controller
@@ -132,7 +163,6 @@ def render_nominate_tab(user, supabase):
     # page config and auth are already handled by the main page
     controller._run_nominate_functionality(user, supabase)
 
-
 def render_submissions_tab(user, supabase):
     """Render the Submissions tab content."""
     # Initialize submission controller
@@ -142,56 +172,3 @@ def render_submissions_tab(user, supabase):
     # Note: We need to handle the parts of controller.run() ourselves since
     # page config and auth are already handled by the main page
     controller._run_submission_functionality(user, supabase)
-
-
-def main():
-    """Main function for the Ranges page."""
-    # Set page configuration FIRST, before any other Streamlit operations
-    st.set_page_config(page_title="Ranges", page_icon="🌍", layout="wide")
-
-    # Load custom navigation
-    navigation.load()
-
-    # Set app identifier for auth system
-    if "app" not in st.query_params:
-        st.query_params["app"] = "mapping"
-
-    # Handle authentication
-    user = handle_auth()
-    if not user:
-        return
-
-    # Display user info in sidebar (only on this page to avoid duplication)
-    if "user_info_displayed" not in st.session_state:
-        st.sidebar.success(f"Logged in as {user['name']}")
-        st.session_state["user_info_displayed"] = True
-
-    # Database connection
-    try:
-        url = st.secrets["supabase"]["url"]
-        key = st.secrets["supabase"]["key"]
-        supabase = create_client(url, key)
-    except Exception as e:
-        st.error(f"Error connecting to database: {str(e)}")
-        return
-
-    # Display main title
-    st.title("🌍 Ranges")
-
-    # Create tabs
-    tab1, tab2, tab3 = st.tabs(
-        ["📋 Public Ranges", "📍 Nominate Range", "📋 My Submissions"]
-    )
-
-    with tab1:
-        render_public_ranges_tab(user, supabase)
-
-    with tab2:
-        render_nominate_tab(user, supabase)
-
-    with tab3:
-        render_submissions_tab(user, supabase)
-
-
-if __name__ == "__main__":
-    main()

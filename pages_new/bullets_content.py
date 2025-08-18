@@ -1,31 +1,24 @@
 import os
 import sys
-
 import streamlit as st
-import navigation
 
 # Add the root directory to the path so we can import our modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from bullets.create_tab import render_create_bullets_tab
 from bullets.view_tab import render_view_bullets_tab
-from auth import handle_auth
 from supabase import create_client
 
-
-def main():
-    """Main function for the Ammo page."""
-    # Set page configuration FIRST, before any other Streamlit operations
-    st.set_page_config(page_title="Bullets", page_icon="📦", layout="wide")
-
-    # Load custom navigation
-    navigation.load()
-
-    # Handle authentication
-    user = handle_auth()
-    if not user:
+def render_bullets_content():
+    """Render the bullets page content."""
+    
+    # Get user from session state (should be set by main app)
+    if "user" not in st.session_state:
+        st.error("User not authenticated")
         return
-
+    
+    user = st.session_state.user
+    
     # Supabase setup
     try:
         url = st.secrets["supabase"]["url"]
@@ -36,7 +29,7 @@ def main():
         return
 
     # Display title
-    st.title("🔫 Bullets Management")
+    st.title("📦 Bullets Management")
 
     # Create tabs for Create and View
     tab1, tab2 = st.tabs(["View", "Create"])
@@ -46,9 +39,3 @@ def main():
 
     with tab2:
         render_create_bullets_tab(user, supabase)
-
-
-
-
-if __name__ == "__main__":
-    main()

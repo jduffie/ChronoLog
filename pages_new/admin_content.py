@@ -1,30 +1,23 @@
 import os
 import sys
-
 import streamlit as st
-import navigation
 
 # Add the root directory to the path so we can import our modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from admin.users_tab import render_users_tab
-from auth import handle_auth
 from supabase import create_client
 
-
-def main():
-    """Main function for the Admin page."""
-    # Set page configuration FIRST, before any other Streamlit operations
-    st.set_page_config(page_title="Admin", page_icon="👑", layout="wide")
-
-    # Load custom navigation
-    navigation.load()
-
-    # Handle authentication
-    user = handle_auth()
-    if not user:
+def render_admin_content():
+    """Render the admin page content."""
+    
+    # Get user from session state (should be set by main app)
+    if "user" not in st.session_state:
+        st.error("User not authenticated")
         return
-
+    
+    user = st.session_state.user
+    
     # Check if user has admin role
     user_email = user.get("email")
     if not user_email:
@@ -76,7 +69,3 @@ def main():
 
     with tab1:
         render_users_tab(user, supabase)
-
-
-if __name__ == "__main__":
-    main()

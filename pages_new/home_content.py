@@ -1,33 +1,8 @@
-import os
-import sys
-
 import streamlit as st
-import navigation
 
-# Add the root directory to the path so we can import our modules
-sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
-
-from auth import handle_auth
-
-def run():
-    """Main function for the Landing page."""
-    # Set page configuration FIRST, before any other Streamlit operations
-    st.set_page_config(page_title="ChronoLog - Home", page_icon="🏠", layout="wide")
-
-    # Load custom navigation
-    navigation.load()
-
-    # Set app identifier for auth system (main ChronoLog app)
-    if "app" not in st.query_params:
-        st.query_params["app"] = "chronolog"
-
-    # Handle authentication
-    user = handle_auth()
-    if not user:
-        return
-
+def render_home_content():
+    """Render the home page content."""
+    
     # Display landing page content
     st.title("🎯 ChronoLog")
     st.subheader("Automated DOPE Construction from Multiple Data Sources")
@@ -149,7 +124,3 @@ def run():
     st.warning(
         "⚠️ **This is a prototype. There are no guarantees. Use at your own risk.**"
     )
-
-
-if __name__ == "__main__":
-    run()
