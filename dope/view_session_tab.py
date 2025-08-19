@@ -285,6 +285,111 @@ def render_view_session_tab(user, supabase):
                             tab_name
                         )
 
+                # Display measurements for all selected sessions in a unified table
+                st.markdown("---")
+                st.markdown("### 📊 DOPE Measurements")
+                
+                # Collect all measurements from sessions that have selections
+                all_measurements = []
+                if selected_rows.selection.rows:
+                    for selected_row_index in selected_rows.selection.rows:
+                        if selected_row_index in filtered_session_lookup:
+                            session = filtered_session_lookup[selected_row_index]
+                            measurements = session.get("dope_measurements", [])
+                            
+                            # Add session context to each measurement
+                            for measurement in measurements:
+                                enhanced_measurement = measurement.copy()
+                                enhanced_measurement["session_name"] = session.get("session_name", "N/A")
+                                enhanced_measurement["session_date"] = session_date if 'session_date' in locals() else "N/A"
+                                
+                                # Get session date from chrono data
+                                chrono_session = session.get("chrono_sessions")
+                                if chrono_session and chrono_session.get("datetime_local"):
+                                    session_dt = pd.to_datetime(chrono_session["datetime_local"])
+                                    enhanced_measurement["session_date"] = session_dt.strftime("%Y-%m-%d")
+                                elif session.get("created_at"):
+                                    session_dt = pd.to_datetime(session["created_at"])
+                                    enhanced_measurement["session_date"] = session_dt.strftime("%Y-%m-%d")
+                                
+                                all_measurements.append(enhanced_measurement)
+                
+                if all_measurements:
+                    # Convert to DataFrame
+                    measurements_df = pd.DataFrame(all_measurements)
+                    
+                    # Select and reorder columns for display
+                    display_columns = []
+                    if "session_name" in measurements_df.columns:
+                        display_columns.append("session_name")
+                    if "session_date" in measurements_df.columns:
+                        display_columns.append("session_date")
+                    if "shot_number" in measurements_df.columns:
+                        display_columns.append("shot_number")
+                    if "speed_fps" in measurements_df.columns:
+                        display_columns.append("speed_fps")
+                    if "ke_ft_lb" in measurements_df.columns:
+                        display_columns.append("ke_ft_lb")
+                    if "power_factor" in measurements_df.columns:
+                        display_columns.append("power_factor")
+                    if "azimuth_deg" in measurements_df.columns:
+                        display_columns.append("azimuth_deg")
+                    if "elevation_angle_deg" in measurements_df.columns:
+                        display_columns.append("elevation_angle_deg")
+                    if "temperature_f" in measurements_df.columns:
+                        display_columns.append("temperature_f")
+                    if "pressure_inhg" in measurements_df.columns:
+                        display_columns.append("pressure_inhg")
+                    if "humidity_pct" in measurements_df.columns:
+                        display_columns.append("humidity_pct")
+                    if "datetime_shot" in measurements_df.columns:
+                        display_columns.append("datetime_shot")
+                    if "clean_bore" in measurements_df.columns:
+                        display_columns.append("clean_bore")
+                    if "cold_bore" in measurements_df.columns:
+                        display_columns.append("cold_bore")
+                    if "shot_notes" in measurements_df.columns:
+                        display_columns.append("shot_notes")
+                    if "distance" in measurements_df.columns:
+                        display_columns.append("distance")
+                    if "elevation_adjustment" in measurements_df.columns:
+                        display_columns.append("elevation_adjustment")
+                    if "windage_adjustment" in measurements_df.columns:
+                        display_columns.append("windage_adjustment")
+
+                    # Display measurements table
+                    if display_columns:
+                        st.info(f"📈 Showing {len(measurements_df)} measurements from {len(selected_rows.selection.rows)} selected session(s)")
+                        
+                        st.dataframe(
+                            measurements_df[display_columns],
+                            use_container_width=True,
+                            hide_index=True,
+                            column_config={
+                                "session_name": st.column_config.TextColumn("Session Name"),
+                                "session_date": st.column_config.DateColumn("Session Date"),
+                                "shot_number": st.column_config.NumberColumn("Shot #"),
+                                "speed_fps": st.column_config.NumberColumn("Speed (fps)", format="%.1f"),
+                                "ke_ft_lb": st.column_config.NumberColumn("KE (ft-lb)", format="%.1f"),
+                                "power_factor": st.column_config.NumberColumn("Power Factor", format="%.1f"),
+                                "azimuth_deg": st.column_config.NumberColumn("Azimuth (°)", format="%.2f"),
+                                "elevation_angle_deg": st.column_config.NumberColumn("Elevation (°)", format="%.2f"),
+                                "temperature_f": st.column_config.NumberColumn("Temp (°F)", format="%.1f"),
+                                "pressure_inhg": st.column_config.NumberColumn("Pressure (inHg)", format="%.2f"),
+                                "humidity_pct": st.column_config.NumberColumn("Humidity (%)", format="%.1f"),
+                                "datetime_shot": st.column_config.DatetimeColumn("Date/Time"),
+                                "clean_bore": st.column_config.TextColumn("Clean Bore"),
+                                "cold_bore": st.column_config.TextColumn("Cold Bore"),
+                                "shot_notes": st.column_config.TextColumn("Notes"),
+                                "distance": st.column_config.TextColumn("Distance"),
+                                "elevation_adjustment": st.column_config.TextColumn("Elevation Adj"),
+                                "windage_adjustment": st.column_config.TextColumn("Windage Adj"),
+                            },
+                        )
+                    else:
+                        st.info("No measurement data columns found.")
+                else:
+                    st.info("No measurements found for selected session(s). Select a session above to view measurements.")
 
             else:
                 st.info("No sessions found.")

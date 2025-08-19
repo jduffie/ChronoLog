@@ -172,16 +172,23 @@ class TestDopePageStructure(unittest.TestCase):
     """Test the DOPE page structure and configuration"""
 
     def test_dope_page_exists(self):
-        """Test that the DOPE page file exists"""
-        page_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "pages", "2_📊_DOPE.py"
-        )
-        self.assertTrue(os.path.exists(page_path), "DOPE page should exist")
+        """Test that the DOPE page files exist"""
+        pages_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "pages")
+        
+        dope_pages = [
+            "2b_📊_DOPE_Create.py",
+            "2c_📊_DOPE_View.py", 
+            "2d_📊_DOPE_Analytics.py"
+        ]
+        
+        for page_file in dope_pages:
+            page_path = os.path.join(pages_dir, page_file)
+            self.assertTrue(os.path.exists(page_path), f"DOPE page {page_file} should exist")
 
     def test_dope_page_has_required_imports(self):
         """Test that DOPE page has required imports"""
         page_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "pages", "2_📊_DOPE.py"
+            os.path.dirname(os.path.dirname(__file__)), "pages", "2c_📊_DOPE_View.py"
         )
         if os.path.exists(page_path):
             with open(page_path, "r") as f:
@@ -191,7 +198,7 @@ class TestDopePageStructure(unittest.TestCase):
                 "streamlit",
                 "handle_auth",
                 "create_client",
-                "render_create_session_tab",
+                "render_view_session_tab",
             ]
             for required_import in required_imports:
                 self.assertIn(

@@ -40,7 +40,9 @@ class TestPageStructure(unittest.TestCase):
         """Test that all expected page files exist"""
         expected_pages = [
             "pages/1_🏠_Home.py",
-            "pages/2_📊_DOPE.py",
+            "pages/2b_📊_DOPE_Create.py",
+            "pages/2c_📊_DOPE_View.py", 
+            "pages/2d_📊_DOPE_Analytics.py",
             "pages/3_⏱️_Chronograph.py",
             "pages/4_🌤️_Weather.py",
             "pages/5_🌍_Ranges.py",
