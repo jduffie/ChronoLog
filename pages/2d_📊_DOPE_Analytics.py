@@ -37,38 +37,6 @@ def main():
     # Display title
     st.title("📊 DOPE Analytics")
 
-    # Clear DOPE model state when Analytics page is accessed
-    if "dope_page_sessions_visited" not in st.session_state:
-        st.session_state.dope_page_sessions_visited = True
-
-        # Clear DOPE model data
-        if "dope_model" in st.session_state:
-            for tab_name in list(st.session_state.dope_model.get_all_tabs()):
-                st.session_state.dope_model.clear_tab_data(tab_name)
-
-        # Reset other page visit flags
-        st.session_state.pop("dope_page_create_visited", None)
-        st.session_state.pop("dope_page_view_visited", None)
-        st.session_state.pop("dope_page_overview_visited", None)
-
-        # Clear any Analytics page related session state
-        keys_to_clear = []
-        for key in st.session_state.keys():
-            if key.startswith(
-                (
-                    "edit_range_",
-                    "edit_weather_",
-                    "edit_rifle_",
-                    "edit_cartridge_",
-                    "dope_cartridge_selection_",
-                    "dope_measurements_table_",
-                )
-            ):
-                keys_to_clear.append(key)
-
-        for key in keys_to_clear:
-            del st.session_state[key]
-
     render_sessions_tab(user, supabase)
 
 
