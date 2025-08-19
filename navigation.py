@@ -52,7 +52,7 @@ def load():
     st.sidebar.header("ChronoLog")
 
     # Data on Prior Engagements section
-    st.sidebar.divider()
+    # st.sidebar.divider()
     st.sidebar.subheader("Data on Prior Engagements")
     
     # Overview
@@ -83,7 +83,7 @@ def load():
     with cols[1]:
         st.page_link("pages/2d_📊_DOPE_Analytics.py", label="Analytics")
 
-    st.sidebar.divider()
+    # st.sidebar.divider()
     st.sidebar.header("Data Sets")
 
     # Data sets items
