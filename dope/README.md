@@ -2,6 +2,12 @@
 
 This directory contains tools and documentation for DOPE (Data On Previous Engagement) session management.
 
+## DOPE Session Entity Rules
+
+### Mandatory Fields
+
+Refer to the Nullable column in the dope_sessions_table_schema.md to identify which fields are required.
+
 ## Table Schema Documentation
 
 ###  Generate Schema

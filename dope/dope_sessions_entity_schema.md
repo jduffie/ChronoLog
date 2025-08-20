@@ -2,33 +2,44 @@
 
 ## Table Description
 
-| Column Name | Data Type | Nullable | Default | Description |
-|-------------|-----------|----------|---------|-------------|
-| **session_name** | text | YES | - | Descriptive name for the DOPE session |
-| **created_at** | timestamp with time zone | YES | now() | Record creation timestamp |
-| **chrono_session_id** | uuid | YES | - | Foreign key to chrono_sessions table |
-| **range_submission_id** | uuid | YES | - | Foreign key to ranges_submissions table |
-| **range_name** | text | YES | - | Name of the shooting range |
-| **distance_m** | real | YES | - | Target distance in meters |
-| **notes** | text | YES | - | Session notes and observations |
-| **status** | text | YES | 'active' | Session status |
-| **rifle_name** | uuid | YES | - | from rifles table |
-| **rifle_barrel_length_cm** | uuid | YES | - | from rifles table |
-| **rifle_barrel_twist_in_per_rev** | uuid | YES | - | from rifles table |
-| **cartridge_make** | text | YES | - | creator of the cartridge |
-| **cartridge_model** | text | YES | - | model |
-| **cartridge_type** | text | YES | - | Type of cartridge ('6mm Creedmore', '22LR', etc) |
-| **cartridge_lot_number** | text | YES | - | Cartridge lot identifier |
-| **bullet_make** | text | YES | - | from bullet table |
-| **bullet_model** | text | YES | - | from bullet table|
-| **bullet_weight** | text | YES | - | from bullet table |
-| **weather_source_name** | uuid | YES | - | name from weather_source table |
-| **temperature_c** | numeric(3,1) | YES | - | Temperature in Celsius with 1 decimal place |
-| **relative_humidity_pct** | numeric(5,2) | YES | - | Relative humidity percentage with 2 decimal places |
-| **barometric_pressure_inhg** | numeric(6,2) | YES | - | Barometric pressure in inHg with 2 decimal places |
-| **wind_speed_1_kmh** | numeric(4,1) | YES | - | Wind speed measurement 1 in km/h with 1 decimal place |
-| **wind_speed_2_kmh** | numeric(4,1) | YES | - | Wind speed measurement 2 in km/h with 1 decimal place |
-| **wind_direction_deg** | numeric(5,1) | YES | - | Wind direction in degrees with 1 decimal place |
+| Column Name                       | Data Type | Nullable | Default | Description                                                |
+|-----------------------------------|-----------|----------|---------|------------------------------------------------------------|
+| **session_name**                  | text | NO | - | Descriptive name for the DOPE session                      |
+| **created_at**                    | timestamp with time zone | YES | now() | Record creation timestamp                                  |
+| **chrono_session_id**             | uuid | YES | - | Foreign key to chrono_sessions table                       |
+| **range_submission_id**           | uuid | YES | - | Foreign key to ranges_submissions table                    |
+| **range_name**                    | text | YES | - | Name of the shooting range from ranges_submissions table   |
+| **distance_m**                    | real | YES | - | Target distance in meters                                  |
+| **notes**                         | text | YES | - | Session notes and observations                             |
+| **status**                        | text | YES | 'active' | Session status                                             |
+| **rifle_name**                    | uuid | NO | - | from rifles table                                          |
+| **rifle_barrel_length_cm**        | uuid | YES | - | from rifles table                                          |
+| **rifle_barrel_twist_in_per_rev** | uuid | YES | - | from rifles table                                          |
+| **cartridge_make**                | text | NO | - | creator of the cartridge                                   |
+| **cartridge_model**               | text | NO | - | model                                                      |
+| **cartridge_type**                | text | NO | - | Type of cartridge ('6mm Creedmore', '22LR', etc)           |
+| **cartridge_lot_number**          | text | YES | - | Cartridge lot identifier                                   |
+| **bullet_make**                   | text | NO | - | from bullet table                                          |
+| **bullet_model**                  | text | NO | - | from bullet table                                          |
+| **bullet_weight**                 | text | NO | - | from bullet table                                          |
+| **bullet_length_mm**              | text | YES | - | from bullet table                                          |
+| **ballistic_coefficient_g1**      | text | YES | - | from bullet table                                          |
+| **ballistic_coefficient_g7**      | text | YES | - | from bullet table                                          |
+| **sectional_density**             | text | YES | - | from bullet table                                          |
+| **bullet_diameter_groove_mm**     | text | YES | - | from bullet table                                          |
+| **bore_diameter_land_mm**         | text | YES | - | from bullet table                                          |
+| **weather_source_name**           | uuid | YES | - | name from weather_source table                             |
+| **temperature_c**                 | numeric(3,1) | YES | - | Temperature in Celsius with 1 decimal place                |
+| **relative_humidity_pct**         | numeric(5,2) | YES | - | Relative humidity percentage with 2 decimal places         |
+| **barometric_pressure_inhg**      | numeric(6,2) | YES | - | Barometric pressure in inHg with 2 decimal places          |
+| **wind_speed_1_kmh**              | numeric(4,1) | YES | - | Wind speed measurement 1 in km/h with 1 decimal place      |
+| **wind_speed_2_kmh**              | numeric(4,1) | YES | - | Wind speed measurement 2 in km/h with 1 decimal place      |
+| **wind_direction_deg**            | numeric(5,1) | YES | - | Wind direction in degrees with 1 decimal place             |
+| **start_lat**                     | numeric(10,6) | YES | - | Firing position latitude from ranges_submissions           |
+| **start_lon**                     | numeric(10,6) | YES | - | Firing position longitude from ranges_submissions          |
+| **start_altitude_m**              | numeric(8,2) | YES | - | Firing position altitude in meters from ranges_submissions |
+| **azimuth_deg**                   | numeric(6,2) | YES | - | Bearing angle in degrees from ranges_submissions           |
+| **elevation_angle_deg**           | numeric(6,2) | YES | - | Elevation angle in degrees from ranges_submissions         |
 
 ## Foreign Key Relationships
 
