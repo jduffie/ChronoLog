@@ -8,7 +8,7 @@ import navigation
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from auth import handle_auth
-from dope.create_session_tab import render_create_session_tab
+from dope.create_page import render_create_page
 from supabase import create_client
 
 
@@ -37,7 +37,7 @@ def main():
     # Display title
     st.title("📈 Create DOPE Session")
 
-    render_create_session_tab(user, supabase)
+    render_create_page()
 
 
 if __name__ == "__main__":

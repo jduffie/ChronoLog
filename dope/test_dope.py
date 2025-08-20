@@ -9,7 +9,7 @@ import pandas as pd
 # Add the root directory to the path so we can import our modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from dope.create_session_tab import render_create_session_tab
+from dope.create_page import render_create_page
 from dope.dope_model import DopeModel
 
 
@@ -162,7 +162,7 @@ class TestDopeCreateSessionTab(unittest.TestCase):
 
             # This would normally render the tab content
             # We're just testing that it doesn't crash
-            result = render_create_session_tab(user, mock_supabase)
+            result = render_create_page()
 
             # The function doesn't return anything by default
             self.assertIsNone(result)
