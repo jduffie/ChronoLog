@@ -141,8 +141,6 @@ python -m pytest chronograph/test_chronograph.py -v
 # Run bullets tests
 python -m pytest bullets/test_bullets.py -v
 
-# Run DOPE tests
-python -m pytest dope/test_dope.py -v
 
 # Run rifles tests
 python -m pytest rifles/test_rifles.py -v

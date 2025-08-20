@@ -13,13 +13,13 @@ from chronograph.test_chronograph import (
     TestChronographService,
 )
 
-# from weather.test_weather import TestWeatherSource, TestWeatherMeasurement, TestWeatherImportTab, TestWeatherPageStructure  # Temporarily disabled
-from dope.test_dope import (
-    TestDopeCreateSessionTab,
-    TestDopeModel,
-    TestDopePageStructure,
-    TestDopeSessionManagement,
-)
+from weather.test_weather import TestWeatherSource, TestWeatherMeasurement, TestWeatherImportTab, TestWeatherPageStructure
+# from dope.test_dope import (  # Removed - test_dope.py deleted
+#     TestDopeCreateSessionTab,
+#     TestDopeModel,
+#     TestDopePageStructure,
+#     TestDopeSessionManagement,
+# )
 from mapping.test_mapping import (
     TestMappingModels,
     TestMappingPageStructure,
@@ -40,6 +40,7 @@ class TestPageStructure(unittest.TestCase):
         """Test that all expected page files exist"""
         expected_pages = [
             "pages/1_🏠_Home.py",
+            "pages/2a_📊_DOPE_Overview.py",
             "pages/2b_📊_DOPE_Create.py",
             "pages/2c_📊_DOPE_View.py", 
             "pages/2d_📊_DOPE_Analytics.py",
@@ -59,7 +60,9 @@ class TestPageStructure(unittest.TestCase):
         """Test that pages have required imports"""
         page_imports = {
             "pages/1_🏠_Home.py": ["streamlit", "handle_auth"],
-            "pages/2_📊_DOPE.py": ["streamlit", "handle_auth", "create_client"],
+            "pages/2b_📊_DOPE_Create.py": ["streamlit", "handle_auth", "create_client"],
+            "pages/2c_📊_DOPE_View.py": ["streamlit", "handle_auth", "create_client"],
+            "pages/2d_📊_DOPE_Analytics.py": ["streamlit", "handle_auth", "create_client"],
             "pages/3_⏱️_Chronograph.py": ["streamlit", "handle_auth", "create_client"],
             "pages/4_🌤️_Weather.py": ["streamlit", "handle_auth", "create_client"],
             "pages/5_🌍_Ranges.py": ["streamlit", "handle_auth", "create_client"],
@@ -83,7 +86,9 @@ class TestPageStructure(unittest.TestCase):
         """Test that pages have either main() or run() function"""
         page_files = [
             "pages/1_🏠_Home.py",
-            "pages/2_📊_DOPE.py",
+            "pages/2b_📊_DOPE_Create.py",
+            "pages/2c_📊_DOPE_View.py",
+            "pages/2d_📊_DOPE_Analytics.py",
             "pages/3_⏱️_Chronograph.py",
             "pages/4_🌤️_Weather.py",
             "pages/5_🌍_Ranges.py",
@@ -265,15 +270,20 @@ class TestPageTabStructure(unittest.TestCase):
                     f'"{tab}"', content, f"Weather page should have {tab} tab"
                 )
 
-    def test_dope_has_correct_tabs(self):
-        """Test that DOPE page has expected tabs"""
-        if os.path.exists("pages/2_📊_DOPE.py"):
-            with open("pages/2_📊_DOPE.py", "r") as f:
-                content = f.read()
-
-            expected_tabs = ["Create", "View", "Analytics"]
-            for tab in expected_tabs:
-                self.assertIn(f'"{tab}"', content, f"DOPE page should have {tab} tab")
+    def test_dope_has_separate_pages(self):
+        """Test that DOPE has separate pages instead of tabs"""
+        expected_dope_pages = [
+            "pages/2a_📊_DOPE_Overview.py",
+            "pages/2b_📊_DOPE_Create.py", 
+            "pages/2c_📊_DOPE_View.py",
+            "pages/2d_📊_DOPE_Analytics.py"
+        ]
+        
+        for page_file in expected_dope_pages:
+            self.assertTrue(
+                os.path.exists(page_file),
+                f"DOPE page {page_file} should exist"
+            )
 
     def test_ranges_has_correct_tabs(self):
         """Test that ranges page has expected tabs"""

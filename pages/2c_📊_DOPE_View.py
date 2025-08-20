@@ -8,7 +8,7 @@ import navigation
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from auth import handle_auth
-from dope.view_page import render_view_page
+from dope.view.view_page import render_view_page
 from supabase import create_client
 
 

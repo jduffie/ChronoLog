@@ -18,9 +18,8 @@ def discover_and_run_tests():
     # Test directories to scan
     test_dirs = [
         "chronograph",
-        # 'weather',  # Temporarily disabled due to import issues
-        "dope",
-        "ammo",
+        "weather",  # Re-enabled - import issues resolved
+        "dope",  # Now has test_dope_modules.py
         "rifles",
         "mapping",
         ".",  # Root directory for general tests
@@ -49,9 +48,8 @@ def run_specific_module_tests():
 
     test_modules = [
         "chronograph.test_chronograph",
-        # 'weather.test_weather',  # Temporarily disabled due to import issues
-        "dope.test_dope",
-        "ammo.test_ammo",
+        "weather.test_weather",  # Re-enabled - import issues resolved
+        "dope.test_dope_modules",  # New DOPE module tests
         "rifles.test_rifles",
         "mapping.test_mapping",
         "test_all_pages",

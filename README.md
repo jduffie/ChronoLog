@@ -28,8 +28,6 @@ python test_all_pages.py
 # Run module-specific tests
 python chronograph/test_chronograph.py
 python weather/test_weather.py
-python dope/test_dope.py
-python ammo/test_ammo.py
 python rifles/test_rifles.py
 python mapping/test_mapping.py
 ```

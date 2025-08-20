@@ -75,8 +75,8 @@ jobs:
         pytest --cov=. --cov-report=xml --cov-report=html --cov-report=term-missing \
                --html=test-report.html --self-contained-html \
                chronograph/test_chronograph.py \
-               dope/test_dope.py \
-               ammo/test_ammo.py \
+               weather/test_weather.py \
+               dope/test_dope_modules.py \
                rifles/test_rifles.py \
                mapping/test_mapping.py \
                test_all_pages.py \
