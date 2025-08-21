@@ -32,8 +32,6 @@ def render_view_page():
             "name": "Test User"
         }
     
-    # Debug: Show user info (remove this in production)
-    st.write("DEBUG - User object:", st.session_state.user)
     
     user_id = st.session_state.user.get("id")
     if not user_id:
@@ -46,7 +44,6 @@ def render_view_page():
             user_id = "google-oauth2|111273793361054745867"
             st.warning(f"Using test user ID: {user_id}")
     
-    st.write(f"DEBUG - Using user_id: {user_id}")
     
     st.title("📊 View DOPE Sessions")
     
@@ -62,8 +59,7 @@ def render_view_page():
         if "show_advanced_filters" not in st.session_state:
             st.session_state.show_advanced_filters = False
         
-        # Sidebar for filters
-        render_filter_sidebar(service, user_id)
+        # Remove sidebar filters - all filters now on main page
         
         # Main content area
         col1, col2, col3 = st.columns([3, 1, 1])
@@ -79,6 +75,9 @@ def render_view_page():
         with col3:
             if st.button("➕ Create New", help="Create a new DOPE session"):
                 st.switch_page("pages/2b_DOPE_Create.py")
+        
+        # Advanced Filters Section (on main page)
+        render_main_page_filters(service, user_id)
         
         # Get filtered sessions
         sessions = get_filtered_sessions(service, user_id, st.session_state.dope_filters)
@@ -110,64 +109,41 @@ def render_view_page():
         st.info("Please try refreshing the page or contact support if the problem persists.")
 
 
-def render_filter_sidebar(service: DopeService, user_id: str):
-    """Render comprehensive filtering interface in sidebar"""
-    with st.sidebar:
-        st.header("🔍 Filters")
+def render_main_page_filters(service: DopeService, user_id: str):
+    """Render advanced filters section on the main page with expandable controls"""
+    # Advanced Filters Section with expander
+    with st.expander("🔍 All Filters", expanded=st.session_state.get("show_advanced_filters", False)):
+        # Store expander state
+        st.session_state.show_advanced_filters = True
         
-        # Quick clear filters button
-        if st.button("Clear All Filters", key="clear_filters"):
-            st.session_state.dope_filters = {}
-            st.rerun()
+        # Quick actions row
+        col1, col2, col3 = st.columns([2, 1, 1])
         
-        # Global search
-        search_term = st.text_input(
-            "🔍 Search Sessions",
-            value=st.session_state.dope_filters.get("search", ""),
-            placeholder="Search names, cartridges, bullets, ranges...",
-            help="Search across all text fields"
-        )
-        if search_term:
-            st.session_state.dope_filters["search"] = search_term
-        elif "search" in st.session_state.dope_filters:
-            del st.session_state.dope_filters["search"]
-        
-        # Basic filters
-        st.subheader("Basic Filters")
-        
-        # Date range filter
-        col1, col2 = st.columns(2)
         with col1:
-            date_from = st.date_input(
-                "From Date",
-                value=st.session_state.dope_filters.get("date_from"),
-                key="date_from_filter"
+            # Global search
+            search_term = st.text_input(
+                "🔍 Search Sessions",
+                value=st.session_state.dope_filters.get("search", ""),
+                placeholder="Search names, cartridges, bullets, ranges...",
+                help="Search across all text fields"
             )
+            if search_term:
+                st.session_state.dope_filters["search"] = search_term
+            elif "search" in st.session_state.dope_filters:
+                del st.session_state.dope_filters["search"]
+        
         with col2:
-            date_to = st.date_input(
-                "To Date", 
-                value=st.session_state.dope_filters.get("date_to"),
-                key="date_to_filter"
-            )
+            if st.button("🔄 Apply Filters", use_container_width=True):
+                st.rerun()
         
-        if date_from:
-            st.session_state.dope_filters["date_from"] = datetime.combine(date_from, datetime.min.time())
-        if date_to:
-            st.session_state.dope_filters["date_to"] = datetime.combine(date_to, datetime.max.time())
+        with col3:
+            if st.button("🧹 Clear All", use_container_width=True):
+                st.session_state.dope_filters = {}
+                st.rerun()
         
-        # Status filter
-        status_options = ["All", "active", "archived"]
-        status = st.selectbox(
-            "Status",
-            options=status_options,
-            index=status_options.index(st.session_state.dope_filters.get("status", "All"))
-        )
-        if status != "All":
-            st.session_state.dope_filters["status"] = status
-        elif "status" in st.session_state.dope_filters:
-            del st.session_state.dope_filters["status"]
+        st.divider()
         
-        # Get unique values for autocomplete filters
+        # Get unique values for filters
         try:
             rifle_names = service.get_unique_values(user_id, "rifle_name")
             cartridge_types = service.get_unique_values(user_id, "cartridge_type")
@@ -177,125 +153,183 @@ def render_filter_sidebar(service: DopeService, user_id: str):
         except Exception:
             rifle_names = cartridge_types = cartridge_makes = bullet_makes = range_names = []
         
-        # Rifle filter
-        if rifle_names:
-            rifle_name = st.selectbox(
-                "Rifle Name",
-                options=["All"] + rifle_names,
-                index=0 if st.session_state.dope_filters.get("rifle_name") not in rifle_names 
-                       else rifle_names.index(st.session_state.dope_filters.get("rifle_name")) + 1
+        # Filter sections in columns
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.subheader("📅 Time & Status")
+            
+            # Date range filter
+            date_col1, date_col2 = st.columns(2)
+            with date_col1:
+                date_from = st.date_input(
+                    "From Date",
+                    value=st.session_state.dope_filters.get("date_from"),
+                    key="date_from_filter"
+                )
+            with date_col2:
+                date_to = st.date_input(
+                    "To Date", 
+                    value=st.session_state.dope_filters.get("date_to"),
+                    key="date_to_filter"
+                )
+            
+            if date_from:
+                st.session_state.dope_filters["date_from"] = datetime.combine(date_from, datetime.min.time())
+            if date_to:
+                st.session_state.dope_filters["date_to"] = datetime.combine(date_to, datetime.max.time())
+            
+            # Status filter
+            status_options = ["All", "active", "archived"]
+            status = st.selectbox(
+                "Status",
+                options=status_options,
+                index=status_options.index(st.session_state.dope_filters.get("status", "All"))
             )
-            if rifle_name != "All":
-                st.session_state.dope_filters["rifle_name"] = rifle_name
-            elif "rifle_name" in st.session_state.dope_filters:
-                del st.session_state.dope_filters["rifle_name"]
+            if status != "All":
+                st.session_state.dope_filters["status"] = status
+            elif "status" in st.session_state.dope_filters:
+                del st.session_state.dope_filters["status"]
         
-        # Range filter
-        if range_names:
-            range_name = st.selectbox(
-                "Range Name",
-                options=["All"] + range_names,
-                index=0 if st.session_state.dope_filters.get("range_name") not in range_names
-                       else range_names.index(st.session_state.dope_filters.get("range_name")) + 1
+        with col2:
+            st.subheader("🔫 Equipment")
+            
+            # Rifle filter
+            if rifle_names:
+                rifle_name = st.selectbox(
+                    "Rifle Name",
+                    options=["All"] + rifle_names,
+                    index=0 if st.session_state.dope_filters.get("rifle_name") not in rifle_names 
+                           else rifle_names.index(st.session_state.dope_filters.get("rifle_name")) + 1
+                )
+                if rifle_name != "All":
+                    st.session_state.dope_filters["rifle_name"] = rifle_name
+                elif "rifle_name" in st.session_state.dope_filters:
+                    del st.session_state.dope_filters["rifle_name"]
+            
+            # Range filter
+            if range_names:
+                range_name = st.selectbox(
+                    "Range Name",
+                    options=["All"] + range_names,
+                    index=0 if st.session_state.dope_filters.get("range_name") not in range_names
+                           else range_names.index(st.session_state.dope_filters.get("range_name")) + 1
+                )
+                if range_name != "All":
+                    st.session_state.dope_filters["range_name"] = range_name
+                elif "range_name" in st.session_state.dope_filters:
+                    del st.session_state.dope_filters["range_name"]
+            
+            # Distance filter
+            distance_range = st.slider(
+                "Distance (meters)",
+                min_value=0,
+                max_value=1000,
+                value=st.session_state.dope_filters.get("distance_range", (0, 1000)),
+                step=25
             )
-            if range_name != "All":
-                st.session_state.dope_filters["range_name"] = range_name
-            elif "range_name" in st.session_state.dope_filters:
-                del st.session_state.dope_filters["range_name"]
+            if distance_range != (0, 1000):
+                st.session_state.dope_filters["distance_range"] = distance_range
+            elif "distance_range" in st.session_state.dope_filters:
+                del st.session_state.dope_filters["distance_range"]
         
-        # Advanced filters toggle
-        st.session_state.show_advanced_filters = st.checkbox(
-            "Show Advanced Filters", 
-            value=st.session_state.show_advanced_filters
-        )
+        with col3:
+            st.subheader("🎯 Ammunition")
+            
+            # Cartridge filters
+            if cartridge_makes:
+                cartridge_make = st.selectbox(
+                    "Cartridge Make",
+                    options=["All"] + cartridge_makes,
+                    key="cartridge_make_filter"
+                )
+                if cartridge_make != "All":
+                    st.session_state.dope_filters["cartridge_make"] = cartridge_make
+                elif "cartridge_make" in st.session_state.dope_filters:
+                    del st.session_state.dope_filters["cartridge_make"]
+            
+            if cartridge_types:
+                cartridge_type = st.selectbox(
+                    "Cartridge Type",
+                    options=["All"] + cartridge_types,
+                    key="cartridge_type_filter"
+                )
+                if cartridge_type != "All":
+                    st.session_state.dope_filters["cartridge_type"] = cartridge_type
+                elif "cartridge_type" in st.session_state.dope_filters:
+                    del st.session_state.dope_filters["cartridge_type"]
+            
+            # Bullet filters
+            if bullet_makes:
+                bullet_make = st.selectbox(
+                    "Bullet Make",
+                    options=["All"] + bullet_makes,
+                    key="bullet_make_filter"
+                )
+                if bullet_make != "All":
+                    st.session_state.dope_filters["bullet_make"] = bullet_make
+                elif "bullet_make" in st.session_state.dope_filters:
+                    del st.session_state.dope_filters["bullet_make"]
+            
+            # Bullet weight range
+            weight_range = st.slider(
+                "Bullet Weight (grains)",
+                min_value=50,
+                max_value=300,
+                value=st.session_state.dope_filters.get("bullet_weight_range", (50, 300)),
+                step=5
+            )
+            if weight_range != (50, 300):
+                st.session_state.dope_filters["bullet_weight_range"] = weight_range
+            elif "bullet_weight_range" in st.session_state.dope_filters:
+                del st.session_state.dope_filters["bullet_weight_range"]
         
-        if st.session_state.show_advanced_filters:
-            render_advanced_filters(cartridge_types, cartridge_makes, bullet_makes)
+        # Weather filters in a separate row
+        st.divider()
+        st.subheader("🌤️ Weather Conditions")
+        
+        weather_col1, weather_col2, weather_col3 = st.columns(3)
+        
+        with weather_col1:
+            temp_range = st.slider(
+                "Temperature (°C)",
+                min_value=-20.0,
+                max_value=50.0,
+                value=st.session_state.dope_filters.get("temperature_range", (-20.0, 50.0)),
+                step=1.0
+            )
+            if temp_range != (-20.0, 50.0):
+                st.session_state.dope_filters["temperature_range"] = temp_range
+            elif "temperature_range" in st.session_state.dope_filters:
+                del st.session_state.dope_filters["temperature_range"]
+        
+        with weather_col2:
+            humidity_range = st.slider(
+                "Humidity (%)",
+                min_value=0.0,
+                max_value=100.0,
+                value=st.session_state.dope_filters.get("humidity_range", (0.0, 100.0)),
+                step=5.0
+            )
+            if humidity_range != (0.0, 100.0):
+                st.session_state.dope_filters["humidity_range"] = humidity_range
+            elif "humidity_range" in st.session_state.dope_filters:
+                del st.session_state.dope_filters["humidity_range"]
+        
+        with weather_col3:
+            wind_range = st.slider(
+                "Wind Speed (km/h)",
+                min_value=0.0,
+                max_value=50.0,
+                value=st.session_state.dope_filters.get("wind_speed_range", (0.0, 50.0)),
+                step=1.0
+            )
+            if wind_range != (0.0, 50.0):
+                st.session_state.dope_filters["wind_speed_range"] = wind_range
+            elif "wind_speed_range" in st.session_state.dope_filters:
+                del st.session_state.dope_filters["wind_speed_range"]
 
 
-def render_advanced_filters(cartridge_types: List[str], cartridge_makes: List[str], bullet_makes: List[str]):
-    """Render advanced filtering options"""
-    st.subheader("Advanced Filters")
-    
-    # Cartridge filters
-    with st.expander("🎯 Cartridge Filters"):
-        if cartridge_makes:
-            cartridge_make = st.selectbox(
-                "Cartridge Make",
-                options=["All"] + cartridge_makes,
-                key="cartridge_make_filter"
-            )
-            if cartridge_make != "All":
-                st.session_state.dope_filters["cartridge_make"] = cartridge_make
-        
-        if cartridge_types:
-            cartridge_type = st.selectbox(
-                "Cartridge Type",
-                options=["All"] + cartridge_types,
-                key="cartridge_type_filter"
-            )
-            if cartridge_type != "All":
-                st.session_state.dope_filters["cartridge_type"] = cartridge_type
-    
-    # Bullet filters
-    with st.expander("🏹 Bullet Filters"):
-        if bullet_makes:
-            bullet_make = st.selectbox(
-                "Bullet Make",
-                options=["All"] + bullet_makes,
-                key="bullet_make_filter"
-            )
-            if bullet_make != "All":
-                st.session_state.dope_filters["bullet_make"] = bullet_make
-        
-        # Bullet weight range
-        weight_range = st.slider(
-            "Bullet Weight (grains)",
-            min_value=50,
-            max_value=300,
-            value=(50, 300),
-            step=5,
-            key="bullet_weight_range"
-        )
-        if weight_range != (50, 300):
-            st.session_state.dope_filters["bullet_weight_range"] = weight_range
-    
-    # Weather filters
-    with st.expander("🌤️ Weather Filters"):
-        temp_range = st.slider(
-            "Temperature (°C)",
-            min_value=-20.0,
-            max_value=50.0,
-            value=(-20.0, 50.0),
-            step=1.0,
-            key="temperature_range"
-        )
-        if temp_range != (-20.0, 50.0):
-            st.session_state.dope_filters["temperature_range"] = temp_range
-        
-        wind_range = st.slider(
-            "Wind Speed (km/h)",
-            min_value=0.0,
-            max_value=50.0,
-            value=(0.0, 50.0),
-            step=1.0,
-            key="wind_speed_range"
-        )
-        if wind_range != (0.0, 50.0):
-            st.session_state.dope_filters["wind_speed_range"] = wind_range
-    
-    # Distance filter
-    with st.expander("📏 Distance Filters"):
-        distance_range = st.slider(
-            "Distance (meters)",
-            min_value=0,
-            max_value=1000,
-            value=(0, 1000),
-            step=25,
-            key="distance_range"
-        )
-        if distance_range != (0, 1000):
-            st.session_state.dope_filters["distance_range"] = distance_range
 
 
 def get_filtered_sessions(service: DopeService, user_id: str, filters: Dict[str, Any]) -> List[DopeSessionModel]:
