@@ -386,12 +386,12 @@ def render_sessions_table(sessions: List[DopeSessionModel]):
             "Cartridge": f"{session.cartridge_make} {session.cartridge_model}" if session.cartridge_make else "Unknown",
             "Cartridge Type": session.cartridge_type or "Unknown",
             "Bullet": f"{session.bullet_make} {session.bullet_model}" if session.bullet_make else "Unknown",
-            "Bullet Weight (gr)": session.bullet_weight if session.bullet_weight else "",
-            "Distance (m)": session.distance_m if session.distance_m else "",
+            "Bullet Weight (gr)": float(session.bullet_weight) if session.bullet_weight else None,
+            "Distance (m)": session.distance_m if session.distance_m else None,
             "Range": session.range_name or "Unknown",
-            "Temperature (°C)": session.temperature_c if session.temperature_c is not None else "",
-            "Humidity (%)": session.relative_humidity_pct if session.relative_humidity_pct is not None else "",
-            "Wind Speed (km/h)": session.wind_speed_1_kmh if session.wind_speed_1_kmh is not None else "",
+            "Temperature (°C)": session.temperature_c if session.temperature_c is not None else None,
+            "Humidity (%)": session.relative_humidity_pct if session.relative_humidity_pct is not None else None,
+            "Wind Speed (km/h)": session.wind_speed_1_kmh if session.wind_speed_1_kmh is not None else None,
             "Notes": (session.notes[:50] + "...") if session.notes and len(session.notes) > 50 else (session.notes or "")
         }
         df_data.append(row)
