@@ -36,6 +36,8 @@ def main():
 
     # Display title
     st.title("📈 Create DOPE Session")
+    print("start")
+
 
     render_create_page()
 

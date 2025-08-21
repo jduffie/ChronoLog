@@ -39,15 +39,15 @@ class TestPageStructure(unittest.TestCase):
     def test_all_pages_exist(self):
         """Test that all expected page files exist"""
         expected_pages = [
-            "pages/1_🏠_Home.py",
-            "pages/2a_📊_DOPE_Overview.py",
-            "pages/2b_📊_DOPE_Create.py",
-            "pages/2c_📊_DOPE_View.py", 
-            "pages/2d_📊_DOPE_Analytics.py",
-            "pages/3_⏱️_Chronograph.py",
-            "pages/4_🌤️_Weather.py",
-            "pages/5_🌍_Ranges.py",
-            "pages/6_📏_Rifles.py",
+            "pages/1_Home.py",
+            "pages/2a_DOPE_Overview.py",
+            "pages/2b_DOPE_Create.py",
+            "pages/2c_DOPE_View.py", 
+            "pages/2d_DOPE_Analytics.py",
+            "pages/3_Chronograph.py",
+            "pages/4_Weather.py",
+            "pages/5_Ranges.py",
+            "pages/6_Rifles.py",
         ]
 
         for page_file in expected_pages:
@@ -59,14 +59,14 @@ class TestPageStructure(unittest.TestCase):
     def test_pages_have_required_imports(self):
         """Test that pages have required imports"""
         page_imports = {
-            "pages/1_🏠_Home.py": ["streamlit", "handle_auth"],
-            "pages/2b_📊_DOPE_Create.py": ["streamlit", "handle_auth", "create_client"],
-            "pages/2c_📊_DOPE_View.py": ["streamlit", "handle_auth", "create_client"],
-            "pages/2d_📊_DOPE_Analytics.py": ["streamlit", "handle_auth", "create_client"],
-            "pages/3_⏱️_Chronograph.py": ["streamlit", "handle_auth", "create_client"],
-            "pages/4_🌤️_Weather.py": ["streamlit", "handle_auth", "create_client"],
-            "pages/5_🌍_Ranges.py": ["streamlit", "handle_auth", "create_client"],
-            "pages/6_📏_Rifles.py": ["streamlit", "handle_auth", "create_client"],
+            "pages/1_Home.py": ["streamlit", "handle_auth"],
+            "pages/2b_DOPE_Create.py": ["streamlit", "handle_auth", "create_client"],
+            "pages/2c_DOPE_View.py": ["streamlit", "handle_auth", "create_client"],
+            "pages/2d_DOPE_Analytics.py": ["streamlit", "handle_auth", "create_client"],
+            "pages/3_Chronograph.py": ["streamlit", "handle_auth", "create_client"],
+            "pages/4_Weather.py": ["streamlit", "handle_auth", "create_client"],
+            "pages/5_Ranges.py": ["streamlit", "handle_auth", "create_client"],
+            "pages/6_Rifles.py": ["streamlit", "handle_auth", "create_client"],
         }
 
         for page_file, required_imports in page_imports.items():
@@ -85,14 +85,14 @@ class TestPageStructure(unittest.TestCase):
     def test_pages_have_main_or_run_function(self):
         """Test that pages have either main() or run() function"""
         page_files = [
-            "pages/1_🏠_Home.py",
-            "pages/2b_📊_DOPE_Create.py",
-            "pages/2c_📊_DOPE_View.py",
-            "pages/2d_📊_DOPE_Analytics.py",
-            "pages/3_⏱️_Chronograph.py",
-            "pages/4_🌤️_Weather.py",
-            "pages/5_🌍_Ranges.py",
-            "pages/6_📏_Rifles.py",
+            "pages/1_Home.py",
+            "pages/2b_DOPE_Create.py",
+            "pages/2c_DOPE_View.py",
+            "pages/2d_DOPE_Analytics.py",
+            "pages/3_Chronograph.py",
+            "pages/4_Weather.py",
+            "pages/5_Ranges.py",
+            "pages/6_Rifles.py",
         ]
 
         for page_file in page_files:
@@ -112,12 +112,12 @@ class TestPageStructure(unittest.TestCase):
     def test_pages_set_page_config(self):
         """Test that pages call st.set_page_config"""
         page_files = [
-            "pages/1_🏠_Home.py",
-            "pages/2_📊_DOPE.py",
-            "pages/3_⏱️_Chronograph.py",
-            "pages/4_🌤️_Weather.py",
-            "pages/5_🌍_Ranges.py",
-            "pages/6_📏_Rifles.py",
+            "pages/1_Home.py",
+            "pages/2_DOPE.py",
+            "pages/3_Chronograph.py",
+            "pages/4_Weather.py",
+            "pages/5_Ranges.py",
+            "pages/6_Rifles.py",
         ]
 
         for page_file in page_files:
@@ -135,12 +135,12 @@ class TestPageStructure(unittest.TestCase):
     def test_pages_handle_authentication(self):
         """Test that pages handle authentication"""
         page_files = [
-            "pages/1_🏠_Home.py",
-            "pages/2_📊_DOPE.py",
-            "pages/3_⏱️_Chronograph.py",
-            "pages/4_🌤️_Weather.py",
-            "pages/5_🌍_Ranges.py",
-            "pages/6_📏_Rifles.py",
+            "pages/1_Home.py",
+            "pages/2_DOPE.py",
+            "pages/3_Chronograph.py",
+            "pages/4_Weather.py",
+            "pages/5_Ranges.py",
+            "pages/6_Rifles.py",
         ]
 
         for page_file in page_files:
@@ -169,12 +169,12 @@ class TestPageConfiguration(unittest.TestCase):
     def test_page_titles_and_icons(self):
         """Test that pages have appropriate titles and icons"""
         expected_configs = {
-            "pages/1_🏠_Home.py": ("ChronoLog - Home", "🏠"),
-            "pages/2_📊_DOPE.py": ("DOPE", "📊"),
-            "pages/3_⏱️_Chronograph.py": ("Chronograph", "📁"),
-            "pages/4_🌤️_Weather.py": ("Weather - ChronoLog", "🌤️"),
-            "pages/5_🌍_Ranges.py": ("Ranges", "🌍"),
-            "pages/6_📏_Rifles.py": ("Rifles", "📏"),
+            "pages/1_Home.py": ("ChronoLog - Home", "🏠"),
+            "pages/2_DOPE.py": ("DOPE", "📊"),
+            "pages/3_Chronograph.py": ("Chronograph", "📁"),
+            "pages/4_Weather.py": ("Weather - ChronoLog", "🌤️"),
+            "pages/5_Ranges.py": ("Ranges", "🌍"),
+            "pages/6_Rifles.py": ("Rifles", "📏"),
         }
 
         for page_file, (expected_title, expected_icon) in expected_configs.items():
@@ -197,12 +197,12 @@ class TestPageConfiguration(unittest.TestCase):
     def test_pages_use_wide_layout(self):
         """Test that pages use wide layout"""
         page_files = [
-            "pages/1_🏠_Home.py",
-            "pages/2_📊_DOPE.py",
-            "pages/3_⏱️_Chronograph.py",
-            "pages/4_🌤️_Weather.py",
-            "pages/5_🌍_Ranges.py",
-            "pages/6_📏_Rifles.py",
+            "pages/1_Home.py",
+            "pages/2_DOPE.py",
+            "pages/3_Chronograph.py",
+            "pages/4_Weather.py",
+            "pages/5_Ranges.py",
+            "pages/6_Rifles.py",
         ]
 
         for page_file in page_files:
@@ -232,7 +232,7 @@ class TestMainAppStructure(unittest.TestCase):
                 content = f.read()
 
             self.assertIn(
-                "pages/1_🏠_Home.py",
+                "pages/1_Home.py",
                 content,
                 "ChronoLog.py should import the home page",
             )
@@ -248,8 +248,8 @@ class TestPageTabStructure(unittest.TestCase):
 
     def test_chronograph_has_correct_tabs(self):
         """Test that chronograph page has expected tabs"""
-        if os.path.exists("pages/3_⏱️_Chronograph.py"):
-            with open("pages/3_⏱️_Chronograph.py", "r") as f:
+        if os.path.exists("pages/3_Chronograph.py"):
+            with open("pages/3_Chronograph.py", "r") as f:
                 content = f.read()
 
             expected_tabs = ["Import", "View", "Edit", "My Files"]
@@ -260,8 +260,8 @@ class TestPageTabStructure(unittest.TestCase):
 
     def test_weather_has_correct_tabs(self):
         """Test that weather page has expected tabs"""
-        if os.path.exists("pages/4_🌤️_Weather.py"):
-            with open("pages/4_🌤️_Weather.py", "r") as f:
+        if os.path.exists("pages/4_Weather.py"):
+            with open("pages/4_Weather.py", "r") as f:
                 content = f.read()
 
             expected_tabs = ["Sources", "Import", "Logs", "View Log", "My Files"]
@@ -273,10 +273,10 @@ class TestPageTabStructure(unittest.TestCase):
     def test_dope_has_separate_pages(self):
         """Test that DOPE has separate pages instead of tabs"""
         expected_dope_pages = [
-            "pages/2a_📊_DOPE_Overview.py",
-            "pages/2b_📊_DOPE_Create.py", 
-            "pages/2c_📊_DOPE_View.py",
-            "pages/2d_📊_DOPE_Analytics.py"
+            "pages/2a_DOPE_Overview.py",
+            "pages/2b_DOPE_Create.py", 
+            "pages/2c_DOPE_View.py",
+            "pages/2d_DOPE_Analytics.py"
         ]
         
         for page_file in expected_dope_pages:
@@ -287,8 +287,8 @@ class TestPageTabStructure(unittest.TestCase):
 
     def test_ranges_has_correct_tabs(self):
         """Test that ranges page has expected tabs"""
-        if os.path.exists("pages/5_🌍_Ranges.py"):
-            with open("pages/5_🌍_Ranges.py", "r") as f:
+        if os.path.exists("pages/5_Ranges.py"):
+            with open("pages/5_Ranges.py", "r") as f:
                 content = f.read()
 
             expected_tabs = ["Public Ranges", "Nominate Range", "My Submissions"]
@@ -306,11 +306,11 @@ class TestDatabaseConnections(unittest.TestCase):
     def test_pages_handle_supabase_errors(self):
         """Test that pages handle Supabase connection errors"""
         pages_with_db = [
-            "pages/2_📊_DOPE.py",
-            "pages/3_⏱️_Chronograph.py",
-            "pages/4_🌤️_Weather.py",
-            "pages/5_🌍_Ranges.py",
-            "pages/6_📏_Rifles.py",
+            "pages/2_DOPE.py",
+            "pages/3_Chronograph.py",
+            "pages/4_Weather.py",
+            "pages/5_Ranges.py",
+            "pages/6_Rifles.py",
         ]
 
         for page_file in pages_with_db:
@@ -333,11 +333,11 @@ class TestDatabaseConnections(unittest.TestCase):
     def test_pages_use_secrets_for_db_config(self):
         """Test that pages use Streamlit secrets for database configuration"""
         pages_with_db = [
-            "pages/2_📊_DOPE.py",
-            "pages/3_⏱️_Chronograph.py",
-            "pages/4_🌤️_Weather.py",
-            "pages/5_🌍_Ranges.py",
-            "pages/6_📏_Rifles.py",
+            "pages/2_DOPE.py",
+            "pages/3_Chronograph.py",
+            "pages/4_Weather.py",
+            "pages/5_Ranges.py",
+            "pages/6_Rifles.py",
         ]
 
         for page_file in pages_with_db:

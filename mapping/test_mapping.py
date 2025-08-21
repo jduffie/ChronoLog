@@ -136,7 +136,7 @@ class TestMappingPageStructure(unittest.TestCase):
     def test_ranges_page_exists(self):
         """Test that the ranges page file exists"""
         page_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "pages", "5_🌍_Ranges.py"
+            os.path.dirname(os.path.dirname(__file__)), "pages", "5_Ranges.py"
         )
         self.assertTrue(os.path.exists(page_path), "Ranges page should exist")
 

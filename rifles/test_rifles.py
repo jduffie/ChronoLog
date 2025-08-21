@@ -248,7 +248,7 @@ class TestRiflesPageStructure(unittest.TestCase):
     def test_rifles_page_exists(self):
         """Test that the rifles page file exists"""
         page_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "pages", "6_📏_Rifles.py"
+            os.path.dirname(os.path.dirname(__file__)), "pages", "6_Rifles.py"
         )
         self.assertTrue(os.path.exists(page_path), "Rifles page should exist")
 

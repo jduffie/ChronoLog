@@ -241,7 +241,7 @@ class TestWeatherPageStructure(unittest.TestCase):
     def test_weather_page_exists(self):
         """Test that the weather page file exists"""
         page_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "pages", "4_🌤️_Weather.py"
+            os.path.dirname(os.path.dirname(__file__)), "pages", "4_Weather.py"
         )
         self.assertTrue(os.path.exists(page_path), "Weather page should exist")
 

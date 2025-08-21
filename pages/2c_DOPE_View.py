@@ -15,6 +15,8 @@ from supabase import create_client
 def main():
     """Main function for the DOPE View page."""
     # Set page configuration FIRST, before any other Streamlit operations
+    print("start")
+
     st.set_page_config(page_title="DOPE View", page_icon="📊", layout="wide")
 
     # Load custom navigation
@@ -22,6 +24,7 @@ def main():
 
     # Handle authentication
     user = handle_auth()
+    print("user", user)
     if not user:
         return
 

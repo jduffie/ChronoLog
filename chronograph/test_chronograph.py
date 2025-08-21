@@ -330,7 +330,7 @@ class TestChronographPageStructure(unittest.TestCase):
     def test_chronograph_page_exists(self):
         """Test that the chronograph page file exists"""
         page_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "pages", "3_⏱️_Chronograph.py"
+            os.path.dirname(os.path.dirname(__file__)), "pages", "3_Chronograph.py"
         )
         self.assertTrue(os.path.exists(page_path), "Chronograph page should exist")
 

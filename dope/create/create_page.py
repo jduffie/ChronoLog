@@ -17,6 +17,8 @@ def render_create_page():
     - Weather data input
     - Rifle and cartridge configuration
     """
+    print("start render_create_page")
+    
     st.title("Create DOPE Session")
     st.info("🚧 This page is under development - TBD")
     

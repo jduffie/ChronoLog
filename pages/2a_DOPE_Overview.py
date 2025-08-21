@@ -63,13 +63,13 @@ def main():
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.page_link("pages/2b_📊_DOPE_Create.py", label="🆕 Create New DOPE Session")
+        st.page_link("pages/2b_DOPE_Create.py", label="🆕 Create New DOPE Session")
     
     with col2:
-        st.page_link("pages/2c_📊_DOPE_View.py", label="📋 View DOPE Sessions")
+        st.page_link("pages/2c_DOPE_View.py", label="📋 View DOPE Sessions")
     
     with col3:
-        st.page_link("pages/2d_📊_DOPE_Analytics.py", label="📊 View Analytics")
+        st.page_link("pages/2d_DOPE_Analytics.py", label="📊 View Analytics")
 
     # Recent activity placeholder
     st.markdown("---")

@@ -60,28 +60,28 @@ def load():
     with cols[0]:
         st.markdown("&nbsp;", unsafe_allow_html=True)
     with cols[1]:
-        st.page_link("pages/2a_📊_DOPE_Overview.py", label="Overview")
+        st.page_link("pages/2a_DOPE_Overview.py", label="Overview")
     
     # Create
     cols = st.sidebar.columns([1, 9], gap="small")
     with cols[0]:
         st.markdown("&nbsp;", unsafe_allow_html=True)
     with cols[1]:
-        st.page_link("pages/2b_📊_DOPE_Create.py", label="Create")
+        st.page_link("pages/2b_DOPE_Create.py", label="Create")
     
     # View
     cols = st.sidebar.columns([1, 9], gap="small")
     with cols[0]:
         st.markdown("&nbsp;", unsafe_allow_html=True)
     with cols[1]:
-        st.page_link("pages/2c_📊_DOPE_View.py", label="View")
+        st.page_link("pages/2c_DOPE_View.py", label="View")
     
     # Analytics
     cols = st.sidebar.columns([1, 9], gap="small")
     with cols[0]:
         st.markdown("&nbsp;", unsafe_allow_html=True)
     with cols[1]:
-        st.page_link("pages/2d_📊_DOPE_Analytics.py", label="Analytics")
+        st.page_link("pages/2d_DOPE_Analytics.py", label="Analytics")
 
     # st.sidebar.divider()
     st.sidebar.header("Data Sets")
@@ -91,45 +91,45 @@ def load():
     with cols[0]:
         st.markdown("&nbsp;", unsafe_allow_html=True)
     with cols[1]:
-        st.page_link("pages/3_⏱️_Chronograph.py", label="Chronograph")
+        st.page_link("pages/3_Chronograph.py", label="Chronograph")
     
     cols = st.sidebar.columns([1, 9], gap="small")
     with cols[0]:
         st.markdown("&nbsp;", unsafe_allow_html=True)
     with cols[1]:
-        st.page_link("pages/4_🌤️_Weather.py", label="Weather")
+        st.page_link("pages/4_Weather.py", label="Weather")
     
     cols = st.sidebar.columns([1, 9], gap="small")
     with cols[0]:
         st.markdown("&nbsp;", unsafe_allow_html=True)
     with cols[1]:
-        st.page_link("pages/5_🌍_Ranges.py", label="Ranges")
+        st.page_link("pages/5_Ranges.py", label="Ranges")
     
     cols = st.sidebar.columns([1, 9], gap="small")
     with cols[0]:
         st.markdown("&nbsp;", unsafe_allow_html=True)
     with cols[1]:
-        st.page_link("pages/6_📏_Rifles.py", label="Rifles")
+        st.page_link("pages/6_Rifles.py", label="Rifles")
 
     # Cartridges
     cols = st.sidebar.columns([1, 9], gap="small")
     with cols[0]:
         st.markdown("&nbsp;", unsafe_allow_html=True)
     with cols[1]:
-        st.page_link("pages/7_🏭_Factory_Cartridges.py", label="Cartridges-Factory")
+        st.page_link("pages/7_Factory_Cartridges.py", label="Cartridges-Factory")
     
     cols = st.sidebar.columns([1, 9], gap="small")
     with cols[0]:
         st.markdown("&nbsp;", unsafe_allow_html=True)
     with cols[1]:
-        st.page_link("pages/8_🎯_Custom_Cartridges.py", label="Cartridges-Custom")
+        st.page_link("pages/8_Custom_Cartridges.py", label="Cartridges-Custom")
 
     # Bullets
     cols = st.sidebar.columns([1, 9], gap="small")
     with cols[0]:
         st.markdown("&nbsp;", unsafe_allow_html=True)
     with cols[1]:
-        st.page_link("pages/9_📦_Bullets.py", label="Bullets")
+        st.page_link("pages/9_Bullets.py", label="Bullets")
 
     # Admin section
     st.sidebar.divider()
@@ -137,4 +137,4 @@ def load():
     with cols[0]:
         st.markdown("&nbsp;", unsafe_allow_html=True)
     with cols[1]:
-        st.page_link("pages/10_👑_Admin.py", label="Admin")
+        st.page_link("pages/10_Admin.py", label="Admin")

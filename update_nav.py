@@ -5,13 +5,13 @@ import re
 
 # List of files to update
 files_to_update = [
-    "pages/4_🌤️_Weather.py",
-    "pages/5_🌍_Ranges.py", 
-    "pages/6_📏_Rifles.py",
-    "pages/7_🏭_Factory_Cartridges.py",
-    "pages/8_🎯_Custom_Cartridges.py",
-    "pages/9_📦_Bullets.py",
-    "pages/10_👑_Admin.py"
+    "pages/4_Weather.py",
+    "pages/5_Ranges.py", 
+    "pages/6_Rifles.py",
+    "pages/7_Factory_Cartridges.py",
+    "pages/8_Custom_Cartridges.py",
+    "pages/9_Bullets.py",
+    "pages/10_Admin.py"
 ]
 
 for file_path in files_to_update:

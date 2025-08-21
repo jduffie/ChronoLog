@@ -82,28 +82,28 @@ def sidebar_child_link(page_path: str, label: str, *, indent_px: int = CHILD_IND
 # DOPE (standalone above dataset group)
 st.sidebar.divider()
 st.sidebar.header("Data on Prior Engagements")
-sidebar_icon_link(ICON_DOPE_TURRET_MONO, "pages/2_📊_DOPE.py", "Create")
-sidebar_icon_link(ICON_DOPE_TURRET_MONO, "pages/2_📊_DOPE.py", "View")
+sidebar_icon_link(ICON_DOPE_TURRET_MONO, "pages/2_DOPE.py", "Create")
+sidebar_icon_link(ICON_DOPE_TURRET_MONO, "pages/2_DOPE.py", "View")
 
 
 st.sidebar.divider()
 st.sidebar.header("Data Sets")
 
 # Top-level dataset items (with icons)
-sidebar_icon_link(ICON_CHRONO_MONO, "pages/3_⏱️_Chronograph.py", "Chronograph")
-sidebar_icon_link(ICON_WEATHER_MONO, "pages/4_🌤️_Weather.py", "Weather")
-sidebar_icon_link(ICON_RANGES_MONO,  "pages/5_🌍_Ranges.py", "Ranges")
-sidebar_icon_link(ICON_RIFLES_MONO,  "pages/6_📏_Rifles.py", "Rifles")
+sidebar_icon_link(ICON_CHRONO_MONO, "pages/3_Chronograph.py", "Chronograph")
+sidebar_icon_link(ICON_WEATHER_MONO, "pages/4_Weather.py", "Weather")
+sidebar_icon_link(ICON_RANGES_MONO,  "pages/5_Ranges.py", "Ranges")
+sidebar_icon_link(ICON_RIFLES_MONO,  "pages/6_Rifles.py", "Rifles")
 
 ## Cartridges (parent has icon)
-# sidebar_icon_link(ICON_CARTRIDGES_MONO, "pages/10_👑_Admin.py", "Cartridges")
+# sidebar_icon_link(ICON_CARTRIDGES_MONO, "pages/10_Admin.py", "Cartridges")
 
 # Children (no icons)
-sidebar_icon_link(ICON_CARTRIDGES_MONO,"pages/7_🏭_Factory_Cartridges.py", "Factory Cartridges")
-sidebar_icon_link(ICON_CARTRIDGES_MONO, "pages/8_🎯_Custom_Cartridges.py",  "Custom Cartridges")
+sidebar_icon_link(ICON_CARTRIDGES_MONO,"pages/7_Factory_Cartridges.py", "Factory Cartridges")
+sidebar_icon_link(ICON_CARTRIDGES_MONO, "pages/8_Custom_Cartridges.py",  "Custom Cartridges")
 
 # Bullets (icon)
-sidebar_icon_link(ICON_BULLETS_MONO, "pages/9_📦_Bullets.py", "Bullets")
+sidebar_icon_link(ICON_BULLETS_MONO, "pages/9_Bullets.py", "Bullets")
 
 # -------------------------
 # MAIN CONTENT (optional)
