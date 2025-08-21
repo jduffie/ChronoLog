@@ -386,12 +386,12 @@ def render_sessions_table(sessions: List[DopeSessionModel]):
             "Cartridge": f"{session.cartridge_make} {session.cartridge_model}" if session.cartridge_make else "Unknown",
             "Cartridge Type": session.cartridge_type or "Unknown",
             "Bullet": f"{session.bullet_make} {session.bullet_model}" if session.bullet_make else "Unknown",
-            "Bullet Weight": f"{session.bullet_weight}gr" if session.bullet_weight else "",
-            "Distance": f"{session.distance_m}m" if session.distance_m else "",
+            "Bullet Weight (gr)": session.bullet_weight if session.bullet_weight else "",
+            "Distance (m)": session.distance_m if session.distance_m else "",
             "Range": session.range_name or "Unknown",
-            "Temperature": f"{session.temperature_c}°C" if session.temperature_c is not None else "",
-            "Humidity": f"{session.relative_humidity_pct}%" if session.relative_humidity_pct is not None else "",
-            "Wind Speed": f"{session.wind_speed_1_kmh}km/h" if session.wind_speed_1_kmh is not None else "",
+            "Temperature (°C)": session.temperature_c if session.temperature_c is not None else "",
+            "Humidity (%)": session.relative_humidity_pct if session.relative_humidity_pct is not None else "",
+            "Wind Speed (km/h)": session.wind_speed_1_kmh if session.wind_speed_1_kmh is not None else "",
             "Notes": (session.notes[:50] + "...") if session.notes and len(session.notes) > 50 else (session.notes or "")
         }
         df_data.append(row)
@@ -408,12 +408,12 @@ def render_sessions_table(sessions: List[DopeSessionModel]):
         "Cartridge": st.column_config.TextColumn("Cartridge", width="medium"),
         "Cartridge Type": st.column_config.TextColumn("Type", width="medium"),
         "Bullet": st.column_config.TextColumn("Bullet", width="medium"),
-        "Bullet Weight": st.column_config.TextColumn("Weight", width="small"),
-        "Distance": st.column_config.TextColumn("Distance", width="small"),
+        "Bullet Weight (gr)": st.column_config.NumberColumn("Weight (gr)", width="small"),
+        "Distance (m)": st.column_config.NumberColumn("Distance (m)", width="small"),
         "Range": st.column_config.TextColumn("Range", width="medium"),
-        "Temperature": st.column_config.TextColumn("Temp", width="small"),
-        "Humidity": st.column_config.TextColumn("Humidity", width="small"),
-        "Wind Speed": st.column_config.TextColumn("Wind", width="small"),
+        "Temperature (°C)": st.column_config.NumberColumn("Temp (°C)", width="small"),
+        "Humidity (%)": st.column_config.NumberColumn("Humidity (%)", width="small"),
+        "Wind Speed (km/h)": st.column_config.NumberColumn("Wind (km/h)", width="small"),
         "Notes": st.column_config.TextColumn("Notes", width="large")
     }
     

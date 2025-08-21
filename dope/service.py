@@ -176,9 +176,46 @@ class DopeService:
             filtered_sessions = [s for s in filtered_sessions if s.rifle_name == filters["rifle_name"]]
         
         # Apply distance range filter
-        if filters.get("distance_min") and filters.get("distance_max"):
+        if filters.get("distance_range"):
+            min_dist, max_dist = filters["distance_range"]
             filtered_sessions = [s for s in filtered_sessions 
-                               if s.distance_m and filters["distance_min"] <= s.distance_m <= filters["distance_max"]]
+                               if s.distance_m and min_dist <= s.distance_m <= max_dist]
+        
+        # Apply cartridge make filter
+        if filters.get("cartridge_make"):
+            filtered_sessions = [s for s in filtered_sessions if s.cartridge_make == filters["cartridge_make"]]
+        
+        # Apply bullet make filter
+        if filters.get("bullet_make"):
+            filtered_sessions = [s for s in filtered_sessions if s.bullet_make == filters["bullet_make"]]
+        
+        # Apply range name filter
+        if filters.get("range_name"):
+            filtered_sessions = [s for s in filtered_sessions if s.range_name == filters["range_name"]]
+        
+        # Apply bullet weight range filter
+        if filters.get("bullet_weight_range"):
+            min_weight, max_weight = filters["bullet_weight_range"]
+            filtered_sessions = [s for s in filtered_sessions 
+                               if s.bullet_weight and min_weight <= float(s.bullet_weight) <= max_weight]
+        
+        # Apply temperature range filter
+        if filters.get("temperature_range"):
+            min_temp, max_temp = filters["temperature_range"]
+            filtered_sessions = [s for s in filtered_sessions 
+                               if s.temperature_c is not None and min_temp <= s.temperature_c <= max_temp]
+        
+        # Apply humidity range filter
+        if filters.get("humidity_range"):
+            min_humidity, max_humidity = filters["humidity_range"]
+            filtered_sessions = [s for s in filtered_sessions 
+                               if s.relative_humidity_pct is not None and min_humidity <= s.relative_humidity_pct <= max_humidity]
+        
+        # Apply wind speed range filter
+        if filters.get("wind_speed_range"):
+            min_wind, max_wind = filters["wind_speed_range"]
+            filtered_sessions = [s for s in filtered_sessions 
+                               if s.wind_speed_1_kmh is not None and min_wind <= s.wind_speed_1_kmh <= max_wind]
         
         return filtered_sessions
 

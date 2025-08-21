@@ -27,11 +27,12 @@ The DOPE View module provides a comprehensive interface for users to view, filte
 
 #### 1.2 Data Formatting
 - **REQ-DV-007**: Format dates in user-friendly format (e.g., "Mar 15, 2024 10:30 AM")
-- **REQ-DV-008**: Display bullet information with proper units (e.g., "175gr", "0.875 mm")
-- **REQ-DV-009**: Show distance with unit suffix (e.g., "100.0m")
-- **REQ-DV-010**: Format weather data with appropriate units and precision
+- **REQ-DV-008**: Display numeric values without unit suffixes - units are provided in column headers
+- **REQ-DV-009**: Show distance, weight, temperature, humidity, and other measurements as numeric values only
+- **REQ-DV-010**: Format weather data with appropriate precision (no unit suffixes in values)
 - **REQ-DV-011**: Use status badges with appropriate colors (Active: Green, Archived: Gray)
 - **REQ-DV-012**: Handle null/empty values gracefully with placeholder text
+- **REQ-DV-013**: Include units in column headers (e.g., "Distance (m)", "Humidity (%)", "Temperature (°C)")
 
 ### 2. Comprehensive Filtering and Search
 
