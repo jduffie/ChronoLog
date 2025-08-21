@@ -45,7 +45,7 @@ def render_view_page():
             st.warning(f"Using test user ID: {user_id}")
     
     
-    st.title("📊 View DOPE Sessions")
+    st.title("DOPE Sessions")
     
     # Initialize service (with mocked client for now)
     service = DopeService(None)  # TODO: Pass actual Supabase client
@@ -157,7 +157,7 @@ def render_main_page_filters(service: DopeService, user_id: str):
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            st.subheader("📅 Time & Status")
+            st.subheader("Time & Status")
             
             # Date range filter
             date_col1, date_col2 = st.columns(2)
@@ -192,7 +192,7 @@ def render_main_page_filters(service: DopeService, user_id: str):
                 del st.session_state.dope_filters["status"]
         
         with col2:
-            st.subheader("🔫 Equipment")
+            st.subheader("Equipment")
             
             # Rifle filter
             if rifle_names:
@@ -234,7 +234,7 @@ def render_main_page_filters(service: DopeService, user_id: str):
                 del st.session_state.dope_filters["distance_range"]
         
         with col3:
-            st.subheader("🎯 Ammunition")
+            st.subheader("Ammunition")
             
             # Cartridge filters
             if cartridge_makes:
@@ -286,7 +286,7 @@ def render_main_page_filters(service: DopeService, user_id: str):
         
         # Weather filters in a separate row
         st.divider()
-        st.subheader("🌤️ Weather Conditions")
+        st.subheader("Weather Conditions")
         
         weather_col1, weather_col2, weather_col3 = st.columns(3)
         
@@ -468,7 +468,7 @@ def render_session_details(session: DopeSessionModel, service: DopeService, user
     
     # Detailed information in tabs
     tab1, tab2, tab3, tab4, tab5 = st.tabs([
-        "📋 Session Info", "🔫 Rifle", "🎯 Cartridge", "🏹 Bullet", "🌤️ Weather"
+        "Session Info", "Rifle", "Cartridge", "Bullet", "Weather"
     ])
     
     with tab1:
@@ -510,7 +510,7 @@ def render_session_info_tab(session: DopeSessionModel):
     
     if session.notes:
         st.write("**Notes:**")
-        st.text_area("", value=session.notes, height=100, disabled=True, key="notes_display")
+        st.text_area(label="notes", value=session.notes, height=100, disabled=True, key="notes_display")
 
 
 def render_rifle_info_tab(session: DopeSessionModel):

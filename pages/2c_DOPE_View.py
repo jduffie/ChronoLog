@@ -24,7 +24,6 @@ def main():
 
     # Handle authentication
     user = handle_auth()
-    print("user", user)
     if not user:
         return
 
@@ -36,9 +35,6 @@ def main():
     except Exception as e:
         st.error(f"Error connecting to database: {str(e)}")
         return
-
-    # Display title
-    st.title("📋 View DOPE Sessions")
 
     render_view_page()
 

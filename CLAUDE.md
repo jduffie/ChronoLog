@@ -431,7 +431,13 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
   - The possible values are derived from the cartridge_type column in the cartridge_types table. 
 - Update the View and Create tab on the factory cartridges page to include cartridge_type
     - need to ensure the create and filtering logic respect the 1 to 1 relationship between cartridge_type and bore_diameter_land_mm
+
 - to memorize
-- to memorize
-- to memorize
-- to memorize
+
+# important-instruction-reminders
+Do what has been asked; nothing more, nothing less.
+NEVER create files unless they're absolutely necessary for achieving your goal.
+ALWAYS prefer editing an existing file to creating a new one.
+NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
+DO NOT use unicode emojis. Use plain text only.
+

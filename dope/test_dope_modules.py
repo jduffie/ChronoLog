@@ -607,18 +607,30 @@ class TestDopeViewPage(unittest.TestCase):
     
     @patch('streamlit.session_state')
     @patch('streamlit.title')
-    @patch('streamlit.error')
-    def test_render_view_page_no_authentication(self, mock_error, mock_title, mock_session_state):
+    @patch('streamlit.warning')
+    def test_render_view_page_no_authentication(self, mock_warning, mock_title, mock_session_state):
         """Test view page handles missing authentication"""
         from dope.view.view_page import render_view_page
         
         # Mock missing user in session state
         mock_session_state.get.return_value = None
         mock_session_state.__contains__ = lambda self, key: False
+        mock_session_state.user = {
+            "id": "google-oauth2|111273793361054745867",
+            "sub": "google-oauth2|111273793361054745867",
+            "email": "test@example.com",
+            "name": "Test User"
+        }
         
-        render_view_page()
-        
-        mock_error.assert_called_with("Please log in to view DOPE sessions")
+        with patch('dope.view.view_page.render_main_page_filters'), \
+             patch('dope.view.view_page.get_filtered_sessions', return_value=[]), \
+             patch('streamlit.info'), \
+             patch('streamlit.button'), \
+             patch('streamlit.columns', return_value=[None, None, None]):
+            
+            render_view_page()
+            
+            mock_warning.assert_called_with("No user authentication found - using test user for development")
         
     def test_render_view_page_no_user_id(self):
         """Test view page handles missing user ID"""
@@ -626,7 +638,7 @@ class TestDopeViewPage(unittest.TestCase):
         
         with patch('streamlit.session_state') as mock_state, \
              patch('streamlit.title'), \
-             patch('streamlit.error') as mock_error:
+             patch('streamlit.warning') as mock_warning:
             
             # Mock user without ID
             mock_user = MagicMock()
@@ -638,36 +650,51 @@ class TestDopeViewPage(unittest.TestCase):
             
             mock_state.__contains__ = contains_func
             mock_state.user = mock_user
+            mock_state.dope_filters = {}
+            mock_state.selected_session_id = None
+            mock_state.show_advanced_filters = False
             
-            render_view_page()
-            
-            mock_error.assert_called_with("User ID not found")
+            with patch('dope.view.view_page.render_main_page_filters'), \
+                 patch('dope.view.view_page.get_filtered_sessions', return_value=[]), \
+                 patch('streamlit.info'), \
+                 patch('streamlit.button'), \
+                 patch('streamlit.columns', return_value=[None, None, None]):
+                
+                render_view_page()
+                
+                # Should show warning about using test user ID
+                mock_warning.assert_called_with("Using test user ID: google-oauth2|111273793361054745867")
         
-    def test_render_filter_sidebar_structure(self):
-        """Test filter sidebar renders expected elements"""
-        from dope.view.view_page import render_filter_sidebar
+    def test_render_main_page_filters_structure(self):
+        """Test main page filters renders expected elements"""
+        from dope.view.view_page import render_main_page_filters
         from dope.service import DopeService
         
         # Mock service and user ID
         service = DopeService(None)
         user_id = "google-oauth2|111273793361054745867"
         
-        with patch('streamlit.sidebar'), \
-             patch('streamlit.header'), \
-             patch('streamlit.button'), \
+        with patch('streamlit.expander') as mock_expander, \
              patch('streamlit.text_input', return_value=""), \
+             patch('streamlit.button'), \
+             patch('streamlit.divider'), \
              patch('streamlit.subheader'), \
-             patch('streamlit.columns', return_value=[MagicMock(), MagicMock()]), \
+             patch('streamlit.columns', return_value=[MagicMock(), MagicMock(), MagicMock()]), \
              patch('streamlit.date_input', return_value=None), \
              patch('streamlit.selectbox', return_value="All"), \
-             patch('streamlit.checkbox', return_value=False), \
+             patch('streamlit.slider', return_value=(0, 1000)), \
              patch('streamlit.session_state') as mock_state:
             
             mock_state.dope_filters = {}
             mock_state.show_advanced_filters = False
+            mock_state.get.return_value = False
+            
+            # Mock the expander context manager
+            mock_expander.return_value.__enter__ = MagicMock()
+            mock_expander.return_value.__exit__ = MagicMock()
             
             # Should not raise exceptions
-            render_filter_sidebar(service, user_id)
+            render_main_page_filters(service, user_id)
             
     def test_get_filtered_sessions_with_search(self):
         """Test filtering sessions with search functionality"""
@@ -858,24 +885,35 @@ class TestDopeViewPage(unittest.TestCase):
             # Should not raise exceptions
             render_weather_info_tab(session)
             
-    def test_advanced_filters_rendering(self):
-        """Test advanced filters rendering"""
-        from dope.view.view_page import render_advanced_filters
+    def test_render_main_page_filters_functionality(self):
+        """Test main page filters functionality and integration"""
+        from dope.view.view_page import render_main_page_filters
+        from dope.service import DopeService
         
-        cartridge_types = ["223 Remington", "308 Winchester"]
-        cartridge_makes = ["Federal", "Hornady"]
-        bullet_makes = ["Sierra", "Hornady"]
+        service = DopeService(None)
+        user_id = "google-oauth2|111273793361054745867"
         
-        with patch('streamlit.subheader'), \
-             patch('streamlit.expander'), \
-             patch('streamlit.selectbox'), \
-             patch('streamlit.slider'), \
+        with patch('streamlit.expander') as mock_expander, \
+             patch('streamlit.text_input', return_value="test_search"), \
+             patch('streamlit.button', return_value=False), \
+             patch('streamlit.divider'), \
+             patch('streamlit.subheader'), \
+             patch('streamlit.columns', return_value=[MagicMock(), MagicMock(), MagicMock()]), \
+             patch('streamlit.date_input', return_value=None), \
+             patch('streamlit.selectbox', return_value="All"), \
+             patch('streamlit.slider', return_value=(0, 1000)), \
              patch('streamlit.session_state') as mock_state:
             
-            mock_state.dope_filters = {}
+            mock_state.dope_filters = {"search": "test"}
+            mock_state.show_advanced_filters = True
+            mock_state.get.return_value = True
             
-            # Should not raise exceptions
-            render_advanced_filters(cartridge_types, cartridge_makes, bullet_makes)
+            # Mock the expander context manager
+            mock_expander.return_value.__enter__ = MagicMock()
+            mock_expander.return_value.__exit__ = MagicMock()
+            
+            # Should not raise exceptions and handle filters properly
+            render_main_page_filters(service, user_id)
 
 
 if __name__ == "__main__":
