@@ -4,16 +4,16 @@
 
 ### Columns
 
-| Column Name      | Data Type  | Nullable | Default           | Notes                                        |
-|------------------|------------|----------|-------------------|----------------------------------------------|
-| id               | uuid       | NO       | gen_random_uuid() | Primary key                                  |
-| user_id          | text       | NO       | null              | Auth0 user identifier                        |
-| make             | text       | NO       | null              | Cartridge manufacturer                       |
-| model            | text       | NO       | null              | Cartridge model                              |
-| bullet_id        | uuid       | NO       | null              | Foreign key to bullets table                 |
-| cartridge_type   | text       | YES      | null              | Cartridge type designation                   |
-| data_source_name | text       | YES      | null              | Name or description of the data source       |
-| data_source_link | text       | YES      | null              | URL or reference to the original data source |
+| Column Name      | Data Type             | Nullable | Default           | Notes                                                               |
+|------------------|-----------------------|----------|-------------------|---------------------------------------------------------------------|
+| id               | uuid                  | NO       | gen_random_uuid() | Primary key                                                         |
+| user_id          | text                  | NO       | null              | Auth0 user identifier                                               |
+| make             | text                  | NO       | null              | Cartridge manufacturer                                              |
+| model            | text                  | NO       | null              | Cartridge model                                                     |
+| bullet_id        | uuid                  | NO       | null              | Foreign key to bullets table                                        |
+| cartridge_type   | cartridge_type (enum) | NO       | null              | Enumerated cartridge type (e.g., '6mm Creedmoor', '308 Winchester') |
+| data_source_name | text                  | YES      | null              | Name or description of the data source                              |
+| data_source_link | text                  | YES      | null              | URL or reference to the original data source                        |
 
 ### Primary Key
 - `id` (uuid)
@@ -33,6 +33,6 @@ This table is referenced by:
 - Uses UUID as primary key with automatic generation
 - All user data must be isolated by `user_id`
 - Make, model, and bullet_id are required fields
-- Cartridge type is currently nullable but may become an enumeration
+- Cartridge type uses enumerated values for consistency across the system
 - Data source fields track origin of cartridge specifications
 - Links to bullets table for complete ballistic information

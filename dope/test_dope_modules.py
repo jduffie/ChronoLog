@@ -257,25 +257,6 @@ class TestDopePageIntegration(unittest.TestCase):
 class TestDopeModuleCompatibility(unittest.TestCase):
     """Test compatibility and integration of DOPE modules"""
 
-    def test_dope_model_still_exists(self):
-        """Test that the existing dope_model.py is still available"""
-        dope_dir = os.path.dirname(__file__)
-        model_path = os.path.join(dope_dir, "dope_model.py")
-        
-        self.assertTrue(
-            os.path.exists(model_path),
-            "dope_model.py should still exist for compatibility"
-        )
-
-    def test_dope_model_can_be_imported(self):
-        """Test that DopeModel can still be imported"""
-        try:
-            from dope.dope_model import DopeModel
-            model = DopeModel()
-            self.assertIsNotNone(model)
-        except ImportError as e:
-            self.fail(f"Failed to import DopeModel: {e}")
-
     def test_no_old_tab_modules_exist(self):
         """Test that old tab modules have been properly removed"""
         dope_dir = os.path.dirname(__file__)
@@ -311,7 +292,7 @@ class TestDopeSessionModel(unittest.TestCase):
             "user_id": "test_user",
             "session_name": "Test Session",
             "datetime_local": self.test_datetime,
-            "cartridge_spec_id": "spec_001",
+            "cartridge_id": "cartridge_001",
             "rifle_name": "Test Rifle",
             "cartridge_make": "Federal",
             "cartridge_model": "GMM",
@@ -329,7 +310,7 @@ class TestDopeSessionModel(unittest.TestCase):
         session = self.DopeSessionModel(**self.valid_session_data)
         
         self.assertEqual(session.session_name, "Test Session")
-        self.assertEqual(session.cartridge_spec_id, "spec_001")
+        self.assertEqual(session.cartridge_id, "cartridge_001")
         self.assertEqual(session.rifle_name, "Test Rifle")
         self.assertEqual(session.cartridge_make, "Federal")
         self.assertEqual(session.bullet_weight, "175")
@@ -355,6 +336,18 @@ class TestDopeSessionModel(unittest.TestCase):
         self.assertIn("Session Name", missing_fields)
         self.assertIn("Rifle Name", missing_fields)
         
+    def test_model_cartridge_id_optional(self):
+        """Test that cartridge_id is optional and doesn't affect completeness"""
+        session_data = self.valid_session_data.copy()
+        session_data["cartridge_id"] = None  # Explicitly set to None
+        
+        session = self.DopeSessionModel(**session_data)
+        
+        # Should still be complete even with None cartridge_id
+        self.assertTrue(session.is_complete())
+        self.assertEqual(len(session.get_missing_mandatory_fields()), 0)
+        self.assertIsNone(session.cartridge_id)
+        
     def test_from_supabase_record(self):
         """Test creating model from Supabase record"""
         supabase_record = {
@@ -362,7 +355,7 @@ class TestDopeSessionModel(unittest.TestCase):
             "user_id": "db_user",
             "session_name": "DB Session",
             "datetime_local": "2024-08-20T12:00:00Z",
-            "cartridge_spec_id": "db_spec",
+            "cartridge_id": "db_cartridge",
             "rifle_name": "DB Rifle",
             "cartridge_make": "DB Make",
             "cartridge_model": "DB Model", 
@@ -378,7 +371,7 @@ class TestDopeSessionModel(unittest.TestCase):
         
         self.assertEqual(session.id, "db_session_001")
         self.assertEqual(session.session_name, "DB Session")
-        self.assertEqual(session.cartridge_spec_id, "db_spec")
+        self.assertEqual(session.cartridge_id, "db_cartridge")
         self.assertEqual(session.temperature_c, 22.5)
         self.assertEqual(session.wind_speed_1_kmh, 10.0)
         
@@ -388,7 +381,7 @@ class TestDopeSessionModel(unittest.TestCase):
         data_dict = session.to_dict()
         
         self.assertEqual(data_dict["session_name"], "Test Session")
-        self.assertEqual(data_dict["cartridge_spec_id"], "spec_001")
+        self.assertEqual(data_dict["cartridge_id"], "cartridge_001")
         self.assertEqual(data_dict["datetime_local"], self.test_datetime)
         self.assertIn("rifle_name", data_dict)
         self.assertIn("temperature_c", data_dict)
@@ -420,11 +413,11 @@ class TestDopeSessionModel(unittest.TestCase):
         """Test creating multiple models from Supabase records"""
         records = [
             {"id": "1", "user_id": "user1", "session_name": "Session 1", 
-             "cartridge_spec_id": "spec1", "rifle_name": "Rifle 1",
+             "cartridge_id": "cartridge1", "rifle_name": "Rifle 1",
              "cartridge_make": "Make1", "cartridge_model": "Model1", "cartridge_type": "Type1",
              "bullet_make": "Bullet1", "bullet_model": "BModel1", "bullet_weight": "150"},
             {"id": "2", "user_id": "user2", "session_name": "Session 2",
-             "cartridge_spec_id": "spec2", "rifle_name": "Rifle 2", 
+             "cartridge_id": "cartridge2", "rifle_name": "Rifle 2", 
              "cartridge_make": "Make2", "cartridge_model": "Model2", "cartridge_type": "Type2",
              "bullet_make": "Bullet2", "bullet_model": "BModel2", "bullet_weight": "160"}
         ]
@@ -458,7 +451,7 @@ class TestDopeService(unittest.TestCase):
         first_session = sessions[0]
         self.assertEqual(first_session.user_id, self.test_user_id)
         self.assertIsNotNone(first_session.session_name)
-        self.assertIsNotNone(first_session.cartridge_spec_id)
+        self.assertIsNotNone(first_session.cartridge_id)
         
     def test_get_session_by_id(self):
         """Test getting a specific session by ID"""
@@ -480,7 +473,7 @@ class TestDopeService(unittest.TestCase):
         """Test creating a new session"""
         session_data = {
             "session_name": "New Test Session",
-            "cartridge_spec_id": "new_spec",
+            "cartridge_id": "new_cartridge",
             "rifle_name": "New Rifle",
             "cartridge_make": "New Make",
             "cartridge_model": "New Model",
@@ -727,7 +720,7 @@ class TestDopeViewPage(unittest.TestCase):
             id="test_001",
             session_name="Test Session",
             datetime_local=datetime.now(),
-            cartridge_spec_id="spec_001",
+            cartridge_id="cartridge_001",
             rifle_name="Test Rifle",
             cartridge_make="Federal",
             cartridge_model="GMM",
@@ -773,7 +766,7 @@ class TestDopeViewPage(unittest.TestCase):
             id="test_001",
             session_name="Test Session",
             datetime_local=datetime.now(),
-            cartridge_spec_id="spec_001",
+            cartridge_id="cartridge_001",
             rifle_name="Test Rifle",
             cartridge_make="Federal",
             cartridge_model="GMM",
@@ -814,7 +807,7 @@ class TestDopeViewPage(unittest.TestCase):
             id="test_001",
             session_name="Test Session",
             datetime_local=datetime.now(),
-            cartridge_spec_id="spec_001",
+            cartridge_id="cartridge_001",
             rifle_name="Test Rifle",
             cartridge_make="Federal",
             cartridge_model="GMM",
@@ -852,7 +845,7 @@ class TestDopeViewPage(unittest.TestCase):
             id="test_001",
             session_name="Test Session",
             datetime_local=datetime.now(),
-            cartridge_spec_id="spec_001",
+            cartridge_id="cartridge_001",
             rifle_name="Test Rifle",
             notes="Test notes with longer content for display"
         )

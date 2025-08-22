@@ -500,7 +500,7 @@ def render_session_info_tab(session: DopeSessionModel):
     
     with col2:
         st.write("**Session ID:**", session.id or "Unknown")
-        st.write("**Cartridge Spec ID:**", session.cartridge_spec_id or "Unknown")
+        st.write("**Cartridge ID:**", session.cartridge_id or "Unknown")
         st.write("**Chrono Session ID:**", session.chrono_session_id or "Not linked")
         
         if session.start_lat and session.start_lon:

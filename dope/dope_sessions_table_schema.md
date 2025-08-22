@@ -16,8 +16,8 @@ CREATE TABLE dope_sessions (
     notes TEXT,
     status TEXT DEFAULT 'active',
     rifle_id UUID REFERENCES rifles(id),
-    cartridge_type TEXT,
-    cartridge_spec_id UUID,
+
+    cartridge_id UUID REFERENCES cartridges(id),
     cartridge_lot_number TEXT,
     user_id TEXT NOT NULL,
     temperature_c NUMERIC(3,1),
@@ -40,30 +40,29 @@ CREATE INDEX idx_dope_sessions_created_at ON dope_sessions(created_at DESC);
 
 ## Table Description
 
-| Column Name                  | Data Type                | Nullable | Default           | Description                                           |
-|------------------------------|--------------------------|----------|-------------------|-------------------------------------------------------|
-| **id**                       | uuid                     | NO       | gen_random_uuid() | Primary key, auto-generated unique identifier         |
-| **session_name**             | text                     | YES      | -                 | Descriptive name for the DOPE session                 |
-| **created_at**               | timestamp with time zone | YES      | now()             | Record creation timestamp                             |
-| **updated_at**               | timestamp with time zone | YES      | now()             | Last modification timestamp                           |
-| **chrono_session_id**        | uuid                     | YES      | -                 | Foreign key to chrono_sessions table                  |
-| **range_submission_id**      | uuid                     | YES      | -                 | Foreign key to ranges_submissions table               |
-| **weather_source_id**        | uuid                     | YES      | -                 | Foreign key to weather_source table                   |
-| **range_name**               | text                     | YES      | -                 | Name of the shooting range                            |
-| **distance_m**               | real                     | YES      | -                 | Target distance in meters                             |
-| **notes**                    | text                     | YES      | -                 | Session notes and observations                        |
-| **status**                   | text                     | YES      | 'active'          | Session status                                        |
-| **rifle_id**                 | uuid                     | YES      | -                 | Foreign key to rifles table                           |
-| **cartridge_type**           | text                     | YES      | -                 | Type of cartridge ('factory' or 'custom')             |
-| **cartridge_spec_id**        | uuid                     | YES      | -                 | Reference to cartridge specification                  |
-| **cartridge_lot_number**     | text                     | YES      | -                 | Cartridge lot identifier                              |
-| **user_id**                  | text                     | NO       | -                 | Auth0 user identifier for data isolation              |
-| **temperature_c**            | numeric(3,1)             | YES      | -                 | Temperature in Celsius with 1 decimal place           |
-| **relative_humidity_pct**    | numeric(5,2)             | YES      | -                 | Relative humidity percentage with 2 decimal places    |
-| **barometric_pressure_inhg** | numeric(6,2)             | YES      | -                 | Barometric pressure in inHg with 2 decimal places     |
-| **wind_speed_1_kmh**         | numeric(4,1)             | YES      | -                 | Wind speed measurement 1 in km/h with 1 decimal place |
-| **wind_speed_2_kmh**         | numeric(4,1)             | YES      | -                 | Wind speed measurement 2 in km/h with 1 decimal place |
-| **wind_direction_deg**       | numeric(5,1)             | YES      | -                 | Wind direction in degrees with 1 decimal place        |
+| Column Name                  | Data Type                | Nullable | Default           | Description                                                                              |
+|------------------------------|--------------------------|----------|-------------------|------------------------------------------------------------------------------------------|
+| **id**                       | uuid                     | NO       | gen_random_uuid() | Primary key, auto-generated unique identifier                                            |
+| **session_name**             | text                     | YES      | -                 | Descriptive name for the DOPE session                                                    |
+| **created_at**               | timestamp with time zone | YES      | now()             | Record creation timestamp                                                                |
+| **updated_at**               | timestamp with time zone | YES      | now()             | Last modification timestamp                                                              |
+| **chrono_session_id**        | uuid                     | YES      | -                 | Foreign key to chrono_sessions table                                                     |
+| **range_submission_id**      | uuid                     | YES      | -                 | Foreign key to ranges_submissions table                                                  |
+| **weather_source_id**        | uuid                     | YES      | -                 | Foreign key to weather_source table                                                      |
+| **range_name**               | text                     | YES      | -                 | Name of the shooting range                                                               |
+| **distance_m**               | real                     | YES      | -                 | Target distance in meters                                                                |
+| **notes**                    | text                     | YES      | -                 | Session notes and observations                                                           |
+| **status**                   | text                     | YES      | 'active'          | Session status                                                                           |
+| **rifle_id**                 | uuid                     | YES      | -                 | Foreign key to rifles table                                                              |
+| **cartridge_id**             | uuid                     | YES      | -                 | Foreign key to cartridges table                                                          |
+| **cartridge_lot_number**     | text                     | YES      | -                 | Cartridge lot identifier                                                                 |
+| **user_id**                  | text                     | NO       | -                 | Auth0 user identifier for data isolation                                                 |
+| **temperature_c**            | numeric(3,1)             | YES      | -                 | Temperature in Celsius with 1 decimal place                                              |
+| **relative_humidity_pct**    | numeric(5,2)             | YES      | -                 | Relative humidity percentage with 2 decimal places                                       |
+| **barometric_pressure_inhg** | numeric(6,2)             | YES      | -                 | Barometric pressure in inHg with 2 decimal places                                        |
+| **wind_speed_1_kmh**         | numeric(4,1)             | YES      | -                 | Wind speed measurement 1 in km/h with 1 decimal place                                    |
+| **wind_speed_2_kmh**         | numeric(4,1)             | YES      | -                 | Wind speed measurement 2 in km/h with 1 decimal place                                    |
+| **wind_direction_deg**       | numeric(5,1)             | YES      | -                 | Wind direction in degrees with 1 decimal place                                           |
 
 ## Foreign Key Relationships
 
@@ -73,6 +72,7 @@ The table has the following foreign key relationships:
 - **ranges_submissions(id)** - Links to shooting range information and location data
 - **weather_source(id)** - Links to weather measurement devices (optional)
 - **rifles(id)** - Links to rifle configuration data including barrel specifications
+- **cartridges(id)** - Links to cartridge specifications
 
 ## Purpose and Context
 
@@ -92,5 +92,5 @@ Each DOPE session represents a shooting event where ballistic performance is rec
 2. **Timestamps**: Both creation and update timestamps are automatically tracked
 3. **Optional Relationships**: Many foreign key fields are nullable to accommodate varying data availability
 4. **Comprehensive Context**: Links multiple aspects of shooting data for complete ballistic analysis
-5. **Flexible Cartridge Tracking**: Supports both factory and custom cartridge specifications
+5. **Cartridge Integration**: Links to the unified cartridges table for both factory and custom specifications
 6. **Weather Data**: Includes both linked weather source data and direct weather measurements for environmental tracking

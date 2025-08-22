@@ -14,7 +14,7 @@ class DopeSessionModel:
     datetime_local: Optional[datetime] = None  # NOT NULL - from chrono_sessions
     
     # Foreign key relationships
-    cartridge_spec_id: str = ""  # NOT NULL - Foreign key to cartridge_specs_unified_mv
+    cartridge_id: Optional[str] = None  # Foreign key to cartridges table
     chrono_session_id: Optional[str] = None
     range_submission_id: Optional[str] = None
     weather_source_id: Optional[str] = None
@@ -72,7 +72,7 @@ class DopeSessionModel:
             user_id=record.get("user_id"),
             session_name=record.get("session_name", ""),
             datetime_local=record.get("datetime_local"),
-            cartridge_spec_id=record.get("cartridge_spec_id", ""),
+            cartridge_id=record.get("cartridge_id"),
             chrono_session_id=record.get("chrono_session_id"),
             range_submission_id=record.get("range_submission_id"),
             weather_source_id=record.get("weather_source_id"),
@@ -122,7 +122,7 @@ class DopeSessionModel:
             "user_id": self.user_id,
             "session_name": self.session_name,
             "datetime_local": self.datetime_local,
-            "cartridge_spec_id": self.cartridge_spec_id,
+            "cartridge_id": self.cartridge_id,
             "chrono_session_id": self.chrono_session_id,
             "range_submission_id": self.range_submission_id,
             "weather_source_id": self.weather_source_id,
@@ -218,7 +218,6 @@ class DopeSessionModel:
         """Check if all mandatory fields are filled"""
         mandatory_fields = [
             self.session_name,
-            self.cartridge_spec_id,
             self.rifle_name,
             self.cartridge_make,
             self.cartridge_model,
@@ -234,7 +233,6 @@ class DopeSessionModel:
         missing = []
         mandatory_fields = {
             "session_name": self.session_name,
-            "cartridge_spec_id": self.cartridge_spec_id,
             "rifle_name": self.rifle_name,
             "cartridge_make": self.cartridge_make,
             "cartridge_model": self.cartridge_model,

@@ -8,23 +8,23 @@ The custom_cartridge_specs table stores specifications for custom handloaded amm
 
 ### Columns
 
-| Column | Type | Nullable | Default | Description |
-|--------|------|----------|---------|-------------|
-| **id** | integer | NO | nextval('custom_cartridge_specs_id_seq'::regclass) | Primary key (auto-increment) |
-| **user_id** | text | NO | null | Foreign key to users table |
-| **name** | text | NO | null | User-defined name for the load |
-| **cartridge** | text | NO | null | Cartridge designation (e.g., "6.5 Creedmoor", ".308 Winchester") |
-| **bullet_id** | integer | NO | null | Foreign key to bullets table |
-| **powder** | text | YES | null | Powder type/brand |
-| **powder_charge_gr** | numeric | YES | null | Powder charge weight in grains |
-| **casing_make** | text | YES | null | Brass case manufacturer |
-| **casing_notes** | text | YES | null | Notes about case preparation, neck tension, etc. |
-| **primer** | text | YES | null | Primer type |
-| **coal_mm** | double precision | YES | null | Cartridge Overall Length in millimeters |
-| **velocity_fps** | integer | YES | null | Muzzle velocity in feet per second |
-| **pressure_notes** | text | YES | null | Pressure observations, signs, testing notes |
-| **notes** | text | YES | null | General notes about the load |
-| **cartridge_type** | text | YES | null | Standardized cartridge type designation |
+| Column               | Type                  | Nullable | Default                                            | Description                                                         |
+|----------------------|-----------------------|----------|----------------------------------------------------|---------------------------------------------------------------------|
+| **id**               | integer               | NO       | nextval('custom_cartridge_specs_id_seq'::regclass) | Primary key (auto-increment)                                        |
+| **user_id**          | text                  | NO       | null                                               | Foreign key to users table                                          |
+| **name**             | text                  | NO       | null                                               | User-defined name for the load                                      |
+| **cartridge**        | text                  | NO       | null                                               | Cartridge designation (e.g., "6.5 Creedmoor", ".308 Winchester")    |
+| **bullet_id**        | integer               | NO       | null                                               | Foreign key to bullets table                                        |
+| **powder**           | text                  | YES      | null                                               | Powder type/brand                                                   |
+| **powder_charge_gr** | numeric               | YES      | null                                               | Powder charge weight in grains                                      |
+| **casing_make**      | text                  | YES      | null                                               | Brass case manufacturer                                             |
+| **casing_notes**     | text                  | YES      | null                                               | Notes about case preparation, neck tension, etc.                    |
+| **primer**           | text                  | YES      | null                                               | Primer type                                                         |
+| **coal_mm**          | double precision      | YES      | null                                               | Cartridge Overall Length in millimeters                             |
+| **velocity_fps**     | integer               | YES      | null                                               | Muzzle velocity in feet per second                                  |
+| **pressure_notes**   | text                  | YES      | null                                               | Pressure observations, signs, testing notes                         |
+| **notes**            | text                  | YES      | null                                               | General notes about the load                                        |
+| **cartridge_type**   | cartridge_type (enum) | NO       | null                                               | Enumerated cartridge type (e.g., '6mm Creedmoor', '308 Winchester') |
 
 ### Required Fields
 
@@ -45,7 +45,7 @@ The custom_cartridge_specs table stores specifications for custom handloaded amm
 - `velocity_fps` - Expected/measured velocity
 - `pressure_notes` - Pressure testing observations
 - `notes` - General load notes
-- `cartridge_type` - Standardized type designation
+- `cartridge_type` - Enumerated cartridge type for consistency across the system
 
 ### Relationships
 
