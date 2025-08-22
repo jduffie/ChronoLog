@@ -2,21 +2,21 @@ import os
 import sys
 
 import streamlit as st
-import navigation
 
 # Add the root directory to the path so we can import our modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from cartridges.factory.create_tab import render_create_cartridge_tab
-from cartridges.factory.view_tab import render_view_cartridge_tab
+import navigation
+from cartridges.view_tab import render_view_cartridges_tab
+from cartridges.edit_tab import render_edit_cartridges_tab
 from auth import handle_auth
 from supabase import create_client
 
 
 def main():
-    """Main function for the Factory Cartridges page."""
+    """Main function for the Cartridges page."""
     # Set page configuration FIRST, before any other Streamlit operations
-    st.set_page_config(page_title="Factory Cartridges", page_icon="🏭", layout="wide")
+    st.set_page_config(page_title="Cartridges", layout="wide")
 
     # Load custom navigation
     navigation.load()
@@ -36,18 +36,17 @@ def main():
         return
 
     # Display title
-    st.title("🏭 Factory Cartridges Management")
+    st.title("Cartridges Management")
+    st.markdown("Manage both factory and custom cartridge specifications with comprehensive bullet data.")
 
-    # Create tabs for Create and View
-    tab1, tab2 = st.tabs(["View", "Create"])
+    # Create tabs for View and Create
+    tab1, tab2 = st.tabs(["View Cartridges", "Create Cartridge"])
 
     with tab1:
-        render_view_cartridge_tab(user, supabase)
+        render_view_cartridges_tab(user, supabase)
 
     with tab2:
-        render_create_cartridge_tab(user, supabase)
-
-
+        render_edit_cartridges_tab(user, supabase)
 
 
 if __name__ == "__main__":

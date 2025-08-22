@@ -8,8 +8,7 @@ files_to_update = [
     "pages/4_Weather.py",
     "pages/5_Ranges.py", 
     "pages/6_Rifles.py",
-    "pages/7_Factory_Cartridges.py",
-    "pages/8_Custom_Cartridges.py",
+    "pages/7_Cartridges.py",
     "pages/9_Bullets.py",
     "pages/10_Admin.py"
 ]

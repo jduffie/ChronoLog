@@ -116,13 +116,7 @@ def load():
     with cols[0]:
         st.markdown("&nbsp;", unsafe_allow_html=True)
     with cols[1]:
-        st.page_link("pages/7_Factory_Cartridges.py", label="Cartridges-Factory")
-    
-    cols = st.sidebar.columns([1, 9], gap="small")
-    with cols[0]:
-        st.markdown("&nbsp;", unsafe_allow_html=True)
-    with cols[1]:
-        st.page_link("pages/8_Custom_Cartridges.py", label="Cartridges-Custom")
+        st.page_link("pages/7_Cartridges.py", label="Cartridges")
 
     # Bullets
     cols = st.sidebar.columns([1, 9], gap="small")
