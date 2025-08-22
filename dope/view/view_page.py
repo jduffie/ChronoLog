@@ -11,6 +11,7 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta
 import sys
 import os
+from supabase import create_client
 
 # Add the root directory to the path so we can import our modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -47,8 +48,16 @@ def render_view_page():
     
     st.title("DOPE Sessions")
     
-    # Initialize service (with mocked client for now)
-    service = DopeService(None)  # TODO: Pass actual Supabase client
+    # Initialize Supabase client
+    try:
+        url = st.secrets["supabase"]["url"]
+        key = st.secrets["supabase"]["key"]
+        supabase = create_client(url, key)
+        service = DopeService(supabase)
+    except Exception as e:
+        st.error(f"Error connecting to database: {str(e)}")
+        st.info("Using mock data for development")
+        service = DopeService(None)
     
     try:
         # Initialize session state for filters and selections
