@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, map_on_dope, develop ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ main, map_on_dope ]
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:

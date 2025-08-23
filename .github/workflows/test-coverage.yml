@@ -2,7 +2,7 @@ name: Test Coverage Report
 
 on:
   push:
-    branches: [ main, map_on_dope ]
+    branches: [ main ]
   schedule:
     # Run coverage report daily at 2 AM UTC
     - cron: '0 2 * * *'

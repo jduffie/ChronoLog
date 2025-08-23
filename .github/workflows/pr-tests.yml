@@ -2,7 +2,7 @@ name: Pull Request Tests
 
 on:
   pull_request:
-    branches: [ main, map_on_dope ]
+    branches: [ main ]
     types: [opened, synchronize, reopened]
 
 permissions:
