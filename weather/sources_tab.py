@@ -15,10 +15,10 @@ def render_weather_sources_tab(user, supabase):
             "selected_weather_source_id": None,
             "selected_weather_date": None,
             "edit_sources": {},  # {source_id: bool}
-            "confirm_deletes": {}  # {source_id: bool}
+            "confirm_deletes": {},  # {source_id: bool}
         }
         st.session_state.weather_sources_page_state = weather_state
-    
+
     st.header(" Weather Sources")
 
     try:
@@ -32,7 +32,7 @@ def render_weather_sources_tab(user, supabase):
         manage_tab, add_tab = st.tabs(["Manage Sources", "Add Source"])
 
         with manage_tab:
-            st.subheader("🔧 Manage Weather Sources")
+            st.subheader(" Manage Weather Sources")
 
             if not sources:
                 st.info(
@@ -101,7 +101,9 @@ def render_weather_sources_tab(user, supabase):
 
                     with button_col1:
                         if st.button("Edit", key=f"edit_{source.id}"):
-                            st.session_state.weather_sources_page_state["edit_sources"][source.id] = True
+                            st.session_state.weather_sources_page_state["edit_sources"][
+                                source.id
+                            ] = True
 
                     with button_col2:
                         if source_measurements:
@@ -115,8 +117,13 @@ def render_weather_sources_tab(user, supabase):
                                         ]
                                     ).strftime("%Y-%m-%d")
                                     # Type cast to avoid type checker warnings
-                                    weather_state = cast(Dict[str, Any], st.session_state.weather_sources_page_state)
-                                    weather_state["selected_weather_source_id"] = source.id
+                                    weather_state = cast(
+                                        Dict[str, Any],
+                                        st.session_state.weather_sources_page_state,
+                                    )
+                                    weather_state["selected_weather_source_id"] = (
+                                        source.id
+                                    )
                                     weather_state["selected_weather_date"] = latest_date
                                     st.info(
                                         "Source selected! Go to the 'View Log' tab to see detailed weather analysis."
@@ -126,10 +133,14 @@ def render_weather_sources_tab(user, supabase):
                         if st.button(
                             "Delete", key=f"delete_{source.id}", type="secondary"
                         ):
-                            st.session_state.weather_sources_page_state["confirm_deletes"][source.id] = True
+                            st.session_state.weather_sources_page_state[
+                                "confirm_deletes"
+                            ][source.id] = True
 
                     # Edit form
-                    if st.session_state.weather_sources_page_state["edit_sources"].get(source.id, False):
+                    if st.session_state.weather_sources_page_state["edit_sources"].get(
+                        source.id, False
+                    ):
                         st.write("---")
                         st.write("**Edit Weather Source:**")
 
@@ -169,18 +180,24 @@ def render_weather_sources_tab(user, supabase):
                                         st.success(
                                             "Weather source updated successfully!"
                                         )
-                                        st.session_state.weather_sources_page_state["edit_sources"][source.id] = False
+                                        st.session_state.weather_sources_page_state[
+                                            "edit_sources"
+                                        ][source.id] = False
                                         st.rerun()
                                     except Exception as e:
                                         st.error(f"Error updating weather source: {e}")
 
                             with col2:
                                 if st.form_submit_button("Cancel"):
-                                    st.session_state.weather_sources_page_state["edit_sources"][source.id] = False
+                                    st.session_state.weather_sources_page_state[
+                                        "edit_sources"
+                                    ][source.id] = False
                                     st.rerun()
 
                     # Delete confirmation
-                    if st.session_state.weather_sources_page_state["confirm_deletes"].get(source.id, False):
+                    if st.session_state.weather_sources_page_state[
+                        "confirm_deletes"
+                    ].get(source.id, False):
                         st.write("---")
                         st.warning(
                             f"⚠️ Are you sure you want to delete '{source.name}'?"
@@ -198,24 +215,26 @@ def render_weather_sources_tab(user, supabase):
                                 type="primary",
                             ):
                                 try:
-                                    weather_service.delete_source(
-                                        source.id, user["id"]
-                                    )
+                                    weather_service.delete_source(source.id, user["id"])
                                     st.success(
                                         f"Weather source '{source.name}' deleted successfully!"
                                     )
-                                    st.session_state.weather_sources_page_state["confirm_deletes"][source.id] = False
+                                    st.session_state.weather_sources_page_state[
+                                        "confirm_deletes"
+                                    ][source.id] = False
                                     st.rerun()
                                 except Exception as e:
                                     st.error(f"Error deleting weather source: {e}")
 
                         with col2:
                             if st.button("Cancel", key=f"confirm_no_{source.id}"):
-                                st.session_state.weather_sources_page_state["confirm_deletes"][source.id] = False
+                                st.session_state.weather_sources_page_state[
+                                    "confirm_deletes"
+                                ][source.id] = False
                                 st.rerun()
 
         with add_tab:
-            st.subheader("➕ Add New Weather Source")
+            st.subheader(" Add New Weather Source")
             st.write("Create a new weather source for organizing your weather data.")
 
             with st.form("add_source_form"):

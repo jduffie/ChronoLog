@@ -62,11 +62,15 @@ def render_weather_view_log_tab(user, supabase):
         default_selection = None
         if (
             "weather_sources_page_state" in st.session_state
-            and st.session_state.weather_sources_page_state.get("selected_weather_source_id")
+            and st.session_state.weather_sources_page_state.get(
+                "selected_weather_source_id"
+            )
             and st.session_state.weather_sources_page_state.get("selected_weather_date")
         ):
             # Type cast to avoid type checker warnings
-            weather_state = cast(Dict[str, Any], st.session_state.weather_sources_page_state)
+            weather_state = cast(
+                Dict[str, Any], st.session_state.weather_sources_page_state
+            )
             target_source_id = weather_state["selected_weather_source_id"]
             target_date = weather_state["selected_weather_date"]
             for option_key, info in source_date_options.items():
@@ -197,7 +201,7 @@ def render_weather_view_log_tab(user, supabase):
                 st.metric("Avg Density Alt", f"{density_alt.mean():.0f} ft")
 
         # Charts
-        st.subheader("📊 Weather Trends")
+        st.subheader(" Weather Trends")
 
         # Create tabs for different views
         chart_tab1, chart_tab2, chart_tab3 = st.tabs(
@@ -357,7 +361,7 @@ def render_weather_view_log_tab(user, supabase):
                 st.info("No data available for normalized comparison chart.")
 
         # Detailed data table
-        st.subheader("📋 Detailed Measurements")
+        st.subheader(" Detailed Measurements")
 
         # Format data for display
         display_df = df.copy()
@@ -413,7 +417,7 @@ def render_weather_view_log_tab(user, supabase):
             st.dataframe(display_df, use_container_width=True)
 
         # Export options
-        st.subheader("📤 Export Data")
+        st.subheader(" Export Data")
         col1, col2 = st.columns(2)
 
         with col1:

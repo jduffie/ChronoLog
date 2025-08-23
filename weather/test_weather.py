@@ -186,7 +186,10 @@ class TestWeatherImportTab(unittest.TestCase):
     ):
         mock_file_uploader.return_value = None
 
-        user = {"email": "test@example.com", "id": "google-oauth2|111273793361054745867"}
+        user = {
+            "email": "test@example.com",
+            "id": "google-oauth2|111273793361054745867",
+        }
         mock_supabase = Mock()
 
         # Mock empty weather sources response
@@ -214,7 +217,10 @@ class TestWeatherImportTab(unittest.TestCase):
         mock_file.getvalue.return_value = b"fake_csv_data"
         mock_file_uploader.return_value = mock_file
 
-        user = {"email": "test@example.com", "id": "google-oauth2|111273793361054745867"}
+        user = {
+            "email": "test@example.com",
+            "id": "google-oauth2|111273793361054745867",
+        }
         mock_supabase = Mock()
 
         # Mock empty weather sources response

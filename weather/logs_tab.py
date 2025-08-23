@@ -28,7 +28,7 @@ def render_weather_logs_tab(user, supabase):
         measurements = weather_service.get_all_measurements_for_user(user["id"])
 
         # Create a summary table by weather source
-        st.subheader("📋 Weather Sources Summary")
+        st.subheader(" Weather Sources Summary")
 
         summary_data = []
         for source in sources:
@@ -110,7 +110,7 @@ def render_weather_logs_tab(user, supabase):
             st.dataframe(df_summary, use_container_width=True)
 
         # Detailed measurements with filtering
-        st.subheader("🌡️ Detailed Weather Measurements")
+        st.subheader("️ Detailed Weather Measurements")
 
         if not measurements:
             st.info("No weather measurements found.")
@@ -352,19 +352,31 @@ def render_weather_logs_tab(user, supabase):
                                         key=f"view_weather_{source_obj.id}_{date_str}",
                                     ):
                                         # Update weather sources page state for navigation
-                                        if "weather_sources_page_state" not in st.session_state:
+                                        if (
+                                            "weather_sources_page_state"
+                                            not in st.session_state
+                                        ):
                                             weather_state: Dict[str, Any] = {
                                                 "selected_weather_source_id": None,
                                                 "selected_weather_date": None,
                                                 "edit_sources": {},
-                                                "confirm_deletes": {}
+                                                "confirm_deletes": {},
                                             }
-                                            st.session_state.weather_sources_page_state = weather_state
-                                        
+                                            st.session_state.weather_sources_page_state = (
+                                                weather_state
+                                            )
+
                                         # Type cast to avoid type checker warnings
-                                        weather_state = cast(Dict[str, Any], st.session_state.weather_sources_page_state)
-                                        weather_state["selected_weather_source_id"] = source_obj.id
-                                        weather_state["selected_weather_date"] = date_str
+                                        weather_state = cast(
+                                            Dict[str, Any],
+                                            st.session_state.weather_sources_page_state,
+                                        )
+                                        weather_state["selected_weather_source_id"] = (
+                                            source_obj.id
+                                        )
+                                        weather_state["selected_weather_date"] = (
+                                            date_str
+                                        )
                                         st.info(
                                             "Date and source selected! Go to the 'View Log' tab to see detailed weather analysis."
                                         )

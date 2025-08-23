@@ -29,9 +29,7 @@ class WeatherService:
         except Exception as e:
             raise Exception(f"Error fetching weather sources: {str(e)}")
 
-    def get_source_by_id(
-        self, source_id: str, user_id: str
-    ) -> Optional[WeatherSource]:
+    def get_source_by_id(self, source_id: str, user_id: str) -> Optional[WeatherSource]:
         """Get a specific weather source by ID"""
         try:
             response = (
@@ -131,9 +129,7 @@ class WeatherService:
         except Exception as e:
             raise Exception(f"Error fetching measurements: {str(e)}")
 
-    def get_all_measurements_for_user(
-        self, user_id: str
-    ) -> List[WeatherMeasurement]:
+    def get_all_measurements_for_user(self, user_id: str) -> List[WeatherMeasurement]:
         """Get all weather measurements for a user"""
         try:
             response = (
