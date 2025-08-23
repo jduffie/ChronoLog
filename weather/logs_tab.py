@@ -9,7 +9,7 @@ from .service import WeatherService
 
 def render_weather_logs_tab(user, supabase):
     """Render the Weather Logs tab showing weather sources and measurements"""
-    st.header("🌤️ Weather Logs")
+    st.header(" Weather Logs")
 
     try:
         # Initialize weather service

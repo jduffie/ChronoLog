@@ -6,7 +6,7 @@ import streamlit as st
 
 def render_users_tab(user, supabase):
     """Render the Users tab for admin management"""
-    st.header("👥 User Management")
+    st.header(" User Management")
 
     try:
         # Get all users from the database
@@ -25,7 +25,7 @@ def render_users_tab(user, supabase):
         df = pd.DataFrame(response.data)
 
         # Display summary stats
-        st.subheader("📊 Summary")
+        st.subheader(" Summary")
         col1, col2, col3, col4 = st.columns(4)
 
         with col1:
@@ -53,7 +53,7 @@ def render_users_tab(user, supabase):
                 st.metric("Countries", "N/A")
 
         # Add filters
-        st.subheader("🔍 Filter Options")
+        st.subheader(" Filter Options")
         col1, col2, col3, col4 = st.columns(4)
 
         with col1:
@@ -94,7 +94,7 @@ def render_users_tab(user, supabase):
             st.info(f"Showing {len(filtered_df)} of {len(df)} users")
 
         # Display the table with selection
-        st.subheader("👥 Users")
+        st.subheader(" Users")
 
         if len(filtered_df) == 0:
             st.warning("No users match the selected filters.")

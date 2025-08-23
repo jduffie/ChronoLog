@@ -36,7 +36,7 @@ def main():
         return
 
     # Display title
-    st.title("🔫 Bullets Management")
+    st.title(" Bullets Management")
 
     # Create tabs for Create and View
     tab1, tab2 = st.tabs(["View", "Create"])

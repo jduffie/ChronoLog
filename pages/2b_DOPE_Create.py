@@ -35,7 +35,7 @@ def main():
         return
 
     # Display title
-    st.title("📈 Create DOPE Session")
+    st.title(" Create DOPE Session")
     print("start")
 
 

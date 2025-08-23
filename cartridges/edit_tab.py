@@ -95,7 +95,7 @@ def render_edit_cartridges_tab(user, supabase):
                 selected_bullet_id = bullet_options[bullet_selection]
                 selected_bullet = bullet_lookup[selected_bullet_id]
                 
-                st.subheader("🎯 Selected Bullet Details")
+                st.subheader(" Selected Bullet Details")
                 col1, col2, col3 = st.columns(3)
                 
                 with col1:
@@ -168,7 +168,7 @@ def render_edit_cartridges_tab(user, supabase):
                         st.info("A cartridge with this combination already exists.")
 
         # Show existing user cartridges
-        st.subheader("👤 Your Cartridges")
+        st.subheader(" Your Cartridges")
         user_cartridges_response = (
             supabase.table("cartridges")
             .select("""

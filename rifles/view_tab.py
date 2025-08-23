@@ -6,7 +6,7 @@ import streamlit as st
 
 def render_view_rifle_tab(user, supabase):
     """Render the View Rifles tab"""
-    st.header("📋 View Rifle Entries")
+    st.header(" View Rifle Entries")
 
     try:
         # Get all rifle entries for the user
@@ -28,7 +28,7 @@ def render_view_rifle_tab(user, supabase):
         df = pd.DataFrame(response.data)
 
         # Display summary stats
-        st.subheader("📊 Summary")
+        st.subheader(" Summary")
         col1, col2, col3, col4 = st.columns(4)
 
         with col1:
@@ -50,7 +50,7 @@ def render_view_rifle_tab(user, supabase):
             st.metric("With Trigger Info", trigger_count)
 
         # Add filters
-        st.subheader("🔍 Filter Options")
+        st.subheader(" Filter Options")
         col1, col2 = st.columns(2)
 
         with col1:
@@ -98,7 +98,7 @@ def render_view_rifle_tab(user, supabase):
             st.info(f"Showing {len(filtered_df)} of {len(df)} rifles")
 
         # Display the table
-        st.subheader("🔫 Rifle Entries")
+        st.subheader(" Rifle Entries")
 
         if len(filtered_df) == 0:
             st.warning("No rifles match the selected filters.")
@@ -204,11 +204,11 @@ def render_view_rifle_tab(user, supabase):
                     )
 
         # Export option
-        st.subheader("📤 Export")
-        if st.button("📥 Download as CSV"):
+        st.subheader(" Export")
+        if st.button(" Download as CSV"):
             csv = display_df.to_csv(index=False)
             st.download_button(
-                label="💾 Download CSV",
+                label=" Download CSV",
                 data=csv,
                 file_name=f"rifles_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
                 mime="text/csv",

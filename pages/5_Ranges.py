@@ -33,7 +33,7 @@ def render_public_ranges_tab(user, supabase):
         public_ranges = controller.get_public_ranges(supabase)
 
         if not public_ranges:
-            st.info("🌍 No public ranges available yet.")
+            st.info(" No public ranges available yet.")
             return
 
         # Check if user is admin
@@ -176,11 +176,11 @@ def main():
         return
 
     # Display main title
-    st.title("🌍 Ranges")
+    st.title(" Ranges")
 
     # Create tabs
     tab1, tab2, tab3 = st.tabs(
-        ["📋 Public Ranges", "📍 Nominate Range", "📋 My Submissions"]
+        [" Public Ranges", " Nominate Range", " My Submissions"]
     )
 
     with tab1:

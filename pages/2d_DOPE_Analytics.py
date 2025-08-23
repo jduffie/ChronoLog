@@ -35,7 +35,7 @@ def main():
         return
 
     # Display title
-    st.title("📊 DOPE Analytics")
+    st.title(" DOPE Analytics")
 
     render_analytics_page()
 

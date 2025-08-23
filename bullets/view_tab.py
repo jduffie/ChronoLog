@@ -7,7 +7,7 @@ from .service import BulletsService
 
 def render_view_bullets_tab(user, supabase):
     """Render the View Bullets tab"""
-    st.header("📋 View Bullets Entries")
+    st.header(" View Bullets Entries")
 
     # Initialize service
     bullets_service = BulletsService(supabase)
@@ -27,7 +27,7 @@ def render_view_bullets_tab(user, supabase):
         df = pd.DataFrame(bullet_dicts)
 
         # Display summary stats
-        st.subheader("📊 Summary")
+        st.subheader(" Summary")
         col1, col2, col3 = st.columns(3)
 
         with col1:
@@ -43,7 +43,7 @@ def render_view_bullets_tab(user, supabase):
 
 
         # Add filters
-        st.subheader("🔍 Filter Options")
+        st.subheader(" Filter Options")
         col1, col2, col3 = st.columns(3)
 
         with col1:
@@ -77,7 +77,7 @@ def render_view_bullets_tab(user, supabase):
             st.info(f"Showing {len(filtered_bullets)} of {len(bullets)} entries")
 
         # Display the table
-        st.subheader("📝 Bullets Entries")
+        st.subheader(" Bullets Entries")
 
         if len(filtered_df) == 0:
             st.warning("No entries match the selected filters.")
@@ -161,7 +161,7 @@ def render_view_bullets_tab(user, supabase):
         
         if is_admin:
             # Edit functionality (admin only)
-            st.subheader("✏️ Edit Entry (Admin Only)")
+            st.subheader("✏ Edit Entry (Admin Only)")
             with st.expander("Edit a bullet entry"):
                 # Create list of entries for editing
                 entry_options = []
@@ -181,7 +181,7 @@ def render_view_bullets_tab(user, supabase):
                         
                         # Create edit form
                         with st.form("edit_bullet_form"):
-                            st.subheader("📋 Edit Basic Information")
+                            st.subheader(" Edit Basic Information")
                             col1, col2 = st.columns(2)
 
                             with col1:
@@ -317,7 +317,7 @@ def render_view_bullets_tab(user, supabase):
                             # Submit button
                             col1, col2 = st.columns([1, 4])
                             with col1:
-                                submitted = st.form_submit_button("💾 Save Changes", type="primary")
+                                submitted = st.form_submit_button(" Save Changes", type="primary")
 
                             if submitted:
                                 # Validate required fields

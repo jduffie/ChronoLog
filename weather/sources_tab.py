@@ -19,7 +19,7 @@ def render_weather_sources_tab(user, supabase):
         }
         st.session_state.weather_sources_page_state = weather_state
     
-    st.header("📡 Weather Sources")
+    st.header(" Weather Sources")
 
     try:
         # Initialize weather service

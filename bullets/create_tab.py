@@ -20,7 +20,7 @@ def render_create_bullets_tab(user, supabase):
 
     # Create form for bullets entry
     with st.form("create_bullets_form"):
-        st.subheader("📋 Basic Information")
+        st.subheader(" Basic Information")
         col1, col2 = st.columns(2)
 
         with col1:
@@ -133,7 +133,7 @@ def render_create_bullets_tab(user, supabase):
                 help="Preferred twist rate in inches per revolution (optional)",
             )
 
-        st.subheader("📄 Data Source (Optional)")
+        st.subheader(" Data Source (Optional)")
         col7, col8 = st.columns(2)
 
         with col7:
@@ -151,7 +151,7 @@ def render_create_bullets_tab(user, supabase):
             )
 
         # Submit button
-        submitted = st.form_submit_button("💾 Create Bullets Entry", type="primary")
+        submitted = st.form_submit_button(" Create Bullets Entry", type="primary")
 
         if submitted:
             # Validate required fields
@@ -222,7 +222,7 @@ def render_create_bullets_tab(user, supabase):
     """
     )
 
-    st.markdown("### 📝 Examples")
+    st.markdown("###  Examples")
     examples = [
         {
             "manufacturer": "Hornady",

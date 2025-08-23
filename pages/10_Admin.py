@@ -69,7 +69,7 @@ def main():
         return
 
     # Display title
-    st.title("👑 Administration Panel")
+    st.title(" Administration Panel")
     
     # Create tabs for different admin functions
     tab1 = st.tabs(["Users"])[0]

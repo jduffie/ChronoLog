@@ -45,7 +45,7 @@ def render_weather_import_tab(user, supabase, bucket):
 
         # Show selected source info
         st.success(
-            f"📡 Selected: {selected_source.name} - {selected_source.device_display()}"
+            f" Selected: {selected_source.name} - {selected_source.device_display()}"
         )
 
         # Check if it's a Kestrel meter and show appropriate upload option
@@ -57,7 +57,7 @@ def render_weather_import_tab(user, supabase, bucket):
             )
         else:
             st.write("---")
-            st.info("📝 Upload options for this source type are not yet available.")
+            st.info(" Upload options for this source type are not yet available.")
 
 
 def render_file_upload(user, supabase, bucket, weather_service, selected_meter_id):

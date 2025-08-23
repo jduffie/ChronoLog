@@ -53,7 +53,7 @@ def render_create_rifle_tab(user, supabase):
             )
 
         # Submit button
-        submitted = st.form_submit_button("💾 Create Rifle Entry", type="primary")
+        submitted = st.form_submit_button(" Create Rifle Entry", type="primary")
 
         if submitted:
             # Validate required fields
@@ -91,7 +91,7 @@ def render_create_rifle_tab(user, supabase):
 
                 if response.data:
                     st.success(f"✅ Rifle entry created successfully!")
-                    st.info(f"📋 **{name}** has been added to your rifle collection")
+                    st.info(f" **{name}** has been added to your rifle collection")
 
                     # Display created rifle details
                     with st.expander("📝 Created Rifle Details"):
@@ -121,7 +121,7 @@ def render_create_rifle_tab(user, supabase):
 
     # Display helpful information
     st.markdown("---")
-    st.markdown("### 💡 Tips")
+    st.markdown("###  Tips")
     st.markdown(
         """
     - **Rifle Name**: Give each rifle a unique, descriptive name (e.g., "My 6.5 Creedmoor", "Hunting AR-15")
@@ -133,7 +133,7 @@ def render_create_rifle_tab(user, supabase):
     """
     )
 
-    st.markdown("### 📝 Examples")
+    st.markdown("###  Examples")
     examples = [
         {
             "name": "Precision 6.5 Creedmoor",

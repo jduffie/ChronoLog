@@ -10,7 +10,7 @@ from .service import WeatherService
 
 def render_weather_view_log_tab(user, supabase):
     """Render the Weather View Log tab for detailed weather analysis"""
-    st.header("🔍 View Weather Log")
+    st.header(" View Weather Log")
 
     try:
         # Initialize weather service
@@ -132,7 +132,7 @@ def render_weather_view_log_tab(user, supabase):
         df = df.sort_values("timestamp")
 
         # Session header
-        st.subheader(f"🌤️ Weather Data - {selection_info['date']}")
+        st.subheader(f" Weather Data - {selection_info['date']}")
 
         col1, col2, col3 = st.columns(3)
         with col1:
@@ -149,7 +149,7 @@ def render_weather_view_log_tab(user, supabase):
                 )
 
         # Key Statistics
-        st.subheader("📈 Weather Statistics")
+        st.subheader(" Weather Statistics")
 
         # Temperature stats
         if "temperature_f" in df.columns and not df["temperature_f"].isna().all():

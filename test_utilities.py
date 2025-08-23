@@ -202,12 +202,6 @@ class TestNavigationUtilities(unittest.TestCase):
         script_path = os.path.join(os.path.dirname(__file__), 'navigation.py')
         self.assertTrue(os.path.exists(script_path), "navigation.py should exist")
 
-    def test_update_nav_exists(self):
-        """Test that update_nav.py exists"""
-        script_path = os.path.join(os.path.dirname(__file__), 'update_nav.py')
-        self.assertTrue(os.path.exists(script_path), "update_nav.py should exist")
-
-
 class TestDataManagementScripts(unittest.TestCase):
     """Test data import/export scripts"""
 

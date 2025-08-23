@@ -40,7 +40,7 @@ def main():
         return
 
     # Display title
-    st.title("🌤️ Weather")
+    st.title("️ Weather")
 
     # Create tabs for Sources, Import, Logs, View Log, and My Files
     tab1, tab2, tab3, tab4, tab5 = st.tabs(

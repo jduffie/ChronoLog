@@ -38,7 +38,7 @@ def main():
         return
 
     # Display title
-    st.title("⏱️Chronograph")
+    st.title("Chronograph")
 
     # Create tabs for Import, View, Edit, and My Files
     tab1, tab2, tab3, tab4 = st.tabs(["Import", "View", "Edit", "My Files"])
