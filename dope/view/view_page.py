@@ -60,13 +60,13 @@ def render_view_page():
         service = DopeService(None)
     
     try:
-        # Initialize session state for filters and selections
-        if "dope_filters" not in st.session_state:
-            st.session_state.dope_filters = {}
-        if "selected_session_id" not in st.session_state:
-            st.session_state.selected_session_id = None
-        if "show_advanced_filters" not in st.session_state:
-            st.session_state.show_advanced_filters = False
+        # Initialize private session state for DOPE view page
+        if "dope_view_page_state" not in st.session_state:
+            st.session_state.dope_view_page_state = {
+                "filters": {},
+                "selected_session_id": None,
+                "show_advanced_filters": False
+            }
         
         # Remove sidebar filters - all filters now on main page
         
@@ -89,12 +89,12 @@ def render_view_page():
         render_main_page_filters(service, user_id)
         
         # Get filtered sessions
-        sessions = get_filtered_sessions(service, user_id, st.session_state.dope_filters)
+        sessions = get_filtered_sessions(service, user_id, st.session_state.dope_view_page_state["filters"])
         
         if not sessions:
             st.info("No DOPE sessions found matching your filters. Try adjusting the filters or create a new session.")
             if st.button("Clear All Filters"):
-                st.session_state.dope_filters = {}
+                st.session_state.dope_view_page_state["filters"] = {}
                 st.rerun()
             return
         
@@ -105,9 +105,9 @@ def render_view_page():
         render_sessions_table(sessions)
         
         # Show session details if one is selected
-        if st.session_state.selected_session_id:
+        if st.session_state.dope_view_page_state["selected_session_id"]:
             selected_session = next(
-                (s for s in sessions if s.id == st.session_state.selected_session_id), 
+                (s for s in sessions if s.id == st.session_state.dope_view_page_state["selected_session_id"]), 
                 None
             )
             if selected_session:
@@ -121,9 +121,9 @@ def render_view_page():
 def render_main_page_filters(service: DopeService, user_id: str):
     """Render advanced filters section on the main page with expandable controls"""
     # Advanced Filters Section with expander
-    with st.expander("🔍 All Filters", expanded=st.session_state.get("show_advanced_filters", False)):
+    with st.expander("🔍 All Filters", expanded=st.session_state.dope_view_page_state["show_advanced_filters"]):
         # Store expander state
-        st.session_state.show_advanced_filters = True
+        st.session_state.dope_view_page_state["show_advanced_filters"] = True
         
         # Quick actions row
         col1, col2, col3 = st.columns([2, 1, 1])
@@ -132,14 +132,14 @@ def render_main_page_filters(service: DopeService, user_id: str):
             # Global search
             search_term = st.text_input(
                 "🔍 Search Sessions",
-                value=st.session_state.dope_filters.get("search", ""),
+                value=st.session_state.dope_view_page_state["filters"].get("search", ""),
                 placeholder="Search names, cartridges, bullets, ranges...",
                 help="Search across all text fields"
             )
             if search_term:
-                st.session_state.dope_filters["search"] = search_term
-            elif "search" in st.session_state.dope_filters:
-                del st.session_state.dope_filters["search"]
+                st.session_state.dope_view_page_state["filters"]["search"] = search_term
+            elif "search" in st.session_state.dope_view_page_state["filters"]:
+                del st.session_state.dope_view_page_state["filters"]["search"]
         
         with col2:
             if st.button("🔄 Apply Filters", use_container_width=True):
@@ -147,7 +147,7 @@ def render_main_page_filters(service: DopeService, user_id: str):
         
         with col3:
             if st.button("🧹 Clear All", use_container_width=True):
-                st.session_state.dope_filters = {}
+                st.session_state.dope_view_page_state["filters"] = {}
                 st.rerun()
         
         st.divider()
@@ -173,125 +173,173 @@ def render_main_page_filters(service: DopeService, user_id: str):
             with date_col1:
                 date_from = st.date_input(
                     "From Date",
-                    value=st.session_state.dope_filters.get("date_from"),
+                    value=st.session_state.dope_view_page_state["filters"].get("date_from"),
                     key="date_from_filter"
                 )
             with date_col2:
                 date_to = st.date_input(
                     "To Date", 
-                    value=st.session_state.dope_filters.get("date_to"),
+                    value=st.session_state.dope_view_page_state["filters"].get("date_to"),
                     key="date_to_filter"
                 )
             
             if date_from:
-                st.session_state.dope_filters["date_from"] = datetime.combine(date_from, datetime.min.time())
+                st.session_state.dope_view_page_state["filters"]["date_from"] = datetime.combine(date_from, datetime.min.time())
             if date_to:
-                st.session_state.dope_filters["date_to"] = datetime.combine(date_to, datetime.max.time())
+                st.session_state.dope_view_page_state["filters"]["date_to"] = datetime.combine(date_to, datetime.max.time())
             
             # Status filter
             status_options = ["All", "active", "archived"]
             status = st.selectbox(
                 "Status",
                 options=status_options,
-                index=status_options.index(st.session_state.dope_filters.get("status", "All"))
+                index=status_options.index(st.session_state.dope_view_page_state["filters"].get("status", "All"))
             )
             if status != "All":
-                st.session_state.dope_filters["status"] = status
-            elif "status" in st.session_state.dope_filters:
-                del st.session_state.dope_filters["status"]
+                st.session_state.dope_view_page_state["filters"]["status"] = status
+            elif "status" in st.session_state.dope_view_page_state["filters"]:
+                del st.session_state.dope_view_page_state["filters"]["status"]
         
         with col2:
             st.subheader("Equipment")
             
             # Rifle filter
             if rifle_names:
+                # Initialize widget with current filter value only on first run
+                if "rifle_name_selectbox" not in st.session_state:
+                    current_value = st.session_state.dope_view_page_state["filters"].get("rifle_name", "All")
+                    if current_value in rifle_names:
+                        st.session_state.rifle_name_selectbox = current_value
+                    else:
+                        st.session_state.rifle_name_selectbox = "All"
+                
                 rifle_name = st.selectbox(
                     "Rifle Name",
                     options=["All"] + rifle_names,
-                    index=0 if st.session_state.dope_filters.get("rifle_name") not in rifle_names 
-                           else rifle_names.index(st.session_state.dope_filters.get("rifle_name")) + 1
+                    key="rifle_name_selectbox"
                 )
+                
+                # Update private state based on widget value
                 if rifle_name != "All":
-                    st.session_state.dope_filters["rifle_name"] = rifle_name
-                elif "rifle_name" in st.session_state.dope_filters:
-                    del st.session_state.dope_filters["rifle_name"]
+                    st.session_state.dope_view_page_state["filters"]["rifle_name"] = rifle_name
+                elif "rifle_name" in st.session_state.dope_view_page_state["filters"]:
+                    del st.session_state.dope_view_page_state["filters"]["rifle_name"]
             
             # Range filter
             if range_names:
+                # Initialize widget with current filter value only on first run
+                if "range_name_selectbox" not in st.session_state:
+                    current_value = st.session_state.dope_view_page_state["filters"].get("range_name", "All")
+                    if current_value in range_names:
+                        st.session_state.range_name_selectbox = current_value
+                    else:
+                        st.session_state.range_name_selectbox = "All"
+                
                 range_name = st.selectbox(
                     "Range Name",
                     options=["All"] + range_names,
-                    index=0 if st.session_state.dope_filters.get("range_name") not in range_names
-                           else range_names.index(st.session_state.dope_filters.get("range_name")) + 1
+                    key="range_name_selectbox"
                 )
+                
+                # Update private state based on widget value
                 if range_name != "All":
-                    st.session_state.dope_filters["range_name"] = range_name
-                elif "range_name" in st.session_state.dope_filters:
-                    del st.session_state.dope_filters["range_name"]
+                    st.session_state.dope_view_page_state["filters"]["range_name"] = range_name
+                elif "range_name" in st.session_state.dope_view_page_state["filters"]:
+                    del st.session_state.dope_view_page_state["filters"]["range_name"]
             
             # Distance filter
             distance_range = st.slider(
                 "Distance (meters)",
                 min_value=0,
                 max_value=1000,
-                value=st.session_state.dope_filters.get("distance_range", (0, 1000)),
+                value=st.session_state.dope_view_page_state["filters"].get("distance_range", (0, 1000)),
                 step=25
             )
             if distance_range != (0, 1000):
-                st.session_state.dope_filters["distance_range"] = distance_range
-            elif "distance_range" in st.session_state.dope_filters:
-                del st.session_state.dope_filters["distance_range"]
+                st.session_state.dope_view_page_state["filters"]["distance_range"] = distance_range
+            elif "distance_range" in st.session_state.dope_view_page_state["filters"]:
+                del st.session_state.dope_view_page_state["filters"]["distance_range"]
         
         with col3:
             st.subheader("Ammunition")
             
             # Cartridge filters
             if cartridge_makes:
+                # Initialize widget with current filter value only on first run
+                if "cartridge_make_selectbox" not in st.session_state:
+                    current_value = st.session_state.dope_view_page_state["filters"].get("cartridge_make", "All")
+                    if current_value in cartridge_makes:
+                        st.session_state.cartridge_make_selectbox = current_value
+                    else:
+                        st.session_state.cartridge_make_selectbox = "All"
+                
                 cartridge_make = st.selectbox(
                     "Cartridge Make",
                     options=["All"] + cartridge_makes,
-                    key="cartridge_make_filter"
+                    key="cartridge_make_selectbox"
                 )
+                
+                # Update private state based on widget value
                 if cartridge_make != "All":
-                    st.session_state.dope_filters["cartridge_make"] = cartridge_make
-                elif "cartridge_make" in st.session_state.dope_filters:
-                    del st.session_state.dope_filters["cartridge_make"]
+                    st.session_state.dope_view_page_state["filters"]["cartridge_make"] = cartridge_make
+                elif "cartridge_make" in st.session_state.dope_view_page_state["filters"]:
+                    del st.session_state.dope_view_page_state["filters"]["cartridge_make"]
             
             if cartridge_types:
+                # Initialize widget with current filter value only on first run
+                if "cartridge_type_selectbox" not in st.session_state:
+                    current_value = st.session_state.dope_view_page_state["filters"].get("cartridge_type", "All")
+                    if current_value in cartridge_types:
+                        st.session_state.cartridge_type_selectbox = current_value
+                    else:
+                        st.session_state.cartridge_type_selectbox = "All"
+                
                 cartridge_type = st.selectbox(
                     "Cartridge Type",
                     options=["All"] + cartridge_types,
-                    key="cartridge_type_filter"
+                    key="cartridge_type_selectbox"
                 )
+                
+                # Update private state based on widget value
                 if cartridge_type != "All":
-                    st.session_state.dope_filters["cartridge_type"] = cartridge_type
-                elif "cartridge_type" in st.session_state.dope_filters:
-                    del st.session_state.dope_filters["cartridge_type"]
+                    st.session_state.dope_view_page_state["filters"]["cartridge_type"] = cartridge_type
+                elif "cartridge_type" in st.session_state.dope_view_page_state["filters"]:
+                    del st.session_state.dope_view_page_state["filters"]["cartridge_type"]
             
             # Bullet filters
             if bullet_makes:
+                # Initialize widget with current filter value only on first run
+                if "bullet_make_selectbox" not in st.session_state:
+                    current_value = st.session_state.dope_view_page_state["filters"].get("bullet_make", "All")
+                    if current_value in bullet_makes:
+                        st.session_state.bullet_make_selectbox = current_value
+                    else:
+                        st.session_state.bullet_make_selectbox = "All"
+                
                 bullet_make = st.selectbox(
                     "Bullet Make",
                     options=["All"] + bullet_makes,
-                    key="bullet_make_filter"
+                    key="bullet_make_selectbox"
                 )
+                
+                # Update private state based on widget value
                 if bullet_make != "All":
-                    st.session_state.dope_filters["bullet_make"] = bullet_make
-                elif "bullet_make" in st.session_state.dope_filters:
-                    del st.session_state.dope_filters["bullet_make"]
+                    st.session_state.dope_view_page_state["filters"]["bullet_make"] = bullet_make
+                elif "bullet_make" in st.session_state.dope_view_page_state["filters"]:
+                    del st.session_state.dope_view_page_state["filters"]["bullet_make"]
             
             # Bullet weight range
             weight_range = st.slider(
                 "Bullet Weight (grains)",
                 min_value=50,
                 max_value=300,
-                value=st.session_state.dope_filters.get("bullet_weight_range", (50, 300)),
+                value=st.session_state.dope_view_page_state["filters"].get("bullet_weight_range", (50, 300)),
                 step=5
             )
             if weight_range != (50, 300):
-                st.session_state.dope_filters["bullet_weight_range"] = weight_range
-            elif "bullet_weight_range" in st.session_state.dope_filters:
-                del st.session_state.dope_filters["bullet_weight_range"]
+                st.session_state.dope_view_page_state["filters"]["bullet_weight_range"] = weight_range
+            elif "bullet_weight_range" in st.session_state.dope_view_page_state["filters"]:
+                del st.session_state.dope_view_page_state["filters"]["bullet_weight_range"]
         
         # Weather filters in a separate row
         st.divider()
@@ -304,39 +352,39 @@ def render_main_page_filters(service: DopeService, user_id: str):
                 "Temperature (°C)",
                 min_value=-20.0,
                 max_value=50.0,
-                value=st.session_state.dope_filters.get("temperature_range", (-20.0, 50.0)),
+                value=st.session_state.dope_view_page_state["filters"].get("temperature_range", (-20.0, 50.0)),
                 step=1.0
             )
             if temp_range != (-20.0, 50.0):
-                st.session_state.dope_filters["temperature_range"] = temp_range
-            elif "temperature_range" in st.session_state.dope_filters:
-                del st.session_state.dope_filters["temperature_range"]
+                st.session_state.dope_view_page_state["filters"]["temperature_range"] = temp_range
+            elif "temperature_range" in st.session_state.dope_view_page_state["filters"]:
+                del st.session_state.dope_view_page_state["filters"]["temperature_range"]
         
         with weather_col2:
             humidity_range = st.slider(
                 "Humidity (%)",
                 min_value=0.0,
                 max_value=100.0,
-                value=st.session_state.dope_filters.get("humidity_range", (0.0, 100.0)),
+                value=st.session_state.dope_view_page_state["filters"].get("humidity_range", (0.0, 100.0)),
                 step=5.0
             )
             if humidity_range != (0.0, 100.0):
-                st.session_state.dope_filters["humidity_range"] = humidity_range
-            elif "humidity_range" in st.session_state.dope_filters:
-                del st.session_state.dope_filters["humidity_range"]
+                st.session_state.dope_view_page_state["filters"]["humidity_range"] = humidity_range
+            elif "humidity_range" in st.session_state.dope_view_page_state["filters"]:
+                del st.session_state.dope_view_page_state["filters"]["humidity_range"]
         
         with weather_col3:
             wind_range = st.slider(
                 "Wind Speed (km/h)",
                 min_value=0.0,
                 max_value=50.0,
-                value=st.session_state.dope_filters.get("wind_speed_range", (0.0, 50.0)),
+                value=st.session_state.dope_view_page_state["filters"].get("wind_speed_range", (0.0, 50.0)),
                 step=1.0
             )
             if wind_range != (0.0, 50.0):
-                st.session_state.dope_filters["wind_speed_range"] = wind_range
-            elif "wind_speed_range" in st.session_state.dope_filters:
-                del st.session_state.dope_filters["wind_speed_range"]
+                st.session_state.dope_view_page_state["filters"]["wind_speed_range"] = wind_range
+            elif "wind_speed_range" in st.session_state.dope_view_page_state["filters"]:
+                del st.session_state.dope_view_page_state["filters"]["wind_speed_range"]
 
 
 
@@ -440,7 +488,7 @@ def render_sessions_table(sessions: List[DopeSessionModel]):
     if selected_rows.selection.rows:
         selected_idx = selected_rows.selection.rows[0]
         selected_session_id = df.iloc[selected_idx]["ID"]
-        st.session_state.selected_session_id = selected_session_id
+        st.session_state.dope_view_page_state["selected_session_id"] = selected_session_id
     
     # Export functionality
     if st.button("📥 Export to CSV"):
