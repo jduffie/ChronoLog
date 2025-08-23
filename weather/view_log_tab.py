@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, Any, cast
+from typing import Any, Dict, cast
 
 import matplotlib.pyplot as plt
 import pandas as pd

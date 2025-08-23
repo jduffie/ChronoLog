@@ -6,16 +6,21 @@ from .service import BulletsService
 def render_create_bullets_tab(user, supabase):
     """Render the Create Bullets tab"""
     st.header("➕ Create New Bullets Entry")
-    
+
     # Initialize service
     bullets_service = BulletsService(supabase)
-    
+
     # Check if user is admin
-    is_admin = user.get("user_metadata", {}).get("is_admin", False) or user.get("email") == "johnduffie91@gmail.com"
-    
+    is_admin = (
+        user.get("user_metadata", {}).get("is_admin", False)
+        or user.get("email") == "johnduffie91@gmail.com"
+    )
+
     if not is_admin:
         st.warning("🔒 Access Denied: Only administrators can create bullet entries.")
-        st.info("This global bullet database is maintained by administrators to ensure data quality and consistency.")
+        st.info(
+            "This global bullet database is maintained by administrators to ensure data quality and consistency."
+        )
         return
 
     # Create form for bullets entry
@@ -155,27 +160,53 @@ def render_create_bullets_tab(user, supabase):
 
         if submitted:
             # Validate required fields
-            if not manufacturer or not model or weight_grains == 0 or bullet_diameter_groove_mm == 0.0 or bore_diameter_land_mm == 0.0:
+            if (
+                not manufacturer
+                or not model
+                or weight_grains == 0
+                or bullet_diameter_groove_mm == 0.0
+                or bore_diameter_land_mm == 0.0
+            ):
                 st.error("❌ Please fill in all required fields (marked with *)")
                 return
 
             # Clean up text inputs
             manufacturer = manufacturer.strip()
             model = model.strip()
-            data_source_name_cleaned = data_source_name.strip() if data_source_name else None
-            data_source_url_cleaned = data_source_url.strip() if data_source_url else None
-            
+            data_source_name_cleaned = (
+                data_source_name.strip() if data_source_name else None
+            )
+            data_source_url_cleaned = (
+                data_source_url.strip() if data_source_url else None
+            )
+
             # Convert zero values to None for optional fields
             bullet_length_mm_value = bullet_length_mm if bullet_length_mm > 0 else None
-            ballistic_coefficient_g1_value = ballistic_coefficient_g1 if ballistic_coefficient_g1 > 0 else None
-            ballistic_coefficient_g7_value = ballistic_coefficient_g7 if ballistic_coefficient_g7 > 0 else None
-            sectional_density_value = sectional_density if sectional_density > 0 else None
-            min_req_twist_rate_value = min_req_twist_rate_in_per_rev if min_req_twist_rate_in_per_rev > 0 else None
-            pref_twist_rate_value = pref_twist_rate_in_per_rev if pref_twist_rate_in_per_rev > 0 else None
-            
+            ballistic_coefficient_g1_value = (
+                ballistic_coefficient_g1 if ballistic_coefficient_g1 > 0 else None
+            )
+            ballistic_coefficient_g7_value = (
+                ballistic_coefficient_g7 if ballistic_coefficient_g7 > 0 else None
+            )
+            sectional_density_value = (
+                sectional_density if sectional_density > 0 else None
+            )
+            min_req_twist_rate_value = (
+                min_req_twist_rate_in_per_rev
+                if min_req_twist_rate_in_per_rev > 0
+                else None
+            )
+            pref_twist_rate_value = (
+                pref_twist_rate_in_per_rev if pref_twist_rate_in_per_rev > 0 else None
+            )
+
             # Convert empty strings to None for data source fields
-            data_source_name_value = data_source_name_cleaned if data_source_name_cleaned else None
-            data_source_url_value = data_source_url_cleaned if data_source_url_cleaned else None
+            data_source_name_value = (
+                data_source_name_cleaned if data_source_name_cleaned else None
+            )
+            data_source_url_value = (
+                data_source_url_cleaned if data_source_url_cleaned else None
+            )
 
             try:
                 # Create bullets entry
@@ -198,7 +229,7 @@ def render_create_bullets_tab(user, supabase):
 
                 # Create bullet through service
                 bullet = bullets_service.create_bullet(bullets_data)
-                
+
                 st.success(f"✅ Bullet entry created successfully!")
                 st.info(f"📋 **{bullet.display_name}**")
 
@@ -229,21 +260,21 @@ def render_create_bullets_tab(user, supabase):
             "model": "ELD-M",
             "weight": "147gr",
             "diameter": "6.50mm",
-            "bc_g1": "0.697"
+            "bc_g1": "0.697",
         },
         {
             "manufacturer": "Federal",
             "model": "Gold Medal",
             "weight": "168gr",
             "diameter": "7.82mm (.308)",
-            "bc_g1": "0.465"
+            "bc_g1": "0.465",
         },
         {
             "manufacturer": "Sierra",
             "model": "MatchKing",
             "weight": "77gr",
             "diameter": "5.70mm (.224)",
-            "bc_g1": "0.372"
+            "bc_g1": "0.372",
         },
     ]
 

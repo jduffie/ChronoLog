@@ -7,29 +7,30 @@ Usage: python test_env_variables.py
 import os
 import sys
 
+
 def test_env_variables():
     """Test that all required environment variables are set."""
-    
+
     required_vars = [
         "AUTH0_DOMAIN",
-        "AUTH0_CLIENT_ID", 
+        "AUTH0_CLIENT_ID",
         "AUTH0_CLIENT_SECRET",
         "SUPABASE_URL",
-        "SUPABASE_SERVICE_ROLE_KEY"
+        "SUPABASE_SERVICE_ROLE_KEY",
     ]
-    
+
     optional_vars = [
         "AUTH0_REDIRECT_URI",
-        "AUTH0_MAPPING_REDIRECT_URI", 
+        "AUTH0_MAPPING_REDIRECT_URI",
         "SUPABASE_KEY",
-        "SUPABASE_BUCKET"
+        "SUPABASE_BUCKET",
     ]
-    
+
     print("🔍 Checking environment variables...")
     print("=" * 50)
-    
+
     missing_required = []
-    
+
     # Check required variables
     for var in required_vars:
         value = os.getenv(var)
@@ -43,7 +44,7 @@ def test_env_variables():
         else:
             print(f"❌ {var}: NOT SET")
             missing_required.append(var)
-    
+
     print("\nOptional variables:")
     for var in optional_vars:
         value = os.getenv(var)
@@ -55,9 +56,9 @@ def test_env_variables():
             print(f"✅ {var}: {display_value}")
         else:
             print(f"⚠️  {var}: NOT SET (optional)")
-    
+
     print("=" * 50)
-    
+
     if missing_required:
         print(f"❌ Missing {len(missing_required)} required environment variables:")
         for var in missing_required:
@@ -71,6 +72,7 @@ def test_env_variables():
         print("\n🚀 You can now run:")
         print("   streamlit run ChronoLog.py")
         return True
+
 
 if __name__ == "__main__":
     success = test_env_variables()

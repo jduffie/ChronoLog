@@ -1,10 +1,12 @@
 import streamlit as st
 
+
 def load():
     """Load and render the custom navigation sidebar."""
-    
+
     # Hide Streamlit's default multipage nav with very aggressive CSS
-    st.markdown("""
+    st.markdown(
+        """
     <style>
     /* Hide the default Streamlit navigation */
     [data-testid='stSidebarNav'] {
@@ -46,36 +48,38 @@ def load():
         display: none !important;
     }
     </style>
-    """, unsafe_allow_html=True)
-    
+    """,
+        unsafe_allow_html=True,
+    )
+
     # App title
     st.sidebar.header("ChronoLog")
 
     # Data on Prior Engagements section
     # st.sidebar.divider()
     st.sidebar.subheader("Data on Prior Engagements")
-    
+
     # Overview
     cols = st.sidebar.columns([1, 9], gap="small")
     with cols[0]:
         st.markdown("&nbsp;", unsafe_allow_html=True)
     with cols[1]:
         st.page_link("pages/2a_DOPE_Overview.py", label="Overview")
-    
+
     # Create
     cols = st.sidebar.columns([1, 9], gap="small")
     with cols[0]:
         st.markdown("&nbsp;", unsafe_allow_html=True)
     with cols[1]:
         st.page_link("pages/2b_DOPE_Create.py", label="Create")
-    
+
     # View
     cols = st.sidebar.columns([1, 9], gap="small")
     with cols[0]:
         st.markdown("&nbsp;", unsafe_allow_html=True)
     with cols[1]:
         st.page_link("pages/2c_DOPE_View.py", label="View")
-    
+
     # Analytics
     cols = st.sidebar.columns([1, 9], gap="small")
     with cols[0]:
@@ -92,19 +96,19 @@ def load():
         st.markdown("&nbsp;", unsafe_allow_html=True)
     with cols[1]:
         st.page_link("pages/3_Chronograph.py", label="Chronograph")
-    
+
     cols = st.sidebar.columns([1, 9], gap="small")
     with cols[0]:
         st.markdown("&nbsp;", unsafe_allow_html=True)
     with cols[1]:
         st.page_link("pages/4_Weather.py", label="Weather")
-    
+
     cols = st.sidebar.columns([1, 9], gap="small")
     with cols[0]:
         st.markdown("&nbsp;", unsafe_allow_html=True)
     with cols[1]:
         st.page_link("pages/5_Ranges.py", label="Ranges")
-    
+
     cols = st.sidebar.columns([1, 9], gap="small")
     with cols[0]:
         st.markdown("&nbsp;", unsafe_allow_html=True)

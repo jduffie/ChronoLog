@@ -2,6 +2,7 @@ import os
 import sys
 
 import streamlit as st
+
 import navigation
 
 # Add the root directory to the path so we can import our modules
@@ -10,6 +11,7 @@ sys.path.append(
 )
 
 from auth import handle_auth
+
 
 def run():
     """Main function for the Landing page."""

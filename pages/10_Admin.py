@@ -2,6 +2,7 @@ import os
 import sys
 
 import streamlit as st
+
 import navigation
 
 # Add the root directory to the path so we can import our modules
@@ -43,21 +44,18 @@ def main():
     # Check admin role from users table
     try:
         user_response = (
-            supabase.table("users")
-            .select("roles")
-            .eq("email", user_email)
-            .execute()
+            supabase.table("users").select("roles").eq("email", user_email).execute()
         )
-        
+
         is_admin = False
         if user_response.data:
             user_roles = user_response.data[0].get("roles", [])
             is_admin = "admin" in user_roles if user_roles else False
-        
+
         # Fallback check for specific admin email
         if not is_admin and user_email == "johnduffie91@gmail.com":
             is_admin = True
-            
+
     except Exception as e:
         st.error(f"Error checking admin privileges: {str(e)}")
         return
@@ -65,12 +63,14 @@ def main():
     if not is_admin:
         st.error("❌ Access Denied")
         st.warning("🔒 This page requires administrator privileges.")
-        st.info("Contact an administrator if you believe you should have access to this page.")
+        st.info(
+            "Contact an administrator if you believe you should have access to this page."
+        )
         return
 
     # Display title
     st.title(" Administration Panel")
-    
+
     # Create tabs for different admin functions
     tab1 = st.tabs(["Users"])[0]
 

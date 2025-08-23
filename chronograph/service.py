@@ -143,9 +143,7 @@ class ChronographService:
         except Exception as e:
             raise Exception(f"Error fetching bullet types: {str(e)}")
 
-    def session_exists(
-        self, user_id: str, tab_name: str, datetime_local: str
-    ) -> bool:
+    def session_exists(self, user_id: str, tab_name: str, datetime_local: str) -> bool:
         """Check if a session already exists"""
         try:
             response = (
@@ -204,9 +202,7 @@ class ChronographService:
         except Exception as e:
             raise Exception(f"Error creating measurement: {str(e)}")
 
-    def get_measurements_for_stats(
-        self, user_id: str, session_id: str
-    ) -> List[float]:
+    def get_measurements_for_stats(self, user_id: str, session_id: str) -> List[float]:
         """Get speed measurements for calculating session statistics"""
         try:
             response = (

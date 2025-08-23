@@ -15,11 +15,11 @@ def main():
         print("❌ Environment variable 'SUPABASE_SERVICE_ROLE_KEY' not set.")
         print("Set it with: export SUPABASE_SERVICE_ROLE_KEY=your_key")
         sys.exit(1)
-    print('OBSOLETE')
-    print('OBSOLETE')
-    print('OBSOLETE')
-    print('OBSOLETE')
-    print('OBSOLETE - aborting')
+    print("OBSOLETE")
+    print("OBSOLETE")
+    print("OBSOLETE")
+    print("OBSOLETE")
+    print("OBSOLETE - aborting")
     sys.exit(1)
 
     # Confirmation prompt
@@ -54,11 +54,12 @@ def delete_all_files(supabase):
 
 
 def drop_tables(supabase):
-   print("TBD")
+    print("TBD")
+
 
 def create_tables(supabase):
     # Create sessions table
-   print("TBD")
+    print("TBD")
 
 
 if __name__ == "__main__":

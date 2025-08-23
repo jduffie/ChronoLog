@@ -13,7 +13,6 @@ from chronograph.test_chronograph import (
     TestChronographService,
 )
 
-from weather.test_weather import TestWeatherSource, TestWeatherMeasurement, TestWeatherImportTab, TestWeatherPageStructure
 # from dope.test_dope import (  # Removed - test_dope.py deleted
 #     TestDopeCreateSessionTab,
 #     TestDopeModel,
@@ -31,6 +30,12 @@ from rifles.test_rifles import (
     TestRiflesPageStructure,
     TestRiflesViewTab,
 )
+from weather.test_weather import (
+    TestWeatherImportTab,
+    TestWeatherMeasurement,
+    TestWeatherPageStructure,
+    TestWeatherSource,
+)
 
 
 class TestPageStructure(unittest.TestCase):
@@ -42,7 +47,7 @@ class TestPageStructure(unittest.TestCase):
             "pages/1_Home.py",
             "pages/2a_DOPE_Overview.py",
             "pages/2b_DOPE_Create.py",
-            "pages/2c_DOPE_View.py", 
+            "pages/2c_DOPE_View.py",
             "pages/2d_DOPE_Analytics.py",
             "pages/3_Chronograph.py",
             "pages/4_Weather.py",
@@ -274,15 +279,14 @@ class TestPageTabStructure(unittest.TestCase):
         """Test that DOPE has separate pages instead of tabs"""
         expected_dope_pages = [
             "pages/2a_DOPE_Overview.py",
-            "pages/2b_DOPE_Create.py", 
+            "pages/2b_DOPE_Create.py",
             "pages/2c_DOPE_View.py",
-            "pages/2d_DOPE_Analytics.py"
+            "pages/2d_DOPE_Analytics.py",
         ]
-        
+
         for page_file in expected_dope_pages:
             self.assertTrue(
-                os.path.exists(page_file),
-                f"DOPE page {page_file} should exist"
+                os.path.exists(page_file), f"DOPE page {page_file} should exist"
             )
 
     def test_ranges_has_correct_tabs(self):

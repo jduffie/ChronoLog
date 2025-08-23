@@ -2,6 +2,7 @@ import os
 import sys
 
 import streamlit as st
+
 import navigation
 
 # Add the root directory to the path so we can import our modules
@@ -179,9 +180,7 @@ def main():
     st.title(" Ranges")
 
     # Create tabs
-    tab1, tab2, tab3 = st.tabs(
-        [" Public Ranges", " Nominate Range", " My Submissions"]
-    )
+    tab1, tab2, tab3 = st.tabs([" Public Ranges", " Nominate Range", " My Submissions"])
 
     with tab1:
         render_public_ranges_tab(user, supabase)

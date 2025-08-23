@@ -41,36 +41,51 @@ def render_view_bullets_tab(user, supabase):
             unique_calibers = df["bullet_diameter_groove_mm"].nunique()
             st.metric("Calibers", unique_calibers)
 
-
         # Add filters
         st.subheader(" Filter Options")
         col1, col2, col3 = st.columns(3)
 
         with col1:
             manufacturers = ["All"] + sorted(df["manufacturer"].unique().tolist())
-            selected_manufacturer = st.selectbox("Filter by Manufacturer:", manufacturers)
+            selected_manufacturer = st.selectbox(
+                "Filter by Manufacturer:", manufacturers
+            )
 
         with col2:
             calibers = ["All"] + sorted(df["bore_diameter_land_mm"].unique().tolist())
-            selected_bore_diameter_mm = st.selectbox("Filter by Bore Diameter:", calibers)
+            selected_bore_diameter_mm = st.selectbox(
+                "Filter by Bore Diameter:", calibers
+            )
 
         with col3:
             weights = ["All"] + sorted(df["weight_grains"].unique().tolist())
             selected_weight = st.selectbox("Filter by Weight:", weights)
 
         # Apply filters using service
-        if selected_manufacturer == "All" and selected_bore_diameter_mm == "All" and selected_weight == "All":
+        if (
+            selected_manufacturer == "All"
+            and selected_bore_diameter_mm == "All"
+            and selected_weight == "All"
+        ):
             filtered_bullets = bullets
         else:
             filtered_bullets = bullets_service.filter_bullets(
-                manufacturer=selected_manufacturer if selected_manufacturer != "All" else None,
-                bore_diameter_mm=selected_bore_diameter_mm if selected_bore_diameter_mm != "All" else None,
-                weight_grains=selected_weight if selected_weight != "All" else None
+                manufacturer=(
+                    selected_manufacturer if selected_manufacturer != "All" else None
+                ),
+                bore_diameter_mm=(
+                    selected_bore_diameter_mm
+                    if selected_bore_diameter_mm != "All"
+                    else None
+                ),
+                weight_grains=selected_weight if selected_weight != "All" else None,
             )
-        
+
         # Convert filtered results to DataFrame
         filtered_bullet_dicts = [bullet.__dict__ for bullet in filtered_bullets]
-        filtered_df = pd.DataFrame(filtered_bullet_dicts) if filtered_bullets else pd.DataFrame()
+        filtered_df = (
+            pd.DataFrame(filtered_bullet_dicts) if filtered_bullets else pd.DataFrame()
+        )
 
         # Display filtered results count
         if len(filtered_bullets) != len(bullets):
@@ -90,30 +105,38 @@ def render_view_bullets_tab(user, supabase):
 
         # Handle nullable fields by filling NaN values
         display_df["bullet_length_mm"] = display_df["bullet_length_mm"].fillna("N/A")
-        display_df["ballistic_coefficient_g1"] = display_df["ballistic_coefficient_g1"].fillna("N/A")
-        display_df["ballistic_coefficient_g7"] = display_df["ballistic_coefficient_g7"].fillna("N/A")
+        display_df["ballistic_coefficient_g1"] = display_df[
+            "ballistic_coefficient_g1"
+        ].fillna("N/A")
+        display_df["ballistic_coefficient_g7"] = display_df[
+            "ballistic_coefficient_g7"
+        ].fillna("N/A")
         display_df["sectional_density"] = display_df["sectional_density"].fillna("N/A")
-        display_df["min_req_twist_rate_in_per_rev"] = display_df["min_req_twist_rate_in_per_rev"].fillna("N/A")
-        display_df["pref_twist_rate_in_per_rev"] = display_df["pref_twist_rate_in_per_rev"].fillna("N/A")
+        display_df["min_req_twist_rate_in_per_rev"] = display_df[
+            "min_req_twist_rate_in_per_rev"
+        ].fillna("N/A")
+        display_df["pref_twist_rate_in_per_rev"] = display_df[
+            "pref_twist_rate_in_per_rev"
+        ].fillna("N/A")
         display_df["data_source_name"] = display_df["data_source_name"].fillna("N/A")
         display_df["data_source_url"] = display_df["data_source_url"].fillna("N/A")
 
         # Select and rename columns for display
         display_df = display_df[
             [
-                "manufacturer", 
-                "model", 
-                "weight_grains", 
-                "bullet_diameter_groove_mm", 
+                "manufacturer",
+                "model",
+                "weight_grains",
+                "bullet_diameter_groove_mm",
                 "bore_diameter_land_mm",
-                "bullet_length_mm", 
-                "ballistic_coefficient_g1", 
+                "bullet_length_mm",
+                "ballistic_coefficient_g1",
                 "ballistic_coefficient_g7",
                 "sectional_density",
                 "min_req_twist_rate_in_per_rev",
                 "pref_twist_rate_in_per_rev",
                 "data_source_name",
-                "data_source_url"
+                "data_source_url",
             ]
         ].rename(
             columns={
@@ -129,7 +152,7 @@ def render_view_bullets_tab(user, supabase):
                 "min_req_twist_rate_in_per_rev": "Min Twist Rate",
                 "pref_twist_rate_in_per_rev": "Pref Twist Rate",
                 "data_source_name": "Data Source",
-                "data_source_url": "Source URL"
+                "data_source_url": "Source URL",
             }
         )
 
@@ -139,26 +162,46 @@ def render_view_bullets_tab(user, supabase):
             use_container_width=True,
             hide_index=True,
             column_config={
-                "Manufacturer": st.column_config.TextColumn("Manufacturer", width="small"),
+                "Manufacturer": st.column_config.TextColumn(
+                    "Manufacturer", width="small"
+                ),
                 "Model": st.column_config.TextColumn("Model", width="small"),
-                "Weight (gr)": st.column_config.NumberColumn("Weight (gr)", width="small"),
-                "Diameter (mm)": st.column_config.NumberColumn("Diameter (mm)", width="small", format="%.3f"),
-                "Bore Dia (mm)": st.column_config.NumberColumn("Bore Dia (mm)", width="small", format="%.3f"),
-                "Length (mm)": st.column_config.TextColumn("Length (mm)", width="small"),
+                "Weight (gr)": st.column_config.NumberColumn(
+                    "Weight (gr)", width="small"
+                ),
+                "Diameter (mm)": st.column_config.NumberColumn(
+                    "Diameter (mm)", width="small", format="%.3f"
+                ),
+                "Bore Dia (mm)": st.column_config.NumberColumn(
+                    "Bore Dia (mm)", width="small", format="%.3f"
+                ),
+                "Length (mm)": st.column_config.TextColumn(
+                    "Length (mm)", width="small"
+                ),
                 "BC G1": st.column_config.TextColumn("BC G1", width="small"),
                 "BC G7": st.column_config.TextColumn("BC G7", width="small"),
-                "Sectional Density": st.column_config.TextColumn("Sectional Density", width="small"),
-                "Min Twist Rate": st.column_config.TextColumn("Min Twist Rate", width="small"),
-                "Pref Twist Rate": st.column_config.TextColumn("Pref Twist Rate", width="small"),
-                "Data Source": st.column_config.TextColumn("Data Source", width="medium"),
-                "Source URL": st.column_config.LinkColumn("Source URL", width="medium")
+                "Sectional Density": st.column_config.TextColumn(
+                    "Sectional Density", width="small"
+                ),
+                "Min Twist Rate": st.column_config.TextColumn(
+                    "Min Twist Rate", width="small"
+                ),
+                "Pref Twist Rate": st.column_config.TextColumn(
+                    "Pref Twist Rate", width="small"
+                ),
+                "Data Source": st.column_config.TextColumn(
+                    "Data Source", width="medium"
+                ),
+                "Source URL": st.column_config.LinkColumn("Source URL", width="medium"),
             },
         )
 
-
         # Admin-only functionality
-        is_admin = user.get("user_metadata", {}).get("is_admin", False) or user.get("email") == "johnduffie91@gmail.com"
-        
+        is_admin = (
+            user.get("user_metadata", {}).get("is_admin", False)
+            or user.get("email") == "johnduffie91@gmail.com"
+        )
+
         if is_admin:
             # Edit functionality (admin only)
             st.subheader("✏ Edit Entry (Admin Only)")
@@ -172,13 +215,15 @@ def render_view_bullets_tab(user, supabase):
                     selected_entry = st.selectbox(
                         "Select entry to edit:",
                         options=[None] + entry_options,
-                        format_func=lambda x: "Select an entry..." if x is None else x[0],
-                        key="edit_selector"
+                        format_func=lambda x: (
+                            "Select an entry..." if x is None else x[0]
+                        ),
+                        key="edit_selector",
                     )
 
                     if selected_entry:
                         bullet_model = selected_entry[1]
-                        
+
                         # Create edit form
                         with st.form("edit_bullet_form"):
                             st.subheader(" Edit Basic Information")
@@ -237,7 +282,11 @@ def render_view_bullets_tab(user, supabase):
                                     max_value=200.0,
                                     step=0.1,
                                     format="%.1f",
-                                    value=bullet_model.bullet_length_mm if bullet_model.bullet_length_mm is not None else 0.0,
+                                    value=(
+                                        bullet_model.bullet_length_mm
+                                        if bullet_model.bullet_length_mm is not None
+                                        else 0.0
+                                    ),
                                     help="The bullet length in millimeters (optional)",
                                 )
 
@@ -247,7 +296,11 @@ def render_view_bullets_tab(user, supabase):
                                     max_value=2.0,
                                     step=0.001,
                                     format="%.3f",
-                                    value=bullet_model.sectional_density if bullet_model.sectional_density is not None else 0.0,
+                                    value=(
+                                        bullet_model.sectional_density
+                                        if bullet_model.sectional_density is not None
+                                        else 0.0
+                                    ),
                                     help="The sectional density (weight/diameter²) (optional)",
                                 )
 
@@ -258,7 +311,12 @@ def render_view_bullets_tab(user, supabase):
                                     max_value=2.0,
                                     step=0.001,
                                     format="%.3f",
-                                    value=bullet_model.ballistic_coefficient_g1 if bullet_model.ballistic_coefficient_g1 is not None else 0.0,
+                                    value=(
+                                        bullet_model.ballistic_coefficient_g1
+                                        if bullet_model.ballistic_coefficient_g1
+                                        is not None
+                                        else 0.0
+                                    ),
                                     help="The G1 ballistic coefficient (optional)",
                                 )
 
@@ -268,7 +326,12 @@ def render_view_bullets_tab(user, supabase):
                                     max_value=2.0,
                                     step=0.001,
                                     format="%.3f",
-                                    value=bullet_model.ballistic_coefficient_g7 if bullet_model.ballistic_coefficient_g7 is not None else 0.0,
+                                    value=(
+                                        bullet_model.ballistic_coefficient_g7
+                                        if bullet_model.ballistic_coefficient_g7
+                                        is not None
+                                        else 0.0
+                                    ),
                                     help="The G7 ballistic coefficient (optional)",
                                 )
 
@@ -282,7 +345,12 @@ def render_view_bullets_tab(user, supabase):
                                     max_value=50.0,
                                     step=0.1,
                                     format="%.1f",
-                                    value=bullet_model.min_req_twist_rate_in_per_rev if bullet_model.min_req_twist_rate_in_per_rev is not None else 0.0,
+                                    value=(
+                                        bullet_model.min_req_twist_rate_in_per_rev
+                                        if bullet_model.min_req_twist_rate_in_per_rev
+                                        is not None
+                                        else 0.0
+                                    ),
                                     help="Minimum required twist rate in inches per revolution (optional)",
                                 )
 
@@ -293,7 +361,12 @@ def render_view_bullets_tab(user, supabase):
                                     max_value=50.0,
                                     step=0.1,
                                     format="%.1f",
-                                    value=bullet_model.pref_twist_rate_in_per_rev if bullet_model.pref_twist_rate_in_per_rev is not None else 0.0,
+                                    value=(
+                                        bullet_model.pref_twist_rate_in_per_rev
+                                        if bullet_model.pref_twist_rate_in_per_rev
+                                        is not None
+                                        else 0.0
+                                    ),
                                     help="Preferred twist rate in inches per revolution (optional)",
                                 )
 
@@ -303,44 +376,102 @@ def render_view_bullets_tab(user, supabase):
                             with col7:
                                 data_source_name = st.text_input(
                                     "Data Source Name",
-                                    value=bullet_model.data_source_name if bullet_model.data_source_name is not None else "",
+                                    value=(
+                                        bullet_model.data_source_name
+                                        if bullet_model.data_source_name is not None
+                                        else ""
+                                    ),
                                     help="Name or description of where this data came from (optional)",
                                 )
 
                             with col8:
                                 data_source_url = st.text_input(
                                     "Data Source URL",
-                                    value=bullet_model.data_source_url if bullet_model.data_source_url is not None else "",
+                                    value=(
+                                        bullet_model.data_source_url
+                                        if bullet_model.data_source_url is not None
+                                        else ""
+                                    ),
                                     help="URL or reference to the original data source (optional)",
                                 )
 
                             # Submit button
                             col1, col2 = st.columns([1, 4])
                             with col1:
-                                submitted = st.form_submit_button(" Save Changes", type="primary")
+                                submitted = st.form_submit_button(
+                                    " Save Changes", type="primary"
+                                )
 
                             if submitted:
                                 # Validate required fields
-                                if not manufacturer or not model or weight_grains == 0 or bullet_diameter_groove_mm == 0.0 or bore_diameter_land_mm == 0.0:
-                                    st.error("❌ Please fill in all required fields (marked with *)")
+                                if (
+                                    not manufacturer
+                                    or not model
+                                    or weight_grains == 0
+                                    or bullet_diameter_groove_mm == 0.0
+                                    or bore_diameter_land_mm == 0.0
+                                ):
+                                    st.error(
+                                        "❌ Please fill in all required fields (marked with *)"
+                                    )
                                 else:
                                     # Clean up text inputs
                                     manufacturer = manufacturer.strip()
                                     model = model.strip()
-                                    data_source_name_cleaned = data_source_name.strip() if data_source_name else None
-                                    data_source_url_cleaned = data_source_url.strip() if data_source_url else None
-                                    
+                                    data_source_name_cleaned = (
+                                        data_source_name.strip()
+                                        if data_source_name
+                                        else None
+                                    )
+                                    data_source_url_cleaned = (
+                                        data_source_url.strip()
+                                        if data_source_url
+                                        else None
+                                    )
+
                                     # Convert zero values to None for optional fields
-                                    bullet_length_mm_value = bullet_length_mm if bullet_length_mm > 0 else None
-                                    ballistic_coefficient_g1_value = ballistic_coefficient_g1 if ballistic_coefficient_g1 > 0 else None
-                                    ballistic_coefficient_g7_value = ballistic_coefficient_g7 if ballistic_coefficient_g7 > 0 else None
-                                    sectional_density_value = sectional_density if sectional_density > 0 else None
-                                    min_req_twist_rate_value = min_req_twist_rate_in_per_rev if min_req_twist_rate_in_per_rev > 0 else None
-                                    pref_twist_rate_value = pref_twist_rate_in_per_rev if pref_twist_rate_in_per_rev > 0 else None
-                                    
+                                    bullet_length_mm_value = (
+                                        bullet_length_mm
+                                        if bullet_length_mm > 0
+                                        else None
+                                    )
+                                    ballistic_coefficient_g1_value = (
+                                        ballistic_coefficient_g1
+                                        if ballistic_coefficient_g1 > 0
+                                        else None
+                                    )
+                                    ballistic_coefficient_g7_value = (
+                                        ballistic_coefficient_g7
+                                        if ballistic_coefficient_g7 > 0
+                                        else None
+                                    )
+                                    sectional_density_value = (
+                                        sectional_density
+                                        if sectional_density > 0
+                                        else None
+                                    )
+                                    min_req_twist_rate_value = (
+                                        min_req_twist_rate_in_per_rev
+                                        if min_req_twist_rate_in_per_rev > 0
+                                        else None
+                                    )
+                                    pref_twist_rate_value = (
+                                        pref_twist_rate_in_per_rev
+                                        if pref_twist_rate_in_per_rev > 0
+                                        else None
+                                    )
+
                                     # Convert empty strings to None for data source fields
-                                    data_source_name_value = data_source_name_cleaned if data_source_name_cleaned else None
-                                    data_source_url_value = data_source_url_cleaned if data_source_url_cleaned else None
+                                    data_source_name_value = (
+                                        data_source_name_cleaned
+                                        if data_source_name_cleaned
+                                        else None
+                                    )
+                                    data_source_url_value = (
+                                        data_source_url_cleaned
+                                        if data_source_url_cleaned
+                                        else None
+                                    )
 
                                     try:
                                         # Update the entry
@@ -360,10 +491,14 @@ def render_view_bullets_tab(user, supabase):
                                             "data_source_url": data_source_url_value,
                                         }
 
-                                        updated_bullet = bullets_service.update_bullet(bullet_model.id, update_data)
-                                        st.success(f"✅ Updated: {updated_bullet.display_name}")
+                                        updated_bullet = bullets_service.update_bullet(
+                                            bullet_model.id, update_data
+                                        )
+                                        st.success(
+                                            f"✅ Updated: {updated_bullet.display_name}"
+                                        )
                                         st.rerun()
-                                        
+
                                     except Exception as e:
                                         st.error(f"❌ Error updating entry: {str(e)}")
                 else:
@@ -383,8 +518,10 @@ def render_view_bullets_tab(user, supabase):
                     selected_entry = st.selectbox(
                         "Select entry to delete:",
                         options=[None] + entry_options,
-                        format_func=lambda x: "Select an entry..." if x is None else x[0],
-                        key="delete_selector"
+                        format_func=lambda x: (
+                            "Select an entry..." if x is None else x[0]
+                        ),
+                        key="delete_selector",
                     )
 
                     if selected_entry:
@@ -404,7 +541,9 @@ def render_view_bullets_tab(user, supabase):
                     st.info("No entries available for deletion with current filters.")
         else:
             # Info for non-admin users
-            st.info("ℹ️ This is a read-only view of the global bullet database maintained by administrators.")
+            st.info(
+                "ℹ️ This is a read-only view of the global bullet database maintained by administrators."
+            )
 
     except Exception as e:
         st.error(f"❌ Error loading bullets entries: {str(e)}")

@@ -2,14 +2,15 @@ import os
 import sys
 
 import streamlit as st
+
 import navigation
 
 # Add the root directory to the path so we can import our modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from auth import handle_auth
 from bullets.create_tab import render_create_bullets_tab
 from bullets.view_tab import render_view_bullets_tab
-from auth import handle_auth
 from supabase import create_client
 
 
@@ -46,8 +47,6 @@ def main():
 
     with tab2:
         render_create_bullets_tab(user, supabase)
-
-
 
 
 if __name__ == "__main__":

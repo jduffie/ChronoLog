@@ -2,6 +2,7 @@ import os
 import sys
 
 import streamlit as st
+
 import navigation
 
 # Add the root directory to the path so we can import our modules
@@ -35,9 +36,10 @@ def main():
 
     # Display title
     st.title("📊 DOPE Overview")
-    
+
     # Overview content
-    st.markdown("""
+    st.markdown(
+        """
     ## Data on Prior Engagements Overview
     
     Welcome to the DOPE (Data on Prior Engagements) system. This comprehensive platform allows you to:
@@ -58,16 +60,17 @@ def main():
     - Generate statistical reports
     
     ### 🎯 **Quick Actions**
-    """)
-    
+    """
+    )
+
     col1, col2, col3 = st.columns(3)
-    
+
     with col1:
         st.page_link("pages/2b_DOPE_Create.py", label="🆕 Create New DOPE Session")
-    
+
     with col2:
         st.page_link("pages/2c_DOPE_View.py", label="📋 View DOPE Sessions")
-    
+
     with col3:
         st.page_link("pages/2d_DOPE_Analytics.py", label="📊 View Analytics")
 

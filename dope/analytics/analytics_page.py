@@ -6,10 +6,11 @@ This module handles analytics and visualization of DOPE session data.
 
 import streamlit as st
 
+
 def render_analytics_page():
     """
     Render the DOPE Analytics page.
-    
+
     TODO: Implement DOPE analytics functionality
     - Performance trends over time
     - Ballistic coefficient analysis
@@ -21,6 +22,6 @@ def render_analytics_page():
     """
     st.title("DOPE Analytics")
     st.info("🚧 This page is under development - TBD")
-    
+
     # TBD: Implementation placeholder
     st.write("DOPE analytics and visualization functionality will be implemented here.")

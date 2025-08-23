@@ -1,12 +1,11 @@
+# Auth0 settings - support both secrets.toml and environment variables
+import os
 from urllib.parse import urlencode
 
 import requests
 import streamlit as st
 
 from users import handle_user_profile
-
-# Auth0 settings - support both secrets.toml and environment variables
-import os
 
 AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN") or st.secrets["auth0"]["domain"]
 CLIENT_ID = os.getenv("AUTH0_CLIENT_ID") or st.secrets["auth0"]["client_id"]

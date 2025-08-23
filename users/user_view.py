@@ -165,7 +165,6 @@ class UserView:
         """Display user info in sidebar."""
         st.sidebar.success(f"Logged in as {profile['name']}")
 
-
     def display_user_management_admin(
         self, users: list[Dict[str, Any]]
     ) -> Optional[Dict[str, Any]]:

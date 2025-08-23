@@ -23,7 +23,7 @@ def discover_and_run_tests():
         "rifles",
         "mapping",
         "bullets",  # Bullet management tests
-        "cartridges",  # Cartridge management tests  
+        "cartridges",  # Cartridge management tests
         "users",  # User management tests
         ".",  # Root directory for general tests
     ]

@@ -7,9 +7,9 @@ import streamlit as st
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import navigation
-from cartridges.view_tab import render_view_cartridges_tab
-from cartridges.edit_tab import render_edit_cartridges_tab
 from auth import handle_auth
+from cartridges.edit_tab import render_edit_cartridges_tab
+from cartridges.view_tab import render_view_cartridges_tab
 from supabase import create_client
 
 
@@ -37,7 +37,9 @@ def main():
 
     # Display title
     st.title("Cartridges Management")
-    st.markdown("Manage both factory and custom cartridge specifications with comprehensive bullet data.")
+    st.markdown(
+        "Manage both factory and custom cartridge specifications with comprehensive bullet data."
+    )
 
     # Create tabs for View and Create
     tab1, tab2 = st.tabs(["View Cartridges", "Create Cartridge"])

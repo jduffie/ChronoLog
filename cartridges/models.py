@@ -1,31 +1,31 @@
 from dataclasses import dataclass
-from typing import List, Optional
 from datetime import datetime
+from typing import List, Optional
 
 
 @dataclass
 class CartridgeModel:
     """Entity representing a cartridge specification"""
-    
+
     # Core identification fields
     id: Optional[str] = None
     owner_id: Optional[str] = None  # NULL for global/admin records
-    
+
     # Required cartridge information
     make: str = ""  # NOT NULL - Manufacturer name
     model: str = ""  # NOT NULL - Model name
     bullet_id: Optional[str] = None  # NOT NULL - Foreign key to bullets
     cartridge_type: str = ""  # NOT NULL - Cartridge type designation
-    
+
     # Data source tracking
     data_source_name: Optional[str] = None
     data_source_link: Optional[str] = None
-    
+
     # Generated and timestamp fields
     cartridge_key: Optional[str] = None  # Generated natural key
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
-    
+
     # Related data from joins (populated when fetched with bullet info)
     bullet_manufacturer: Optional[str] = None
     bullet_model: Optional[str] = None
@@ -102,7 +102,7 @@ class CartridgeModel:
         """Get a display string for the associated bullet"""
         if not self.bullet_manufacturer and not self.bullet_model:
             return "Unknown Bullet"
-        
+
         parts = []
         if self.bullet_manufacturer:
             parts.append(self.bullet_manufacturer)
@@ -138,11 +138,11 @@ class CartridgeModel:
     def twist_rate_recommendation(self) -> str:
         """Get twist rate recommendation"""
         if self.min_req_twist_rate_in_per_rev and self.pref_twist_rate_in_per_rev:
-            return f"Min: 1:{self.min_req_twist_rate_in_per_rev}\", Pref: 1:{self.pref_twist_rate_in_per_rev}\""
+            return f'Min: 1:{self.min_req_twist_rate_in_per_rev}", Pref: 1:{self.pref_twist_rate_in_per_rev}"'
         elif self.min_req_twist_rate_in_per_rev:
-            return f"Min: 1:{self.min_req_twist_rate_in_per_rev}\""
+            return f'Min: 1:{self.min_req_twist_rate_in_per_rev}"'
         elif self.pref_twist_rate_in_per_rev:
-            return f"Pref: 1:{self.pref_twist_rate_in_per_rev}\""
+            return f'Pref: 1:{self.pref_twist_rate_in_per_rev}"'
         else:
             return "No twist rate data"
 
@@ -154,7 +154,10 @@ class CartridgeModel:
             self.bullet_id,
             self.cartridge_type,
         ]
-        return all(field.strip() if isinstance(field, str) else field for field in mandatory_fields)
+        return all(
+            field.strip() if isinstance(field, str) else field
+            for field in mandatory_fields
+        )
 
     def get_missing_mandatory_fields(self) -> List[str]:
         """Get list of missing mandatory fields"""
@@ -165,26 +168,24 @@ class CartridgeModel:
             "bullet_id": self.bullet_id,
             "cartridge_type": self.cartridge_type,
         }
-        
+
         for field_name, value in mandatory_fields.items():
             if not value or (isinstance(value, str) and not value.strip()):
                 missing.append(field_name.replace("_", " ").title())
-        
+
         return missing
 
 
 @dataclass
 class CartridgeTypeModel:
     """Entity representing a cartridge type from the lookup table"""
-    
+
     name: str = ""  # Primary key - cartridge type name
-    
+
     @classmethod
     def from_supabase_record(cls, record: dict) -> "CartridgeTypeModel":
         """Create a CartridgeTypeModel from a Supabase record"""
-        return cls(
-            name=record.get("name", "")
-        )
+        return cls(name=record.get("name", ""))
 
     @classmethod
     def from_supabase_records(cls, records: List[dict]) -> List["CartridgeTypeModel"]:

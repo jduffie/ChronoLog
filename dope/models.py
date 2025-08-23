@@ -1,6 +1,6 @@
 from dataclasses import dataclass
-from typing import List, Optional
 from datetime import datetime
+from typing import List, Optional
 
 
 @dataclass
@@ -12,31 +12,31 @@ class DopeSessionModel:
     user_id: Optional[str] = None
     session_name: str = ""  # NOT NULL
     datetime_local: Optional[datetime] = None  # NOT NULL - from chrono_sessions
-    
+
     # Foreign key relationships
     cartridge_id: Optional[str] = None  # Foreign key to cartridges table
     chrono_session_id: Optional[str] = None
     range_submission_id: Optional[str] = None
     weather_source_id: Optional[str] = None
     rifle_id: Optional[str] = None
-    
+
     # Range and session data
     range_name: Optional[str] = None
     distance_m: Optional[float] = None  # real type
     notes: Optional[str] = None
     status: Optional[str] = "active"
-    
+
     # Rifle information (mandatory fields)
     rifle_name: str = ""  # NOT NULL
     rifle_barrel_length_cm: Optional[float] = None  # real type
     rifle_barrel_twist_in_per_rev: Optional[float] = None  # real type
-    
+
     # Cartridge information (mandatory fields)
     cartridge_make: str = ""  # NOT NULL
-    cartridge_model: str = ""  # NOT NULL  
+    cartridge_model: str = ""  # NOT NULL
     cartridge_type: str = ""  # NOT NULL
     cartridge_lot_number: Optional[str] = None
-    
+
     # Bullet information (mandatory fields)
     bullet_make: str = ""  # NOT NULL
     bullet_model: str = ""  # NOT NULL
@@ -47,7 +47,7 @@ class DopeSessionModel:
     sectional_density: Optional[str] = None  # text type
     bullet_diameter_groove_mm: Optional[str] = None  # text type
     bore_diameter_land_mm: Optional[str] = None  # text type
-    
+
     # Weather conditions
     weather_source_name: Optional[str] = None
     temperature_c: Optional[float] = None  # numeric(3,1)
@@ -56,7 +56,7 @@ class DopeSessionModel:
     wind_speed_1_kmh: Optional[float] = None  # numeric(4,1)
     wind_speed_2_kmh: Optional[float] = None  # numeric(4,1)
     wind_direction_deg: Optional[float] = None  # numeric(5,1)
-    
+
     # Range position data
     start_lat: Optional[float] = None  # numeric(10,6)
     start_lon: Optional[float] = None  # numeric(10,6)
@@ -209,7 +209,7 @@ class DopeSessionModel:
         if self.relative_humidity_pct is not None:
             conditions.append(f"{self.relative_humidity_pct}% RH")
         if self.barometric_pressure_inhg is not None:
-            conditions.append(f"{self.barometric_pressure_inhg}\" Hg")
+            conditions.append(f'{self.barometric_pressure_inhg}" Hg')
         if self.wind_speed_1_kmh is not None:
             conditions.append(f"{self.wind_speed_1_kmh} km/h wind")
         return ", ".join(conditions) if conditions else "No weather data"
@@ -226,7 +226,10 @@ class DopeSessionModel:
             self.bullet_model,
             self.bullet_weight,
         ]
-        return all(field.strip() if isinstance(field, str) else field for field in mandatory_fields)
+        return all(
+            field.strip() if isinstance(field, str) else field
+            for field in mandatory_fields
+        )
 
     def get_missing_mandatory_fields(self) -> List[str]:
         """Get list of missing mandatory fields"""
@@ -241,9 +244,9 @@ class DopeSessionModel:
             "bullet_model": self.bullet_model,
             "bullet_weight": self.bullet_weight,
         }
-        
+
         for field_name, value in mandatory_fields.items():
             if not value or (isinstance(value, str) and not value.strip()):
                 missing.append(field_name.replace("_", " ").title())
-        
+
         return missing

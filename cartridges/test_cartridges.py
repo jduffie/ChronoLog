@@ -4,11 +4,11 @@ Comprehensive test suite for the cartridges module.
 Tests models, data validation, and UI components.
 """
 
-import sys
 import os
+import sys
 import unittest
-from unittest.mock import Mock, MagicMock, patch
 from datetime import datetime
+from unittest.mock import MagicMock, Mock, patch
 
 # Add root directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -49,7 +49,7 @@ class TestCartridgeModel(unittest.TestCase):
     def test_from_supabase_record(self):
         """Test creating CartridgeModel from Supabase record"""
         cartridge = CartridgeModel.from_supabase_record(self.sample_record)
-        
+
         self.assertEqual(cartridge.id, "test-id-123")
         self.assertEqual(cartridge.owner_id, "user-123")
         self.assertEqual(cartridge.make, "Federal")
@@ -64,7 +64,7 @@ class TestCartridgeModel(unittest.TestCase):
         """Test creating multiple CartridgeModels from records"""
         records = [self.sample_record, {**self.sample_record, "id": "test-id-456"}]
         cartridges = CartridgeModel.from_supabase_records(records)
-        
+
         self.assertEqual(len(cartridges), 2)
         self.assertEqual(cartridges[0].id, "test-id-123")
         self.assertEqual(cartridges[1].id, "test-id-456")
@@ -73,15 +73,20 @@ class TestCartridgeModel(unittest.TestCase):
         """Test converting CartridgeModel to dictionary"""
         cartridge = CartridgeModel.from_supabase_record(self.sample_record)
         result = cartridge.to_dict()
-        
+
         expected_keys = [
-            "owner_id", "make", "model", "bullet_id", "cartridge_type",
-            "data_source_name", "data_source_link"
+            "owner_id",
+            "make",
+            "model",
+            "bullet_id",
+            "cartridge_type",
+            "data_source_name",
+            "data_source_link",
         ]
-        
+
         for key in expected_keys:
             self.assertIn(key, result)
-        
+
         self.assertEqual(result["make"], "Federal")
         self.assertEqual(result["model"], "Premium")
         self.assertEqual(result["cartridge_type"], "6mm Creedmoor")
@@ -120,7 +125,7 @@ class TestCartridgeModel(unittest.TestCase):
         # User-owned cartridge
         cartridge = CartridgeModel.from_supabase_record(self.sample_record)
         self.assertFalse(cartridge.is_global)
-        
+
         # Global cartridge
         global_record = {**self.sample_record, "owner_id": None}
         global_cartridge = CartridgeModel.from_supabase_record(global_record)
@@ -131,7 +136,7 @@ class TestCartridgeModel(unittest.TestCase):
         # User-owned cartridge
         cartridge = CartridgeModel.from_supabase_record(self.sample_record)
         self.assertTrue(cartridge.is_user_owned)
-        
+
         # Global cartridge
         global_record = {**self.sample_record, "owner_id": None}
         global_cartridge = CartridgeModel.from_supabase_record(global_record)
@@ -196,11 +201,11 @@ class TestCartridgeModel(unittest.TestCase):
             "make": "",
             "model": "Test Model",
             "bullet_id": None,
-            "cartridge_type": "6mm Creedmoor"
+            "cartridge_type": "6mm Creedmoor",
         }
         cartridge = CartridgeModel.from_supabase_record(incomplete_record)
         missing = cartridge.get_missing_mandatory_fields()
-        
+
         self.assertIn("Make", missing)
         self.assertIn("Bullet Id", missing)
         self.assertNotIn("Model", missing)
@@ -214,17 +219,14 @@ class TestCartridgeTypeModel(unittest.TestCase):
         """Test creating CartridgeTypeModel from Supabase record"""
         record = {"name": "6mm Creedmoor"}
         cartridge_type = CartridgeTypeModel.from_supabase_record(record)
-        
+
         self.assertEqual(cartridge_type.name, "6mm Creedmoor")
 
     def test_from_supabase_records_list(self):
         """Test creating multiple CartridgeTypeModels from records"""
-        records = [
-            {"name": "6mm Creedmoor"},
-            {"name": ".308 Winchester"}
-        ]
+        records = [{"name": "6mm Creedmoor"}, {"name": ".308 Winchester"}]
         cartridge_types = CartridgeTypeModel.from_supabase_records(records)
-        
+
         self.assertEqual(len(cartridge_types), 2)
         self.assertEqual(cartridge_types[0].name, "6mm Creedmoor")
         self.assertEqual(cartridge_types[1].name, ".308 Winchester")
@@ -233,7 +235,7 @@ class TestCartridgeTypeModel(unittest.TestCase):
         """Test converting CartridgeTypeModel to dictionary"""
         cartridge_type = CartridgeTypeModel(name="6mm Creedmoor")
         result = cartridge_type.to_dict()
-        
+
         self.assertEqual(result, {"name": "6mm Creedmoor"})
 
     def test_display_name_property(self):
@@ -260,9 +262,9 @@ class TestCartridgeDataValidation(unittest.TestCase):
             ".223 Remington",
             "5.56x45mm NATO",
             ".22 Long Rifle",
-            ".17 HMR"
+            ".17 HMR",
         ]
-        
+
         for cartridge_type in common_types:
             cartridge = CartridgeModel(cartridge_type=cartridge_type)
             self.assertIsNotNone(cartridge.cartridge_type)
@@ -274,7 +276,7 @@ class TestCartridgeDataValidation(unittest.TestCase):
         cartridge = CartridgeModel(ballistic_coefficient_g1=0.536)
         self.assertGreater(cartridge.ballistic_coefficient_g1, 0.0)
         self.assertLess(cartridge.ballistic_coefficient_g1, 1.5)
-        
+
         # G7 BC typically ranges from 0.1 to 0.6
         cartridge = CartridgeModel(ballistic_coefficient_g7=0.274)
         self.assertGreater(cartridge.ballistic_coefficient_g7, 0.0)
@@ -284,7 +286,7 @@ class TestCartridgeDataValidation(unittest.TestCase):
         """Test that bullet weights are in reasonable ranges"""
         # Test various bullet weights
         weights = [55, 77, 108, 140, 168, 175, 208]
-        
+
         for weight in weights:
             cartridge = CartridgeModel(bullet_weight_grains=weight)
             self.assertGreater(cartridge.bullet_weight_grains, 10)
@@ -294,11 +296,11 @@ class TestCartridgeDataValidation(unittest.TestCase):
         """Test that twist rates are in reasonable ranges"""
         # Common twist rates
         twist_rates = [7.0, 8.0, 9.0, 10.0, 12.0, 16.0]
-        
+
         for rate in twist_rates:
             cartridge = CartridgeModel(
                 min_req_twist_rate_in_per_rev=rate,
-                pref_twist_rate_in_per_rev=rate - 1.0
+                pref_twist_rate_in_per_rev=rate - 1.0,
             )
             self.assertGreater(cartridge.min_req_twist_rate_in_per_rev, 5.0)
             self.assertLess(cartridge.min_req_twist_rate_in_per_rev, 20.0)
@@ -318,9 +320,9 @@ class TestCartridgeManufacturers(unittest.TestCase):
             "Lapua",
             "Sierra",
             "Nosler",
-            "Berger"
+            "Berger",
         ]
-        
+
         for make in manufacturers:
             cartridge = CartridgeModel(make=make)
             self.assertIsNotNone(cartridge.make)
@@ -328,14 +330,8 @@ class TestCartridgeManufacturers(unittest.TestCase):
 
     def test_model_format(self):
         """Test cartridge model format"""
-        models = [
-            "Premium",
-            "Match",
-            "Gold Medal",
-            "Black Hills",
-            "Custom Competition"
-        ]
-        
+        models = ["Premium", "Match", "Gold Medal", "Black Hills", "Custom Competition"]
+
         for model in models:
             cartridge = CartridgeModel(model=model)
             self.assertIsNotNone(cartridge.model)

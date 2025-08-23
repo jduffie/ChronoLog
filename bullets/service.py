@@ -49,17 +49,13 @@ class BulletsService:
     def create_bullet(self, bullet_data: dict) -> BulletModel:
         """Create a new bullet entry"""
         import uuid
-        
+
         try:
             # Generate UUID for the bullet entry (database expects explicit UUID)
             insert_data = bullet_data.copy()
-            insert_data['id'] = str(uuid.uuid4())
-            
-            response = (
-                self.supabase.table("bullets")
-                .insert(insert_data)
-                .execute()
-            )
+            insert_data["id"] = str(uuid.uuid4())
+
+            response = self.supabase.table("bullets").insert(insert_data).execute()
 
             if not response.data:
                 raise Exception("Failed to create bullet entry")
@@ -93,10 +89,7 @@ class BulletsService:
         """Delete a bullet entry"""
         try:
             response = (
-                self.supabase.table("bullets")
-                .delete()
-                .eq("id", bullet_id)
-                .execute()
+                self.supabase.table("bullets").delete().eq("id", bullet_id).execute()
             )
 
             return bool(response.data)
@@ -108,7 +101,7 @@ class BulletsService:
         self,
         manufacturer: Optional[str] = None,
         bore_diameter_mm: Optional[float] = None,
-        weight_grains: Optional[int] = None
+        weight_grains: Optional[int] = None,
     ) -> List[BulletModel]:
         """Filter bullets by various criteria"""
         try:
