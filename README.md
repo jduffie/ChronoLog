@@ -35,7 +35,7 @@ python mapping/test_mapping.py
 ### Test Coverage
 
 - ✅ **Chronograph Module:** 17/17 tests passing (100%)
-- ✅ **Page Structure:** 15/15 tests passing (100%)
+- ✅ **Page Structure:** 15/15    tests passing (100%)
 - ⚠️ **Overall Suite:** 65/82 tests passing (79%)
 
 ## 🔐 Authentication

@@ -8,7 +8,7 @@ from .service import ChronographService
 
 def render_logs_tab(user, supabase):
     """Render the View tab showing all chronograph sessions"""
-    st.header("📊 Chronograph Sessions")
+    st.header(" Chronograph Sessions")
 
     try:
         # Initialize service
@@ -29,7 +29,7 @@ def render_logs_tab(user, supabase):
                 all_bullet_types.add(bullet_display)
 
         # Search controls
-        st.subheader("🔍 Search & Filter")
+        st.subheader(" Search & Filter")
         col1, col2 = st.columns(2)
 
         with col1:
@@ -82,14 +82,14 @@ def render_logs_tab(user, supabase):
 
         # Show filtered count
         if len(filtered_sessions) != len(sessions):
-            st.info(f"📊 Showing {len(filtered_sessions)} of {len(sessions)} sessions")
+            st.info(f" Showing {len(filtered_sessions)} of {len(sessions)} sessions")
         else:
             st.subheader(f"Chronograph Sessions ({len(sessions)})")
 
         # Check if no results after filtering
         if not filtered_sessions:
             st.warning(
-                "🔍 No sessions match your search criteria. Try adjusting your filters."
+                " No sessions match your search criteria. Try adjusting your filters."
             )
             return
 
@@ -155,7 +155,7 @@ def render_logs_tab(user, supabase):
             st.session_state["selected_session_ids"] = [
                 session.id for session in selected_sessions
             ]
-            st.success(f"✅ Selected {len(selected_sessions)} session(s)")
+            st.success(f" Selected {len(selected_sessions)} session(s)")
         else:
             # Clear selection if nothing is selected
             if "selected_session_ids" in st.session_state:
@@ -163,7 +163,7 @@ def render_logs_tab(user, supabase):
 
         # Shot Data section
         if selected_indices:
-            st.subheader("📊 Shot Data")
+            st.subheader(" Shot Data")
 
             # Get measurement data for all selected sessions
             all_measurements = []
@@ -180,7 +180,7 @@ def render_logs_tab(user, supabase):
                                 "Bullet": session.bullet_display(),
                                 "Shot #": measurement.shot_number,
                                 "Speed (fps)": measurement.speed_fps,
-                                "Δ AVG (fps)": (
+                                " AVG (fps)": (
                                     measurement.delta_avg_fps
                                     if measurement.delta_avg_fps
                                     else None
@@ -235,7 +235,7 @@ def render_logs_tab(user, supabase):
 
                 # Show summary stats
                 if len(all_measurements) > 0:
-                    st.subheader("📈 Summary Statistics")
+                    st.subheader(" Summary Statistics")
 
                     # Extract data for calculations
                     speeds = [
@@ -292,7 +292,7 @@ def render_logs_tab(user, supabase):
                                 st.metric("Avg Power Factor", "N/A")
 
                         # Add histogram
-                        st.subheader("📊 Velocity Distribution")
+                        st.subheader(" Velocity Distribution")
                         import matplotlib.pyplot as plt
                         import numpy as np
 
@@ -321,14 +321,14 @@ def render_logs_tab(user, supabase):
                             color="orange",
                             linestyle=":",
                             linewidth=2,
-                            label=f"-1σ: {avg_speed - std_dev:.1f} fps",
+                            label=f"-1 sigma: {avg_speed - std_dev:.1f} fps",
                         )
                         ax.axvline(
                             avg_speed + std_dev,
                             color="orange",
                             linestyle=":",
                             linewidth=2,
-                            label=f"+1σ: {avg_speed + std_dev:.1f} fps",
+                            label=f"+1 sigma: {avg_speed + std_dev:.1f} fps",
                         )
 
                         # Formatting

@@ -333,12 +333,12 @@ class TestBulletsPageStructure(unittest.TestCase):
 
     def test_bullets_page_exists(self):
         """Test that the bullets page file exists"""
-        page_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "pages", "9_📦_Bullets.py")
+        page_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "pages", "9_Bullets.py")
         self.assertTrue(os.path.exists(page_path), f"Bullets page not found at {page_path}")
 
     def test_bullets_page_has_required_imports(self):
         """Test that bullets page has required imports"""
-        page_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "pages", "9_📦_Bullets.py")
+        page_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "pages", "9_Bullets.py")
         
         with open(page_path, 'r') as f:
             content = f.read()

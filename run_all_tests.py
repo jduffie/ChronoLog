@@ -22,6 +22,9 @@ def discover_and_run_tests():
         "dope",  # Now has test_dope_modules.py
         "rifles",
         "mapping",
+        "bullets",  # Bullet management tests
+        "cartridges",  # Cartridge management tests  
+        "users",  # User management tests
         ".",  # Root directory for general tests
     ]
 
@@ -52,6 +55,11 @@ def run_specific_module_tests():
         "dope.test_dope_modules",  # New DOPE module tests
         "rifles.test_rifles",
         "mapping.test_mapping",
+        "bullets.test_bullets",  # Bullet management tests
+        "cartridges.test_cartridges",  # Cartridge management tests
+        "users.test_users",  # User management tests
+        "test_auth",  # Authentication tests
+        "test_utilities",  # Utility scripts tests
         "test_all_pages",
     ]
 
