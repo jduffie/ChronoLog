@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Dict, Any, cast
 
 import pandas as pd
 import streamlit as st
@@ -350,12 +351,20 @@ def render_weather_logs_tab(user, supabase):
                                         f"View Detailed Analysis",
                                         key=f"view_weather_{source_obj.id}_{date_str}",
                                     ):
-                                        st.session_state[
-                                            "selected_weather_source_id"
-                                        ] = source_obj.id
-                                        st.session_state["selected_weather_date"] = (
-                                            date_str
-                                        )
+                                        # Update weather sources page state for navigation
+                                        if "weather_sources_page_state" not in st.session_state:
+                                            weather_state: Dict[str, Any] = {
+                                                "selected_weather_source_id": None,
+                                                "selected_weather_date": None,
+                                                "edit_sources": {},
+                                                "confirm_deletes": {}
+                                            }
+                                            st.session_state.weather_sources_page_state = weather_state
+                                        
+                                        # Type cast to avoid type checker warnings
+                                        weather_state = cast(Dict[str, Any], st.session_state.weather_sources_page_state)
+                                        weather_state["selected_weather_source_id"] = source_obj.id
+                                        weather_state["selected_weather_date"] = date_str
                                         st.info(
                                             "Date and source selected! Go to the 'View Log' tab to see detailed weather analysis."
                                         )

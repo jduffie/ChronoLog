@@ -445,3 +445,4 @@ DO NOT use unicode emojis. Use plain text only.
 - 
 - system wide, I want this terminology - "cartridge source" is one of factory or custom. "cartridge type" is an enumeration defined in supabase and examples include "6mm Creedmore", "22LR", "17HMR", ".308 Winchester", etc
 - /compact
+- always check for unused imports before committing

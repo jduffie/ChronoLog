@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Dict, Any, cast
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -60,11 +61,14 @@ def render_weather_view_log_tab(user, supabase):
         # Use selected source/date from session state if available
         default_selection = None
         if (
-            "selected_weather_source_id" in st.session_state
-            and "selected_weather_date" in st.session_state
+            "weather_sources_page_state" in st.session_state
+            and st.session_state.weather_sources_page_state.get("selected_weather_source_id")
+            and st.session_state.weather_sources_page_state.get("selected_weather_date")
         ):
-            target_source_id = st.session_state["selected_weather_source_id"]
-            target_date = st.session_state["selected_weather_date"]
+            # Type cast to avoid type checker warnings
+            weather_state = cast(Dict[str, Any], st.session_state.weather_sources_page_state)
+            target_source_id = weather_state["selected_weather_source_id"]
+            target_date = weather_state["selected_weather_date"]
             for option_key, info in source_date_options.items():
                 if (
                     info["source_id"] == target_source_id
