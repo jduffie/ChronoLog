@@ -32,12 +32,11 @@ def run():
 
     # Display landing page content
     st.title(" ChronoLog")
-    st.subheader("Automated DOPE Construction")
 
     # Hero section
     st.markdown(
         """
-    ### 🤖 **The Power of Automation**
+    ###  **The Power of Automation**
     
     Stop manually transcribing data between spreadsheets, weather apps, and range cards. 
     ChronoLog merges data from multiple sources to build your DOPE (Data On Previous Engagements) 
