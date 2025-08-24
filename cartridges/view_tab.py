@@ -60,7 +60,7 @@ def render_view_cartridges_tab(user, supabase):
                 "data_source_link": cartridge.get("data_source_link", ""),
                 "created_at": cartridge.get("created_at", ""),
                 "updated_at": cartridge.get("updated_at", ""),
-                "source": "Global" if cartridge.get("owner_id") is None else "User",
+                "source": "Public" if cartridge.get("owner_id") is None else "User",
                 "manufacturer": cartridge.get("make", ""),
                 "bullet_manufacturer": bullet_info.get("manufacturer") or "",
                 "bullet_model": bullet_info.get("model") or "",
@@ -246,14 +246,14 @@ def render_view_cartridges_tab(user, supabase):
                 "source": "Source",
                 "manufacturer": "Manufacturer",
                 "cartridge_type": "Cartridge Type",
-                "model": "Model",
+                "model": "Cartridge Model",
                 "bullet_name": "Bullet",
                 "bullet_manufacturer": "Bullet Make",
                 "bullet_model": "Bullet Model",
-                "bullet_weight_grains": "Weight (gr)",
+                "bullet_weight_grains": "Bullet Weight (gr)",
                 "bullet_diameter_groove_mm": "Bullet Dia (mm)",
                 "bore_diameter_land_mm": "Bore Dia (mm)",
-                "bullet_length_mm": "Length (mm)",
+                "bullet_length_mm": "Bullet Length (mm)",
                 "ballistic_coefficient_g1": "BC G1",
                 "ballistic_coefficient_g7": "BC G7",
                 "sectional_density": "Sect. Density",
@@ -266,10 +266,10 @@ def render_view_cartridges_tab(user, supabase):
         column_config = {}
         for col in display_df.columns:
             if col in [
-                "Weight (gr)",
+                "Bullet Weight (gr)",
                 "Bullet Dia (mm)",
                 "Bore Dia (mm)",
-                "Length (mm)",
+                "Bullet Length (mm)",
                 "BC G1",
                 "BC G7",
                 "Sect. Density",
@@ -279,7 +279,7 @@ def render_view_cartridges_tab(user, supabase):
                 column_config[col] = st.column_config.TextColumn(col, width="small")
             elif col in [
                 "Cartridge Type",
-                "Model",
+                "Cartridge Model",
                 "Bullet",
                 "Bullet Make",
                 "Bullet Model",
@@ -344,7 +344,7 @@ def render_view_cartridges_tab(user, supabase):
                         st.write(
                             f"**Cartridge Type:** {row.get('cartridge_type', 'N/A')}"
                         )
-                        st.write(f"**Model:** {row.get('model', 'N/A')}")
+                        st.write(f"**Cartridge Model:** {row.get('model', 'N/A')}")
                         if row.get("data_source_name"):
                             st.write(f"**Data Source:** {row['data_source_name']}")
                         if row.get("created_at"):
@@ -357,9 +357,9 @@ def render_view_cartridges_tab(user, supabase):
                         st.write(
                             f"**Manufacturer:** {row.get('bullet_manufacturer', 'N/A')}"
                         )
-                        st.write(f"**Model:** {row.get('bullet_model', 'N/A')}")
+                        st.write(f"**Cartridge Model:** {row.get('bullet_model', 'N/A')}")
                         st.write(
-                            f"**Weight:** {row.get('bullet_weight_grains', 'N/A')} gr"
+                            f"**Bullet Weight:** {row.get('bullet_weight_grains', 'N/A')} gr"
                         )
                         st.write(
                             f"**Diameter:** {row.get('bullet_diameter_groove_mm', 'N/A')} mm"
@@ -368,7 +368,7 @@ def render_view_cartridges_tab(user, supabase):
                             f"**Bore Diameter:** {row.get('bore_diameter_land_mm', 'N/A')} mm"
                         )
                         if row.get("bullet_length_mm"):
-                            st.write(f"**Length:** {row['bullet_length_mm']} mm")
+                            st.write(f"**Bullet Length:** {row['bullet_length_mm']} mm")
 
                     with col3:
                         st.markdown("**Ballistic Properties**")
