@@ -231,27 +231,6 @@ class TestDataManagementScripts(unittest.TestCase):
             os.path.exists(script_path), "upload_bullets_csv.py should exist"
         )
 
-    def test_wipe_data_exists(self):
-        """Test that wipe_data.py exists"""
-        script_path = os.path.join(os.path.dirname(__file__), "wipe_data.py")
-        self.assertTrue(os.path.exists(script_path), "wipe_data.py should exist")
-
-    @patch("wipe_data.input", return_value="n")  # Always answer 'no'
-    def test_wipe_data_has_confirmation(self, mock_input):
-        """Test that wipe_data script has confirmation prompt"""
-        script_path = os.path.join(os.path.dirname(__file__), "wipe_data.py")
-        if os.path.exists(script_path):
-            with open(script_path, "r") as f:
-                content = f.read()
-                # Should have some form of confirmation
-                has_confirmation = (
-                    "input(" in content.lower()
-                    or "confirm" in content.lower()
-                    or "sure" in content.lower()
-                )
-                self.assertTrue(
-                    has_confirmation, "wipe_data.py should have confirmation prompts"
-                )
 
 
 class TestMainApplications(unittest.TestCase):

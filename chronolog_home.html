@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChronoLog - Precision Ballistic Data Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #2d3a14 0%, #3d4b1c 100%);
+            color: white;
+            margin-bottom: 40px;
+            border-radius: 10px;
+            min-height: 60px;
+        }
+        
+        h1 {
+            font-size: 2em;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            flex-grow: 1;
+            text-align: center;
+        }
+        
+        .header-launch {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+            border: 2px solid rgba(255,255,255,0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .header-launch:hover {
+            background: white;
+            color: #2d3a14;
+            text-decoration: none;
+        }
+        
+        .tagline-section {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .tagline {
+            font-size: 1.8em;
+            color: #2d3a14;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+        
+        .section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .section h2 {
+            color: #2d3a14;
+            margin-bottom: 20px;
+            font-size: 2em;
+            border-bottom: 2px solid #2d3a14;
+            padding-bottom: 10px;
+        }
+        
+        .resources-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+        
+        .resource-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .resource-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        
+        .resource-card img {
+            max-width: 100%;
+            height: 150px;
+            object-fit: contain;
+            margin-bottom: 15px;
+            border-radius: 8px;
+        }
+        
+        .resource-card h3 {
+            color: #2d3a14;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+        
+        .resource-card p {
+            color: #666;
+            font-size: 0.95em;
+        }
+        
+        .cta-section {
+            background: linear-gradient(135deg, #3d4b1c 0%, #2d3a14 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 40px;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: white;
+            color: #2d3a14;
+            padding: 15px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            margin: 10px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .nav-buttons {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .nav-button {
+            display: inline-block;
+            background: #2d3a14;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            margin: 0 10px;
+            transition: transform 0.3s ease, background-color 0.3s ease;
+        }
+        
+        .nav-button:hover {
+            transform: translateY(-2px);
+            background: #1f2a0e;
+            color: white;
+            text-decoration: none;
+        }
+        
+        @media (max-width: 768px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .resources-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div></div> <!-- Left spacer -->
+            <h1>ChronoLog</h1>
+            <a href="http://localhost:8501" class="header-launch">Launch App</a>
+        </header>
+        
+        <div class="tagline-section">
+            <h2 class="tagline">Precision Ballistic Data Management & Analysis</h2>
+        </div>
+        
+        <div class="content-grid">
+            <div class="section">
+                <h2>Automation</h2>
+                <p>Stop manually transcribing data between notebooks, mobile apps, and range cards. ChronoLog merges data from multiple sources to build your DOPE (Data On Previous Engagements) with precision and speed.</p>
+            </div>
+            
+            <div class="section">
+                <h2>Analytics</h2>
+                <p>Analyze your shooting performance with comprehensive ballistic data visualization and statistical insights to improve accuracy and consistency.</p>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Supported Equipment & Data Sources</h2>
+            <p>ChronoLog integrates with industry-leading equipment to provide comprehensive ballistic data collection and analysis.</p>
+            
+            <div class="resources-grid">
+                <div class="resource-card">
+                    <img src="home/resources/garmin_xero.png" alt="Garmin Xero Chronograph">
+                    <h3>Chronograph Sessions</h3>
+                    <p>Import session histories generated by your Garmin Xero.</p>
+                </div>
+                
+                <div class="resource-card">
+                    <img src="home/resources/kestrel.png" alt="Kestrel Weather Meter">
+                    <h3>Weather History</h3>
+                    <p>Import historical weather data collected by your Kestrel.</p>
+                </div>
+
+                <div class="resource-card">
+                    <img src="home/resources/cartridge.png" alt="Factory Cartridge">
+                    <h3>Factory Cartridges</h3>
+                    <p>Comprehensive database of cartridge specifications for factory cartridges.</p>
+                </div>
+
+                <div class="resource-card">
+                    <img src="home/resources/cartridge.png" alt="Custom Cartridge">
+                    <h3>Custom Cartridges</h3>
+                    <p>Create and track your custom cartridge development.</p>
+                </div>
+
+                <div class="resource-card">
+                    <img src="home/resources/bullets.png" alt="Bullet">
+                    <h3>Bullets</h3>
+                    <p>Extensive database of factory bullet specifications.</p>
+                </div>
+
+                <div class="resource-card">
+                    <img src="home/resources/saami.png" alt="SAAMI Cartridge Specifications">
+                    <h3>SAAMI Cartridge Specifications</h3>
+                    <p>SAAMI specifications and requirements for centerfire rifle and rimfire cartridges.</p>
+                </div>
+
+                <div class="resource-card">
+                    <img src="home/resources/rifle.png" alt="Rifle Configuration">
+                    <h3>Rifle Profiles</h3>
+                    <p>Create and track your rifle's ballistic attributes.</p>
+                </div>
+
+                <div class="resource-card">
+                    <img src="home/resources/gis.jpg" alt="Shooting Range">
+                    <h3>Shooting Ranges</h3>
+                    <p>Submit and track shooting range GIS data including lat/lon, elevation, and shooting angles.</p>
+                </div>
+
+            </div>
+        </div>
+        
+        <div class="cta-section">
+            <h2>Ready to Get Started?</h2>
+            <p>Transform your shooting data into actionable insights with ChronoLog's automated ballistic analysis platform.</p>
+            <div class="nav-buttons">
+                <a href="http://localhost:8501" class="cta-button">Launch ChronoLog App</a>
+                <a href="http://localhost:8501/?page=chronograph" class="nav-button">Upload Chronograph Data</a>
+                <a href="http://localhost:8501/?page=dope" class="nav-button">Create DOPE Session</a>
+                <a href="http://localhost:8501/?page=rifles" class="nav-button">Manage Rifles</a>
+                <a href="http://localhost:8501/?page=cartridges" class="nav-button">View Cartridges</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
