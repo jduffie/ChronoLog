@@ -4,18 +4,47 @@ from datetime import datetime, timezone
 import streamlit as st
 
 
+@st.cache_data
+def get_cartridge_types(_supabase):
+    """Get cartridge types from database with caching"""
+    try:
+        # Get cartridge types from cartridge_types table (using 'name' column)
+        response = _supabase.table("cartridge_types").select("name").execute()
+        return sorted([item["name"] for item in response.data])
+    except Exception as e:
+        st.error(f"❌ Error loading cartridge types: {str(e)}")
+        return []
+
+
 def render_create_rifle_tab(user, supabase):
     """Render the Create Rifle tab"""
     st.header("➕ Create New Rifle Entry")
 
+    # Load cartridge types from database (cached)
+    cartridge_options = get_cartridge_types(supabase)
+    if not cartridge_options:
+        st.error("❌ Unable to load cartridge types. Please check your database connection.")
+        return
+
     # Create form for rifle entry
     with st.form("create_rifle_form"):
-        # Required field
-        name = st.text_input(
-            "Rifle Name *",
-            placeholder="e.g., My Precision Rifle, Hunting Rifle #1",
-            help="A unique name to identify this rifle",
-        )
+        # Required fields
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            name = st.text_input(
+                "Rifle Name *",
+                placeholder="e.g., My Precision Rifle, Hunting Rifle #1",
+                help="A unique name to identify this rifle",
+            )
+        
+        with col2:
+            cartridge_type = st.selectbox(
+                "Cartridge Type *",
+                options=[None] + cartridge_options,
+                format_func=lambda x: "Select cartridge type..." if x is None else x,
+                help="Primary cartridge type this rifle is chambered for",
+            )
 
         # Optional fields in two columns
         col1, col2 = st.columns(2)
@@ -60,6 +89,10 @@ def render_create_rifle_tab(user, supabase):
             if not name:
                 st.error("❌ Please enter a rifle name (required field)")
                 return
+            
+            if not cartridge_type:
+                st.error("❌ Please select a cartridge type (required field)")
+                return
 
             # Clean up inputs
             name = name.strip()
@@ -77,6 +110,7 @@ def render_create_rifle_tab(user, supabase):
                     "id": str(uuid.uuid4()),
                     "user_id": user["id"],
                     "name": name,
+                    "cartridge_type": cartridge_type,
                     "barrel_twist_ratio": barrel_twist_ratio,
                     "barrel_length": barrel_length,
                     "sight_offset": sight_offset,
@@ -91,10 +125,11 @@ def render_create_rifle_tab(user, supabase):
 
                 if response.data:
                     st.success(f"✅ Rifle entry created successfully!")
-                    st.info(f" **{name}** has been added to your rifle collection")
+                    st.info(f" **{name}** ({cartridge_type}) has been added to your rifle collection")
 
                     # Display created rifle details
                     with st.expander("📝 Created Rifle Details"):
+                        st.write(f"**Cartridge Type:** {cartridge_type}")
                         if barrel_twist_ratio:
                             st.write(f"**Barrel Twist:** {barrel_twist_ratio}")
                         if barrel_length:
@@ -124,7 +159,8 @@ def render_create_rifle_tab(user, supabase):
     st.markdown("###  Tips")
     st.markdown(
         """
-    - **Rifle Name**: Give each rifle a unique, descriptive name (e.g., "My 6.5 Creedmoor", "Hunting AR-15")
+    - **Rifle Name**: Give each rifle a unique, descriptive name (e.g., "My Precision Rifle", "Hunting AR-15")
+    - **Cartridge Type**: Select the primary cartridge type this rifle is chambered for
     - **Barrel Twist Ratio**: Expressed as 1:X where X is inches per complete turn (e.g., 1:8, 1:10)
     - **Barrel Length**: Include units for clarity (e.g., "24 inches", "20\\"")
     - **Sight Offset**: Height from bore centerline to scope centerline (e.g., "1.5 inches", "38mm")
@@ -137,6 +173,7 @@ def render_create_rifle_tab(user, supabase):
     examples = [
         {
             "name": "Precision 6.5 Creedmoor",
+            "cartridge_type": "6.5 Creedmoor",
             "barrel_twist_ratio": "1:8",
             "barrel_length": "24 inches",
             "sight_offset": "1.5 inches",
@@ -145,6 +182,7 @@ def render_create_rifle_tab(user, supabase):
         },
         {
             "name": "Hunting AR-15",
+            "cartridge_type": "223 Remington",
             "barrel_twist_ratio": "1:9",
             "barrel_length": "18 inches",
             "sight_offset": "2.6 inches",
@@ -154,7 +192,7 @@ def render_create_rifle_tab(user, supabase):
     ]
 
     for example in examples:
-        st.markdown(f"**{example['name']}**")
+        st.markdown(f"**{example['name']}** ({example['cartridge_type']})")
         st.markdown(
             f"- Twist: {example['barrel_twist_ratio']}, Length: {example['barrel_length']}"
         )

@@ -13,7 +13,7 @@ from dope.create.create_page import render_create_page
 from supabase import create_client
 
 
-def main():
+def run():
     """Main function for the DOPE Create page."""
     # Set page configuration FIRST, before any other Streamlit operations
     st.set_page_config(page_title="DOPE Create", page_icon="📊", layout="wide", initial_sidebar_state="expanded")
@@ -37,10 +37,9 @@ def main():
 
     # Display title
     st.title(" Create DOPE Session")
-    print("start")
 
     render_create_page()
 
 
 if __name__ == "__main__":
-    main()
+    run()
