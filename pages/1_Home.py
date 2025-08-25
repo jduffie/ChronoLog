@@ -16,7 +16,7 @@ from auth import handle_auth
 def run():
     """Main function for the Landing page."""
     # Set page configuration FIRST, before any other Streamlit operations
-    st.set_page_config(page_title="ChronoLog - Home", page_icon="🏠", layout="wide")
+    st.set_page_config(page_title="ChronoLog - Home", page_icon="🏠", layout="wide", initial_sidebar_state="expanded")
 
     # Load custom navigation
     navigation.load()

@@ -3,7 +3,7 @@ set -euo pipefail
 
 # --------- CONFIG ---------
 REGION="us-east-1"
-BUCKET=""  # set if you want to enforce, else script tries to infer
+BUCKET="my-static-site-1756072614"  # set if you want to enforce, else script tries to infer
 SITE_DIR="/Users/johnduffie/projects/ChronoLog/Streamlit/ChronoLog/home"
 SRC_DIR="$SITE_DIR/resources"
 # --------------------------

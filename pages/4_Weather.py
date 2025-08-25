@@ -20,7 +20,7 @@ from weather.view_log_tab import render_weather_view_log_tab
 def main():
     """Main function for the Weather page."""
     # Set page configuration FIRST, before any other Streamlit operations
-    st.set_page_config(page_title="Weather - ChronoLog", page_icon="🌤️", layout="wide")
+    st.set_page_config(page_title="Weather - ChronoLog", page_icon="🌤️", layout="wide", initial_sidebar_state="expanded")
 
     # Load custom navigation
     navigation.load()

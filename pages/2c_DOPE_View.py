@@ -18,7 +18,7 @@ def main():
     # Set page configuration FIRST, before any other Streamlit operations
     print("start")
 
-    st.set_page_config(page_title="DOPE View", page_icon="📊", layout="wide")
+    st.set_page_config(page_title="DOPE View", page_icon="📊", layout="wide", initial_sidebar_state="expanded")
 
     # Load custom navigation
     navigation.load()

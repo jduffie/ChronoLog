@@ -148,7 +148,7 @@ def render_submissions_tab(user, supabase):
 def main():
     """Main function for the Ranges page."""
     # Set page configuration FIRST, before any other Streamlit operations
-    st.set_page_config(page_title="Ranges", page_icon="🌍", layout="wide")
+    st.set_page_config(page_title="Ranges", page_icon="🌍", layout="wide", initial_sidebar_state="expanded")
 
     # Load custom navigation
     navigation.load()
