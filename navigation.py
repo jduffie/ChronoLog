@@ -59,13 +59,6 @@ def load():
     # st.sidebar.divider()
     st.sidebar.subheader("Data on Prior Engagements")
 
-    # Overview
-    cols = st.sidebar.columns([1, 9], gap="small")
-    with cols[0]:
-        st.markdown("&nbsp;", unsafe_allow_html=True)
-    with cols[1]:
-        st.page_link("pages/2a_DOPE_Overview.py", label="Overview")
-
     # Create
     cols = st.sidebar.columns([1, 9], gap="small")
     with cols[0]:

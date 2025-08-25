@@ -45,7 +45,7 @@ class TestPageStructure(unittest.TestCase):
         """Test that all expected page files exist"""
         expected_pages = [
             "pages/1_Home.py",
-            "pages/2a_DOPE_Overview.py",
+
             "pages/2b_DOPE_Create.py",
             "pages/2c_DOPE_View.py",
             "pages/2d_DOPE_Analytics.py",
@@ -278,7 +278,7 @@ class TestPageTabStructure(unittest.TestCase):
     def test_dope_has_separate_pages(self):
         """Test that DOPE has separate pages instead of tabs"""
         expected_dope_pages = [
-            "pages/2a_DOPE_Overview.py",
+
             "pages/2b_DOPE_Create.py",
             "pages/2c_DOPE_View.py",
             "pages/2d_DOPE_Analytics.py",

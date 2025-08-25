@@ -191,7 +191,6 @@ class TestDopePageIntegration(unittest.TestCase):
         pages_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "pages")
 
         expected_pages = [
-            "2a_DOPE_Overview.py",
             "2b_DOPE_Create.py",
             "2c_DOPE_View.py",
             "2d_DOPE_Analytics.py",
