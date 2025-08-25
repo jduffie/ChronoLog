@@ -136,6 +136,23 @@
             font-size: 0.95em;
         }
         
+        .coming-soon {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            opacity: 0.7;
+        }
+        
+        .coming-soon-badge {
+            background: #ffc107;
+            color: #856404;
+            font-size: 0.8em;
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        
         .cta-section {
             background: linear-gradient(135deg, #3d4b1c 0%, #2d3a14 100%);
             color: white;
@@ -249,21 +266,9 @@
                 </div>
 
                 <div class="resource-card">
-                    <img src="./cartridge.png" alt="Custom Cartridge">
-                    <h3>Custom Cartridges</h3>
-                    <p>Create and track your custom cartridge development.</p>
-                </div>
-
-                <div class="resource-card">
                     <img src="./bullets.png" alt="Bullet">
                     <h3>Bullets</h3>
                     <p>Extensive database of factory bullet specifications.</p>
-                </div>
-
-                <div class="resource-card">
-                    <img src="./saami.png" alt="SAAMI Cartridge Specifications">
-                    <h3>SAAMI Cartridge Specifications</h3>
-                    <p>SAAMI specifications and requirements for centerfire rifle and rimfire cartridges.</p>
                 </div>
 
                 <div class="resource-card">
@@ -278,6 +283,20 @@
                     <p>Submit and track shooting range GIS data including lat/lon, elevation, and shooting angles.</p>
                 </div>
 
+                <div class="resource-card coming-soon">
+                    <div class="coming-soon-badge">Coming Soon</div>
+                    <img src="./saami.png" alt="SAAMI Cartridge Specifications">
+                    <h3>SAAMI Cartridge Specifications</h3>
+                    <p>SAAMI specifications and requirements for centerfire rifle and rimfire cartridges.</p>
+                </div>
+
+                <div class="resource-card coming-soon">
+                    <div class="coming-soon-badge">Coming Soon</div>
+                    <img src="./cartridge.png" alt="Custom Cartridge">
+                    <h3>Custom Cartridges</h3>
+                    <p>Create and track your custom cartridge development.</p>
+                </div>
+
             </div>
         </div>
         
@@ -285,11 +304,11 @@
             <h2>Ready to Get Started?</h2>
             <p>Transform your shooting data into actionable insights with ChronoLog's automated ballistic analysis platform.</p>
             <div class="nav-buttons">
-                <a href="http://localhost:8501" class="cta-button">Launch ChronoLog App</a>
-                <a href="http://localhost:8501/?page=chronograph" class="nav-button">Upload Chronograph Data</a>
-                <a href="http://localhost:8501/?page=dope" class="nav-button">Create DOPE Session</a>
-                <a href="http://localhost:8501/?page=rifles" class="nav-button">Manage Rifles</a>
-                <a href="http://localhost:8501/?page=cartridges" class="nav-button">View Cartridges</a>
+                <a href="https://chronolog.streamlit.app" class="cta-button">Launch ChronoLog App</a>
+                <a href="https://chronolog.streamlit.app/?page=rifles" class="nav-button">Manage Rifles</a>
+                <a href="https://chronolog.streamlit.app/?page=cartridges" class="nav-button">View Cartridges</a>
+                <a href="https://chronolog.streamlit.app/?page=chronograph" class="nav-button">Upload Chronograph Data</a>
+                <a href="https://chronolog.streamlit.app/?page=dope" class="nav-button">Create DOPE Session</a>
             </div>
         </div>
     </div>
