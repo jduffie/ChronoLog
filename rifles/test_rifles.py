@@ -12,29 +12,32 @@ from rifles.view_tab import render_view_rifle_tab
 
 class TestRiflesCreateTab(unittest.TestCase):
 
+    @patch("rifles.create_tab.get_cartridge_types")
     @patch("streamlit.markdown")
     @patch("streamlit.columns")
     @patch("streamlit.header")
     @patch("streamlit.subheader")
     @patch("streamlit.form")
     @patch("streamlit.text_input")
-    @patch("streamlit.number_input")
     @patch("streamlit.selectbox")
     @patch("streamlit.form_submit_button")
     def test_render_create_rifle_tab_basic(
         self,
         mock_submit,
         mock_selectbox,
-        mock_number_input,
         mock_text_input,
         mock_form,
         mock_subheader,
         mock_header,
         mock_columns,
         mock_markdown,
+        mock_get_cartridge_types,
     ):
         user = {"id": "test-user-id", "email": "test@example.com", "name": "Test User"}
         mock_supabase = Mock()
+
+        # Mock get_cartridge_types to return available cartridge types
+        mock_get_cartridge_types.return_value = [".308 Winchester", "6.5 Creedmoor", ".223 Remington"]
 
         # Mock form context manager
         mock_form_ctx = Mock()
@@ -64,6 +67,7 @@ class TestRiflesCreateTab(unittest.TestCase):
         self.assertIsNone(result)
         mock_header.assert_called()
 
+    @patch("rifles.create_tab.get_cartridge_types")
     @patch("streamlit.rerun")
     @patch("streamlit.expander")
     @patch("streamlit.write")
@@ -74,7 +78,6 @@ class TestRiflesCreateTab(unittest.TestCase):
     @patch("streamlit.subheader")
     @patch("streamlit.form")
     @patch("streamlit.text_input")
-    @patch("streamlit.number_input")
     @patch("streamlit.selectbox")
     @patch("streamlit.form_submit_button")
     @patch("streamlit.success")
@@ -83,7 +86,6 @@ class TestRiflesCreateTab(unittest.TestCase):
         mock_success,
         mock_submit,
         mock_selectbox,
-        mock_number_input,
         mock_text_input,
         mock_form,
         mock_subheader,
@@ -94,9 +96,13 @@ class TestRiflesCreateTab(unittest.TestCase):
         mock_write,
         mock_expander,
         mock_rerun,
+        mock_get_cartridge_types,
     ):
         user = {"id": "test-user-id", "email": "test@example.com", "name": "Test User"}
         mock_supabase = Mock()
+
+        # Mock get_cartridge_types to return available cartridge types
+        mock_get_cartridge_types.return_value = [".308 Winchester", "6.5 Creedmoor", ".223 Remington"]
 
         # Mock successful database insertion
         mock_response = Mock()
@@ -120,7 +126,7 @@ class TestRiflesCreateTab(unittest.TestCase):
         mock_expander.return_value.__enter__ = Mock(return_value=Mock())
         mock_expander.return_value.__exit__ = Mock(return_value=None)
 
-        # Mock form inputs (6 text inputs based on actual function)
+        # Mock form inputs (5 text inputs based on actual function)
         mock_text_input.side_effect = [
             "My Test Rifle",  # name
             "1:10",  # barrel_twist_ratio
@@ -130,7 +136,6 @@ class TestRiflesCreateTab(unittest.TestCase):
             "Leupold Mark 4",  # scope
         ]
         mock_selectbox.return_value = ".308 Winchester"
-        mock_number_input.side_effect = [24, 1.0, 10.0, 2.5]
         mock_submit.return_value = True  # Form submitted
 
         result = render_create_rifle_tab(user, mock_supabase)
