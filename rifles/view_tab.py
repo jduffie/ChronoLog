@@ -16,7 +16,6 @@ def get_cartridge_types(_supabase):
 
 def render_view_rifle_tab(user, supabase):
     """Render the View Rifles tab"""
-    st.header(" View Rifle Entries")
 
     try:
         # Get all rifle entries for the user
@@ -38,8 +37,7 @@ def render_view_rifle_tab(user, supabase):
         df = pd.DataFrame(response.data)
 
         # Display summary stats
-        st.subheader(" Summary")
-        col1, col2 = st.columns(2)
+        col1, col2, col3, col4 = st.columns(4)
 
         with col1:
             st.metric("Total Rifles", len(df))
@@ -49,21 +47,31 @@ def render_view_rifle_tab(user, supabase):
             cartridge_count = df["cartridge_type"].nunique()
             st.metric("Cartridge Types", cartridge_count)
 
-        # Add filters
-        st.subheader(" Filter Options")
-        col1, col2 = st.columns(2)
+        with col3:
+            # Count rifles with twist ratio specified
+            twist_count = df["barrel_twist_ratio"].notna().sum()
+            st.metric("With Twist Ratio", twist_count)
 
-        with col1:
-            # Filter by cartridge type
-            cartridge_types = df["cartridge_type"].dropna().unique()
-            cartridge_options = ["All"] + sorted([c for c in cartridge_types if c])
-            selected_cartridge = st.selectbox("Filter by Cartridge Type:", cartridge_options)
+        with col4:
+            # Count rifles with scope specified
+            scope_count = df["scope"].notna().sum()
+            st.metric("With Scope", scope_count)
 
-        with col2:
-            # Filter by twist ratio
-            twist_ratios = df["barrel_twist_ratio"].dropna().unique()
-            twist_options = ["All"] + sorted([t for t in twist_ratios if t])
-            selected_twist = st.selectbox("Filter by Twist Ratio:", twist_options)
+        # Collapsible filters section
+        with st.expander("Filter Options", expanded=False):
+            col1, col2 = st.columns(2)
+
+            with col1:
+                # Filter by cartridge type
+                cartridge_types = df["cartridge_type"].dropna().unique()
+                cartridge_options = ["All"] + sorted([c for c in cartridge_types if c])
+                selected_cartridge = st.selectbox("Filter by Cartridge Type:", cartridge_options)
+
+            with col2:
+                # Filter by twist ratio
+                twist_ratios = df["barrel_twist_ratio"].dropna().unique()
+                twist_options = ["All"] + sorted([t for t in twist_ratios if t])
+                selected_twist = st.selectbox("Filter by Twist Ratio:", twist_options)
 
 
         # Apply filters
@@ -82,9 +90,6 @@ def render_view_rifle_tab(user, supabase):
         # Display filtered results count
         if len(filtered_df) != len(df):
             st.info(f"Showing {len(filtered_df)} of {len(df)} rifles")
-
-        # Display the table
-        st.subheader(" Rifle Entries")
 
         if len(filtered_df) == 0:
             st.warning("No rifles match the selected filters.")
@@ -166,7 +171,7 @@ def render_view_rifle_tab(user, supabase):
 
         # Show detailed view and actions if a rifle is selected
         if selected_rifle_data is not None:
-            st.subheader(f"🔍 {selected_rifle_data['name']} Details")
+            st.markdown(f"**Details: {selected_rifle_data['name']}**")
             
             col1, col2, col3 = st.columns([2, 2, 1])
             
@@ -206,10 +211,9 @@ def render_view_rifle_tab(user, supabase):
                     st.session_state.deleting_rifle_id = selected_rifle_data['id']
         
         else:
-            st.info("💡 Click on a rifle in the table above to view details and access Edit/Delete options")
+            st.info(" Click on a rifle in the table above to view details and access Edit/Delete options")
 
         # Export option
-        st.subheader(" Export")
         if st.button(" Download as CSV"):
             csv = display_df.to_csv(index=False)
             st.download_button(

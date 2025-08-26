@@ -448,3 +448,4 @@ DO NOT use unicode emojis. Use plain text only.
 - always check for unused imports before committing
 - my ci/cd does test coverage and ensure the number is higher than 70% before commiting
 - only use emojis for info messages.
+- don't use emojis

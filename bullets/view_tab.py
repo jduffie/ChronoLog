@@ -6,8 +6,6 @@ from .service import BulletsService
 
 
 def render_view_bullets_tab(user, supabase):
-    """Render the View Bullets tab"""
-    st.header(" View Bullets Entries")
 
     # Initialize service
     bullets_service = BulletsService(supabase)
@@ -18,7 +16,7 @@ def render_view_bullets_tab(user, supabase):
 
         if not bullets:
             st.info(
-                "📭 No bullets available in the database. Please contact an administrator to add bullet specifications."
+                " No bullets available in the database. Please contact an administrator to add bullet specifications."
             )
             return
 
@@ -26,9 +24,7 @@ def render_view_bullets_tab(user, supabase):
         bullet_dicts = [bullet.__dict__ for bullet in bullets]
         df = pd.DataFrame(bullet_dicts)
 
-        # Display summary stats
-        st.subheader(" Summary")
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns(4)
 
         with col1:
             st.metric("Total Entries", len(df))
@@ -41,25 +37,30 @@ def render_view_bullets_tab(user, supabase):
             unique_calibers = df["bullet_diameter_groove_mm"].nunique()
             st.metric("Calibers", unique_calibers)
 
-        # Add filters
-        st.subheader(" Filter Options")
-        col1, col2, col3 = st.columns(3)
+        with col4:
+            unique_weights = df["weight_grains"].nunique()
+            st.metric("Weight Variants", unique_weights)
 
-        with col1:
-            manufacturers = ["All"] + sorted(df["manufacturer"].unique().tolist())
-            selected_manufacturer = st.selectbox(
-                "Filter by Manufacturer:", manufacturers
-            )
+        # Collapsible filters section
+        with st.expander("Filter Options", expanded=False):
+            col1, col2, col3 = st.columns(3)
 
-        with col2:
-            calibers = ["All"] + sorted(df["bore_diameter_land_mm"].unique().tolist())
-            selected_bore_diameter_mm = st.selectbox(
-                "Filter by Bore Diameter:", calibers
-            )
+            with col1:
+                manufacturers = ["All"] + sorted(df["manufacturer"].unique().tolist())
+                selected_manufacturer = st.selectbox(
+                    "Filter by Manufacturer:", manufacturers
+                )
 
-        with col3:
-            weights = ["All"] + sorted(df["weight_grains"].unique().tolist())
-            selected_weight = st.selectbox("Filter by Weight:", weights)
+            with col2:
+                calibers = ["All"] + sorted(df["bore_diameter_land_mm"].unique().tolist())
+                selected_bore_diameter_mm = st.selectbox(
+                    "Filter by Bore Diameter:", calibers
+                )
+
+            with col3:
+                weights = ["All"] + sorted(df["weight_grains"].unique().tolist())
+                selected_weight = st.selectbox("Filter by Weight:", weights)
+
 
         # Apply filters using service
         if (
@@ -90,9 +91,6 @@ def render_view_bullets_tab(user, supabase):
         # Display filtered results count
         if len(filtered_bullets) != len(bullets):
             st.info(f"Showing {len(filtered_bullets)} of {len(bullets)} entries")
-
-        # Display the table
-        st.subheader(" Bullets Entries")
 
         if len(filtered_df) == 0:
             st.warning("No entries match the selected filters.")
@@ -156,11 +154,13 @@ def render_view_bullets_tab(user, supabase):
             }
         )
 
-        # Display the table with enhanced formatting
-        st.dataframe(
+        # Display the table with enhanced formatting and selection
+        selected_bullet_event = st.dataframe(
             display_df,
             use_container_width=True,
             hide_index=True,
+            on_select="rerun",
+            selection_mode="single-row",
             column_config={
                 "Manufacturer": st.column_config.TextColumn(
                     "Manufacturer", width="small"
@@ -196,354 +196,63 @@ def render_view_bullets_tab(user, supabase):
             },
         )
 
-        # Admin-only functionality
-        is_admin = (
-            user.get("user_metadata", {}).get("is_admin", False)
-            or user.get("email") == "johnduffie91@gmail.com"
-        )
+        # Handle bullet selection from table click
+        selected_bullet_data = None
+        if selected_bullet_event["selection"]["rows"]:
+            selected_row_index = selected_bullet_event["selection"]["rows"][0]
+            # Get the bullet data from the filtered_bullets using the display index
+            selected_bullet_data = filtered_bullets[selected_row_index]
 
-        if is_admin:
-            # Edit functionality (admin only)
-            st.subheader("✏ Edit Entry (Admin Only)")
-            with st.expander("Edit a bullet entry"):
-                # Create list of entries for editing
-                entry_options = []
-                for bullet in filtered_bullets:
-                    entry_options.append((bullet.display_name, bullet))
+        # Show detailed view if a bullet is selected
+        if selected_bullet_data is not None:
+            st.markdown(f"**Details: {selected_bullet_data.display_name}**")
+            
+            # Display detailed information in columns
+            col1, col2, col3 = st.columns(3)
 
-                if entry_options:
-                    selected_entry = st.selectbox(
-                        "Select entry to edit:",
-                        options=[None] + entry_options,
-                        format_func=lambda x: (
-                            "Select an entry..." if x is None else x[0]
-                        ),
-                        key="edit_selector",
-                    )
+            with col1:
+                st.markdown("**Basic Information**")
+                st.write(f"**Manufacturer:** {selected_bullet_data.manufacturer}")
+                st.write(f"**Model:** {selected_bullet_data.model}")
+                st.write(f"**Weight:** {selected_bullet_data.weight_grains} grains")
+                st.write(f"**Bullet Diameter:** {selected_bullet_data.bullet_diameter_groove_mm:.3f} mm")
+                st.write(f"**Bore Diameter:** {selected_bullet_data.bore_diameter_land_mm:.3f} mm")
+                if selected_bullet_data.bullet_length_mm:
+                    st.write(f"**Length:** {selected_bullet_data.bullet_length_mm:.1f} mm")
 
-                    if selected_entry:
-                        bullet_model = selected_entry[1]
-
-                        # Create edit form
-                        with st.form("edit_bullet_form"):
-                            st.subheader(" Edit Basic Information")
-                            col1, col2 = st.columns(2)
-
-                            with col1:
-                                manufacturer = st.text_input(
-                                    "Manufacturer/Brand *",
-                                    value=bullet_model.manufacturer,
-                                    help="The bullet manufacturer or brand name",
-                                )
-
-                                model = st.text_input(
-                                    "Model/Type *",
-                                    value=bullet_model.model,
-                                    help="The specific bullet model or type",
-                                )
-
-                                weight_grains = st.number_input(
-                                    "Weight (grains) *",
-                                    min_value=1,
-                                    max_value=1000,
-                                    step=1,
-                                    value=bullet_model.weight_grains,
-                                    help="The bullet weight in grains",
-                                )
-
-                            with col2:
-                                bullet_diameter_groove_mm = st.number_input(
-                                    "Bullet Diameter (mm) *",
-                                    min_value=0.001,
-                                    max_value=50.0,
-                                    step=0.001,
-                                    format="%.3f",
-                                    value=bullet_model.bullet_diameter_groove_mm,
-                                    help="The bullet diameter at the groove in millimeters",
-                                )
-
-                                bore_diameter_land_mm = st.number_input(
-                                    "Bore Diameter (mm) *",
-                                    min_value=0.001,
-                                    max_value=50.0,
-                                    step=0.001,
-                                    format="%.3f",
-                                    value=bullet_model.bore_diameter_land_mm,
-                                    help="The bore diameter at the land in millimeters",
-                                )
-
-                            st.subheader("📐 Physical Properties (Optional)")
-                            col3, col4 = st.columns(2)
-
-                            with col3:
-                                bullet_length_mm = st.number_input(
-                                    "Bullet Length (mm)",
-                                    min_value=0.0,
-                                    max_value=200.0,
-                                    step=0.1,
-                                    format="%.1f",
-                                    value=(
-                                        bullet_model.bullet_length_mm
-                                        if bullet_model.bullet_length_mm is not None
-                                        else 0.0
-                                    ),
-                                    help="The bullet length in millimeters (optional)",
-                                )
-
-                                sectional_density = st.number_input(
-                                    "Sectional Density",
-                                    min_value=0.0,
-                                    max_value=2.0,
-                                    step=0.001,
-                                    format="%.3f",
-                                    value=(
-                                        bullet_model.sectional_density
-                                        if bullet_model.sectional_density is not None
-                                        else 0.0
-                                    ),
-                                    help="The sectional density (weight/diameter²) (optional)",
-                                )
-
-                            with col4:
-                                ballistic_coefficient_g1 = st.number_input(
-                                    "Ballistic Coefficient G1",
-                                    min_value=0.0,
-                                    max_value=2.0,
-                                    step=0.001,
-                                    format="%.3f",
-                                    value=(
-                                        bullet_model.ballistic_coefficient_g1
-                                        if bullet_model.ballistic_coefficient_g1
-                                        is not None
-                                        else 0.0
-                                    ),
-                                    help="The G1 ballistic coefficient (optional)",
-                                )
-
-                                ballistic_coefficient_g7 = st.number_input(
-                                    "Ballistic Coefficient G7",
-                                    min_value=0.0,
-                                    max_value=2.0,
-                                    step=0.001,
-                                    format="%.3f",
-                                    value=(
-                                        bullet_model.ballistic_coefficient_g7
-                                        if bullet_model.ballistic_coefficient_g7
-                                        is not None
-                                        else 0.0
-                                    ),
-                                    help="The G7 ballistic coefficient (optional)",
-                                )
-
-                            st.subheader("🌪️ Twist Rate Requirements (Optional)")
-                            col5, col6 = st.columns(2)
-
-                            with col5:
-                                min_req_twist_rate_in_per_rev = st.number_input(
-                                    "Minimum Required Twist Rate (in/rev)",
-                                    min_value=0.0,
-                                    max_value=50.0,
-                                    step=0.1,
-                                    format="%.1f",
-                                    value=(
-                                        bullet_model.min_req_twist_rate_in_per_rev
-                                        if bullet_model.min_req_twist_rate_in_per_rev
-                                        is not None
-                                        else 0.0
-                                    ),
-                                    help="Minimum required twist rate in inches per revolution (optional)",
-                                )
-
-                            with col6:
-                                pref_twist_rate_in_per_rev = st.number_input(
-                                    "Preferred Twist Rate (in/rev)",
-                                    min_value=0.0,
-                                    max_value=50.0,
-                                    step=0.1,
-                                    format="%.1f",
-                                    value=(
-                                        bullet_model.pref_twist_rate_in_per_rev
-                                        if bullet_model.pref_twist_rate_in_per_rev
-                                        is not None
-                                        else 0.0
-                                    ),
-                                    help="Preferred twist rate in inches per revolution (optional)",
-                                )
-
-                            st.subheader("📄 Data Source (Optional)")
-                            col7, col8 = st.columns(2)
-
-                            with col7:
-                                data_source_name = st.text_input(
-                                    "Data Source Name",
-                                    value=(
-                                        bullet_model.data_source_name
-                                        if bullet_model.data_source_name is not None
-                                        else ""
-                                    ),
-                                    help="Name or description of where this data came from (optional)",
-                                )
-
-                            with col8:
-                                data_source_url = st.text_input(
-                                    "Data Source URL",
-                                    value=(
-                                        bullet_model.data_source_url
-                                        if bullet_model.data_source_url is not None
-                                        else ""
-                                    ),
-                                    help="URL or reference to the original data source (optional)",
-                                )
-
-                            # Submit button
-                            col1, col2 = st.columns([1, 4])
-                            with col1:
-                                submitted = st.form_submit_button(
-                                    " Save Changes", type="primary"
-                                )
-
-                            if submitted:
-                                # Validate required fields
-                                if (
-                                    not manufacturer
-                                    or not model
-                                    or weight_grains == 0
-                                    or bullet_diameter_groove_mm == 0.0
-                                    or bore_diameter_land_mm == 0.0
-                                ):
-                                    st.error(
-                                        "❌ Please fill in all required fields (marked with *)"
-                                    )
-                                else:
-                                    # Clean up text inputs
-                                    manufacturer = manufacturer.strip()
-                                    model = model.strip()
-                                    data_source_name_cleaned = (
-                                        data_source_name.strip()
-                                        if data_source_name
-                                        else None
-                                    )
-                                    data_source_url_cleaned = (
-                                        data_source_url.strip()
-                                        if data_source_url
-                                        else None
-                                    )
-
-                                    # Convert zero values to None for optional fields
-                                    bullet_length_mm_value = (
-                                        bullet_length_mm
-                                        if bullet_length_mm > 0
-                                        else None
-                                    )
-                                    ballistic_coefficient_g1_value = (
-                                        ballistic_coefficient_g1
-                                        if ballistic_coefficient_g1 > 0
-                                        else None
-                                    )
-                                    ballistic_coefficient_g7_value = (
-                                        ballistic_coefficient_g7
-                                        if ballistic_coefficient_g7 > 0
-                                        else None
-                                    )
-                                    sectional_density_value = (
-                                        sectional_density
-                                        if sectional_density > 0
-                                        else None
-                                    )
-                                    min_req_twist_rate_value = (
-                                        min_req_twist_rate_in_per_rev
-                                        if min_req_twist_rate_in_per_rev > 0
-                                        else None
-                                    )
-                                    pref_twist_rate_value = (
-                                        pref_twist_rate_in_per_rev
-                                        if pref_twist_rate_in_per_rev > 0
-                                        else None
-                                    )
-
-                                    # Convert empty strings to None for data source fields
-                                    data_source_name_value = (
-                                        data_source_name_cleaned
-                                        if data_source_name_cleaned
-                                        else None
-                                    )
-                                    data_source_url_value = (
-                                        data_source_url_cleaned
-                                        if data_source_url_cleaned
-                                        else None
-                                    )
-
-                                    try:
-                                        # Update the entry
-                                        update_data = {
-                                            "manufacturer": manufacturer,
-                                            "model": model,
-                                            "weight_grains": weight_grains,
-                                            "bullet_diameter_groove_mm": bullet_diameter_groove_mm,
-                                            "bore_diameter_land_mm": bore_diameter_land_mm,
-                                            "bullet_length_mm": bullet_length_mm_value,
-                                            "ballistic_coefficient_g1": ballistic_coefficient_g1_value,
-                                            "ballistic_coefficient_g7": ballistic_coefficient_g7_value,
-                                            "sectional_density": sectional_density_value,
-                                            "min_req_twist_rate_in_per_rev": min_req_twist_rate_value,
-                                            "pref_twist_rate_in_per_rev": pref_twist_rate_value,
-                                            "data_source_name": data_source_name_value,
-                                            "data_source_url": data_source_url_value,
-                                        }
-
-                                        updated_bullet = bullets_service.update_bullet(
-                                            bullet_model.id, update_data
-                                        )
-                                        st.success(
-                                            f"✅ Updated: {updated_bullet.display_name}"
-                                        )
-                                        st.rerun()
-
-                                    except Exception as e:
-                                        st.error(f"❌ Error updating entry: {str(e)}")
+            with col2:
+                st.markdown("**Ballistic Properties**")
+                if selected_bullet_data.ballistic_coefficient_g1:
+                    st.write(f"**BC G1:** {selected_bullet_data.ballistic_coefficient_g1:.3f}")
                 else:
-                    st.info("No entries available for editing with current filters.")
-
-            # Delete functionality (admin only)
-            st.subheader("🗑️ Delete Entry (Admin Only)")
-            with st.expander("Delete a bullet entry"):
-                st.warning("⚠️ This action cannot be undone!")
-
-                # Create list of entries for deletion
-                entry_options = []
-                for bullet in filtered_bullets:
-                    entry_options.append((bullet.display_name, bullet.id))
-
-                if entry_options:
-                    selected_entry = st.selectbox(
-                        "Select entry to delete:",
-                        options=[None] + entry_options,
-                        format_func=lambda x: (
-                            "Select an entry..." if x is None else x[0]
-                        ),
-                        key="delete_selector",
-                    )
-
-                    if selected_entry:
-                        col1, col2 = st.columns([1, 4])
-                        with col1:
-                            if st.button("🗑️ Delete", type="secondary"):
-                                try:
-                                    # Delete the entry
-                                    if bullets_service.delete_bullet(selected_entry[1]):
-                                        st.success(f"✅ Deleted: {selected_entry[0]}")
-                                        st.rerun()
-                                    else:
-                                        st.error("❌ Failed to delete entry.")
-                                except Exception as e:
-                                    st.error(f"❌ Error deleting entry: {str(e)}")
+                    st.write("**BC G1:** N/A")
+                if selected_bullet_data.ballistic_coefficient_g7:
+                    st.write(f"**BC G7:** {selected_bullet_data.ballistic_coefficient_g7:.3f}")
                 else:
-                    st.info("No entries available for deletion with current filters.")
+                    st.write("**BC G7:** N/A")
+                if selected_bullet_data.sectional_density:
+                    st.write(f"**Sectional Density:** {selected_bullet_data.sectional_density:.3f}")
+                else:
+                    st.write("**Sectional Density:** N/A")
+
+            with col3:
+                st.markdown("**Twist Rate Requirements**")
+                if selected_bullet_data.min_req_twist_rate_in_per_rev:
+                    st.write(f"**Min Required:** {selected_bullet_data.min_req_twist_rate_in_per_rev:.1f} in/rev")
+                else:
+                    st.write("**Min Required:** N/A")
+                if selected_bullet_data.pref_twist_rate_in_per_rev:
+                    st.write(f"**Preferred:** {selected_bullet_data.pref_twist_rate_in_per_rev:.1f} in/rev")
+                else:
+                    st.write("**Preferred:** N/A")
+                if selected_bullet_data.data_source_name:
+                    st.write(f"**Data Source:** {selected_bullet_data.data_source_name}")
+                if selected_bullet_data.data_source_url:
+                    st.write(f"**Source URL:** [Link]({selected_bullet_data.data_source_url})")
+        
         else:
-            # Info for non-admin users
-            st.info(
-                "ℹ️ This is a read-only view of the global bullet database maintained by administrators."
-            )
+            st.info("Click on a bullet in the table above to view detailed information")
+
 
     except Exception as e:
         st.error(f"❌ Error loading bullets entries: {str(e)}")

@@ -5,8 +5,6 @@ import streamlit as st
 
 
 def render_view_cartridges_tab(user, supabase):
-    """Render the View Cartridges tab"""
-    st.header("View Cartridge Details")
 
     try:
         # Get cartridges: both user-owned and global ones
@@ -96,8 +94,6 @@ def render_view_cartridges_tab(user, supabase):
         # Convert all columns to string type to avoid Arrow serialization issues
         df = df.astype(str)
 
-        # Display summary stats
-        st.subheader("Summary")
         col1, col2, col3, col4 = st.columns(4)
 
         with col1:
@@ -119,54 +115,55 @@ def render_view_cartridges_tab(user, supabase):
 
         with col4:
             global_count = (
-                len(df[df["source"] == "Global"]) if "source" in df.columns else 0
+                len(df[df["source"] == "Public"]) if "source" in df.columns else 0
             )
             user_count = (
                 len(df[df["source"] == "User"]) if "source" in df.columns else 0
             )
-            st.metric("Global/User", f"{global_count}/{user_count}")
+            st.metric("Public/User", f"{global_count}/{user_count}")
 
-        # Add filters
-        st.subheader("Filter Options")
-        col1, col2, col3, col4 = st.columns(4)
+        # Collapsible filters section
+        with st.expander("Filter Options", expanded=False):
+            col1, col2, col3, col4 = st.columns(4)
 
-        with col1:
-            sources = (
-                ["All"] + sorted(df["source"].unique().tolist())
-                if "source" in df.columns
-                else ["All"]
-            )
-            selected_source = st.selectbox("Filter by Source:", sources)
+            with col1:
+                sources = (
+                    ["All"] + sorted(df["source"].unique().tolist())
+                    if "source" in df.columns
+                    else ["All"]
+                )
+                selected_source = st.selectbox("Filter by Source:", sources)
 
-        with col2:
-            manufacturers = (
-                ["All"] + sorted(df["manufacturer"].dropna().unique().tolist())
-                if "manufacturer" in df.columns
-                else ["All"]
-            )
-            selected_manufacturer = st.selectbox(
-                "Filter by Manufacturer:", manufacturers
-            )
+            with col2:
+                manufacturers = (
+                    ["All"] + sorted(df["manufacturer"].dropna().unique().tolist())
+                    if "manufacturer" in df.columns
+                    else ["All"]
+                )
+                selected_manufacturer = st.selectbox(
+                    "Filter by Manufacturer:", manufacturers
+                )
 
-        with col3:
-            cartridge_types = (
-                ["All"] + sorted(df["cartridge_type"].dropna().unique().tolist())
-                if "cartridge_type" in df.columns
-                else ["All"]
-            )
-            selected_cartridge_type = st.selectbox(
-                "Filter by Cartridge Type:", cartridge_types
-            )
+            with col3:
+                cartridge_types = (
+                    ["All"] + sorted(df["cartridge_type"].dropna().unique().tolist())
+                    if "cartridge_type" in df.columns
+                    else ["All"]
+                )
+                selected_cartridge_type = st.selectbox(
+                    "Filter by Cartridge Type:", cartridge_types
+                )
 
-        with col4:
-            bullet_weights = (
-                ["All"] + sorted(df["bullet_weight_grains"].dropna().unique().tolist())
-                if "bullet_weight_grains" in df.columns
-                else ["All"]
-            )
-            selected_bullet_weight = st.selectbox(
-                "Filter by Bullet Weight:", bullet_weights
-            )
+            with col4:
+                bullet_weights = (
+                    ["All"] + sorted(df["bullet_weight_grains"].dropna().unique().tolist())
+                    if "bullet_weight_grains" in df.columns
+                    else ["All"]
+                )
+                selected_bullet_weight = st.selectbox(
+                    "Filter by Bullet Weight:", bullet_weights
+                )
+
 
         # Apply filters
         filtered_df = df.copy()
@@ -188,9 +185,6 @@ def render_view_cartridges_tab(user, supabase):
         # Display filtered results count
         if len(filtered_df) != len(df):
             st.info(f"Showing {len(filtered_df)} of {len(df)} entries")
-
-        # Display the table
-        st.subheader("Cartridge Details")
 
         if len(filtered_df) == 0:
             st.warning("No entries match the selected filters.")
@@ -288,12 +282,83 @@ def render_view_cartridges_tab(user, supabase):
             else:
                 column_config[col] = st.column_config.TextColumn(col, width="small")
 
-        st.dataframe(
+        # Display the table with enhanced formatting and selection
+        selected_cartridge_event = st.dataframe(
             display_df,
             use_container_width=True,
             hide_index=True,
+            on_select="rerun",
+            selection_mode="single-row",
             column_config=column_config,
         )
+
+        # Handle cartridge selection from table click
+        selected_cartridge_data = None
+        if selected_cartridge_event["selection"]["rows"]:
+            selected_row_index = selected_cartridge_event["selection"]["rows"][0]
+            # Get the cartridge data from the filtered_df using the display index
+            selected_cartridge_data = filtered_df.iloc[selected_row_index]
+
+        # Show detailed view if a cartridge is selected
+        if selected_cartridge_data is not None:
+            source = selected_cartridge_data.get("source", "N/A")
+            manufacturer = selected_cartridge_data.get("manufacturer", "N/A")
+            cartridge_type = selected_cartridge_data.get("cartridge_type", "N/A")
+            model = selected_cartridge_data.get("model", "N/A")
+            bullet_name = selected_cartridge_data.get("bullet_name", "N/A")
+            
+            st.subheader(f"Details: {manufacturer} {cartridge_type} {model} - {bullet_name}")
+            
+            # Display detailed information in columns
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                st.markdown("**Cartridge Info**")
+                st.write(f"**Source:** {source}")
+                st.write(f"**Manufacturer:** {manufacturer}")
+                st.write(f"**Cartridge Type:** {cartridge_type}")
+                st.write(f"**Cartridge Model:** {model}")
+                if selected_cartridge_data.get("data_source_name"):
+                    st.write(f"**Data Source:** {selected_cartridge_data['data_source_name']}")
+                if selected_cartridge_data.get("created_at"):
+                    st.write(f"**Created:** {selected_cartridge_data['created_at'][:10]}")
+
+            with col2:
+                st.markdown("**Bullet Info**")
+                st.write(f"**Description:** {bullet_name}")
+                st.write(f"**Bullet Manufacturer:** {selected_cartridge_data.get('bullet_manufacturer', 'N/A')}")
+                st.write(f"**Bullet Model:** {selected_cartridge_data.get('bullet_model', 'N/A')}")
+                st.write(f"**Weight:** {selected_cartridge_data.get('bullet_weight_grains', 'N/A')} gr")
+                st.write(f"**Bullet Diameter:** {selected_cartridge_data.get('bullet_diameter_groove_mm', 'N/A')} mm")
+                st.write(f"**Bore Diameter:** {selected_cartridge_data.get('bore_diameter_land_mm', 'N/A')} mm")
+                if selected_cartridge_data.get("bullet_length_mm") and selected_cartridge_data.get("bullet_length_mm") != "":
+                    st.write(f"**Length:** {selected_cartridge_data['bullet_length_mm']} mm")
+
+            with col3:
+                st.markdown("**Ballistic Properties**")
+                if selected_cartridge_data.get("ballistic_coefficient_g1") and selected_cartridge_data.get("ballistic_coefficient_g1") != "":
+                    st.write(f"**BC G1:** {selected_cartridge_data['ballistic_coefficient_g1']}")
+                else:
+                    st.write("**BC G1:** N/A")
+                if selected_cartridge_data.get("ballistic_coefficient_g7") and selected_cartridge_data.get("ballistic_coefficient_g7") != "":
+                    st.write(f"**BC G7:** {selected_cartridge_data['ballistic_coefficient_g7']}")
+                else:
+                    st.write("**BC G7:** N/A")
+                if selected_cartridge_data.get("sectional_density") and selected_cartridge_data.get("sectional_density") != "":
+                    st.write(f"**Sectional Density:** {selected_cartridge_data['sectional_density']}")
+                else:
+                    st.write("**Sectional Density:** N/A")
+                if selected_cartridge_data.get("min_req_twist_rate_in_per_rev") and selected_cartridge_data.get("min_req_twist_rate_in_per_rev") != "":
+                    st.write(f"**Min Twist Rate:** {selected_cartridge_data['min_req_twist_rate_in_per_rev']} in/rev")
+                else:
+                    st.write("**Min Twist Rate:** N/A")
+                if selected_cartridge_data.get("pref_twist_rate_in_per_rev") and selected_cartridge_data.get("pref_twist_rate_in_per_rev") != "":
+                    st.write(f"**Pref Twist Rate:** {selected_cartridge_data['pref_twist_rate_in_per_rev']} in/rev")
+                else:
+                    st.write("**Pref Twist Rate:** N/A")
+        
+        else:
+            st.info("Click on a cartridge in the table above to view detailed information")
 
         # Export option
         st.subheader("Export")
@@ -305,91 +370,6 @@ def render_view_cartridges_tab(user, supabase):
                 file_name=f"cartridge_details_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
                 mime="text/csv",
             )
-
-        # Display additional details section
-        st.subheader("Additional Details")
-        with st.expander("View detailed information for selected cartridges"):
-            if len(filtered_df) > 0:
-                # Create a selectbox for detailed view
-                detail_options = []
-                detail_lookup = {}
-
-                for _, row in filtered_df.iterrows():
-                    source = row.get("source", "N/A")
-                    manufacturer = row.get("manufacturer", "N/A")
-                    cartridge_type = row.get("cartridge_type", "N/A")
-                    model = row.get("model", "N/A")
-                    bullet_name = row.get("bullet_name", "N/A")
-                    label = f"{source.title()}: {manufacturer} {cartridge_type} {model} - {bullet_name}"
-                    detail_options.append(label)
-                    detail_lookup[label] = row
-
-                selected_detail = st.selectbox(
-                    "Select cartridge for detailed view:",
-                    options=[None] + detail_options,
-                    format_func=lambda x: "Select a cartridge..." if x is None else x,
-                )
-
-                if selected_detail:
-                    row = detail_lookup[selected_detail]
-
-                    # Display detailed information in columns
-                    col1, col2, col3 = st.columns(3)
-
-                    with col1:
-                        st.markdown("**Cartridge Info**")
-                        st.write(f"**ID:** {row.get('id', 'N/A')}")
-                        st.write(f"**Source:** {row.get('source', 'N/A')}")
-                        st.write(f"**Manufacturer:** {row.get('manufacturer', 'N/A')}")
-                        st.write(
-                            f"**Cartridge Type:** {row.get('cartridge_type', 'N/A')}"
-                        )
-                        st.write(f"**Cartridge Model:** {row.get('model', 'N/A')}")
-                        if row.get("data_source_name"):
-                            st.write(f"**Data Source:** {row['data_source_name']}")
-                        if row.get("created_at"):
-                            st.write(f"**Created:** {row['created_at'][:10]}")
-
-                    with col2:
-                        st.markdown("**Bullet Info**")
-                        st.write(f"**Bullet ID:** {row.get('bullet_id', 'N/A')}")
-                        st.write(f"**Description:** {row.get('bullet_name', 'N/A')}")
-                        st.write(
-                            f"**Manufacturer:** {row.get('bullet_manufacturer', 'N/A')}"
-                        )
-                        st.write(f"**Cartridge Model:** {row.get('bullet_model', 'N/A')}")
-                        st.write(
-                            f"**Bullet Weight:** {row.get('bullet_weight_grains', 'N/A')} gr"
-                        )
-                        st.write(
-                            f"**Diameter:** {row.get('bullet_diameter_groove_mm', 'N/A')} mm"
-                        )
-                        st.write(
-                            f"**Bore Diameter:** {row.get('bore_diameter_land_mm', 'N/A')} mm"
-                        )
-                        if row.get("bullet_length_mm"):
-                            st.write(f"**Bullet Length:** {row['bullet_length_mm']} mm")
-
-                    with col3:
-                        st.markdown("**Ballistic Properties**")
-                        if row.get("ballistic_coefficient_g1"):
-                            st.write(f"**BC G1:** {row['ballistic_coefficient_g1']}")
-                        if row.get("ballistic_coefficient_g7"):
-                            st.write(f"**BC G7:** {row['ballistic_coefficient_g7']}")
-                        if row.get("sectional_density"):
-                            st.write(
-                                f"**Sectional Density:** {row['sectional_density']}"
-                            )
-                        if row.get("min_req_twist_rate_in_per_rev"):
-                            st.write(
-                                f"**Min Twist Rate:** {row['min_req_twist_rate_in_per_rev']} in/rev"
-                            )
-                        if row.get("pref_twist_rate_in_per_rev"):
-                            st.write(
-                                f"**Pref Twist Rate:** {row['pref_twist_rate_in_per_rev']} in/rev"
-                            )
-
-                    # No lot information or notes in the simplified view
 
     except Exception as e:
         st.error(f"Error loading cartridge details: {str(e)}")

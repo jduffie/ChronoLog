@@ -42,7 +42,7 @@ def main():
     )
 
     # Create tabs for View and Create
-    tab1, tab2 = st.tabs(["View Cartridges", "Create Cartridge"])
+    tab1, tab2 = st.tabs(["View", "Create"])
 
     with tab1:
         render_view_cartridges_tab(user, supabase)
