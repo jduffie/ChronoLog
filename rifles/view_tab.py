@@ -30,7 +30,7 @@ def render_view_rifle_tab(user, supabase):
 
         if not response.data:
             st.info(
-                "📭 No rifle entries found. Go to the 'Create' tab to add your first rifle."
+                " No rifle entries found. Go to the 'Create' tab to add your first rifle."
             )
             return
 
@@ -39,29 +39,19 @@ def render_view_rifle_tab(user, supabase):
 
         # Display summary stats
         st.subheader(" Summary")
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2 = st.columns(2)
 
         with col1:
             st.metric("Total Rifles", len(df))
 
         with col2:
-            # Count rifles with twist ratio specified
-            twist_count = df["barrel_twist_ratio"].notna().sum()
-            st.metric("With Twist Ratio", twist_count)
-
-        with col3:
-            # Count rifles with scope specified
-            scope_count = df["scope"].notna().sum()
-            st.metric("With Scope", scope_count)
-
-        with col4:
             # Count unique cartridge types
             cartridge_count = df["cartridge_type"].nunique()
             st.metric("Cartridge Types", cartridge_count)
 
         # Add filters
         st.subheader(" Filter Options")
-        col1, col2, col3 = st.columns(3)
+        col1, col2 = st.columns(2)
 
         with col1:
             # Filter by cartridge type
@@ -75,12 +65,6 @@ def render_view_rifle_tab(user, supabase):
             twist_options = ["All"] + sorted([t for t in twist_ratios if t])
             selected_twist = st.selectbox("Filter by Twist Ratio:", twist_options)
 
-        with col3:
-            # Filter by rifles with complete info
-            completeness_options = ["All", "Complete Info Only", "Missing Info Only"]
-            selected_completeness = st.selectbox(
-                "Filter by Completeness:", completeness_options
-            )
 
         # Apply filters
         filtered_df = df.copy()
@@ -93,26 +77,6 @@ def render_view_rifle_tab(user, supabase):
         if selected_twist != "All":
             filtered_df = filtered_df[
                 filtered_df["barrel_twist_ratio"] == selected_twist
-            ]
-
-        if selected_completeness == "Complete Info Only":
-            # Filter to rifles with all major fields filled (cartridge_type is required)
-            filtered_df = filtered_df[
-                filtered_df["cartridge_type"].notna()
-                & filtered_df["barrel_twist_ratio"].notna()
-                & filtered_df["barrel_length"].notna()
-                & filtered_df["sight_offset"].notna()
-                & filtered_df["trigger"].notna()
-                & filtered_df["scope"].notna()
-            ]
-        elif selected_completeness == "Missing Info Only":
-            # Filter to rifles with any missing optional fields (cartridge_type is required so skip)
-            filtered_df = filtered_df[
-                filtered_df["barrel_twist_ratio"].isna()
-                | filtered_df["barrel_length"].isna()
-                | filtered_df["sight_offset"].isna()
-                | filtered_df["trigger"].isna()
-                | filtered_df["scope"].isna()
             ]
 
         # Display filtered results count
