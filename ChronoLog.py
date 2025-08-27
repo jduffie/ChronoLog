@@ -11,5 +11,4 @@ landing_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(landing_module)
 
 if __name__ == "__main__":
-    print("MAIN MAIN")
     landing_module.run()

@@ -5,6 +5,10 @@ import streamlit as st
 
 
 def render_view_cartridges_tab(user, supabase):
+    
+    # Clear any existing cartridges session state when navigating to page
+    if 'cartridges' in st.session_state:
+        del st.session_state.cartridges
 
     try:
         # Get cartridges: both user-owned and global ones
@@ -299,7 +303,7 @@ def render_view_cartridges_tab(user, supabase):
             # Get the cartridge data from the filtered_df using the display index
             selected_cartridge_data = filtered_df.iloc[selected_row_index]
 
-        # Show detailed view if a cartridge is selected
+        # Show read-only details when a cartridge is selected
         if selected_cartridge_data is not None:
             source = selected_cartridge_data.get("source", "N/A")
             manufacturer = selected_cartridge_data.get("manufacturer", "N/A")
@@ -307,10 +311,10 @@ def render_view_cartridges_tab(user, supabase):
             model = selected_cartridge_data.get("model", "N/A")
             bullet_name = selected_cartridge_data.get("bullet_name", "N/A")
             
-            st.subheader(f"Details: {manufacturer} {cartridge_type} {model} - {bullet_name}")
+            st.markdown(f"**Details: {manufacturer} {cartridge_type} {model} - {bullet_name}**")
             
             # Display detailed information in columns
-            col1, col2, col3 = st.columns(3)
+            col1, col2, col3, col4 = st.columns([2, 2, 2, 1])
 
             with col1:
                 st.markdown("**Cartridge Info**")
@@ -318,7 +322,7 @@ def render_view_cartridges_tab(user, supabase):
                 st.write(f"**Manufacturer:** {manufacturer}")
                 st.write(f"**Cartridge Type:** {cartridge_type}")
                 st.write(f"**Cartridge Model:** {model}")
-                if selected_cartridge_data.get("data_source_name"):
+                if selected_cartridge_data.get("data_source_name") and selected_cartridge_data.get("data_source_name") != "":
                     st.write(f"**Data Source:** {selected_cartridge_data['data_source_name']}")
                 if selected_cartridge_data.get("created_at"):
                     st.write(f"**Created:** {selected_cartridge_data['created_at'][:10]}")
@@ -356,9 +360,58 @@ def render_view_cartridges_tab(user, supabase):
                     st.write(f"**Pref Twist Rate:** {selected_cartridge_data['pref_twist_rate_in_per_rev']} in/rev")
                 else:
                     st.write("**Pref Twist Rate:** N/A")
+            
+            with col4:
+                st.markdown("**Actions**")
+                # Delete button
+                if st.button("Delete", type="secondary", use_container_width=True):
+                    if 'cartridges' not in st.session_state:
+                        st.session_state.cartridges = {}
+                    st.session_state.cartridges['deleting_cartridge_id'] = selected_cartridge_data['id']
         
         else:
-            st.info("Click on a cartridge in the table above to view detailed information")
+            st.info("Click on a cartridge in the table above to view details")
+
+        # Handle Delete Confirmation
+        if 'cartridges' in st.session_state and 'deleting_cartridge_id' in st.session_state.cartridges:
+            # Get the cartridge data for deletion
+            cartridge_to_delete = filtered_df[
+                filtered_df["id"] == st.session_state.cartridges['deleting_cartridge_id']
+            ].iloc[0] if not filtered_df[filtered_df["id"] == st.session_state.cartridges['deleting_cartridge_id']].empty else None
+            
+            if cartridge_to_delete is not None:
+                st.subheader(f"Delete {cartridge_to_delete['make']} {cartridge_to_delete['model']}")
+                st.warning("⚠️ This action cannot be undone!")
+                st.write(f"Are you sure you want to delete **{cartridge_to_delete['make']} {cartridge_to_delete['model']}** ({cartridge_to_delete['cartridge_type']})?")
+                
+                col1, col2 = st.columns([1, 1])
+                with col1:
+                    if st.button("Yes, Delete", type="primary", use_container_width=True):
+                        try:
+                            # Delete the cartridge
+                            delete_response = (
+                                supabase.table("cartridges")
+                                .delete()
+                                .eq("id", st.session_state.cartridges['deleting_cartridge_id'])
+                                .execute()
+                            )
+
+                            if delete_response.data:
+                                st.success(f"Deleted: {cartridge_to_delete['make']} {cartridge_to_delete['model']}")
+                                del st.session_state.cartridges['deleting_cartridge_id']
+                                st.rerun()
+                            else:
+                                st.error("Failed to delete cartridge.")
+                        except Exception as e:
+                            st.error(f"Error deleting cartridge: {str(e)}")
+                
+                with col2:
+                    if st.button("Cancel", use_container_width=True):
+                        del st.session_state.cartridges['deleting_cartridge_id']
+                        st.rerun()
+            else:
+                del st.session_state.cartridges['deleting_cartridge_id']
+                st.rerun()
 
         # Export option
         st.subheader("Export")

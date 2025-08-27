@@ -6,9 +6,9 @@ from cartridges.models import CartridgeModel
 
 def render_edit_cartridges_tab(user, supabase):
     """Render the Create/Edit Cartridges tab"""
-    st.header("➕ Create New Cartridge")
+    st.header("➕ Create Custom Cartridge")
     st.markdown(
-        "Create a new cartridge specification by selecting a bullet and providing manufacturer details."
+        "Create a new cartridge specification by first selecting a bullet and then providing details."
     )
 
     try:

@@ -449,3 +449,5 @@ DO NOT use unicode emojis. Use plain text only.
 - my ci/cd does test coverage and ensure the number is higher than 70% before commiting
 - only use emojis for info messages.
 - don't use emojis
+- each page needs its own private session state
+- Each page should have its own nested session state.
