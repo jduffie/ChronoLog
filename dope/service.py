@@ -382,11 +382,18 @@ class DopeService:
 
             # Apply cartridge type filter
             if filters.get("cartridge_type"):
-                filtered_sessions = [
-                    s
-                    for s in filtered_sessions
-                    if s.cartridge_type == filters["cartridge_type"]
-                ]
+                if filters["cartridge_type"] == "Not Defined":
+                    filtered_sessions = [
+                        s
+                        for s in filtered_sessions
+                        if not s.cartridge_type or s.cartridge_type.strip() == ""
+                    ]
+                else:
+                    filtered_sessions = [
+                        s
+                        for s in filtered_sessions
+                        if s.cartridge_type == filters["cartridge_type"]
+                    ]
 
             # Apply date range filter
             if filters.get("date_from"):
@@ -404,11 +411,18 @@ class DopeService:
 
             # Apply rifle filter
             if filters.get("rifle_name"):
-                filtered_sessions = [
-                    s
-                    for s in filtered_sessions
-                    if s.rifle_name == filters["rifle_name"]
-                ]
+                if filters["rifle_name"] == "Not Defined":
+                    filtered_sessions = [
+                        s
+                        for s in filtered_sessions
+                        if not s.rifle_name or s.rifle_name.strip() == ""
+                    ]
+                else:
+                    filtered_sessions = [
+                        s
+                        for s in filtered_sessions
+                        if s.rifle_name == filters["rifle_name"]
+                    ]
 
             # Apply distance range filter
             if filters.get("distance_range"):
@@ -421,27 +435,48 @@ class DopeService:
 
             # Apply cartridge make filter
             if filters.get("cartridge_make"):
-                filtered_sessions = [
-                    s
-                    for s in filtered_sessions
-                    if s.cartridge_make == filters["cartridge_make"]
-                ]
+                if filters["cartridge_make"] == "Not Defined":
+                    filtered_sessions = [
+                        s
+                        for s in filtered_sessions
+                        if not s.cartridge_make or s.cartridge_make.strip() == ""
+                    ]
+                else:
+                    filtered_sessions = [
+                        s
+                        for s in filtered_sessions
+                        if s.cartridge_make == filters["cartridge_make"]
+                    ]
 
             # Apply bullet make filter
             if filters.get("bullet_make"):
-                filtered_sessions = [
-                    s
-                    for s in filtered_sessions
-                    if s.bullet_make == filters["bullet_make"]
-                ]
+                if filters["bullet_make"] == "Not Defined":
+                    filtered_sessions = [
+                        s
+                        for s in filtered_sessions
+                        if not s.bullet_make or s.bullet_make.strip() == ""
+                    ]
+                else:
+                    filtered_sessions = [
+                        s
+                        for s in filtered_sessions
+                        if s.bullet_make == filters["bullet_make"]
+                    ]
 
             # Apply range name filter
             if filters.get("range_name"):
-                filtered_sessions = [
-                    s
-                    for s in filtered_sessions
-                    if s.range_name == filters["range_name"]
-                ]
+                if filters["range_name"] == "Not Defined":
+                    filtered_sessions = [
+                        s
+                        for s in filtered_sessions
+                        if not s.range_name or s.range_name.strip() == ""
+                    ]
+                else:
+                    filtered_sessions = [
+                        s
+                        for s in filtered_sessions
+                        if s.range_name == filters["range_name"]
+                    ]
 
             # Apply bullet weight range filter
             if filters.get("bullet_weight_range"):
@@ -544,20 +579,32 @@ class DopeService:
                 filtered_sessions = sessions
 
                 # Apply cartridge type filter on joined data
-                if filters.get("cartridge_type"):
-                    filtered_sessions = [
-                        s
-                        for s in filtered_sessions
-                        if s.cartridge_type == filters["cartridge_type"]
-                    ]
+                if filters.get("cartridge_type") and filters["cartridge_type"] != "All":
+                    if filters["cartridge_type"] == "Not Defined":
+                        filtered_sessions = [
+                            s for s in filtered_sessions
+                            if s.cartridge_type is None
+                        ]
+                    else:
+                        filtered_sessions = [
+                            s
+                            for s in filtered_sessions
+                            if s.cartridge_type == filters["cartridge_type"]
+                        ]
 
                 # Apply rifle filter on joined data
-                if filters.get("rifle_name"):
-                    filtered_sessions = [
-                        s
-                        for s in filtered_sessions
-                        if s.rifle_name == filters["rifle_name"]
-                    ]
+                if filters.get("rifle_name") and filters["rifle_name"] != "All":
+                    if filters["rifle_name"] == "Not Defined":
+                        filtered_sessions = [
+                            s for s in filtered_sessions
+                            if not s.rifle_name or s.rifle_name.strip() == ""
+                        ]
+                    else:
+                        filtered_sessions = [
+                            s
+                            for s in filtered_sessions
+                            if s.rifle_name == filters["rifle_name"]
+                        ]
 
                 # Apply distance range filter
                 if filters.get("distance_range"):
@@ -569,28 +616,46 @@ class DopeService:
                     ]
 
                 # Apply cartridge make filter
-                if filters.get("cartridge_make"):
-                    filtered_sessions = [
-                        s
-                        for s in filtered_sessions
-                        if s.cartridge_make == filters["cartridge_make"]
-                    ]
+                if filters.get("cartridge_make") and filters["cartridge_make"] != "All":
+                    if filters["cartridge_make"] == "Not Defined":
+                        filtered_sessions = [
+                            s for s in filtered_sessions
+                            if s.cartridge_make is None
+                        ]
+                    else:
+                        filtered_sessions = [
+                            s
+                            for s in filtered_sessions
+                            if s.cartridge_make == filters["cartridge_make"]
+                        ]
 
                 # Apply bullet make filter
-                if filters.get("bullet_make"):
-                    filtered_sessions = [
-                        s
-                        for s in filtered_sessions
-                        if s.bullet_make == filters["bullet_make"]
-                    ]
+                if filters.get("bullet_make") and filters["bullet_make"] != "All":
+                    if filters["bullet_make"] == "Not Defined":
+                        filtered_sessions = [
+                            s for s in filtered_sessions
+                            if s.bullet_make is None
+                        ]
+                    else:
+                        filtered_sessions = [
+                            s
+                            for s in filtered_sessions
+                            if s.bullet_make == filters["bullet_make"]
+                        ]
 
                 # Apply range name filter
-                if filters.get("range_name"):
-                    filtered_sessions = [
-                        s
-                        for s in filtered_sessions
-                        if s.range_name == filters["range_name"]
-                    ]
+                if filters.get("range_name") and filters["range_name"] != "All":
+                    if filters["range_name"] == "Not Defined":
+                        filtered_sessions = [
+                            s for s in filtered_sessions
+                            if not s.range_name or s.range_name.strip() == ""
+                        ]
+                    else:
+                        filtered_sessions = [
+                            s
+                            for s in filtered_sessions
+                            if s.range_name == filters["range_name"]
+                        ]
 
                 # Apply bullet weight range filter
                 if filters.get("bullet_weight_range"):

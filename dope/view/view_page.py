@@ -249,7 +249,7 @@ def render_main_page_filters(service: DopeService, user_id: str):
 
                 rifle_name = st.selectbox(
                     "Rifle Name",
-                    options=["All"] + rifle_names,
+                    options=["All", "Not Defined"] + rifle_names,
                     key="rifle_name_selectbox",
                 )
 
@@ -275,7 +275,7 @@ def render_main_page_filters(service: DopeService, user_id: str):
 
                 range_name = st.selectbox(
                     "Range Name",
-                    options=["All"] + range_names,
+                    options=["All", "Not Defined"] + range_names,
                     key="range_name_selectbox",
                 )
 
@@ -321,7 +321,7 @@ def render_main_page_filters(service: DopeService, user_id: str):
 
                 cartridge_make = st.selectbox(
                     "Cartridge Make",
-                    options=["All"] + cartridge_makes,
+                    options=["All", "Not Defined"] + cartridge_makes,
                     key="cartridge_make_selectbox",
                 )
 
@@ -350,7 +350,7 @@ def render_main_page_filters(service: DopeService, user_id: str):
 
                 cartridge_type = st.selectbox(
                     "Cartridge Type",
-                    options=["All"] + cartridge_types,
+                    options=["All", "Not Defined"] + cartridge_types,
                     key="cartridge_type_selectbox",
                 )
 
@@ -380,7 +380,7 @@ def render_main_page_filters(service: DopeService, user_id: str):
 
                 bullet_make = st.selectbox(
                     "Bullet Make",
-                    options=["All"] + bullet_makes,
+                    options=["All", "Not Defined"] + bullet_makes,
                     key="bullet_make_selectbox",
                 )
 
