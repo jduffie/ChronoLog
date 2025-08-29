@@ -444,10 +444,10 @@ DO NOT use unicode emojis. Use plain text only.
 
 - 
 - system wide, I want this terminology - "cartridge source" is one of factory or custom. "cartridge type" is an enumeration defined in supabase and examples include "6mm Creedmore", "22LR", "17HMR", ".308 Winchester", etc
-- /compact
 - always check for unused imports before committing
 - my ci/cd does test coverage and ensure the number is higher than 70% before commiting
 - only use emojis for info messages.
 - don't use emojis
 - each page needs its own private session state
 - Each page should have its own nested session state.
+- use user["id"] for authorization

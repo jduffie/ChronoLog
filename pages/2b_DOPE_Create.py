@@ -38,7 +38,7 @@ def run():
     # Display title
     st.title(" Create DOPE Session")
 
-    render_create_page()
+    render_create_page(user, supabase)
 
 
 if __name__ == "__main__":
