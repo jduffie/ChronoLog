@@ -6,6 +6,62 @@ import streamlit as st
 from .service import WeatherService
 
 
+def fahrenheit_to_celsius(f_temp):
+    """Convert Fahrenheit to Celsius"""
+    if f_temp is None:
+        return None
+    return (f_temp - 32) * 5/9
+
+
+def feet_to_meters(feet):
+    """Convert feet to meters"""
+    if feet is None:
+        return None
+    return feet * 0.3048
+
+
+def inhg_to_hpa(inhg):
+    """Convert inches of mercury to hectopascals (hPa)"""
+    if inhg is None:
+        return None
+    return inhg * 33.8639
+
+
+def mph_to_mps(mph):
+    """Convert miles per hour to meters per second"""
+    if mph is None:
+        return None
+    return mph * 0.44704
+
+
+def celsius_to_fahrenheit(c_temp):
+    """Convert Celsius to Fahrenheit"""
+    if c_temp is None:
+        return None
+    return (c_temp * 9/5) + 32
+
+
+def meters_to_feet(meters):
+    """Convert meters to feet"""
+    if meters is None:
+        return None
+    return meters / 0.3048
+
+
+def hpa_to_inhg(hpa):
+    """Convert hectopascals (hPa) to inches of mercury"""
+    if hpa is None:
+        return None
+    return hpa / 33.8639
+
+
+def mps_to_mph(mps):
+    """Convert meters per second to miles per hour"""
+    if mps is None:
+        return None
+    return mps / 0.44704
+
+
 def render_weather_import_tab(user, supabase, bucket):
     """Render weather file upload section"""
 
@@ -70,6 +126,15 @@ def render_file_upload(user, supabase, bucket, weather_service, selected_meter_i
         st.error("❌ Selected weather source not found. Please refresh the page.")
         return
 
+    # Unit selection
+    st.write("### Data Unit System")
+    unit_system = st.selectbox(
+        "Select the unit system of your CSV data",
+        options=["Imperial", "Metric"],
+        index=0,  # Default to Imperial
+        help="Choose Imperial for Fahrenheit/feet/mph/inHg or Metric for Celsius/meters/m/s/hPa"
+    )
+
     # Upload and parse CSV
     uploaded_file = st.file_uploader(
         "Upload Kestrel CSV File", type=["csv"], key="weather_upload"
@@ -132,40 +197,21 @@ def render_file_upload(user, supabase, bucket, weather_service, selected_meter_i
             content = uploaded_file.getvalue().decode("utf-8")
             lines = content.strip().split("\n")
 
-            if len(lines) < 6:
+            if len(lines) < 2:
                 st.error(
-                    "❌ Invalid weather file format. File must have metadata and data rows."
+                    "❌ Invalid weather file format. File must have headers and data rows."
                 )
                 return
 
-            # Parse metadata from first 3 rows
-            device_name = (
-                lines[0].split(",")[1]
-                if "," in lines[0] and len(lines[0].split(",")) > 1
-                else ""
-            )
-            device_model = (
-                lines[1].split(",")[1]
-                if "," in lines[1] and len(lines[1].split(",")) > 1
-                else ""
-            )
-            serial_number = (
-                lines[2].split(",")[1]
-                if "," in lines[2] and len(lines[2].split(",")) > 1
-                else ""
-            )
+            # Headers are in row 1 (index 0), data starts row 2 (index 1)
+            headers = [h.strip() for h in lines[0].split(",")]
 
-            # Headers are in row 4 (index 3), data starts row 6 (index 5)
-            headers = [h.strip() for h in lines[3].split(",")]
-
-            # Process data rows (starting from index 5)
+            # Process data rows (starting from index 1)
             data_rows = []
-            for i in range(5, len(lines)):
+            for i in range(1, len(lines)):
                 line = lines[i].strip()
-                print("line-", line)
                 if line:  # Skip empty lines
                     row_data = [cell.strip() for cell in line.split(",")]
-                    print("    row_data", row_data)
 
                     # Check if we have data in the first column (timestamp)
                     if len(row_data) > 0 and row_data[0] and row_data[0] != "nan":
@@ -174,32 +220,24 @@ def render_file_upload(user, supabase, bucket, weather_service, selected_meter_i
             if not data_rows:
                 st.warning("⚠️ No data rows found in weather file.")
                 st.info(
-                    f"Debug: Found {len(lines)} total lines, expected data starting from line 6"
-                )
-                st.info(
-                    f"Debug: Device info - Name: {device_name}, Model: {device_model}, Serial: {serial_number}"
+                    f"Debug: Found {len(lines)} total lines, headers: {headers[:5]}..."
                 )
                 return
 
-            # Update selected meter with device info from CSV
-            try:
-                weather_service.update_source_with_device_info(
-                    selected_meter_id,
-                    user["id"],
-                    device_name,
-                    device_model,
-                    serial_number,
-                )
-                source_id = selected_meter_id
-            except Exception as e:
-                st.error(f"❌ Failed to update weather meter with device info: {e}")
-                return
+            # Use selected source ID directly
+            source_id = selected_meter_id
 
-            # Process each data row
+            # Process each data row with progress tracking
             valid_measurements = 0
             skipped_measurements = 0
-
-            for row_data in data_rows:
+            total_rows = len(data_rows)
+            
+            # Show processing message and create progress bar
+            st.info("🔄 **Processing weather measurements...**")
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+            
+            for row_index, row_data in enumerate(data_rows):
                 try:
                     # Parse timestamp (first column)
                     timestamp_str = row_data[0]
@@ -246,21 +284,21 @@ def render_file_upload(user, supabase, bucket, weather_service, selected_meter_i
 
                             # Map specific headers to database columns
                             field_mapping = {
-                                "Temperature": "temperature_f",
-                                "Wet Bulb Temp": "wet_bulb_temp_f",
+                                "Temperature": "temperature",
+                                "Wet Bulb Temp": "wet_bulb_temp",
                                 "Relative Humidity": "relative_humidity_pct",
-                                "Barometric Pressure": "barometric_pressure_inhg",
-                                "Altitude": "altitude_ft",
-                                "Station Pressure": "station_pressure_inhg",
-                                "Wind Speed": "wind_speed_mph",
-                                "Heat Index": "heat_index_f",
-                                "Dew Point": "dew_point_f",
-                                "Density Altitude": "density_altitude_ft",
-                                "Crosswind": "crosswind_mph",
-                                "Headwind": "headwind_mph",
+                                "Barometric Pressure": "barometric_pressure",
+                                "Altitude": "altitude",
+                                "Station Pressure": "station_pressure",
+                                "Wind Speed": "wind_speed",
+                                "Heat Index": "heat_index",
+                                "Dew Point": "dew_point",
+                                "Density Altitude": "density_altitude",
+                                "Crosswind": "crosswind",
+                                "Headwind": "headwind",
                                 "Compass Magnetic Direction": "compass_magnetic_deg",
                                 "Compass True Direction": "compass_true_deg",
-                                "Wind Chill": "wind_chill_f",
+                                "Wind Chill": "wind_chill",
                                 "Data Type": "data_type",
                                 "Record name": "record_name",
                                 "Start time": "start_time",
@@ -272,28 +310,72 @@ def render_file_upload(user, supabase, bucket, weather_service, selected_meter_i
                             }
 
                             if header in field_mapping:
-                                db_field = field_mapping[header]
-                                # Convert numeric fields to float, keep text fields as string
-                                if header in [
-                                    "Temperature",
-                                    "Wet Bulb Temp",
+                                base_field = field_mapping[header]
+                                raw_value = safe_float(value)
+                                
+                                # Handle temperature fields
+                                if header in ["Temperature", "Wet Bulb Temp", "Heat Index", "Dew Point", "Wind Chill"]:
+                                    if unit_system == "Imperial":
+                                        # Input is Fahrenheit, save F and convert to C
+                                        measurement_data[f"{base_field}_f"] = raw_value
+                                        if raw_value is not None:
+                                            measurement_data[f"{base_field}_c"] = fahrenheit_to_celsius(raw_value)
+                                    else:
+                                        # Input is Celsius, save C and convert to F
+                                        measurement_data[f"{base_field}_c"] = raw_value
+                                        if raw_value is not None:
+                                            measurement_data[f"{base_field}_f"] = celsius_to_fahrenheit(raw_value)
+                                
+                                # Handle pressure fields
+                                elif header in ["Barometric Pressure", "Station Pressure"]:
+                                    if unit_system == "Imperial":
+                                        # Input is inHg, save inHg and convert to hPa
+                                        measurement_data[f"{base_field}_inhg"] = raw_value
+                                        if raw_value is not None:
+                                            measurement_data[f"{base_field}_hpa"] = inhg_to_hpa(raw_value)
+                                    else:
+                                        # Input is hPa, save hPa and convert to inHg
+                                        measurement_data[f"{base_field}_hpa"] = raw_value
+                                        if raw_value is not None:
+                                            measurement_data[f"{base_field}_inhg"] = hpa_to_inhg(raw_value)
+                                
+                                # Handle altitude fields
+                                elif header in ["Altitude", "Density Altitude"]:
+                                    if unit_system == "Imperial":
+                                        # Input is feet, save ft and convert to m
+                                        measurement_data[f"{base_field}_ft"] = raw_value
+                                        if raw_value is not None:
+                                            measurement_data[f"{base_field}_m"] = feet_to_meters(raw_value)
+                                    else:
+                                        # Input is meters, save m and convert to ft
+                                        measurement_data[f"{base_field}_m"] = raw_value
+                                        if raw_value is not None:
+                                            measurement_data[f"{base_field}_ft"] = meters_to_feet(raw_value)
+                                
+                                # Handle wind speed fields
+                                elif header in ["Wind Speed", "Crosswind", "Headwind"]:
+                                    if unit_system == "Imperial":
+                                        # Input is mph, save mph and convert to m/s
+                                        measurement_data[f"{base_field}_mph"] = raw_value
+                                        if raw_value is not None:
+                                            measurement_data[f"{base_field}_mps"] = mph_to_mps(raw_value)
+                                    else:
+                                        # Input is m/s, save m/s and convert to mph
+                                        measurement_data[f"{base_field}_mps"] = raw_value
+                                        if raw_value is not None:
+                                            measurement_data[f"{base_field}_mph"] = mps_to_mph(raw_value)
+                                
+                                # Handle other numeric fields (no conversion needed)
+                                elif header in [
                                     "Relative Humidity",
-                                    "Barometric Pressure",
-                                    "Altitude",
-                                    "Station Pressure",
-                                    "Wind Speed",
-                                    "Heat Index",
-                                    "Dew Point",
-                                    "Density Altitude",
-                                    "Crosswind",
-                                    "Headwind",
                                     "Compass Magnetic Direction",
                                     "Compass True Direction",
-                                    "Wind Chill",
                                 ]:
-                                    measurement_data[db_field] = safe_float(value)
+                                    measurement_data[base_field] = raw_value
+                                
+                                # Handle text fields
                                 else:
-                                    measurement_data[db_field] = (
+                                    measurement_data[base_field] = (
                                         value if value else None
                                     )
 
@@ -306,6 +388,15 @@ def render_file_upload(user, supabase, bucket, weather_service, selected_meter_i
                         f"Skipped weather measurement at {timestamp_str if 'timestamp_str' in locals() else 'unknown time'}: {e}"
                     )
                     skipped_measurements += 1
+                
+                # Update progress bar and status
+                progress = (row_index + 1) / total_rows
+                progress_bar.progress(progress)
+                status_text.text(f"Processing record {row_index + 1} of {total_rows} - {valid_measurements} processed, {skipped_measurements} skipped")
+            
+            # Clear progress indicators
+            progress_bar.empty()
+            status_text.empty()
 
             # Import completed successfully
 
@@ -326,14 +417,8 @@ def render_file_upload(user, supabase, bucket, weather_service, selected_meter_i
                     st.info(
                         f"📱 Weather Source: {source.display_name()} - {source.device_display()}"
                     )
-                else:
-                    st.info(
-                        f"📱 Device: {device_name} ({device_model}) - Serial: {serial_number}"
-                    )
             except:
-                st.info(
-                    f"📱 Device: {device_name} ({device_model}) - Serial: {serial_number}"
-                )
+                st.info(f"📱 Weather Source: {selected_source.name}")
 
         except Exception as e:
             st.error(f"❌ Error processing weather file: {e}")
