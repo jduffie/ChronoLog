@@ -199,6 +199,23 @@ class WeatherService:
         except Exception as e:
             raise Exception(f"Error creating measurement: {str(e)}")
 
+    def create_measurements_batch(self, measurements_data: List[dict]) -> List[str]:
+        """Create multiple weather measurements in a single batch"""
+        try:
+            response = (
+                self.supabase.table("weather_measurements")
+                .insert(measurements_data)
+                .execute()
+            )
+
+            if not response.data:
+                raise Exception("Failed to create measurements batch")
+
+            return [record["id"] for record in response.data]
+
+        except Exception as e:
+            raise Exception(f"Error creating measurements batch: {str(e)}")
+
     def measurement_exists(
         self, user_id: str, source_id: str, measurement_timestamp: str
     ) -> bool:

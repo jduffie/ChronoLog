@@ -135,6 +135,18 @@ def render_file_upload(user, supabase, bucket, weather_service, selected_meter_i
         help="Choose Imperial for Fahrenheit/feet/mph/inHg or Metric for Celsius/meters/m/s/hPa"
     )
 
+    # Processing options
+    st.write("### Processing Options")
+    processing_mode = st.radio(
+        "Choose processing mode",
+        options=["Real-time", "Background"],
+        index=0,
+        help="Real-time shows progress updates. Background allows you to navigate away during import."
+    )
+    
+    if processing_mode == "Background":
+        st.info("🔄 Background mode: You can navigate away during import. Check back later for results.")
+    
     # Upload and parse CSV
     uploaded_file = st.file_uploader(
         "Upload Kestrel CSV File", type=["csv"], key="weather_upload"
@@ -227,198 +239,273 @@ def render_file_upload(user, supabase, bucket, weather_service, selected_meter_i
             # Use selected source ID directly
             source_id = selected_meter_id
 
-            # Process each data row with progress tracking
-            valid_measurements = 0
-            skipped_measurements = 0
-            total_rows = len(data_rows)
-            
-            # Show processing message and create progress bar
-            st.info("🔄 **Processing weather measurements...**")
-            progress_bar = st.progress(0)
-            status_text = st.empty()
-            
-            for row_index, row_data in enumerate(data_rows):
-                try:
-                    # Parse timestamp (first column)
-                    timestamp_str = row_data[0]
-                    if not timestamp_str:
-                        skipped_measurements += 1
-                        continue
-
-                    # Parse timestamp to check for duplicates
-                    measurement_timestamp = pd.to_datetime(timestamp_str).isoformat()
-
-                    # Check if measurement already exists using service
-                    if weather_service.measurement_exists(
-                        user["id"], source_id, measurement_timestamp
-                    ):
-                        skipped_measurements += 1
-                        continue
-
-                    # Helper function to safely convert to float
-                    def safe_float(value, default=None):
-                        try:
-                            if pd.isna(value) or value == "" or value is None:
-                                return default
-                            return float(value)
-                        except (ValueError, TypeError):
-                            return default
-
-                    # Create measurement record with all available fields
-                    measurement_data = {
-                        "user_id": user["id"],
-                        "weather_source_id": source_id,
-                        "measurement_timestamp": measurement_timestamp,
-                        "uploaded_at": datetime.now(timezone.utc).isoformat(),
-                        "file_path": file_name,
-                    }
-
-                    # Map data columns to database fields (based on header names)
-                    for i, header in enumerate(headers):
-                        if i < len(row_data):
-                            value = row_data[i]
-
-                            # Skip the timestamp column (already processed)
-                            if header == "FORMATTED DATE_TIME":
-                                continue
-
-                            # Map specific headers to database columns
-                            field_mapping = {
-                                "Temperature": "temperature",
-                                "Wet Bulb Temp": "wet_bulb_temp",
-                                "Relative Humidity": "relative_humidity_pct",
-                                "Barometric Pressure": "barometric_pressure",
-                                "Altitude": "altitude",
-                                "Station Pressure": "station_pressure",
-                                "Wind Speed": "wind_speed",
-                                "Heat Index": "heat_index",
-                                "Dew Point": "dew_point",
-                                "Density Altitude": "density_altitude",
-                                "Crosswind": "crosswind",
-                                "Headwind": "headwind",
-                                "Compass Magnetic Direction": "compass_magnetic_deg",
-                                "Compass True Direction": "compass_true_deg",
-                                "Wind Chill": "wind_chill",
-                                "Data Type": "data_type",
-                                "Record name": "record_name",
-                                "Start time": "start_time",
-                                "Duration (H:M:S)": "duration",
-                                "Location description": "location_description",
-                                "Location address": "location_address",
-                                "Location coordinates": "location_coordinates",
-                                "Notes": "notes",
-                            }
-
-                            if header in field_mapping:
-                                base_field = field_mapping[header]
-                                raw_value = safe_float(value)
-                                
-                                # Handle temperature fields
-                                if header in ["Temperature", "Wet Bulb Temp", "Heat Index", "Dew Point", "Wind Chill"]:
-                                    if unit_system == "Imperial":
-                                        # Input is Fahrenheit, save F and convert to C
-                                        measurement_data[f"{base_field}_f"] = raw_value
-                                        if raw_value is not None:
-                                            measurement_data[f"{base_field}_c"] = fahrenheit_to_celsius(raw_value)
-                                    else:
-                                        # Input is Celsius, save C and convert to F
-                                        measurement_data[f"{base_field}_c"] = raw_value
-                                        if raw_value is not None:
-                                            measurement_data[f"{base_field}_f"] = celsius_to_fahrenheit(raw_value)
-                                
-                                # Handle pressure fields
-                                elif header in ["Barometric Pressure", "Station Pressure"]:
-                                    if unit_system == "Imperial":
-                                        # Input is inHg, save inHg and convert to hPa
-                                        measurement_data[f"{base_field}_inhg"] = raw_value
-                                        if raw_value is not None:
-                                            measurement_data[f"{base_field}_hpa"] = inhg_to_hpa(raw_value)
-                                    else:
-                                        # Input is hPa, save hPa and convert to inHg
-                                        measurement_data[f"{base_field}_hpa"] = raw_value
-                                        if raw_value is not None:
-                                            measurement_data[f"{base_field}_inhg"] = hpa_to_inhg(raw_value)
-                                
-                                # Handle altitude fields
-                                elif header in ["Altitude", "Density Altitude"]:
-                                    if unit_system == "Imperial":
-                                        # Input is feet, save ft and convert to m
-                                        measurement_data[f"{base_field}_ft"] = raw_value
-                                        if raw_value is not None:
-                                            measurement_data[f"{base_field}_m"] = feet_to_meters(raw_value)
-                                    else:
-                                        # Input is meters, save m and convert to ft
-                                        measurement_data[f"{base_field}_m"] = raw_value
-                                        if raw_value is not None:
-                                            measurement_data[f"{base_field}_ft"] = meters_to_feet(raw_value)
-                                
-                                # Handle wind speed fields
-                                elif header in ["Wind Speed", "Crosswind", "Headwind"]:
-                                    if unit_system == "Imperial":
-                                        # Input is mph, save mph and convert to m/s
-                                        measurement_data[f"{base_field}_mph"] = raw_value
-                                        if raw_value is not None:
-                                            measurement_data[f"{base_field}_mps"] = mph_to_mps(raw_value)
-                                    else:
-                                        # Input is m/s, save m/s and convert to mph
-                                        measurement_data[f"{base_field}_mps"] = raw_value
-                                        if raw_value is not None:
-                                            measurement_data[f"{base_field}_mph"] = mps_to_mph(raw_value)
-                                
-                                # Handle other numeric fields (no conversion needed)
-                                elif header in [
-                                    "Relative Humidity",
-                                    "Compass Magnetic Direction",
-                                    "Compass True Direction",
-                                ]:
-                                    measurement_data[base_field] = raw_value
-                                
-                                # Handle text fields
-                                else:
-                                    measurement_data[base_field] = (
-                                        value if value else None
-                                    )
-
-                    # Insert measurement using service
-                    weather_service.create_measurement(measurement_data)
-                    valid_measurements += 1
-
-                except Exception as e:
-                    st.warning(
-                        f"Skipped weather measurement at {timestamp_str if 'timestamp_str' in locals() else 'unknown time'}: {e}"
-                    )
-                    skipped_measurements += 1
-                
-                # Update progress bar and status
-                progress = (row_index + 1) / total_rows
-                progress_bar.progress(progress)
-                status_text.text(f"Processing record {row_index + 1} of {total_rows} - {valid_measurements} processed, {skipped_measurements} skipped")
-            
-            # Clear progress indicators
-            progress_bar.empty()
-            status_text.empty()
-
-            # Import completed successfully
-
-            # Show upload summary
-            if skipped_measurements > 0:
-                st.warning(
-                    f"⚠️ Processed {valid_measurements} weather measurements, skipped {skipped_measurements} rows"
-                )
+            # Process measurements in batches
+            if processing_mode == "Background":
+                process_weather_data_background(data_rows, headers, unit_system, user, source_id, file_name, weather_service)
             else:
-                st.success(
-                    f"✅ Successfully processed {valid_measurements} weather measurements"
-                )
-
-            # Display source information
-            try:
-                source = weather_service.get_source_by_id(source_id, user["id"])
-                if source:
-                    st.info(
-                        f"📱 Weather Source: {source.display_name()} - {source.device_display()}"
-                    )
-            except:
-                st.info(f"📱 Weather Source: {selected_source.name}")
+                process_weather_data_realtime(data_rows, headers, unit_system, user, source_id, file_name, weather_service)
 
         except Exception as e:
             st.error(f"❌ Error processing weather file: {e}")
+
+
+def process_weather_data_realtime(data_rows, headers, unit_system, user, source_id, file_name, weather_service):
+    """Process weather data with real-time progress updates"""
+    valid_measurements = 0
+    skipped_measurements = 0
+    total_rows = len(data_rows)
+    
+    # Show processing message and create progress bar
+    st.info("🔄 **Processing weather measurements...**")
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+    
+    # Process in batches of 50 records
+    batch_size = 50
+    batch_data = []
+    
+    for row_index, row_data in enumerate(data_rows):
+        try:
+            measurement_data = process_single_measurement(row_data, headers, unit_system, user, source_id, file_name)
+            if measurement_data:
+                batch_data.append(measurement_data)
+                
+                # Process batch when it reaches batch_size or is the last record
+                if len(batch_data) >= batch_size or row_index == len(data_rows) - 1:
+                    try:
+                        weather_service.create_measurements_batch(batch_data)
+                        valid_measurements += len(batch_data)
+                        batch_data = []  # Clear batch
+                    except Exception as batch_error:
+                        st.warning(f"Batch processing error: {batch_error}")
+                        skipped_measurements += len(batch_data)
+                        batch_data = []
+            else:
+                skipped_measurements += 1
+
+        except Exception as e:
+            skipped_measurements += 1
+        
+        # Update progress bar and status
+        progress = (row_index + 1) / total_rows
+        progress_bar.progress(progress)
+        status_text.text(f"Processing record {row_index + 1} of {total_rows} - {valid_measurements} processed, {skipped_measurements} skipped")
+    
+    # Clear progress indicators
+    progress_bar.empty()
+    status_text.empty()
+    
+    # Show final results
+    show_import_results(valid_measurements, skipped_measurements, source_id, user, weather_service)
+
+
+def process_weather_data_background(data_rows, headers, unit_system, user, source_id, file_name, weather_service):
+    """Process weather data in background with batched commits"""
+    
+    # Store processing state in session
+    if "weather_import_state" not in st.session_state:
+        st.session_state.weather_import_state = {
+            "status": "starting",
+            "total_rows": len(data_rows),
+            "processed": 0,
+            "skipped": 0,
+            "current_batch": 0
+        }
+    
+    state = st.session_state.weather_import_state
+    
+    if state["status"] == "starting":
+        st.info("🔄 **Starting background processing...**")
+        state["status"] = "processing"
+        
+        # Process all data in larger batches
+        batch_size = 100
+        total_batches = (len(data_rows) + batch_size - 1) // batch_size
+        
+        for batch_num in range(total_batches):
+            start_idx = batch_num * batch_size
+            end_idx = min(start_idx + batch_size, len(data_rows))
+            batch_rows = data_rows[start_idx:end_idx]
+            
+            batch_data = []
+            batch_skipped = 0
+            
+            for row_data in batch_rows:
+                try:
+                    measurement_data = process_single_measurement(row_data, headers, unit_system, user, source_id, file_name)
+                    if measurement_data:
+                        batch_data.append(measurement_data)
+                    else:
+                        batch_skipped += 1
+                except:
+                    batch_skipped += 1
+            
+            # Commit batch to database
+            if batch_data:
+                try:
+                    weather_service.create_measurements_batch(batch_data)
+                    state["processed"] += len(batch_data)
+                except Exception as e:
+                    state["skipped"] += len(batch_data)
+            
+            state["skipped"] += batch_skipped
+            state["current_batch"] = batch_num + 1
+        
+        state["status"] = "completed"
+        st.rerun()
+    
+    elif state["status"] == "processing":
+        st.info(f"🔄 Processing batch {state['current_batch']}... ({state['processed']} processed, {state['skipped']} skipped)")
+        
+    elif state["status"] == "completed":
+        show_import_results(state["processed"], state["skipped"], source_id, user, weather_service)
+        # Clear state for next import
+        del st.session_state.weather_import_state
+
+
+def process_single_measurement(row_data, headers, unit_system, user, source_id, file_name):
+    """Process a single measurement row and return measurement data"""
+    # Helper function to safely convert to float
+    def safe_float(value, default=None):
+        try:
+            if pd.isna(value) or value == "" or value is None:
+                return default
+            return float(value)
+        except (ValueError, TypeError):
+            return default
+    
+    # Parse timestamp (first column)
+    timestamp_str = row_data[0]
+    if not timestamp_str:
+        return None
+
+    # Parse timestamp
+    measurement_timestamp = pd.to_datetime(timestamp_str).isoformat()
+
+    # Create measurement record with all available fields
+    measurement_data = {
+        "user_id": user["id"],
+        "weather_source_id": source_id,
+        "measurement_timestamp": measurement_timestamp,
+        "uploaded_at": datetime.now(timezone.utc).isoformat(),
+        "file_path": file_name,
+    }
+
+    # Map data columns to database fields
+    field_mapping = {
+        "Temperature": "temperature",
+        "Wet Bulb Temp": "wet_bulb_temp",
+        "Relative Humidity": "relative_humidity_pct",
+        "Barometric Pressure": "barometric_pressure",
+        "Altitude": "altitude",
+        "Station Pressure": "station_pressure",
+        "Wind Speed": "wind_speed",
+        "Heat Index": "heat_index",
+        "Dew Point": "dew_point",
+        "Density Altitude": "density_altitude",
+        "Crosswind": "crosswind",
+        "Headwind": "headwind",
+        "Compass Magnetic Direction": "compass_magnetic_deg",
+        "Compass True Direction": "compass_true_deg",
+        "Wind Chill": "wind_chill",
+        "Data Type": "data_type",
+        "Record name": "record_name",
+        "Start time": "start_time",
+        "Duration (H:M:S)": "duration",
+        "Location description": "location_description",
+        "Location address": "location_address",
+        "Location coordinates": "location_coordinates",
+        "Notes": "notes",
+    }
+
+    for i, header in enumerate(headers):
+        if i < len(row_data):
+            value = row_data[i]
+
+            # Skip the timestamp column (already processed)
+            if header == "FORMATTED DATE_TIME":
+                continue
+
+            if header in field_mapping:
+                base_field = field_mapping[header]
+                raw_value = safe_float(value)
+                
+                # Handle temperature fields
+                if header in ["Temperature", "Wet Bulb Temp", "Heat Index", "Dew Point", "Wind Chill"]:
+                    if unit_system == "Imperial":
+                        measurement_data[f"{base_field}_f"] = raw_value
+                        if raw_value is not None:
+                            measurement_data[f"{base_field}_c"] = fahrenheit_to_celsius(raw_value)
+                    else:
+                        measurement_data[f"{base_field}_c"] = raw_value
+                        if raw_value is not None:
+                            measurement_data[f"{base_field}_f"] = celsius_to_fahrenheit(raw_value)
+                
+                # Handle pressure fields
+                elif header in ["Barometric Pressure", "Station Pressure"]:
+                    if unit_system == "Imperial":
+                        measurement_data[f"{base_field}_inhg"] = raw_value
+                        if raw_value is not None:
+                            measurement_data[f"{base_field}_hpa"] = inhg_to_hpa(raw_value)
+                    else:
+                        measurement_data[f"{base_field}_hpa"] = raw_value
+                        if raw_value is not None:
+                            measurement_data[f"{base_field}_inhg"] = hpa_to_inhg(raw_value)
+                
+                # Handle altitude fields
+                elif header in ["Altitude", "Density Altitude"]:
+                    if unit_system == "Imperial":
+                        measurement_data[f"{base_field}_ft"] = raw_value
+                        if raw_value is not None:
+                            measurement_data[f"{base_field}_m"] = feet_to_meters(raw_value)
+                    else:
+                        measurement_data[f"{base_field}_m"] = raw_value
+                        if raw_value is not None:
+                            measurement_data[f"{base_field}_ft"] = meters_to_feet(raw_value)
+                
+                # Handle wind speed fields
+                elif header in ["Wind Speed", "Crosswind", "Headwind"]:
+                    if unit_system == "Imperial":
+                        measurement_data[f"{base_field}_mph"] = raw_value
+                        if raw_value is not None:
+                            measurement_data[f"{base_field}_mps"] = mph_to_mps(raw_value)
+                    else:
+                        measurement_data[f"{base_field}_mps"] = raw_value
+                        if raw_value is not None:
+                            measurement_data[f"{base_field}_mph"] = mps_to_mph(raw_value)
+                
+                # Handle other numeric fields
+                elif header in [
+                    "Relative Humidity",
+                    "Compass Magnetic Direction", 
+                    "Compass True Direction",
+                ]:
+                    measurement_data[base_field] = raw_value
+                
+                # Handle text fields
+                else:
+                    measurement_data[base_field] = value if value else None
+
+    return measurement_data
+
+
+def show_import_results(valid_measurements, skipped_measurements, source_id, user, weather_service):
+    """Display import results"""
+    if skipped_measurements > 0:
+        st.warning(
+            f"⚠️ Processed {valid_measurements} weather measurements, skipped {skipped_measurements} rows"
+        )
+    else:
+        st.success(
+            f"✅ Successfully processed {valid_measurements} weather measurements"
+        )
+
+    # Display source information
+    try:
+        source = weather_service.get_source_by_id(source_id, user["id"])
+        if source:
+            st.info(
+                f"📱 Weather Source: {source.display_name()} - {source.device_display()}"
+            )
+    except:
+        st.info(f"📱 Weather Source: Selected source")
