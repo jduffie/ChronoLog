@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 from .models import DopeSessionModel
+from chronograph.service import ChronographService
 
 
 class DopeService:
@@ -176,8 +177,18 @@ class DopeService:
             )
 
             if response.data:
+                new_session_id = response.data[0]["id"]
+                
+                # Copy chronograph measurements to DOPE measurements if chrono_session_id is provided
+                if session_data.get("chrono_session_id"):
+                    self._create_dope_measurements_from_chrono(
+                        new_session_id, 
+                        session_data["chrono_session_id"], 
+                        user_id
+                    )
+                
                 # Fetch the complete session with joined data
-                return self.get_session_by_id(response.data[0]["id"], user_id)
+                return self.get_session_by_id(new_session_id, user_id)
             else:
                 raise Exception("Failed to create session")
 
@@ -1071,3 +1082,39 @@ class DopeService:
             del flattened["weather_source"]
 
         return flattened
+
+    def _create_dope_measurements_from_chrono(self, dope_session_id: str, chrono_session_id: str, user_id: str) -> None:
+        """Copy chronograph measurements to DOPE measurements"""
+        try:
+            # Get chronograph measurements
+            chrono_service = ChronographService(self.supabase)
+            chrono_measurements = chrono_service.get_measurements_by_session_id(chrono_session_id, user_id)
+            
+            if not chrono_measurements:
+                return
+            
+            # Prepare DOPE measurement records
+            dope_measurement_records = []
+            for measurement in chrono_measurements:
+                dope_record = {
+                    "dope_session_id": dope_session_id,
+                    "user_id": user_id,
+                    "shot_number": measurement.shot_number,
+                    "datetime_shot": measurement.datetime_local.isoformat() if measurement.datetime_local else None,
+                    "speed_fps": measurement.speed_fps,
+                    "ke_ft_lb": measurement.ke_ft_lb,
+                    "power_factor": measurement.power_factor,
+                    "clean_bore": "yes" if measurement.clean_bore else "no" if measurement.clean_bore is False else None,
+                    "cold_bore": "yes" if measurement.cold_bore else "no" if measurement.cold_bore is False else None,
+                    "shot_notes": measurement.shot_notes,
+                    "created_at": datetime.now().isoformat(),
+                    "updated_at": datetime.now().isoformat()
+                }
+                dope_measurement_records.append(dope_record)
+            
+            # Insert all DOPE measurements in batch
+            if dope_measurement_records:
+                self.supabase.table("dope_measurements").insert(dope_measurement_records).execute()
+                
+        except Exception as e:
+            raise Exception(f"Error creating DOPE measurements from chronograph: {str(e)}")

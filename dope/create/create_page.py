@@ -513,8 +513,6 @@ def render_create_page(user, supabase):
     Render the DOPE Create page with wizard-style workflow.
     """
     print("start render_create_page")
-
-    st.title("Create DOPE Session")
     st.write("Follow the steps below to create a new DOPE (Data On Previous Engagement) session.")
 
     # Initialize private session state for DOPE Create
@@ -523,7 +521,13 @@ def render_create_page(user, supabase):
     
     dope_create_state = st.session_state.dope_create
     
-    # Initialize wizard state
+    # Reset state when navigating from another page (detect fresh page load)
+    if "dope_create_initialized" not in dope_create_state:
+        dope_create_state["wizard_step"] = 1
+        dope_create_state["wizard_data"] = {}
+        dope_create_state["dope_create_initialized"] = True
+    
+    # Initialize wizard state if missing
     if "wizard_step" not in dope_create_state:
         dope_create_state["wizard_step"] = 1
     if "wizard_data" not in dope_create_state:
@@ -537,7 +541,9 @@ def render_create_page(user, supabase):
     progress_cols = st.columns(len(progress_steps))
     for i, (col, step_name) in enumerate(zip(progress_cols, progress_steps), 1):
         with col:
-            if i < current_step:
+            if current_step == 8:  # Success step - show all as completed
+                st.success(f"✅ {step_name}")
+            elif i < current_step:
                 st.success(f"✅ {step_name}")
             elif i == current_step:
                 st.info(f"▶️ {step_name}")
@@ -649,19 +655,13 @@ def render_create_page(user, supabase):
             wizard_data["session_details"]
         )
         
-        col1, col2, col3 = st.columns(3)
+        col1, col2 = st.columns(2)
         with col1:
             if st.button("← Back"):
                 dope_create_state["wizard_step"] = 6
                 st.rerun()
         
         with col2:
-            if st.button("Start Over"):
-                dope_create_state["wizard_step"] = 1
-                dope_create_state["wizard_data"] = {}
-                st.rerun()
-        
-        with col3:
             if st.button("Create DOPE Session", type="primary"):
                 try:
                     # Extract data from wizard
@@ -737,19 +737,38 @@ def render_create_page(user, supabase):
                             st.warning(f"⚠️ Weather association failed: {str(weather_error)}")
                             st.info("DOPE session created successfully, but weather data could not be processed.")
                     
-                    st.success(f"✅ DOPE Session created successfully!")
-                    st.success(f"Session ID: {new_session.id}")
-                    
-                    if weather_association_results and not weather_association_results.get("error"):
-                        st.info("Weather measurements have been associated with your shots.")
-                    
-                    st.info("You can now view your session in the DOPE View page.")
-
-                    if st.button("Create Another Session"):
-                        dope_create_state["wizard_step"] = 1
-                        dope_create_state["wizard_data"] = {}
-                        st.rerun()
+                    # Advance to success step (step 8)
+                    dope_create_state["wizard_step"] = 8
+                    dope_create_state["wizard_data"]["created_session"] = new_session
+                    dope_create_state["wizard_data"]["weather_results"] = weather_association_results
+                    st.rerun()
 
                 except Exception as e:
                     st.error(f"❌ Error creating DOPE session: {str(e)}")
                     st.error("Please check your data and try again.")
+
+    elif current_step == 8:
+        # Success step - show results and option to create another session
+        wizard_data = dope_create_state["wizard_data"]
+        created_session = wizard_data.get("created_session")
+        weather_results = wizard_data.get("weather_results")
+        
+        st.subheader("✅ DOPE Session Created Successfully!")
+        
+        if created_session:
+            st.success(f"Session ID: {created_session.id}")
+            
+            if weather_results and not weather_results.get("error"):
+                st.success(f"🌤️ Weather data processed: {weather_results['weather_measurement_count']} measurements")
+                st.success(f"🎯 Shot associations: {weather_results['associations_made']} of {weather_results['dope_measurement_count']} shots")
+                st.info("Weather measurements have been associated with your shots.")
+            elif weather_results and weather_results.get("error"):
+                st.warning(f"⚠️ Weather association warning: {weather_results['error']}")
+                st.info("DOPE session created successfully, but weather data could not be processed.")
+        
+        st.info("You can now view your session in the DOPE View page.")
+        
+        if st.button("Create Another Session", type="primary"):
+            dope_create_state["wizard_step"] = 1
+            dope_create_state["wizard_data"] = {}
+            st.rerun()
