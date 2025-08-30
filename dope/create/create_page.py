@@ -7,6 +7,7 @@ using a wizard-style workflow.
 
 import streamlit as st
 from datetime import datetime
+from typing import Optional
 import sys
 import os
 
@@ -15,6 +16,9 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 from chronograph.service import ChronographService
 from dope.service import DopeService
+from weather.service import WeatherService
+from mapping.submission.submission_model import SubmissionModel
+from dope.weather_associator import WeatherSessionAssociator
 
 
 def get_unused_chrono_sessions(user_id: str, supabase):
@@ -212,10 +216,10 @@ def render_step_2_rifle_selection(user_id: str, supabase):
     return selected_rifle
 
 
-def render_step_3_cartridge_selection(user_id: str, supabase):
-    """Step 3: Select cartridge with filtering"""
+def render_step_3_cartridge_selection(user_id: str, supabase, rifle_cartridge_type: str):
+    """Step 3: Select cartridge filtered by rifle cartridge type"""
     st.subheader("Step 3: Select Cartridge")
-    st.write("Use filters to find your cartridge, then select from the filtered list.")
+    st.write(f"Showing cartridges compatible with your rifle's cartridge type: **{rifle_cartridge_type}**")
     
     # Get all cartridges for user
     all_cartridges = get_cartridges_for_user(supabase, user_id)
@@ -230,19 +234,43 @@ def render_step_3_cartridge_selection(user_id: str, supabase):
                 "4. Return to this page and start over")
         return None
     
-    # Create filter options
+    # Filter cartridges to only show those matching the rifle's cartridge_type
+    compatible_cartridges = []
+    if rifle_cartridge_type:
+        compatible_cartridges = [c for c in all_cartridges if c.get("cartridge_type") == rifle_cartridge_type]
+    else:
+        compatible_cartridges = all_cartridges
+    
+    if not compatible_cartridges:
+        st.warning(f"⚠️ No cartridges found that match your rifle's cartridge type: {rifle_cartridge_type}")
+        st.write("You need to create a compatible cartridge first.")
+        st.info("💡 **How to create a compatible cartridge:**\n"
+                "1. Go to the **Cartridges** page in the navigation menu\n"
+                "2. Click on the **Create** tab\n" 
+                f"3. Add a cartridge with cartridge type: **{rifle_cartridge_type}**\n"
+                "4. Return to this page and start over")
+        return None
+    
+    # Create filter options based on compatible cartridges
     cartridge_types = get_cartridge_types(supabase)
-    cartridge_makes = get_unique_cartridge_makes(all_cartridges)
-    bullet_grains = get_unique_bullet_grains(all_cartridges)
+    cartridge_makes = get_unique_cartridge_makes(compatible_cartridges)
+    bullet_grains = get_unique_bullet_grains(compatible_cartridges)
     
     # Filters
     col1, col2, col3 = st.columns(3)
     
     with col1:
+        # Default to rifle's cartridge type, but allow "All" if user wants to see everything
+        default_index = 0
+        type_options = ["All"] + cartridge_types
+        if rifle_cartridge_type in cartridge_types:
+            default_index = type_options.index(rifle_cartridge_type)
+        
         cartridge_type_filter = st.selectbox(
             "Cartridge Type",
-            options=["All"] + cartridge_types,
-            help="Filter by cartridge type"
+            options=type_options,
+            index=default_index,
+            help="Filter by cartridge type (pre-filtered to your rifle's cartridge type)"
         )
     
     with col2:
@@ -259,10 +287,10 @@ def render_step_3_cartridge_selection(user_id: str, supabase):
             help="Filter by bullet grain weight"
         )
     
-    # Apply filters
+    # Apply filters to compatible cartridges
     bullet_grain_value = None if bullet_grain_filter == "All" else int(bullet_grain_filter.replace("gr", ""))
     filtered_cartridges = filter_cartridges(
-        all_cartridges, 
+        compatible_cartridges, 
         cartridge_type_filter, 
         cartridge_make_filter, 
         bullet_grain_value
@@ -310,7 +338,109 @@ def render_step_3_cartridge_selection(user_id: str, supabase):
     return selected_cartridge
 
 
-def render_step_4_session_details():
+def render_step_4_range_selection(user_id: str, supabase):
+    """Step 4: Select range (optional)"""
+    st.subheader("Step 4: Select Range (Optional)")
+    st.write("Choose the range where this session took place, or skip this step.")
+    
+    try:
+        submission_model = SubmissionModel()
+        ranges = submission_model.get_user_ranges(user_id, supabase)
+    except Exception as e:
+        st.error(f"Error loading ranges: {str(e)}")
+        ranges = []
+    
+    range_options = {"Skip (No Range)": None}
+    
+    if not ranges:
+        st.info("No ranges found in your submissions.")
+        st.info("You can create ranges in the Ranges page, or skip this step.")
+    else:
+        for range_data in ranges:
+            display_name = f"{range_data['range_name']} - {range_data.get('distance_m', 'Unknown')}m"
+            if range_data.get('status'):
+                display_name += f" ({range_data['status']})"
+            range_options[display_name] = range_data
+    
+    selected_range_display = st.selectbox(
+        "Select Range",
+        options=list(range_options.keys()),
+        help="Choose the range used for this session, or skip if not applicable"
+    )
+    
+    selected_range = range_options[selected_range_display]
+    
+    if selected_range:
+        with st.expander("Range Details", expanded=True):
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.write(f"**Name:** {selected_range['range_name']}")
+                st.write(f"**Distance:** {selected_range.get('distance_m', 'Unknown')} meters")
+                st.write(f"**Status:** {selected_range.get('status', 'Unknown')}")
+            
+            with col2:
+                if selected_range.get('azimuth_deg'):
+                    st.write(f"**Azimuth:** {selected_range['azimuth_deg']}°")
+                if selected_range.get('elevation_angle_deg'):
+                    st.write(f"**Elevation:** {selected_range['elevation_angle_deg']}°")
+    
+    return selected_range
+
+
+def render_step_5_weather_selection(user_id: str, supabase, time_window: Optional[tuple] = None):
+    """Step 5: Select weather source (optional)"""
+    st.subheader("Step 5: Select Weather Source (Optional)")
+    st.write("Choose the weather measurement device used, or skip this step.")
+    
+    try:
+        weather_service = WeatherService(supabase)
+        weather_sources = weather_service.get_sources_for_user(user_id)
+    except Exception as e:
+        st.error(f"Error loading weather sources: {str(e)}")
+        weather_sources = []
+    
+    weather_options = {"Skip (No Weather Data)": None}
+    
+    if not weather_sources:
+        st.info("No weather sources found.")
+        st.info("You can create weather sources in the Weather page, or skip this step.")
+    else:
+        for source in weather_sources:
+            display_name = f"{source.name}"
+            if source.make:
+                display_name += f" ({source.make}"
+                if source.model:
+                    display_name += f" {source.model}"
+                display_name += ")"
+            weather_options[display_name] = source
+    
+    selected_weather_display = st.selectbox(
+        "Select Weather Source",
+        options=list(weather_options.keys()),
+        help="Choose the weather measurement device used, or skip if not applicable"
+    )
+    
+    selected_weather = weather_options[selected_weather_display]
+    
+    if selected_weather:
+        with st.expander("Weather Source Details", expanded=True):
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.write(f"**Name:** {selected_weather.name}")
+                st.write(f"**Type:** {selected_weather.source_type}")
+            
+            with col2:
+                if selected_weather.make:
+                    st.write(f"**Make:** {selected_weather.make}")
+                if selected_weather.model:
+                    st.write(f"**Model:** {selected_weather.model}")
+    
+    return selected_weather
+
+
+def render_step_6_session_details():
     """Step 4: Additional session details"""
     st.subheader("Step 4: Session Details")
     st.write("Provide additional details for your DOPE session.")
@@ -333,9 +463,9 @@ def render_step_4_session_details():
     }
 
 
-def render_step_5_confirmation(chrono_session, rifle, cartridge, session_details):
-    """Step 5: Confirmation and creation"""
-    st.subheader("Step 5: Review & Create")
+def render_step_7_confirmation(chrono_session, rifle, cartridge, range_data, weather_data, session_details):
+    """Step 7: Confirmation and creation"""
+    st.subheader("Step 7: Review & Create")
     st.write("Review your DOPE session details before creating.")
     
     # Summary of selections
@@ -351,11 +481,28 @@ def render_step_5_confirmation(chrono_session, rifle, cartridge, session_details
             st.write("**Rifle:**")
             st.write(f"- Name: {rifle['name']}")
             st.write(f"- Cartridge: {rifle.get('cartridge_type', 'Not specified')}")
+            
+            st.write("**Range:**")
+            if range_data:
+                st.write(f"- Name: {range_data['range_name']}")
+                st.write(f"- Distance: {range_data.get('distance_m', 'Unknown')} meters")
+            else:
+                st.write("- None selected")
         
         with col2:
-            st.write("**Session Details:**")
-            st.write(f"- Cartridge Type: {cartridge['cartridge_type']}")
-            st.write(f"- Session Name: {session_details['session_name'] or 'Not specified'}")
+            st.write("**Cartridge:**")
+            st.write(f"- Type: {cartridge['cartridge_type']}")
+            st.write(f"- Make/Model: {cartridge.get('make', 'Unknown')} {cartridge.get('model', 'Unknown')}")
+            
+            st.write("**Weather Source:**")
+            if weather_data:
+                st.write(f"- Name: {weather_data.name}")
+                st.write(f"- Type: {weather_data.source_type}")
+            else:
+                st.write("- None selected")
+            
+            st.write("**Session:**")
+            st.write(f"- Name: {session_details['session_name'] or 'Not specified'}")
             st.write(f"- Notes: {session_details['notes'][:50] + '...' if len(session_details.get('notes', '')) > 50 else session_details.get('notes', 'None')}")
     
     return True
@@ -383,7 +530,7 @@ def render_create_page(user, supabase):
         dope_create_state["wizard_data"] = {}
 
     # Progress indicator
-    progress_steps = ["Chrono Session", "Rifle", "Cartridge", "Details", "Confirm"]
+    progress_steps = ["Chrono", "Rifle", "Cartridge", "Range", "Weather", "Details", "Confirm"]
     current_step = dope_create_state["wizard_step"]
     
     # Create progress bar
@@ -404,6 +551,16 @@ def render_create_page(user, supabase):
         result = render_step_1_chrono_selection(user["id"], supabase)
         if result:
             dope_create_state["wizard_data"]["chrono_session"] = result
+            
+            # Capture time window for weather measurement filtering
+            try:
+                weather_associator = WeatherSessionAssociator(supabase)
+                time_window = weather_associator.get_chrono_session_time_window(user["id"], result.id)
+                dope_create_state["wizard_data"]["time_window"] = time_window
+            except Exception as e:
+                st.warning(f"Could not determine time window for weather filtering: {str(e)}")
+                dope_create_state["wizard_data"]["time_window"] = None
+            
             if st.button("Next: Select Rifle", type="primary"):
                 dope_create_state["wizard_step"] = 2
                 st.rerun()
@@ -424,7 +581,7 @@ def render_create_page(user, supabase):
                     st.rerun()
 
     elif current_step == 3:
-        result = render_step_3_cartridge_selection(user["id"], supabase)
+        result = render_step_3_cartridge_selection(user["id"], supabase, dope_create_state["wizard_data"]["rifle"].get("cartridge_type"))
         if result:
             dope_create_state["wizard_data"]["cartridge"] = result
             
@@ -434,13 +591,13 @@ def render_create_page(user, supabase):
                     dope_create_state["wizard_step"] = 2
                     st.rerun()
             with col2:
-                if st.button("Next: Session Details", type="primary"):
+                if st.button("Next: Select Range", type="primary"):
                     dope_create_state["wizard_step"] = 4
                     st.rerun()
 
     elif current_step == 4:
-        result = render_step_4_session_details()
-        dope_create_state["wizard_data"]["session_details"] = result
+        result = render_step_4_range_selection(user["id"], supabase)
+        dope_create_state["wizard_data"]["range"] = result
         
         col1, col2 = st.columns(2)
         with col1:
@@ -448,23 +605,54 @@ def render_create_page(user, supabase):
                 dope_create_state["wizard_step"] = 3
                 st.rerun()
         with col2:
-            if st.button("Next: Review & Create", type="primary"):
+            if st.button("Next: Select Weather", type="primary"):
                 dope_create_state["wizard_step"] = 5
                 st.rerun()
 
     elif current_step == 5:
+        time_window = dope_create_state["wizard_data"].get("time_window")
+        result = render_step_5_weather_selection(user["id"], supabase, time_window)
+        dope_create_state["wizard_data"]["weather"] = result
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("← Back"):
+                dope_create_state["wizard_step"] = 4
+                st.rerun()
+        with col2:
+            if st.button("Next: Session Details", type="primary"):
+                dope_create_state["wizard_step"] = 6
+                st.rerun()
+
+    elif current_step == 6:
+        result = render_step_6_session_details()
+        dope_create_state["wizard_data"]["session_details"] = result
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("← Back"):
+                dope_create_state["wizard_step"] = 5
+                st.rerun()
+        with col2:
+            if st.button("Next: Review & Create", type="primary"):
+                dope_create_state["wizard_step"] = 7
+                st.rerun()
+
+    elif current_step == 7:
         wizard_data = dope_create_state["wizard_data"]
-        render_step_5_confirmation(
+        render_step_7_confirmation(
             wizard_data["chrono_session"],
             wizard_data["rifle"], 
             wizard_data["cartridge"],
+            wizard_data.get("range"),
+            wizard_data.get("weather"),
             wizard_data["session_details"]
         )
         
         col1, col2, col3 = st.columns(3)
         with col1:
             if st.button("← Back"):
-                dope_create_state["wizard_step"] = 4
+                dope_create_state["wizard_step"] = 6
                 st.rerun()
         
         with col2:
@@ -480,7 +668,10 @@ def render_create_page(user, supabase):
                     chrono_session = wizard_data["chrono_session"]
                     rifle = wizard_data["rifle"]
                     cartridge = wizard_data["cartridge"]
+                    range_data = wizard_data.get("range")
+                    weather_data = wizard_data.get("weather")
                     session_details = wizard_data["session_details"]
+                    time_window = wizard_data.get("time_window")
                     
                     # Prepare session data for database
                     session_data = {
@@ -488,6 +679,10 @@ def render_create_page(user, supabase):
                         "chrono_session_id": chrono_session.id,
                         "rifle_id": rifle["id"],
                         "cartridge_id": cartridge["id"],
+                        "range_submission_id": range_data["id"] if range_data else None,
+                        "weather_source_id": weather_data.id if weather_data else None,
+                        "start_time": time_window[0].isoformat() if time_window else None,
+                        "end_time": time_window[1].isoformat() if time_window else None,
                         "notes": session_details.get("notes"),
                         "status": "active",
                     }
@@ -496,10 +691,59 @@ def render_create_page(user, supabase):
                     service = DopeService(supabase)
                     new_session = service.create_session(session_data, user["id"])
                     
+                    # Process weather association if weather source was selected
+                    weather_association_results = None
+                    if weather_data and time_window:
+                        try:
+                            weather_associator = WeatherSessionAssociator(supabase)
+                            weather_association_results = weather_associator.associate_weather_with_dope_session(
+                                user["id"],
+                                new_session.id,
+                                weather_data.id,
+                                time_window[0],
+                                time_window[1]
+                            )
+                            
+                            if weather_association_results.get("error"):
+                                st.warning(f"⚠️ Weather association warning: {weather_association_results['error']}")
+                            else:
+                                # Update DOPE session with median weather values
+                                median_weather = weather_association_results.get("median_weather", {})
+                                if median_weather:
+                                    weather_update_data = {}
+                                    
+                                    # Map median weather values to dope_session fields
+                                    field_mapping = {
+                                        'temperature_f': 'temperature_f',
+                                        'relative_humidity_pct': 'humidity_pct', 
+                                        'barometric_pressure_inhg': 'pressure_inhg',
+                                        'altitude_ft': 'altitude_ft',
+                                        'wind_speed_mph': 'wind_speed_mph',
+                                        'density_altitude_ft': 'density_altitude_ft'
+                                    }
+                                    
+                                    for weather_field, dope_field in field_mapping.items():
+                                        if weather_field in median_weather:
+                                            weather_update_data[dope_field] = median_weather[weather_field]
+                                    
+                                    if weather_update_data:
+                                        # Update the DOPE session with median weather values
+                                        supabase.table("dope_sessions").update(weather_update_data).eq("id", new_session.id).execute()
+                                
+                                st.success(f"🌤️ Weather data processed: {weather_association_results['weather_measurement_count']} measurements")
+                                st.success(f"🎯 Shot associations: {weather_association_results['associations_made']} of {weather_association_results['dope_measurement_count']} shots")
+                        
+                        except Exception as weather_error:
+                            st.warning(f"⚠️ Weather association failed: {str(weather_error)}")
+                            st.info("DOPE session created successfully, but weather data could not be processed.")
+                    
                     st.success(f"✅ DOPE Session created successfully!")
                     st.success(f"Session ID: {new_session.id}")
-                    st.info("You can now view your session in the DOPE View page.")
                     
+                    if weather_association_results and not weather_association_results.get("error"):
+                        st.info("Weather measurements have been associated with your shots.")
+                    
+                    st.info("You can now view your session in the DOPE View page.")
 
                     if st.button("Create Another Session"):
                         dope_create_state["wizard_step"] = 1
