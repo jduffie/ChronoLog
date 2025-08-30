@@ -367,18 +367,24 @@ def render_create_page(user, supabase):
     """
     print("start render_create_page")
 
-    st.title("🎯 Create DOPE Session")
+    st.title("Create DOPE Session")
     st.write("Follow the steps below to create a new DOPE (Data On Previous Engagement) session.")
 
-    # Initialize session state for wizard
-    if "dope_wizard_step" not in st.session_state:
-        st.session_state.dope_wizard_step = 1
-    if "dope_wizard_data" not in st.session_state:
-        st.session_state.dope_wizard_data = {}
+    # Initialize private session state for DOPE Create
+    if "dope_create" not in st.session_state:
+        st.session_state.dope_create = {}
+    
+    dope_create_state = st.session_state.dope_create
+    
+    # Initialize wizard state
+    if "wizard_step" not in dope_create_state:
+        dope_create_state["wizard_step"] = 1
+    if "wizard_data" not in dope_create_state:
+        dope_create_state["wizard_data"] = {}
 
     # Progress indicator
     progress_steps = ["Chrono Session", "Rifle", "Cartridge", "Details", "Confirm"]
-    current_step = st.session_state.dope_wizard_step
+    current_step = dope_create_state["wizard_step"]
     
     # Create progress bar
     progress_cols = st.columns(len(progress_steps))
@@ -397,57 +403,57 @@ def render_create_page(user, supabase):
     if current_step == 1:
         result = render_step_1_chrono_selection(user["id"], supabase)
         if result:
-            st.session_state.dope_wizard_data["chrono_session"] = result
+            dope_create_state["wizard_data"]["chrono_session"] = result
             if st.button("Next: Select Rifle", type="primary"):
-                st.session_state.dope_wizard_step = 2
+                dope_create_state["wizard_step"] = 2
                 st.rerun()
 
     elif current_step == 2:
         result = render_step_2_rifle_selection(user["id"], supabase)
         if result:
-            st.session_state.dope_wizard_data["rifle"] = result
+            dope_create_state["wizard_data"]["rifle"] = result
             
             col1, col2 = st.columns(2)
             with col1:
                 if st.button("← Back"):
-                    st.session_state.dope_wizard_step = 1
+                    dope_create_state["wizard_step"] = 1
                     st.rerun()
             with col2:
                 if st.button("Next: Select Cartridge", type="primary"):
-                    st.session_state.dope_wizard_step = 3
+                    dope_create_state["wizard_step"] = 3
                     st.rerun()
 
     elif current_step == 3:
         result = render_step_3_cartridge_selection(user["id"], supabase)
         if result:
-            st.session_state.dope_wizard_data["cartridge"] = result
+            dope_create_state["wizard_data"]["cartridge"] = result
             
             col1, col2 = st.columns(2)
             with col1:
                 if st.button("← Back"):
-                    st.session_state.dope_wizard_step = 2
+                    dope_create_state["wizard_step"] = 2
                     st.rerun()
             with col2:
                 if st.button("Next: Session Details", type="primary"):
-                    st.session_state.dope_wizard_step = 4
+                    dope_create_state["wizard_step"] = 4
                     st.rerun()
 
     elif current_step == 4:
         result = render_step_4_session_details()
-        st.session_state.dope_wizard_data["session_details"] = result
+        dope_create_state["wizard_data"]["session_details"] = result
         
         col1, col2 = st.columns(2)
         with col1:
             if st.button("← Back"):
-                st.session_state.dope_wizard_step = 3
+                dope_create_state["wizard_step"] = 3
                 st.rerun()
         with col2:
             if st.button("Next: Review & Create", type="primary"):
-                st.session_state.dope_wizard_step = 5
+                dope_create_state["wizard_step"] = 5
                 st.rerun()
 
     elif current_step == 5:
-        wizard_data = st.session_state.dope_wizard_data
+        wizard_data = dope_create_state["wizard_data"]
         render_step_5_confirmation(
             wizard_data["chrono_session"],
             wizard_data["rifle"], 
@@ -458,21 +464,48 @@ def render_create_page(user, supabase):
         col1, col2, col3 = st.columns(3)
         with col1:
             if st.button("← Back"):
-                st.session_state.dope_wizard_step = 4
+                dope_create_state["wizard_step"] = 4
                 st.rerun()
         
         with col2:
             if st.button("Start Over"):
-                st.session_state.dope_wizard_step = 1
-                st.session_state.dope_wizard_data = {}
+                dope_create_state["wizard_step"] = 1
+                dope_create_state["wizard_data"] = {}
                 st.rerun()
         
         with col3:
-            if st.button("🎯 Create DOPE Session", type="primary"):
-                st.info("Session data ready to be saved to database...")
-                
-                # Reset wizard
-                if st.button("Create Another Session"):
-                    st.session_state.dope_wizard_step = 1
-                    st.session_state.dope_wizard_data = {}
-                    st.rerun()
+            if st.button("Create DOPE Session", type="primary"):
+                try:
+                    # Extract data from wizard
+                    chrono_session = wizard_data["chrono_session"]
+                    rifle = wizard_data["rifle"]
+                    cartridge = wizard_data["cartridge"]
+                    session_details = wizard_data["session_details"]
+                    
+                    # Prepare session data for database
+                    session_data = {
+                        "session_name": session_details.get("session_name") or f"Session {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+                        "chrono_session_id": chrono_session.id,
+                        "rifle_id": rifle["id"],
+                        "cartridge_id": cartridge["id"],
+                        "notes": session_details.get("notes"),
+                        "status": "active",
+                    }
+                    
+                    # Create the DOPE session
+                    service = DopeService(supabase)
+                    new_session = service.create_session(session_data, user["id"])
+                    
+                    st.success(f"✅ DOPE Session created successfully!")
+                    st.success(f"Session ID: {new_session.id}")
+                    st.info("You can now view your session in the DOPE View page.")
+                    
+
+                    if st.button("Create Another Session"):
+                        dope_create_state["wizard_step"] = 1
+                        dope_create_state["wizard_data"] = {}
+                        st.rerun()
+
+                except Exception as e:
+                    st.error(f"❌ Error creating DOPE session: {str(e)}")
+                    st.error("Please check your data and try again.")
