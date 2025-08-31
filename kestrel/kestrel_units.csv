@@ -1,0 +1,16 @@
+Measurement,Imperial Units,Metric Units
+Temperature,°F,°C
+Wet Bulb Temp,°F,°C
+Relative Humidity,%,%
+Barometric Pressure,inHg,hPa
+Altitude,ft,m
+Station Pressure,inHg,hPa
+Wind Speed,mph,m/s
+Heat Index,°F,°C
+Dew Point,°F,°C
+Density Altitude,ft,m
+Crosswind,mph,m/s
+Headwind,mph,m/s
+Compass Magnetic Direction,Deg,Deg
+Compass True Direction,Deg,Deg
+Wind Chill,°F,°C
