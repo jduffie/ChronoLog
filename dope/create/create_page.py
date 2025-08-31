@@ -288,7 +288,7 @@ def render_step_3_cartridge_selection(user_id: str, supabase, rifle_cartridge_ty
         )
     
     # Apply filters to compatible cartridges
-    bullet_grain_value = None if bullet_grain_filter == "All" else int(bullet_grain_filter.replace("gr", ""))
+    bullet_grain_value = None if bullet_grain_filter == "All" else float(bullet_grain_filter.replace("gr", ""))
     filtered_cartridges = filter_cartridges(
         compatible_cartridges, 
         cartridge_type_filter, 
@@ -672,7 +672,7 @@ def render_create_page(user, supabase):
                     weather_data = wizard_data.get("weather")
                     session_details = wizard_data["session_details"]
                     time_window = wizard_data.get("time_window")
-                    
+
                     # Prepare session data for database
                     session_data = {
                         "session_name": session_details.get("session_name") or f"Session {datetime.now().strftime('%Y-%m-%d %H:%M')}",

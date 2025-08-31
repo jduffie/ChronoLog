@@ -4,6 +4,11 @@ This directory contains the **landing page** for ChronoLog along with helper scr
 
 ---
 
+## Website
+
+[http://my-static-site-1756681589.s3-website-us-east-1.amazonaws.com
+](http://my-static-site-1756681589.s3-website-us-east-1.amazonaws.com)
+
 ## 📂 Directory Structure
 
 ```
