@@ -42,9 +42,19 @@ def main():
     # Create tabs for View and Create
     tab1, tab2 = st.tabs(["View", "Add"])
 
+    # Initialize rifles page state
+    if "rifles_view_tab" not in st.session_state:
+        st.session_state.rifles_view_tab = {}
+    if "rifles_create_tab" not in st.session_state:
+        st.session_state.rifles_create_tab = {}
+
     with tab1:
+        # Clear view tab state
+        st.session_state.rifles_view_tab = {}
         render_view_rifle_tab(user, supabase)
     with tab2:
+        # Clear create tab state
+        st.session_state.rifles_create_tab = {}
         render_create_rifle_tab(user, supabase)
 
 

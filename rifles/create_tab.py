@@ -3,6 +3,8 @@ from datetime import datetime, timezone
 
 import streamlit as st
 
+from .service import RifleService
+
 
 @st.cache_data
 def get_cartridge_types(_supabase):
@@ -18,7 +20,7 @@ def get_cartridge_types(_supabase):
 
 def render_create_rifle_tab(user, supabase):
     """Render the Create Rifle tab"""
-    st.header("➕ Create New Rifle Entry")
+    st.header("Create New Rifle Entry")
 
     # Load cartridge types from database (cached)
     cartridge_options = get_cartridge_types(supabase)
@@ -82,7 +84,7 @@ def render_create_rifle_tab(user, supabase):
             )
 
         # Submit button
-        submitted = st.form_submit_button(" Create Rifle Entry", type="primary")
+        submitted = st.form_submit_button("Create Rifle Entry", type="primary")
 
         if submitted:
             # Validate required fields
@@ -120,31 +122,11 @@ def render_create_rifle_tab(user, supabase):
                     "updated_at": datetime.now(timezone.utc).isoformat(),
                 }
 
-                # Insert into database
-                response = supabase.table("rifles").insert(rifle_data).execute()
+                # Insert into database using service
+                rifle_service = RifleService(supabase)
+                rifle_id = rifle_service.create_rifle(rifle_data)
 
-                if response.data:
-                    st.success(f"✅ Rifle entry created successfully!")
-                    st.info(f" **{name}** ({cartridge_type}) has been added to your rifle collection")
-
-                    # Display created rifle details
-                    with st.expander("📝 Created Rifle Details"):
-                        st.write(f"**Cartridge Type:** {cartridge_type}")
-                        if barrel_twist_ratio:
-                            st.write(f"**Barrel Twist:** {barrel_twist_ratio}")
-                        if barrel_length:
-                            st.write(f"**Barrel Length:** {barrel_length}")
-                        if sight_offset:
-                            st.write(f"**Sight Offset:** {sight_offset}")
-                        if trigger:
-                            st.write(f"**Trigger:** {trigger}")
-                        if scope:
-                            st.write(f"**Scope:** {scope}")
-
-                    # Clear form by rerunning (this will reset the form)
-                    st.rerun()
-                else:
-                    st.error("❌ Failed to create rifle entry. Please try again.")
+                st.success(f"✅ Rifle entry '{name}' created successfully!")
 
             except Exception as e:
                 if "duplicate key value violates unique constraint" in str(e):

@@ -3,6 +3,8 @@ from datetime import datetime
 import pandas as pd
 import streamlit as st
 
+from .service import RifleService
+
 
 @st.cache_data
 def get_cartridge_types(_supabase):
@@ -17,24 +19,32 @@ def get_cartridge_types(_supabase):
 def render_view_rifle_tab(user, supabase):
     """Render the View Rifles tab"""
 
-    try:
-        # Get all rifle entries for the user
-        response = (
-            supabase.table("rifles")
-            .select("*")
-            .eq("user_id", user["id"])
-            .order("created_at", desc=True)
-            .execute()
-        )
+    # Initialize rifle service
+    rifle_service = RifleService(supabase)
 
-        if not response.data:
+    try:
+        # Get all rifle entries for the user using service
+        rifles = rifle_service.get_rifles_for_user(user["id"])
+
+        if not rifles:
             st.info(
                 " No rifle entries found. Go to the 'Create' tab to add your first rifle."
             )
             return
 
         # Convert to DataFrame for better display
-        df = pd.DataFrame(response.data)
+        df = pd.DataFrame([{
+            'id': rifle.id,
+            'name': rifle.name,
+            'cartridge_type': rifle.cartridge_type,
+            'barrel_twist_ratio': rifle.barrel_twist_ratio,
+            'barrel_length': rifle.barrel_length,
+            'sight_offset': rifle.sight_offset,
+            'trigger': rifle.trigger,
+            'scope': rifle.scope,
+            'created_at': rifle.created_at,
+            'updated_at': rifle.updated_at
+        } for rifle in rifles])
 
         # Display summary stats
         col1, col2, col3, col4 = st.columns(4)
@@ -166,8 +176,14 @@ def render_view_rifle_tab(user, supabase):
         selected_rifle_data = None
         if selected_rifle_event["selection"]["rows"]:
             selected_row_index = selected_rifle_event["selection"]["rows"][0]
-            # Get the rifle data from the filtered_df using the display index
-            selected_rifle_data = filtered_df.iloc[selected_row_index].copy()
+            # Store selection in state
+            st.session_state.rifles_view_tab["selected_index"] = selected_row_index
+            
+        # Get selected rifle data from state
+        if st.session_state.rifles_view_tab.get("selected_index") is not None:
+            selected_index = st.session_state.rifles_view_tab["selected_index"]
+            if 0 <= selected_index < len(filtered_df):
+                selected_rifle_data = filtered_df.iloc[selected_index].copy()
 
         # Show detailed view and actions if a rifle is selected
         if selected_rifle_data is not None:
