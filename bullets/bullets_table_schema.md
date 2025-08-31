@@ -2,6 +2,29 @@
 
 ## Table: bullets
 
+### SQL
+```sql
+create table public.bullets (
+  user_id text null,
+  manufacturer text not null,
+  model text not null,
+  weight_grains numeric(6, 2) not null,
+  bullet_diameter_groove_mm double precision not null,
+  bore_diameter_land_mm double precision not null,
+  bullet_length_mm double precision null,
+  ballistic_coefficient_g1 double precision null,
+  ballistic_coefficient_g7 double precision null,
+  sectional_density double precision null,
+  min_req_twist_rate_in_per_rev double precision null,
+  pref_twist_rate_in_per_rev double precision null,
+  id uuid not null,
+  data_source_name text null,
+  data_source_url text null,
+  constraint bullets_pkey primary key (id),
+  constraint bullets_user_id_fkey foreign KEY (user_id) references users (id)
+) TABLESPACE pg_default;
+```
+
 ### Columns
 
 | Column Name                   | Data Type        | Nullable | Default | Notes                                             |
@@ -10,7 +33,7 @@
 | user_id                       | text             | NO       | null    | Auth0 user identifier                             |
 | manufacturer                  | text             | NO       | null    | Bullet manufacturer                               |
 | model                         | text             | NO       | null    | Bullet model                                      |
-| weight_grains                 | integer          | NO       | null    | Weight in grains                                  |
+| weight_grains                 | numeric(6, 2)    | NO       | null    | Weight in grains                                  |
 | bullet_diameter_groove_mm     | double precision | NO       | null    | Groove diameter in millimeters                    |
 | bore_diameter_land_mm         | double precision | NO       | null    | Land diameter in millimeters                      |
 | bullet_length_mm              | double precision | YES      | null    | Length in millimeters                             |

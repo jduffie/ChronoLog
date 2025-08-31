@@ -147,7 +147,7 @@ def render_weather_import_tab(user, supabase, bucket):
     # Initialize weather service
     weather_service = WeatherService(supabase)
     
-    # Initialize wizard state
+    # Initialize wizard state only if it doesn't exist
     if "weather_wizard_state" not in st.session_state:
         st.session_state.weather_wizard_state = {
             "step": "source_selection",

@@ -2,6 +2,7 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 
 from .models import ChronographMeasurement, ChronographSession
+from .chronograph_source_models import ChronographSource
 from .business_logic import ChronographDataProcessor, SessionStatisticsCalculator
 from .unit_mapping_service import UnitMappingService
 from .device_adapters import ChronographDeviceFactory
@@ -283,3 +284,109 @@ class ChronographService:
         if speeds:
             stats = SessionStatisticsCalculator.calculate_session_stats(speeds)
             self.update_session_stats(session_id, stats)
+
+    def get_sources_for_user(self, user_id: str) -> List[ChronographSource]:
+        """Get all chronograph sources for a user"""
+        try:
+            response = (
+                self.supabase.table("chronograph_sources")
+                .select("*")
+                .eq("user_id", user_id)
+                .order("name")
+                .execute()
+            )
+
+            if not response.data:
+                return []
+
+            return ChronographSource.from_supabase_records(response.data)
+
+        except Exception as e:
+            raise Exception(f"Error fetching chronograph sources: {str(e)}")
+
+    def get_source_by_id(self, source_id: str, user_id: str) -> Optional[ChronographSource]:
+        """Get a specific chronograph source by ID"""
+        try:
+            response = (
+                self.supabase.table("chronograph_sources")
+                .select("*")
+                .eq("id", source_id)
+                .eq("user_id", user_id)
+                .single()
+                .execute()
+            )
+
+            if not response.data:
+                return None
+
+            return ChronographSource.from_supabase_record(response.data)
+
+        except Exception as e:
+            raise Exception(f"Error fetching chronograph source: {str(e)}")
+
+    def get_source_by_name(self, user_id: str, name: str) -> Optional[ChronographSource]:
+        """Get a chronograph source by name"""
+        try:
+            response = (
+                self.supabase.table("chronograph_sources")
+                .select("*")
+                .eq("user_id", user_id)
+                .eq("name", name)
+                .single()
+                .execute()
+            )
+
+            if not response.data:
+                return None
+
+            return ChronographSource.from_supabase_record(response.data)
+
+        except Exception as e:
+            return None
+
+    def create_source(self, source_data: dict) -> str:
+        """Create a new chronograph source"""
+        try:
+            response = (
+                self.supabase.table("chronograph_sources").insert(source_data).execute()
+            )
+
+            if not response.data:
+                raise Exception("Failed to create chronograph source")
+
+            return response.data[0]["id"]
+
+        except Exception as e:
+            raise Exception(f"Error creating chronograph source: {str(e)}")
+
+    def update_source(self, source_id: str, user_id: str, updates: dict) -> None:
+        """Update a chronograph source"""
+        try:
+            updates["updated_at"] = datetime.now().isoformat()
+            self.supabase.table("chronograph_sources").update(updates).eq("id", source_id).eq("user_id", user_id).execute()
+
+        except Exception as e:
+            raise Exception(f"Error updating chronograph source: {str(e)}")
+
+    def delete_source(self, source_id: str, user_id: str) -> None:
+        """Delete a chronograph source"""
+        try:
+            self.supabase.table("chronograph_sources").delete().eq("id", source_id).eq("user_id", user_id).execute()
+
+        except Exception as e:
+            raise Exception(f"Error deleting chronograph source: {str(e)}")
+
+    def update_source_with_device_info(self, source_id: str, user_id: str, device_name: str, device_model: str, serial_number: str) -> None:
+        """Update chronograph source with device info from uploaded file"""
+        try:
+            updates = {
+                "device_name": device_name if device_name else None,
+                "model": device_model if device_model else None,
+                "serial_number": serial_number if serial_number else None,
+                "updated_at": datetime.now().isoformat()
+            }
+            
+            self.supabase.table("chronograph_sources").update(updates).eq("id", source_id).eq("user_id", user_id).execute()
+
+        except Exception as e:
+            raise Exception(f"Error updating chronograph source with device info: {str(e)}")
