@@ -1,0 +1,5 @@
+Measurement,Header Raw,Header Stripped,Imperial Units,Metric Units
+Velocity per shot,Speed (FPS),Speed,FPS,m/s
+Delta from avg,Δ AVG (FPS),Δ AVG,FPS,m/s
+Kinetic Energy,KE (FT-LB),KE,FT-LB,J
+Power Factor,Power Factor (kgr·ft/s),Power Factor,kgr·ft/s,kg·m/s

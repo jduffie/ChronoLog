@@ -1,0 +1,6 @@
+Measurement,Header Raw,Header Stripped,Imperial Units,Metric Units
+Average Speed,AVERAGE SPEED,AVERAGE SPEED,fps,m/s
+Standard Deviation,STD DEV,STD DEV,fps,m/s
+Extreme Spread,SPREAD,SPREAD,fps,m/s
+Average Power Factor,AVERAGE POWER FACTOR,AVERAGE POWER FACTOR,kgr·ft/s,kg·m/s
+Projectile Weight,PROJECTILE WEIGHT(GRAINS,PROJECTILE WEIGHT,grains (gr),grams (g)
