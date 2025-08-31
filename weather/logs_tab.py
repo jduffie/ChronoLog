@@ -27,88 +27,6 @@ def render_weather_logs_tab(user, supabase):
         # Get all measurements for the user
         measurements = weather_service.get_all_measurements_for_user(user["id"])
 
-        # Create a summary table by weather source
-        st.subheader(" Weather Sources Summary")
-
-        summary_data = []
-        for source in sources:
-            # Get measurements for this source
-            source_measurements = [
-                m for m in measurements if m.weather_source_id == source.id
-            ]
-
-            if source_measurements:
-                # Calculate statistics
-                measurement_count = len(source_measurements)
-
-                # Get date range
-                timestamps = [
-                    pd.to_datetime(m.measurement_timestamp) for m in source_measurements
-                ]
-                first_date = min(timestamps).date()
-                last_date = max(timestamps).date()
-                date_range = (
-                    f"{first_date} to {last_date}"
-                    if first_date != last_date
-                    else str(first_date)
-                )
-
-                # Get temperature stats if available
-                temps = [
-                    m.temperature_f
-                    for m in source_measurements
-                    if m.temperature_f is not None
-                ]
-                temp_range = (
-                    f"{min(temps):.1f}°F - {max(temps):.1f}°F" if temps else "N/A"
-                )
-
-                # Get humidity stats if available
-                humidity = [
-                    m.relative_humidity_pct
-                    for m in source_measurements
-                    if m.relative_humidity_pct is not None
-                ]
-                humidity_range = (
-                    f"{min(humidity):.1f}% - {max(humidity):.1f}%"
-                    if humidity
-                    else "N/A"
-                )
-
-                # Get last upload
-                last_upload = max(
-                    [pd.to_datetime(m.uploaded_at) for m in source_measurements]
-                ).date()
-
-                summary_data.append(
-                    {
-                        "Weather Source": source.display_name(),
-                        "Device": source.device_display(),
-                        "Measurements": measurement_count,
-                        "Date Range": date_range,
-                        "Temp Range": temp_range,
-                        "Humidity Range": humidity_range,
-                        "Last Upload": str(last_upload),
-                    }
-                )
-            else:
-                summary_data.append(
-                    {
-                        "Weather Source": source.display_name(),
-                        "Device": source.device_display(),
-                        "Measurements": 0,
-                        "Date Range": "No data",
-                        "Temp Range": "N/A",
-                        "Humidity Range": "N/A",
-                        "Last Upload": "Never",
-                    }
-                )
-
-        # Display summary table
-        if summary_data:
-            df_summary = pd.DataFrame(summary_data)
-            st.dataframe(df_summary, use_container_width=True)
-
         # Detailed measurements with filtering
         st.subheader("️ Detailed Weather Measurements")
 
@@ -279,7 +197,7 @@ def render_weather_logs_tab(user, supabase):
                                         display_df["measurement_timestamp"] = (
                                             pd.to_datetime(
                                                 display_df["measurement_timestamp"]
-                                            ).dt.strftime("%H:%M:%S")
+                                            ).dt.strftime("%Y-%m-%d %H:%M:%S")
                                         )
 
                                     # Round numeric columns

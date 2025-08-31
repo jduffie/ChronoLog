@@ -12,9 +12,8 @@ from auth import handle_auth
 from files_tab import render_files_tab
 from supabase import create_client
 from weather.import_tab import render_weather_import_tab
-from weather.logs_tab import render_weather_logs_tab
 from weather.sources_tab import render_weather_sources_tab
-from weather.view_log_tab import render_weather_view_log_tab
+from weather.view_tab import render_weather_view_tab
 
 
 def main():
@@ -43,25 +42,22 @@ def main():
     # Display title
     st.title("️ Weather")
 
-    # Create tabs for Sources, Import, Logs, View Log, and My Files
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(
-        ["Sources", "Import", "Logs", "View Log", "My Files"]
+    # Create tabs for View, Sources, Import, and My Files
+    tab1, tab2, tab3, tab4 = st.tabs(
+        ["View", "Sources", "Import", "My Files"]
     )
 
     with tab1:
-        render_weather_sources_tab(user, supabase)
+        render_weather_view_tab(user, supabase)
 
     with tab2:
+        render_weather_sources_tab(user, supabase)
+
+    with tab3:
         st.subheader("Kestrel Log Files")
         render_weather_import_tab(user, supabase, bucket)
 
-    with tab3:
-        render_weather_logs_tab(user, supabase)
-
     with tab4:
-        render_weather_view_log_tab(user, supabase)
-
-    with tab5:
         # Filter files to show only weather/kestrel files
         render_files_tab(user, supabase, bucket, file_type_filter="kestrel")
 

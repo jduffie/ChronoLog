@@ -129,16 +129,20 @@ class WeatherService:
         except Exception as e:
             raise Exception(f"Error fetching measurements: {str(e)}")
 
-    def get_all_measurements_for_user(self, user_id: str) -> List[WeatherMeasurement]:
+    def get_all_measurements_for_user(self, user_id: str, limit: Optional[int] = None) -> List[WeatherMeasurement]:
         """Get all weather measurements for a user"""
         try:
-            response = (
+            query = (
                 self.supabase.table("weather_measurements")
                 .select("*")
                 .eq("user_id", user_id)
                 .order("measurement_timestamp", desc=True)
-                .execute()
             )
+            
+            if limit:
+                query = query.limit(limit)
+                
+            response = query.execute()
 
             if not response.data:
                 return []

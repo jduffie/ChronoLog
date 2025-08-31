@@ -97,7 +97,7 @@ def render_weather_sources_tab(user, supabase):
 
                     # Action buttons
                     st.write("**Actions:**")
-                    button_col1, button_col2, button_col3 = st.columns(3)
+                    button_col1, button_col2 = st.columns(2)
 
                     with button_col1:
                         if st.button("Edit", key=f"edit_{source.id}"):
@@ -106,30 +106,6 @@ def render_weather_sources_tab(user, supabase):
                             ] = True
 
                     with button_col2:
-                        if source_measurements:
-                            if st.button("View Data", key=f"view_{source.id}"):
-                                # Set session state for view log tab
-                                if source_measurements:
-                                    latest_date = max(
-                                        [
-                                            pd.to_datetime(m.measurement_timestamp)
-                                            for m in source_measurements
-                                        ]
-                                    ).strftime("%Y-%m-%d")
-                                    # Type cast to avoid type checker warnings
-                                    weather_state = cast(
-                                        Dict[str, Any],
-                                        st.session_state.weather_sources_page_state,
-                                    )
-                                    weather_state["selected_weather_source_id"] = (
-                                        source.id
-                                    )
-                                    weather_state["selected_weather_date"] = latest_date
-                                    st.info(
-                                        "Source selected! Go to the 'View Log' tab to see detailed weather analysis."
-                                    )
-
-                    with button_col3:
                         if st.button(
                             "Delete", key=f"delete_{source.id}", type="secondary"
                         ):

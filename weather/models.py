@@ -105,7 +105,7 @@ class WeatherMeasurement:
     uploaded_at: datetime
     file_path: Optional[str] = None
 
-    # Primary weather measurements
+    # Primary weather measurements - Imperial units
     temperature_f: Optional[float] = None
     wet_bulb_temp_f: Optional[float] = None
     relative_humidity_pct: Optional[float] = None
@@ -121,6 +121,20 @@ class WeatherMeasurement:
     compass_magnetic_deg: Optional[float] = None
     compass_true_deg: Optional[float] = None
     wind_chill_f: Optional[float] = None
+
+    # Metric equivalents
+    temperature_c: Optional[float] = None
+    wet_bulb_temp_c: Optional[float] = None
+    barometric_pressure_hpa: Optional[float] = None
+    altitude_m: Optional[float] = None
+    station_pressure_hpa: Optional[float] = None
+    wind_speed_mps: Optional[float] = None
+    heat_index_c: Optional[float] = None
+    dew_point_c: Optional[float] = None
+    density_altitude_m: Optional[float] = None
+    crosswind_mps: Optional[float] = None
+    headwind_mps: Optional[float] = None
+    wind_chill_c: Optional[float] = None
 
     # Additional fields
     data_type: Optional[str] = None
@@ -142,6 +156,7 @@ class WeatherMeasurement:
             measurement_timestamp=pd.to_datetime(record["measurement_timestamp"]),
             uploaded_at=pd.to_datetime(record["uploaded_at"]),
             file_path=record.get("file_path"),
+            # Imperial units
             temperature_f=record.get("temperature_f"),
             wet_bulb_temp_f=record.get("wet_bulb_temp_f"),
             relative_humidity_pct=record.get("relative_humidity_pct"),
@@ -157,6 +172,20 @@ class WeatherMeasurement:
             compass_magnetic_deg=record.get("compass_magnetic_deg"),
             compass_true_deg=record.get("compass_true_deg"),
             wind_chill_f=record.get("wind_chill_f"),
+            # Metric units
+            temperature_c=record.get("temperature_c"),
+            wet_bulb_temp_c=record.get("wet_bulb_temp_c"),
+            barometric_pressure_hpa=record.get("barometric_pressure_hpa"),
+            altitude_m=record.get("altitude_m"),
+            station_pressure_hpa=record.get("station_pressure_hpa"),
+            wind_speed_mps=record.get("wind_speed_mps"),
+            heat_index_c=record.get("heat_index_c"),
+            dew_point_c=record.get("dew_point_c"),
+            density_altitude_m=record.get("density_altitude_m"),
+            crosswind_mps=record.get("crosswind_mps"),
+            headwind_mps=record.get("headwind_mps"),
+            wind_chill_c=record.get("wind_chill_c"),
+            # Additional fields
             data_type=record.get("data_type"),
             record_name=record.get("record_name"),
             start_time=record.get("start_time"),
