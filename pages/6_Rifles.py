@@ -40,11 +40,10 @@ def main():
     st.title(" Rifle Management")
 
     # Create tabs for View and Create
-    tab1, tab2 = st.tabs(["View", "Create"])
+    tab1, tab2 = st.tabs(["View", "Add"])
 
     with tab1:
         render_view_rifle_tab(user, supabase)
-
     with tab2:
         render_create_rifle_tab(user, supabase)
 

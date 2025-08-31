@@ -10,7 +10,7 @@ class BulletModel:
     user_id: str
     manufacturer: str
     model: str
-    weight_grains: int
+    weight_grains: float
     bullet_diameter_groove_mm: float
     bore_diameter_land_mm: float
     bullet_length_mm: Optional[float] = None

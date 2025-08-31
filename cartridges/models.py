@@ -29,7 +29,7 @@ class CartridgeModel:
     # Related data from joins (populated when fetched with bullet info)
     bullet_manufacturer: Optional[str] = None
     bullet_model: Optional[str] = None
-    bullet_weight_grains: Optional[int] = None
+    bullet_weight_grains: Optional[float] = None
     bullet_diameter_groove_mm: Optional[float] = None
     bore_diameter_land_mm: Optional[float] = None
     bullet_length_mm: Optional[float] = None

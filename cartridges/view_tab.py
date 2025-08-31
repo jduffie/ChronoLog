@@ -127,7 +127,7 @@ def render_view_cartridges_tab(user, supabase):
             st.metric("Public/User", f"{global_count}/{user_count}")
 
         # Collapsible filters section
-        with st.expander("Filter Options", expanded=False):
+        with st.expander("**Filter**", expanded=False):
             col1, col2, col3, col4 = st.columns(4)
 
             with col1:

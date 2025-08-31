@@ -42,19 +42,14 @@ def main():
     st.title("Chronograph")
 
     # Create tabs for Import, View, Edit, and My Files
-    tab1, tab2, tab3, tab4 = st.tabs(["Import", "View", "Edit", "My Files"])
+    tab1, tab2, tab3, tab4 = st.tabs(["View", "Add", "Edit", "My Files"])
 
     with tab1:
-        st.subheader("Garmin Xero Log Files")
-        render_chronograph_import_tab(user, supabase, bucket)
-
-    with tab2:
         render_logs_tab(user, supabase)
-
+    with tab2:
+        render_chronograph_import_tab(user, supabase, bucket)
     with tab3:
-        st.subheader("Edit Chronograph Data")
         st.info("📝 Edit functionality coming soon...")
-
     with tab4:
         render_files_tab(user, supabase, bucket, file_type_filter="garmin")
 

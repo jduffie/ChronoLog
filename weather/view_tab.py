@@ -9,12 +9,11 @@ from .service import WeatherService
 
 def render_weather_view_tab(user, supabase):
     """Render the Weather View tab with filtering and detailed row selection"""
-    st.header("🌤️ Weather Data View")
+
+    # Initialize weather service
+    weather_service = WeatherService(supabase)
 
     try:
-        # Initialize weather service
-        weather_service = WeatherService(supabase)
-
         # Get all weather sources for the user
         sources = weather_service.get_sources_for_user(user["id"])
 
@@ -24,61 +23,59 @@ def render_weather_view_tab(user, supabase):
             )
             return
 
-        # Filter controls
-        st.subheader("🔍 Filters")
+        with st.expander("**Filter**", expanded=False):
+            col1, col2, col3 = st.columns(3)
         
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            # Weather source filter
-            source_options = ["All"] + [source.display_name() for source in sources]
-            selected_source = st.selectbox("Weather Source", source_options)
+            with col1:
+                # Weather source filter
+                source_options = ["All"] + [source.display_name() for source in sources]
+                selected_source = st.selectbox("Weather Source", source_options)
 
-        with col2:
-            # Date range filter
-            date_range = st.date_input(
-                "Date Range", 
-                value=[], 
-                max_value=datetime.now().date(),
-                help="Select single date or date range"
+            with col2:
+                # Date range filter
+                date_range = st.date_input(
+                    "Date Range",
+                    value=[],
+                    max_value=datetime.now().date(),
+                    help="Select single date or date range"
+                )
+
+            with col3:
+                # Record limit
+                max_records = st.number_input(
+                    "Max Records",
+                    min_value=10,
+                    max_value=500,
+                    value=100,
+                    step=10
+                )
+
+            # Apply filters using service
+            selected_source_id = None
+            if selected_source != "All":
+                selected_source_obj = next(
+                    (s for s in sources if s.display_name() == selected_source), None
+                )
+                if selected_source_obj:
+                    selected_source_id = selected_source_obj.id
+
+            start_date_str = None
+            end_date_str = None
+            if date_range:
+                if len(date_range) == 2:
+                    start_date_str = date_range[0].isoformat()
+                    end_date_str = (date_range[1].strftime("%Y-%m-%d") + "T23:59:59")
+                elif len(date_range) == 1:
+                    start_date_str = date_range[0].isoformat()
+                    end_date_str = (date_range[0].strftime("%Y-%m-%d") + "T23:59:59")
+
+            # Get filtered measurements from service
+            filtered_measurements = weather_service.get_measurements_filtered(
+                user_id=user["id"],
+                source_id=selected_source_id,
+                start_date=start_date_str,
+                end_date=end_date_str
             )
-
-        with col3:
-            # Record limit
-            max_records = st.number_input(
-                "Max Records",
-                min_value=10,
-                max_value=500,
-                value=100,
-                step=10
-            )
-
-        # Apply filters using service
-        selected_source_id = None
-        if selected_source != "All":
-            selected_source_obj = next(
-                (s for s in sources if s.display_name() == selected_source), None
-            )
-            if selected_source_obj:
-                selected_source_id = selected_source_obj.id
-
-        start_date_str = None
-        end_date_str = None
-        if date_range:
-            if len(date_range) == 2:
-                start_date_str = date_range[0].isoformat()
-                end_date_str = (date_range[1].strftime("%Y-%m-%d") + "T23:59:59")
-            elif len(date_range) == 1:
-                start_date_str = date_range[0].isoformat()
-                end_date_str = (date_range[0].strftime("%Y-%m-%d") + "T23:59:59")
-
-        # Get filtered measurements from service
-        filtered_measurements = weather_service.get_measurements_filtered(
-            user_id=user["id"],
-            source_id=selected_source_id,
-            start_date=start_date_str,
-            end_date=end_date_str
-        )
 
         # Apply record limit
         filtered_measurements = filtered_measurements[:max_records]
@@ -86,9 +83,6 @@ def render_weather_view_tab(user, supabase):
         if not filtered_measurements:
             st.info("No measurements match the selected filters.")
             return
-
-        # Create main data table
-        st.subheader("📊 Weather Measurements")
         
         # Convert measurements to DataFrame for display
         table_data = []
@@ -125,9 +119,7 @@ def render_weather_view_tab(user, supabase):
         if selected_rows.selection.rows:
             selected_index = selected_rows.selection.rows[0]
             selected_measurement = filtered_measurements[selected_index]
-            
-            st.subheader("📋 Detailed Measurement")
-            
+
             # Find source for this measurement
             selected_source_obj = next(
                 (s for s in sources if s.id == selected_measurement.weather_source_id), None

@@ -28,25 +28,8 @@ def render_view_bullets_tab(user, supabase):
         bullet_dicts = [bullet.__dict__ for bullet in bullets]
         df = pd.DataFrame(bullet_dicts)
 
-        col1, col2, col3, col4 = st.columns(4)
-
-        with col1:
-            st.metric("Total Entries", len(df))
-
-        with col2:
-            unique_manufacturers = df["manufacturer"].nunique()
-            st.metric("Manufacturers", unique_manufacturers)
-
-        with col3:
-            unique_calibers = df["bullet_diameter_groove_mm"].nunique()
-            st.metric("Calibers", unique_calibers)
-
-        with col4:
-            unique_weights = df["weight_grains"].nunique()
-            st.metric("Weight Variants", unique_weights)
-
         # Collapsible filters section
-        with st.expander("Filter Options", expanded=False):
+        with st.expander("**Filter**", expanded=False):
             col1, col2, col3 = st.columns(3)
 
             with col1:
@@ -58,7 +41,7 @@ def render_view_bullets_tab(user, supabase):
             with col2:
                 calibers = ["All"] + sorted(df["bore_diameter_land_mm"].unique().tolist())
                 selected_bore_diameter_mm = st.selectbox(
-                    "Filter by Bore Diameter:", calibers
+                    "Filter by Bore Diameter (Caliber):", calibers
                 )
 
             with col3:
@@ -171,8 +154,8 @@ def render_view_bullets_tab(user, supabase):
                     "Manufacturer", width="small"
                 ),
                 "Model": st.column_config.TextColumn("Model", width="small"),
-                "Weight (gr)": st.column_config.TextColumn(
-                    "Weight (gr)", width="small"
+                "Weight (gr)": st.column_config.NumberColumn(
+                    "Weight (gr)", width="small", format="%.1f"
                 ),
                 "Diameter (mm)": st.column_config.NumberColumn(
                     "Diameter (mm)", width="small", format="%.3f"
@@ -180,8 +163,8 @@ def render_view_bullets_tab(user, supabase):
                 "Bore Dia (mm)": st.column_config.NumberColumn(
                     "Bore Dia (mm)", width="small", format="%.3f"
                 ),
-                "Length (mm)": st.column_config.TextColumn(
-                    "Length (mm)", width="small"
+                "Length (mm)": st.column_config.NumberColumn(
+                    "Length (mm)", width="small", format="%.3f"
                 ),
                 "BC G1": st.column_config.TextColumn("BC G1", width="small"),
                 "BC G7": st.column_config.TextColumn("BC G7", width="small"),
@@ -241,7 +224,8 @@ def render_view_bullets_tab(user, supabase):
                             min_value=1.0,
                             max_value=1000.0,
                             step=1.0,
-                            value=float(selected_bullet_data.weight_grains),
+                            format="%.1f",
+                            value=selected_bullet_data.weight_grains,
                             help="The bullet weight in grains",
                         )
 
@@ -389,7 +373,7 @@ def render_view_bullets_tab(user, supabase):
                         if (
                             not manufacturer
                             or not model
-                            or weight_grains == 0
+                            or weight_grains == 0.0
                             or bullet_diameter_groove_mm == 0.0
                             or bore_diameter_land_mm == 0.0
                         ):
@@ -422,7 +406,7 @@ def render_view_bullets_tab(user, supabase):
                                 update_data = {
                                     "manufacturer": manufacturer,
                                     "model": model,
-                                    "weight_grains": int(weight_grains),
+                                    "weight_grains": weight_grains,
                                     "bullet_diameter_groove_mm": bullet_diameter_groove_mm,
                                     "bore_diameter_land_mm": bore_diameter_land_mm,
                                     "bullet_length_mm": bullet_length_mm_value,
@@ -453,7 +437,7 @@ def render_view_bullets_tab(user, supabase):
                     st.markdown("**Basic Information**")
                     st.write(f"**Manufacturer:** {selected_bullet_data.manufacturer}")
                     st.write(f"**Model:** {selected_bullet_data.model}")
-                    st.write(f"**Weight:** {selected_bullet_data.weight_grains} grains")
+                    st.write(f"**Weight:** {selected_bullet_data.weight_grains:1f} grains")
                     st.write(f"**Bullet Diameter:** {selected_bullet_data.bullet_diameter_groove_mm:.3f} mm")
                     st.write(f"**Bore Diameter:** {selected_bullet_data.bore_diameter_land_mm:.3f} mm")
                     if selected_bullet_data.bullet_length_mm:

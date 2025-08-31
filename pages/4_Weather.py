@@ -39,19 +39,17 @@ def main():
         return
 
     # Display title
-    st.title("️ Weather")
+    st.title("️Weather")
 
     # Create tabs for Import, View, and My Files
     tab1, tab2, tab3 = st.tabs(
-        ["Import", "View", "My Files"]
+        ["View", "Add", "My Files"]
     )
 
     with tab1:
-        render_weather_import_tab(user, supabase, bucket)
-
-    with tab2:
         render_weather_view_tab(user, supabase)
-
+    with tab2:
+        render_weather_import_tab(user, supabase, bucket)
     with tab3:
         # Filter files to show only weather/kestrel files
         render_files_tab(user, supabase, bucket, file_type_filter="kestrel")
