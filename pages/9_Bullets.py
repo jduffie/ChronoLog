@@ -40,7 +40,7 @@ def main():
     st.title(" Bullets Management")
 
     # Create tabs for Create and View
-    tab1, tab2 = st.tabs(["View", "Create"])
+    tab1, tab2 = st.tabs(["View", "Add"])
 
     with tab1:
         render_view_bullets_tab(user, supabase)

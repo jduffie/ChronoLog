@@ -317,15 +317,18 @@ def render_view_rifle_tab(user, supabase):
                             }
 
                             # Update the rifle
-                            update_response = (
-                                supabase.table("rifles")
-                                .update(update_data)
-                                .eq("id", st.session_state.editing_rifle_id)
-                                .eq("user_id", user["id"])  # Extra security check
-                                .execute()
-                            )
+                            try:
+                                rifle_service.update_rifle(
+                                    st.session_state.editing_rifle_id,
+                                    user["id"],
+                                    update_data
+                                )
+                                update_success = True
+                            except Exception as e:
+                                update_success = False
+                                st.error(f"❌ Error updating rifle: {str(e)}")
 
-                            if update_response.data:
+                            if update_success:
                                 st.success(f"✅ Successfully updated: {rifle_to_edit['name']}")
                                 
                                 # Show what changed
@@ -376,15 +379,17 @@ def render_view_rifle_tab(user, supabase):
                     if st.button("🗑️ Yes, Delete", type="primary", use_container_width=True):
                         try:
                             # Delete the rifle
-                            delete_response = (
-                                supabase.table("rifles")
-                                .delete()
-                                .eq("id", st.session_state.deleting_rifle_id)
-                                .eq("user_id", user["id"])  # Extra security check
-                                .execute()
-                            )
+                            try:
+                                rifle_service.delete_rifle(
+                                    st.session_state.deleting_rifle_id,
+                                    user["id"]
+                                )
+                                delete_success = True
+                            except Exception as e:
+                                delete_success = False
+                                st.error(f"❌ Error deleting rifle: {str(e)}")
 
-                            if delete_response.data:
+                            if delete_success:
                                 st.success(f"✅ Deleted: {rifle_to_delete['name']}")
                                 del st.session_state.deleting_rifle_id
                                 st.rerun()
