@@ -96,10 +96,14 @@ class ChronographMeasurement:
     chrono_session_id: str
     shot_number: int
     speed_fps: float
+    speed_mps: float
     datetime_local: datetime
     delta_avg_fps: Optional[float] = None
+    delta_avg_mps: Optional[float] = None
     ke_ft_lb: Optional[float] = None
+    ke_j: Optional[float] = None
     power_factor: Optional[float] = None
+    power_factor_kgms: Optional[float] = None
     clean_bore: Optional[bool] = None
     cold_bore: Optional[bool] = None
     shot_notes: Optional[str] = None
@@ -113,9 +117,13 @@ class ChronographMeasurement:
             chrono_session_id=record["chrono_session_id"],
             shot_number=record["shot_number"],
             speed_fps=record["speed_fps"],
+            speed_mps=record.get("speed_mps", 0),
             delta_avg_fps=record.get("delta_avg_fps"),
+            delta_avg_mps=record.get("delta_avg_mps"),
             ke_ft_lb=record.get("ke_ft_lb"),
+            ke_j=record.get("ke_j"),
             power_factor=record.get("power_factor"),
+            power_factor_kgms=record.get("power_factor_kgms"),
             datetime_local=pd.to_datetime(record["datetime_local"]),
             clean_bore=record.get("clean_bore"),
             cold_bore=record.get("cold_bore"),

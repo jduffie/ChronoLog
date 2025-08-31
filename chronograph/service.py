@@ -1,6 +1,10 @@
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
+from datetime import datetime
 
 from .models import ChronographMeasurement, ChronographSession
+from .business_logic import ChronographDataProcessor, SessionStatisticsCalculator
+from .unit_mapping_service import UnitMappingService
+from .device_adapters import ChronographDeviceFactory
 
 
 class ChronographService:
@@ -160,20 +164,6 @@ class ChronographService:
         except Exception as e:
             raise Exception(f"Error checking session existence: {str(e)}")
 
-    def create_session(self, session_data: dict) -> str:
-        """Create a new chronograph session"""
-        try:
-            response = (
-                self.supabase.table("chrono_sessions").insert(session_data).execute()
-            )
-
-            if not response.data:
-                raise Exception("Failed to create session")
-
-            return response.data[0]["id"]
-
-        except Exception as e:
-            raise Exception(f"Error creating session: {str(e)}")
 
     def update_session_stats(self, session_id: str, stats: dict) -> None:
         """Update session statistics"""
@@ -225,3 +215,71 @@ class ChronographService:
 
         except Exception as e:
             raise Exception(f"Error fetching measurements for stats: {str(e)}")
+    
+    def save_chronograph_session(self, session: ChronographSession) -> str:
+        """Save a ChronographSession entity to Supabase"""
+        try:
+            session_data = {
+                "id": session.id,
+                "user_id": session.user_id,
+                "tab_name": session.tab_name,
+                "bullet_type": session.bullet_type,
+                "bullet_grain": session.bullet_grain,
+                "datetime_local": session.datetime_local.isoformat(),
+                "uploaded_at": session.uploaded_at.isoformat(),
+                "file_path": session.file_path,
+                "shot_count": session.shot_count,
+                "avg_speed_fps": session.avg_speed_fps,
+                "std_dev_fps": session.std_dev_fps,
+                "min_speed_fps": session.min_speed_fps,
+                "max_speed_fps": session.max_speed_fps,
+            }
+            
+            response = self.supabase.table("chrono_sessions").insert(session_data).execute()
+            
+            if not response.data:
+                raise Exception("Failed to save session")
+            
+            return response.data[0]["id"]
+            
+        except Exception as e:
+            raise Exception(f"Error saving session: {str(e)}")
+    
+    def save_chronograph_measurement(self, measurement: ChronographMeasurement) -> str:
+        """Save a ChronographMeasurement entity to Supabase"""
+        try:
+            measurement_data = {
+                "id": measurement.id,
+                "user_id": measurement.user_id,
+                "chrono_session_id": measurement.chrono_session_id,
+                "shot_number": measurement.shot_number,
+                "speed_fps": measurement.speed_fps,
+                "speed_mps": measurement.speed_mps,
+                "delta_avg_fps": measurement.delta_avg_fps,
+                "delta_avg_mps": measurement.delta_avg_mps,
+                "ke_ft_lb": measurement.ke_ft_lb,
+                "ke_j": measurement.ke_j,
+                "power_factor": measurement.power_factor,
+                "power_factor_kgms": measurement.power_factor_kgms,
+                "datetime_local": measurement.datetime_local.isoformat() if measurement.datetime_local else None,
+                "clean_bore": measurement.clean_bore,
+                "cold_bore": measurement.cold_bore,
+                "shot_notes": measurement.shot_notes,
+            }
+            
+            response = self.supabase.table("chrono_measurements").insert(measurement_data).execute()
+            
+            if not response.data:
+                raise Exception("Failed to save measurement")
+            
+            return response.data[0]["id"]
+            
+        except Exception as e:
+            raise Exception(f"Error saving measurement: {str(e)}")
+    
+    def calculate_and_update_session_stats(self, user_id: str, session_id: str) -> None:
+        """Calculate and update session statistics"""
+        speeds = self.get_measurements_for_stats(user_id, session_id)
+        if speeds:
+            stats = SessionStatisticsCalculator.calculate_session_stats(speeds)
+            self.update_session_stats(session_id, stats)
