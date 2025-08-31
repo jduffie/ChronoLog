@@ -100,7 +100,7 @@ class WeatherService:
         """Delete a weather source and all its measurements"""
         try:
             self.supabase.table("weather_source").delete().eq("id", source_id).eq(
-                "user_email", user_email
+                "user_id", user_id
             ).execute()
 
         except Exception as e:
