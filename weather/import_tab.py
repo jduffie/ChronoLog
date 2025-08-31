@@ -141,57 +141,133 @@ def detect_column_units(headers, units_row, supabase):
 
 
 def render_weather_import_tab(user, supabase, bucket):
-    """Render weather file upload section"""
-
+    """Render weather import wizard"""
+    st.header("Weather Data Import Wizard")
+    
     # Initialize weather service
     weather_service = WeatherService(supabase)
-
-    # Get existing weather sources for the user
-    sources = weather_service.get_sources_for_user(user["id"])
-
-    st.write("Import weather data from your weather devices.")
-
-    if not sources:
-        st.warning(
-            "⚠️ No weather sources found. Please go to the **Sources** tab to create a weather source first."
+    
+    # Initialize wizard state
+    if "weather_wizard_state" not in st.session_state:
+        st.session_state.weather_wizard_state = {
+            "step": "source_selection",
+            "selected_source_id": None,
+            "new_source_data": None
+        }
+    
+    wizard_state = st.session_state.weather_wizard_state
+    
+    # Step 1: Source Selection
+    if wizard_state["step"] == "source_selection":
+        st.subheader("Step 1: Choose Weather Source")
+        st.write("Select an existing weather source or create a new one.")
+        
+        # Get existing sources
+        sources = weather_service.get_sources_for_user(user["id"])
+        
+        # Source selection options
+        source_choice = st.radio(
+            "Choose an option:",
+            options=["Select existing source", "Create new source"],
+            index=0
         )
-        return
-
-    # Select Weather Source
-    st.write("### Select Weather Source")
-
-    # Create source options with names only
-    source_options = [""] + [
-        source.name for source in sources
-    ]  # Empty string for initial undefined state
-
-    selected_source_name = st.selectbox(
-        "Choose weather source for this import",
-        options=source_options,
-        index=0,  # Start with empty selection
-        help="Select which weather source to associate with the imported data",
-    )
-
-    # Only show upload options if a source is selected
-    if selected_source_name:
-        # Find the selected source object
-        selected_source = next(s for s in sources if s.name == selected_source_name)
-
-        # Show selected source info
-        st.success(
-            f" Selected: {selected_source.name} - {selected_source.device_display()}"
-        )
-
-        # Check if it's a Kestrel meter and show appropriate upload option
+        
+        if source_choice == "Select existing source":
+            if not sources:
+                st.warning("No existing weather sources found. Please create a new source.")
+            else:
+                # Show existing sources
+                source_options = [f"{s.name} - {s.device_display()}" for s in sources]
+                selected_index = st.selectbox(
+                    "Select weather source:",
+                    options=range(len(source_options)),
+                    format_func=lambda x: source_options[x]
+                )
+                
+                if st.button("Continue with Selected Source", type="primary"):
+                    wizard_state["selected_source_id"] = sources[selected_index].id
+                    wizard_state["step"] = "file_upload"
+                    st.rerun()
+        
+        else:  # Create new source
+            st.write("#### Create New Weather Source")
+            
+            with st.form("new_source_form"):
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    source_type = st.selectbox(
+                        "Source Type*",
+                        options=["Meter"],
+                        help="Select the type of weather source"
+                    )
+                
+                with col2:
+                    source_make = st.selectbox(
+                        "Make*",
+                        options=["Kestrel"],
+                        help="Select the manufacturer"
+                    )
+                
+                name = st.text_input(
+                    "Source Name*",
+                    placeholder="e.g., Range Kestrel, Hunting Meter",
+                    help="Give your weather source a unique name"
+                )
+                
+                if st.form_submit_button("Create Source and Continue", type="primary"):
+                    if not name.strip():
+                        st.error("Source name is required!")
+                    else:
+                        try:
+                            # Check if name already exists
+                            existing = weather_service.get_source_by_name(user["id"], name.strip())
+                            if existing:
+                                st.error(f"A weather source named '{name}' already exists!")
+                            else:
+                                source_data = {
+                                    "user_id": user["id"],
+                                    "name": name.strip(),
+                                    "make": source_make,
+                                    "source_type": source_type.lower(),
+                                }
+                                
+                                source_id = weather_service.create_source(source_data)
+                                wizard_state["selected_source_id"] = source_id
+                                wizard_state["step"] = "file_upload"
+                                st.success(f"Weather source '{name}' created successfully!")
+                                st.rerun()
+                        except Exception as e:
+                            st.error(f"Error creating weather source: {e}")
+    
+    # Step 2: File Upload
+    elif wizard_state["step"] == "file_upload":
+        # Get the selected source
+        selected_source = weather_service.get_source_by_id(wizard_state["selected_source_id"], user["id"])
+        
+        if not selected_source:
+            st.error("Selected source not found. Returning to source selection.")
+            wizard_state["step"] = "source_selection"
+            st.rerun()
+            return
+        
+        st.subheader("Step 2: Upload Data File")
+        st.success(f"Selected Source: {selected_source.name} - {selected_source.device_display()}")
+        
+        # Back button
+        if st.button("← Back to Source Selection"):
+            wizard_state["step"] = "source_selection"
+            wizard_state["selected_source_id"] = None
+            st.rerun()
+        
+        st.write("---")
+        
+        # Show appropriate upload based on source type
         if selected_source.make and selected_source.make.lower() == "kestrel":
-            st.write("---")
             st.write("### Upload Kestrel CSV Files")
-            render_file_upload(
-                user, supabase, bucket, weather_service, selected_source.id
-            )
+            render_file_upload(user, supabase, bucket, weather_service, selected_source.id)
         else:
-            st.write("---")
-            st.info(" Upload options for this source type are not yet available.")
+            st.info("Upload options for this source type are not yet available.")
 
 
 def render_file_upload(user, supabase, bucket, weather_service, selected_meter_id):
