@@ -16,6 +16,7 @@ class ChronographSession:
     datetime_local: datetime
     uploaded_at: datetime
     file_path: Optional[str]
+    chronograph_source_id: Optional[str] = None
     shot_count: int = 0
     avg_speed_fps: Optional[float] = None
     std_dev_fps: Optional[float] = None
@@ -34,6 +35,7 @@ class ChronographSession:
             datetime_local=pd.to_datetime(record["datetime_local"]),
             uploaded_at=pd.to_datetime(record["uploaded_at"]),
             file_path=record.get("file_path"),
+            chronograph_source_id=record.get("chronograph_source_id"),
             shot_count=record.get("shot_count", 0),
             avg_speed_fps=record.get("avg_speed_fps"),
             std_dev_fps=record.get("std_dev_fps"),
@@ -58,6 +60,17 @@ class ChronographSession:
     def bullet_display(self) -> str:
         """Get a display-friendly bullet description"""
         return self.session_name if self.session_name else "Unknown Session"
+
+    def get_chronograph_source_name(self, chrono_service) -> str:
+        """Get the chronograph source name for this session"""
+        if not self.chronograph_source_id:
+            return "Unknown Source"
+        
+        try:
+            source = chrono_service.get_source_by_id(self.chronograph_source_id, self.user_id)
+            return source.display_name() if source else "Unknown Source"
+        except:
+            return "Unknown Source"
 
     def has_measurements(self) -> bool:
         """Check if this session has any measurements"""

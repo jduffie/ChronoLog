@@ -21,16 +21,25 @@ def render_logs_tab(user, supabase):
             st.info("No chronograph logs found. Import some data files to get started!")
             return
 
-        # Extract all unique session names for dropdown
+        # Get all chronograph sources for the user to create a lookup dictionary
+        sources = chrono_service.get_sources_for_user(user["id"])
+        source_lookup = {source.id: source.display_name() for source in sources}
+
+        # Extract all unique session names and source names for dropdowns
         all_session_names = set()
+        all_source_names = set()
         for session in sessions:
             session_name = session.session_name
             if session_name:
                 all_session_names.add(session_name)
+            
+            # Get chronograph source name from lookup
+            source_name = source_lookup.get(session.chronograph_source_id, "Unknown Source")
+            all_source_names.add(source_name)
 
         # Search controls
         st.subheader(" Search & Filter")
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
 
         with col1:
             # Session name dropdown filter
@@ -43,6 +52,16 @@ def render_logs_tab(user, supabase):
             )
 
         with col2:
+            # Chronograph source dropdown filter
+            source_options = ["All Sources"] + sorted(list(all_source_names))
+            selected_source = st.selectbox(
+                "Filter by Chronograph:",
+                options=source_options,
+                index=0,
+                key="chronograph_source_filter",
+            )
+
+        with col3:
             # Date range filter
             date_range = st.date_input(
                 "Filter by Date Range:",
@@ -61,6 +80,14 @@ def render_logs_tab(user, supabase):
                 session
                 for session in filtered_sessions
                 if session.session_name == selected_session
+            ]
+
+        # Filter by chronograph source
+        if selected_source != "All Sources":
+            filtered_sessions = [
+                session
+                for session in filtered_sessions
+                if source_lookup.get(session.chronograph_source_id, "Unknown Source") == selected_source
             ]
 
         # Filter by date range
@@ -102,6 +129,7 @@ def render_logs_tab(user, supabase):
                     "Date": session.datetime_local.strftime("%Y-%m-%d %H:%M"),
                     "Session": session.tab_name,
                     "Session Name": session.session_name,
+                    "Chronograph": source_lookup.get(session.chronograph_source_id, "Unknown Source"),
                     "Shots": session.shot_count if session.shot_count else 0,
                     "Avg Speed": session.avg_speed_display(),
                     "Session ID": session.id[:8] + "...",
@@ -128,6 +156,9 @@ def render_logs_tab(user, supabase):
                 ),
                 "Session Name": st.column_config.TextColumn(
                     "Session Name", width="medium", disabled=True
+                ),
+                "Chronograph": st.column_config.TextColumn(
+                    "Chronograph", width="medium", disabled=True
                 ),
                 "Shots": st.column_config.NumberColumn(
                     "Shots", width="small", disabled=True
@@ -178,6 +209,7 @@ def render_logs_tab(user, supabase):
                             {
                                 "Session": session.tab_name,
                                 "Session Name": session.session_name,
+                    "Chronograph": source_lookup.get(session.chronograph_source_id, "Unknown Source"),
                                 "Shot #": measurement.shot_number,
                                 "Speed (fps)": measurement.speed_fps,
                                 " AVG (fps)": (
