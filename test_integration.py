@@ -137,18 +137,12 @@ class TestFileUploadIntegration(BaseIntegrationTest):
             ).iloc[0, 0]
 
             # Parse bullet type and grain
-            bullet_parts = bullet_info.split(", ")
-            bullet_type = bullet_parts[0] if len(bullet_parts) > 0 else "Unknown"
-            grain_str = bullet_parts[1] if len(bullet_parts) > 1 else "0gr"
-            grain = int(grain_str.replace("gr", "")) if "gr" in grain_str else 0
-
-            # Create session
+            # Create session using session_name instead of bullet_type and bullet_grain
             session = ChronographSession(
                 id="test-session-123",
                 user_id=self.test_user_id,
                 tab_name="Sheet1",
-                bullet_type=bullet_type,
-                bullet_grain=float(grain),
+                session_name=bullet_info,
                 datetime_local=datetime.now(timezone.utc),
                 uploaded_at=datetime.now(timezone.utc),
                 file_path=excel_file_path,
@@ -171,6 +165,7 @@ class TestFileUploadIntegration(BaseIntegrationTest):
                     chrono_session_id=session_id,
                     shot_number=int(row["Shot"]),
                     speed_fps=float(row["Velocity (fps)"]),
+                    speed_mps=float(row["Velocity (fps)"]) * 0.3048,  # Convert to m/s
                     ke_ft_lb=float(row["Kinetic Energy (ft-lbs)"]),
                     power_factor=float(row["Power Factor"]),
                     datetime_local=pd.to_datetime(row["Date/Time"]),
@@ -180,8 +175,7 @@ class TestFileUploadIntegration(BaseIntegrationTest):
             # Assert we created the expected number of measurements
             self.assertEqual(len(measurements), 5)
             self.assertEqual(measurements[0].speed_fps, 2850)
-            self.assertEqual(session.bullet_type, "9mm FMJ")
-            self.assertEqual(session.bullet_grain, 124.0)
+            self.assertEqual(session.session_name, "9mm FMJ, 124gr")
 
         finally:
             # Clean up temp file
@@ -213,8 +207,7 @@ class TestCrossModuleIntegration(BaseIntegrationTest):
             id="test-session-123",
             user_id=self.test_user_id,
             tab_name="Integration Test",
-            bullet_type="9mm FMJ",
-            bullet_grain=124.0,
+            session_name="9mm FMJ, 124gr",
             datetime_local=datetime.now(timezone.utc),
             uploaded_at=datetime.now(timezone.utc),
             file_path="/tmp/test.xlsx",
@@ -227,14 +220,14 @@ class TestCrossModuleIntegration(BaseIntegrationTest):
             chrono_session_id="test-session-123",
             shot_number=1,
             speed_fps=2850.0,
+            speed_mps=2850.0 * 0.3048,  # Convert to m/s
             ke_ft_lb=1805.0,
             power_factor=228.0,
             datetime_local=datetime.now(timezone.utc),
         )
 
         # Verify data consistency
-        self.assertEqual(session.bullet_type, "9mm FMJ")
-        self.assertEqual(session.bullet_grain, 124.0)
+        self.assertEqual(session.session_name, "9mm FMJ, 124gr")
         self.assertEqual(measurement.speed_fps, 2850.0)
 
         # Test that session and measurement data aligns
@@ -269,7 +262,7 @@ class TestAuthenticationIntegration(BaseIntegrationTest):
                 {
                     "id": "session-1",
                     "user_id": self.test_user_id,
-                    "bullet_type": "9mm FMJ",
+                    "session_name": "9mm FMJ, 124gr",
                 }
             ]
             self.supabase.table.return_value.select.return_value.eq.return_value.execute.return_value = (
@@ -319,8 +312,7 @@ class TestDatabaseTransactionIntegration(BaseIntegrationTest):
             id="test-rollback-session",
             user_id=self.test_user_id,
             tab_name="Rollback Test",
-            bullet_type="Test Bullet",
-            bullet_grain=150.0,
+            session_name="Test Bullet, 150gr",
             datetime_local=datetime.now(timezone.utc),
             uploaded_at=datetime.now(timezone.utc),
             file_path="/tmp/rollback_test.xlsx",
@@ -328,7 +320,7 @@ class TestDatabaseTransactionIntegration(BaseIntegrationTest):
 
         # In a real implementation, this would test actual transaction behavior
         # For now, just verify the test setup
-        self.assertEqual(session.bullet_type, "Test Bullet")
+        self.assertEqual(session.session_name, "Test Bullet, 150gr")
 
 
 if __name__ == "__main__":
