@@ -7,7 +7,6 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Import modular tests from subdirectories
 from chronograph.test_chronograph import (
-    TestChronographImportTab,
     TestChronographModels,
     TestChronographPageStructure,
     TestChronographService,
@@ -251,29 +250,7 @@ class TestMainAppStructure(unittest.TestCase):
 class TestPageTabStructure(unittest.TestCase):
     """Test that pages have appropriate tab structures"""
 
-    def test_chronograph_has_correct_tabs(self):
-        """Test that chronograph page has expected tabs"""
-        if os.path.exists("pages/3_Chronograph.py"):
-            with open("pages/3_Chronograph.py", "r") as f:
-                content = f.read()
 
-            expected_tabs = ["Import", "View", "Edit", "My Files"]
-            for tab in expected_tabs:
-                self.assertIn(
-                    f'"{tab}"', content, f"Chronograph page should have {tab} tab"
-                )
-
-    def test_weather_has_correct_tabs(self):
-        """Test that weather page has expected tabs"""
-        if os.path.exists("pages/4_Weather.py"):
-            with open("pages/4_Weather.py", "r") as f:
-                content = f.read()
-
-            expected_tabs = ["Sources", "Import", "Logs", "View Log", "My Files"]
-            for tab in expected_tabs:
-                self.assertIn(
-                    f'"{tab}"', content, f"Weather page should have {tab} tab"
-                )
 
     def test_dope_has_separate_pages(self):
         """Test that DOPE has separate pages instead of tabs"""

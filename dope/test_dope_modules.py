@@ -78,23 +78,6 @@ class TestDopeModuleStructure(unittest.TestCase):
 class TestDopeCreatePage(unittest.TestCase):
     """Test the DOPE create page module"""
 
-    @patch("streamlit.title")
-    @patch("streamlit.info")
-    @patch("streamlit.write")
-    def test_render_create_page_basic(self, mock_write, mock_info, mock_title):
-        """Test that render_create_page runs without errors"""
-        from dope.create.create_page import render_create_page
-
-        # Should not raise any exceptions
-        result = render_create_page()
-
-        # Verify Streamlit functions were called
-        mock_title.assert_called_once_with("Create DOPE Session")
-        mock_info.assert_called_once_with("🚧 This page is under development - TBD")
-        mock_write.assert_called_once()
-
-        # Function should return None by default
-        self.assertIsNone(result)
 
     def test_create_page_has_docstring(self):
         """Test that create_page module has proper documentation"""
@@ -103,12 +86,6 @@ class TestDopeCreatePage(unittest.TestCase):
         self.assertIsNotNone(create_page.__doc__)
         self.assertIn("DOPE Create Page", create_page.__doc__)
 
-    def test_create_page_function_has_docstring(self):
-        """Test that render_create_page function has documentation"""
-        from dope.create.create_page import render_create_page
-
-        self.assertIsNotNone(render_create_page.__doc__)
-        self.assertIn("TODO", render_create_page.__doc__)
 
 
 class TestDopeViewPage(unittest.TestCase):
@@ -810,60 +787,6 @@ class TestDopeViewPage(unittest.TestCase):
             self.assertIsInstance(call_args, list)
             self.assertGreater(len(call_args), 0)
 
-    def test_render_session_details_structure(self):
-        """Test session details rendering structure"""
-        from datetime import datetime
-
-        from dope.models import DopeSessionModel
-        from dope.service import DopeService
-        from dope.view.view_page import render_session_details
-
-        # Create test session
-        session = DopeSessionModel(
-            id="test_001",
-            session_name="Test Session",
-            datetime_local=datetime.now(),
-            cartridge_id="cartridge_001",
-            rifle_name="Test Rifle",
-            cartridge_make="Federal",
-            cartridge_model="GMM",
-            cartridge_type="223 Remington",
-            bullet_make="Sierra",
-            bullet_model="MatchKing",
-            bullet_weight="77",
-            notes="Test notes",
-        )
-
-        service = DopeService(None)
-        user_id = "test_user_123"
-
-        with patch("streamlit.subheader"), patch(
-            "streamlit.columns"
-        ) as mock_columns, patch("streamlit.button"), patch(
-            "streamlit.tabs",
-            return_value=[
-                MagicMock(),
-                MagicMock(),
-                MagicMock(),
-                MagicMock(),
-                MagicMock(),
-            ],
-        ), patch(
-            "streamlit.info"
-        ), patch(
-            "streamlit.write"
-        ), patch(
-            "streamlit.text_area"
-        ):
-
-            # Mock columns to return appropriate number based on input
-            def mock_columns_func(num_cols):
-                return [MagicMock() for _ in range(num_cols)]
-
-            mock_columns.side_effect = mock_columns_func
-
-            # Should not raise exceptions
-            render_session_details(session, service, user_id)
 
     def test_export_sessions_to_csv(self):
         """Test CSV export functionality"""

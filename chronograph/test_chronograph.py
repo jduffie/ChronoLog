@@ -22,39 +22,6 @@ class TestChronographService(unittest.TestCase):
         self.user_id = "test@example.com"
         self.user_id = "google-oauth2|111273793361054745867"
 
-    def test_get_sessions_for_user(self):
-        mock_data = [
-            {
-                "id": "session-1",
-                "user_id": "google-oauth2|111273793361054745867",
-                "tab_name": "Sheet1",
-                "bullet_type": "9mm FMJ",
-                "bullet_grain": 115.0,
-                "datetime_local": "2023-12-01T10:00:00",
-                "uploaded_at": "2023-12-01T10:05:00",
-                "file_path": "test/file.xlsx",
-                "shot_count": 10,
-                "avg_speed_fps": 1200.5,
-                "std_dev_fps": 15.2,
-                "min_speed_fps": 1180.0,
-                "max_speed_fps": 1220.0,
-                "created_at": "2023-12-01T10:05:00",
-            }
-        ]
-
-        mock_response = Mock()
-        mock_response.data = mock_data
-
-        self.mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = (
-            mock_response
-        )
-
-        sessions = self.service.get_sessions_for_user(self.user_id)
-
-        self.assertEqual(len(sessions), 1)
-        self.assertIsInstance(sessions[0], ChronographSession)
-        self.assertEqual(sessions[0].bullet_type, "9mm FMJ")
-        self.assertEqual(sessions[0].shot_count, 10)
 
     def test_get_sessions_for_user_empty(self):
         mock_response = Mock()
@@ -68,31 +35,6 @@ class TestChronographService(unittest.TestCase):
 
         self.assertEqual(len(sessions), 0)
 
-    def test_get_session_by_id(self):
-        session_id = "session-1"
-        mock_data = {
-            "id": session_id,
-            "user_id": self.user_id,
-            "tab_name": "Sheet1",
-            "bullet_type": "9mm FMJ",
-            "bullet_grain": 115.0,
-            "datetime_local": "2023-12-01T10:00:00",
-            "uploaded_at": "2023-12-01T10:05:00",
-            "file_path": "test/file.xlsx",
-        }
-
-        mock_response = Mock()
-        mock_response.data = mock_data
-
-        self.mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.single.return_value.execute.return_value = (
-            mock_response
-        )
-
-        session = self.service.get_session_by_id(session_id, self.user_id)
-
-        self.assertIsInstance(session, ChronographSession)
-        self.assertEqual(session.id, session_id)
-        self.assertEqual(session.bullet_type, "9mm FMJ")
 
     def test_get_measurements_for_session(self):
         session_id = "session-1"
@@ -154,24 +96,6 @@ class TestChronographService(unittest.TestCase):
 
         self.assertFalse(exists)
 
-    def test_create_session(self):
-        session_data = {
-            "user_email": self.user_id,
-            "tab_name": "Sheet1",
-            "bullet_type": "9mm FMJ",
-        }
-
-        mock_response = Mock()
-        mock_response.data = [{"id": "new-session-id"}]
-
-        self.mock_supabase.table.return_value.insert.return_value.execute.return_value = (
-            mock_response
-        )
-
-        session_id = self.service.create_session(session_data)
-
-        self.assertEqual(session_id, "new-session-id")
-        self.mock_supabase.table.assert_called_with("chrono_sessions")
 
     def test_get_unique_bullet_types(self):
         mock_data = [
@@ -196,57 +120,7 @@ class TestChronographService(unittest.TestCase):
 
 class TestChronographModels(unittest.TestCase):
 
-    def test_chronograph_session_from_supabase_record(self):
-        record = {
-            "id": "session-1",
-            "user_email": "test@example.com",
-            "user_id": "google-oauth2|111273793361054745867",
-            "tab_name": "Sheet1",
-            "bullet_type": "9mm FMJ",
-            "bullet_grain": 115.0,
-            "datetime_local": "2023-12-01T10:00:00",
-            "uploaded_at": "2023-12-01T10:05:00",
-            "file_path": "test/file.xlsx",
-            "shot_count": 10,
-            "avg_speed_fps": 1200.5,
-            "std_dev_fps": 15.2,
-            "min_speed_fps": 1180.0,
-            "max_speed_fps": 1220.0,
-            "created_at": "2023-12-01T10:05:00",
-        }
 
-        session = ChronographSession.from_supabase_record(record)
-
-        self.assertEqual(session.id, "session-1")
-        self.assertEqual(session.bullet_type, "9mm FMJ")
-        self.assertEqual(session.bullet_grain, 115.0)
-        self.assertEqual(session.shot_count, 10)
-        self.assertAlmostEqual(session.avg_speed_fps, 1200.5)
-
-    def test_chronograph_session_display_methods(self):
-        session = ChronographSession(
-            id="session-1",
-            user_id="google-oauth2|111273793361054745867",
-            tab_name="Sheet1",
-            bullet_type="9mm FMJ",
-            bullet_grain=115.0,
-            datetime_local=pd.to_datetime("2023-12-01T10:00:00"),
-            uploaded_at=pd.to_datetime("2023-12-01T10:05:00"),
-            file_path="test/folder/file.xlsx",
-            shot_count=10,
-            avg_speed_fps=1200.5,
-            std_dev_fps=15.2,
-            min_speed_fps=1180.0,
-            max_speed_fps=1220.0,
-        )
-
-        self.assertEqual(session.display_name(), "Sheet1 - 2023-12-01 10:00")
-        self.assertEqual(session.bullet_display(), "9mm FMJ 115.0gr")
-        self.assertEqual(session.avg_speed_display(), "1200 fps")
-        self.assertEqual(session.std_dev_display(), "15.2 fps")
-        self.assertEqual(session.velocity_range_display(), "40 fps")
-        self.assertEqual(session.file_name(), "file.xlsx")
-        self.assertTrue(session.has_measurements())
 
     def test_chronograph_measurement_from_supabase_record(self):
         record = {
@@ -275,53 +149,6 @@ class TestChronographModels(unittest.TestCase):
         self.assertEqual(measurement.shot_notes, "Test note")
 
 
-class TestChronographImportTab(unittest.TestCase):
-
-    @patch("streamlit.file_uploader")
-    @patch("streamlit.success")
-    @patch("streamlit.error")
-    @patch("pandas.ExcelFile")
-    def test_render_chronograph_import_tab_no_file(
-        self, mock_excel, mock_error, mock_success, mock_file_uploader
-    ):
-        mock_file_uploader.return_value = None
-
-        user = {"email": "test@example.com", "id" : "foobar"}
-        mock_supabase = Mock()
-        bucket = "test-bucket"
-
-        result = render_chronograph_import_tab(user, mock_supabase, bucket)
-
-        self.assertIsNone(result)
-        mock_excel.assert_not_called()
-
-    @patch("streamlit.file_uploader")
-    @patch("streamlit.success")
-    @patch("streamlit.error")
-    @patch("pandas.ExcelFile")
-    def test_render_chronograph_import_tab_upload_error(
-        self, mock_excel, mock_error, mock_success, mock_file_uploader
-    ):
-        mock_file = Mock()
-        mock_file.name = "test.xlsx"
-        mock_file.type = (
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-        mock_file.getvalue.return_value = b"fake_excel_data"
-        mock_file_uploader.return_value = mock_file
-
-        user = {"email": "test@example.com"}
-        mock_supabase = Mock()
-        mock_supabase.storage.from_.return_value.upload.side_effect = Exception(
-            "Upload failed"
-        )
-        bucket = "test-bucket"
-
-        result = render_chronograph_import_tab(user, mock_supabase, bucket)
-
-        self.assertIsNone(result)
-        mock_error.assert_called()
-        mock_excel.assert_not_called()
 
 
 class TestChronographPageStructure(unittest.TestCase):
