@@ -1,15 +1,13 @@
-user_id,manufacturer,model,weight_grains,bullet_diameter_groove_mm,bore_diameter_land_mm,bullet_length_mm,ballistic_coefficient_g1,ballistic_coefficient_g7,sectional_density,min_req_twist_rate_in_per_rev,pref_twist_rate_in_per_rev,data_source_name,data_source_url
-google-oauth2|111273793361054745867,Berger,VLD Target,130,6.71,6.50,31.75,0.563,0.283,0.267,8.0,8.0,Berger Bullets Official,https://bergerbullets.com/product/6-5mm-130-grain-vld-target/
-google-oauth2|111273793361054745867,Berger,VLD Target,140,6.71,6.50,33.53,0.618,0.311,0.287,8.0,7.5,Berger Target Line,https://bergerbullets.com/product/6-5mm-140-grain-vld-target/
-google-oauth2|111273793361054745867,Berger,VLD Hunting,130,6.71,6.50,31.75,0.555,0.279,0.267,8.0,8.0,Berger Hunting Bullets,https://bergerbullets.com/product/6-5mm-130-grain-vld-hunting/
-google-oauth2|111273793361054745867,Berger,VLD Hunting,140,6.71,6.50,33.53,0.612,0.308,0.287,8.0,7.5,Berger VLD Hunting Line,https://bergerbullets.com/product/6-5mm-140-grain-vld-hunting/
-google-oauth2|111273793361054745867,Berger,Hybrid Target,130,6.71,6.50,31.75,0.568,0.285,0.267,8.0,8.0,Berger Hybrid Technology,https://bergerbullets.com/product/6-5mm-130-grain-hybrid-target/
-google-oauth2|111273793361054745867,Berger,Hybrid Target,140,6.71,6.50,33.53,0.625,0.315,0.287,8.0,7.5,Berger Target Bullets,https://bergerbullets.com/product/6-5mm-140-grain-hybrid-target/
-google-oauth2|111273793361054745867,Berger,Hybrid Target,156,6.71,6.50,36.58,0.679,0.342,0.320,7.5,7.0,Berger Long Range Target,https://bergerbullets.com/product/6-5mm-156-grain-hybrid-target/
-google-oauth2|111273793361054745867,Berger,Classic Hunter,130,6.71,6.50,31.75,0.540,0.271,0.267,8.0,8.0,Berger Classic Line,https://bergerbullets.com/product/6-5mm-130-grain-classic-hunter/
-google-oauth2|111273793361054745867,Berger,Classic Hunter,140,6.71,6.50,33.53,0.595,0.300,0.287,8.0,7.5,Berger Hunter Series,https://bergerbullets.com/product/6-5mm-140-grain-classic-hunter/
-google-oauth2|111273793361054745867,Berger,Elite Hunter,130,6.71,6.50,31.75,0.545,0.274,0.267,8.0,8.0,Berger Elite Hunter Line,https://bergerbullets.com/product/6-5mm-130-grain-elite-hunter/
-google-oauth2|111273793361054745867,Berger,Elite Hunter,135,6.71,6.50,32.51,0.581,0.292,0.277,8.0,7.5,Berger Premium Hunting,https://bergerbullets.com/product/6-5mm-135-grain-elite-hunter/
-google-oauth2|111273793361054745867,Berger,Elite Hunter,140,6.71,6.50,33.53,0.607,0.305,0.287,8.0,7.5,Berger Elite Series,https://bergerbullets.com/product/6-5mm-140-grain-elite-hunter/
-google-oauth2|111273793361054745867,Berger,Match Grade Target,120,6.71,6.50,28.19,0.485,0.244,0.246,8.0,8.0,Berger Match Grade,https://bergerbullets.com/product/6-5mm-120-grain-match-grade-target/
-google-oauth2|111273793361054745867,Berger,Match Grade Target,123,6.71,6.50,29.21,0.515,0.259,0.252,8.0,8.0,Berger Competition Bullets,https://bergerbullets.com/product/6-5mm-123-grain-match-grade-target/
+user_id,manufacturer,model,weight_grains,bullet_diameter_groove_mm,bore_diameter_land_mm,bullet_length_mm,ballistic_coefficient_g1,ballistic_coefficient_g7,sectional_density,min_req_twist_rate_in_per_rev,pref_twist_rate_in_per_rev,id,data_source_name,data_source_url
+,Sierra,MatchKing,123,6.71,6.50,29.21,0.510,0.257,0.252,8.0,,4e0128b3-54c1-4f47-bb36-4e6315e37011,Sierra Official,https://www.sierrabullets.com/product/6-5mm-264-cal-123-gr-matchking-hpbt/
+,Sierra,MatchKing,130,6.71,6.50,31.75,0.555,0.279,0.267,8.0,,3e76f247-0a4d-4c36-86cb-52d4a0b1f012,Sierra Official,https://www.sierrabullets.com/product/6-5mm-264-cal-130-gr-matchking-hpbt/
+,Sierra,MatchKing,140,6.71,6.50,33.53,0.595,0.300,0.287,8.0,,8cb64a5e-d5d7-4d1a-95f9-912f5ad9f013,Sierra Official,https://www.sierrabullets.com/product/6-5mm-264-cal-140-gr-matchking-hpbt/
+,Sierra,MatchKing,142,6.71,6.50,34.04,0.605,0.310,0.291,8.0,,1b7b0f0d-02f4-40b2-9b0b-3265e9ea2014,Sierra Official,https://www.sierrabullets.com/product/6-5mm-264-cal-142-gr-matchking-hpbt/
+,Sierra,Tipped MatchKing,130,6.71,6.50,31.75,0.565,0.289,0.267,8.0,,3f8f5e29-d62c-441f-8f55-ec3b6b1df015,Sierra Official,https://www.sierrabullets.com/product/6-5mm-264-cal-130-gr-tipped-matchking/
+,Sierra,Tipped MatchKing,140,6.71,6.50,33.53,0.608,0.310,0.287,8.0,,e74c1ed1-b774-4976-804f-d2ad846f2016,Sierra Official,https://www.sierrabullets.com/product/6-5mm-264-cal-140-gr-tipped-matchking/
+,Sierra,GameKing,120,6.71,6.50,28.19,0.435,0.218,0.246,8.0,,a2f7c289-92a2-4b31-82d3-f367c3e1b017,Sierra Official,https://www.sierrabullets.com/product/6-5mm-264-cal-120-gr-gameking-spbt/
+,Sierra,GameKing,140,6.71,6.50,33.02,0.495,0.251,0.287,8.0,,c9a4bdbd-61a6-46c7-8e23-83cfae61d018,Sierra Official,https://www.sierrabullets.com/product/6-5mm-264-cal-140-gr-gameking-spbt/
+,Sierra,Pro-Hunter,120,6.71,6.50,28.19,0.425,0.213,0.246,8.0,,f56ea72a-1bcb-40cb-9b0e-91de4e3a4019,Sierra Official,https://www.sierrabullets.com/product/6-5mm-264-cal-120-gr-pro-hunter-sp/
+,Sierra,Pro-Hunter,140,6.71,6.50,33.02,0.485,0.247,0.287,8.0,,25d79d4f-2f71-41c3-95f3-d39c5a66401a,Sierra Official,https://www.sierrabullets.com/product/6-5mm-264-cal-140-gr-pro-hunter-spbt/
+,Sierra,BlitzKing,100,6.71,6.50,25.40,0.395,0.200,0.205,9.0,,57b4c40e-97f4-4e17-82c3-c79d474a801b,Sierra Official,https://www.sierrabullets.com/product/6-5mm-264-cal-100-gr-blitzking/
+,Sierra,BlitzKing,120,6.71,6.50,28.19,0.445,0.224,0.246,8.0,,62c9f4f9-35a1-4b68-a75f-d8f2f620301c,Sierra Official,https://www.sierrabullets.com/product/6-5mm-264-cal-120-gr-blitzking/
