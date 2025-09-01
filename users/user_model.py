@@ -47,7 +47,7 @@ class UserModel:
                 "country": user_data["country"],
                 "unit_system": user_data["unit_system"],
                 "profile_complete": True,
-                "auth0_sub": user_data.get("sub", ""),
+                "id": user_data.get("sub", ""),
                 "picture": user_data.get("picture", ""),
             }
 
