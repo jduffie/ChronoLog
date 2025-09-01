@@ -76,13 +76,21 @@ class ChronographSession:
         """Check if this session has any measurements"""
         return self.shot_count > 0
 
+    def muzzle_vel_speed_units(self) -> str:
+        return 'fps'
+
     def avg_speed_display(self) -> str:
         """Get formatted average speed for display"""
-        return f"{self.avg_speed_fps:.0f} fps" if self.avg_speed_fps else "N/A"
+        switch = {
+            "fps": self.avg_speed_fps
+        }
+        val = switch.get(self.muzzle_vel_speed_units(), self.avg_speed_fps)
+        return f"{val:.0f}" if val is not None else "N/A"
 
     def std_dev_display(self) -> str:
         """Get formatted standard deviation for display"""
-        return f"{self.std_dev_fps:.1f} fps" if self.std_dev_fps else "N/A"
+        units = self.muzzle_vel_speed_units()
+        return f"{self.std_dev_fps:.1f} {units}" if self.std_dev_fps else "N/A"
 
     def velocity_range_display(self) -> str:
         """Get formatted velocity range for display"""

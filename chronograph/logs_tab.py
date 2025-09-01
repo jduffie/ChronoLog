@@ -123,16 +123,16 @@ def render_logs_tab(user, supabase):
         # Create display data with selection column
         table_data = []
         for i, session in enumerate(filtered_sessions):
+            speed_units = session.muzzle_vel_speed_units()
             table_data.append(
                 {
                     "Select": False,  # Radio button column (only one can be True)
                     "Date": session.datetime_local.strftime("%Y-%m-%d %H:%M"),
-                    "Session": session.tab_name,
                     "Session Name": session.session_name,
-                    "Chronograph": source_lookup.get(session.chronograph_source_id, "Unknown Source"),
                     "Shots": session.shot_count if session.shot_count else 0,
-                    "Avg Speed": session.avg_speed_display(),
-                    "Session ID": session.id[:8] + "...",
+                    f"Avg Speed ({speed_units})": session.avg_speed_display(),
+                    "Chronograph": source_lookup.get(session.chronograph_source_id, "Unknown Source"),
+                    "Session": session.tab_name,
                 }
             )
 
@@ -207,9 +207,8 @@ def render_logs_tab(user, supabase):
                     for measurement in measurements:
                         all_measurements.append(
                             {
-                                "Session": session.tab_name,
+                                "Date": session.datetime_local.strftime("%Y-%m-%d %H:%M"),
                                 "Session Name": session.session_name,
-                    "Chronograph": source_lookup.get(session.chronograph_source_id, "Unknown Source"),
                                 "Shot #": measurement.shot_number,
                                 "Speed (fps)": measurement.speed_fps,
                                 " AVG (fps)": (

@@ -286,7 +286,7 @@ class TestChronographImportTab(unittest.TestCase):
     ):
         mock_file_uploader.return_value = None
 
-        user = {"email": "test@example.com"}
+        user = {"email": "test@example.com", "id" : "foobar"}
         mock_supabase = Mock()
         bucket = "test-bucket"
 
