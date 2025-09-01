@@ -64,6 +64,11 @@ def extract_session_timestamp_from_excel(df: pd.DataFrame) -> str:
     return session_timestamp
 
 
+def extract_session_name(df: pd.DataFrame) -> str:
+    """Extract session name from Excel file metadata"""
+    return str(df.iloc[0, 0]).strip()
+
+
 def extract_bullet_metadata(df: pd.DataFrame) -> tuple[str, Optional[float]]:
     """Extract bullet type and grain from Excel file metadata"""
     bullet_meta = df.iloc[0, 0]

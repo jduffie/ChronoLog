@@ -8,12 +8,13 @@ from dataclasses import dataclass
 from datetime import datetime
 import pandas as pd
 from .business_logic import UnitConverter
-from .ui_helpers import safe_float, safe_int, extract_session_timestamp_from_excel, extract_bullet_metadata
+from .ui_helpers import safe_float, safe_int, extract_session_timestamp_from_excel, extract_session_name
 
 
 @dataclass
 class ChronographSessionEntity:
     """Entity representing a chronograph session from any device type"""
+    session_name: str
     bullet_type: str
     bullet_grain: Optional[float]
     session_timestamp: datetime
@@ -87,12 +88,14 @@ class GarminExcelAdapter(ChronographDeviceAdapter):
         df = pd.read_excel(excel_file, sheet_name=sheet_name, header=None)
         
         # Extract session metadata
-        bullet_type, bullet_grain = extract_bullet_metadata(df)
+        session_name = extract_session_name(df)
+        # bullet_type, bullet_grain = extract_bullet_metadata(df)
         session_timestamp = extract_session_timestamp_from_excel(df)
         
         session_entity = ChronographSessionEntity(
-            bullet_type=bullet_type,
-            bullet_grain=bullet_grain,
+            session_name=session_name,
+            bullet_type="temp_type",
+            bullet_grain=0.0,
             session_timestamp=pd.to_datetime(session_timestamp),
             tab_name=sheet_name,
             file_path=file_path,

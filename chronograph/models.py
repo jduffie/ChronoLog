@@ -12,6 +12,7 @@ class ChronographSession:
     id: str
     user_id: str
     tab_name: str
+    session_name: str
     bullet_type: str
     bullet_grain: Optional[float]
     datetime_local: datetime
@@ -31,6 +32,7 @@ class ChronographSession:
             id=record["id"],
             user_id=record["user_id"],
             tab_name=record["tab_name"],
+            session_name=record.get("session_name", ""),
             bullet_type=record["bullet_type"],
             bullet_grain=record.get("bullet_grain"),
             datetime_local=pd.to_datetime(record["datetime_local"]),
