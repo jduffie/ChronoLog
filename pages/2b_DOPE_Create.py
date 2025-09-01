@@ -6,7 +6,9 @@ import streamlit as st
 import navigation
 
 # Add the root directory to the path so we can import our modules
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
 
 from auth import handle_auth
 from dope.create.create_page import render_create_page

@@ -55,6 +55,13 @@ def load():
     # App title
     st.sidebar.header("ChronoLog")
 
+    # Overview
+    cols = st.sidebar.columns([1, 9], gap="small")
+    with cols[0]:
+        st.markdown("&nbsp;", unsafe_allow_html=True)
+    with cols[1]:
+        st.page_link("pages/1_Home.py", label="Overview")
+
     # Data on Prior Engagements section
     # st.sidebar.divider()
     st.sidebar.subheader("Data on Prior Engagements")

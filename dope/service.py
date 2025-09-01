@@ -147,6 +147,27 @@ class DopeService:
                 (session for session in mock_sessions if session.id == session_id), None
             )
 
+    def get_measurements_for_dope_session(self, dope_session_id: str, user_id: str) -> List[Dict[str, Any]]:
+        """Get all measurements for a specific DOPE session"""
+        try:
+            if not self.supabase or str(type(self.supabase).__name__) == "MagicMock":
+                return []
+                
+            response = (
+                self.supabase.table("dope_measurements")
+                .select("*")
+                .eq("dope_session_id", dope_session_id)
+                .eq("user_id", user_id)
+                .order("shot_number", desc=False)
+                .execute()
+            )
+            
+            return response.data if response.data else []
+            
+        except Exception as e:
+            print(f"Error fetching DOPE measurements for session {dope_session_id}: {e}")
+            return []
+
     def create_session(
         self, session_data: Dict[str, Any], user_id: str
     ) -> DopeSessionModel:

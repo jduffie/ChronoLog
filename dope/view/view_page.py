@@ -651,8 +651,8 @@ def render_session_details(
             st.info("Delete functionality coming soon")
 
     # Detailed information in tabs
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(
-        ["Session Info", "Rifle", "Cartridge", "Bullet", "Weather"]
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
+        ["Session Info", "Rifle", "Cartridge", "Bullet", "Weather", "Shots"]
     )
 
     with tab1:
@@ -669,6 +669,9 @@ def render_session_details(
 
     with tab5:
         render_weather_info_tab(session)
+
+    with tab6:
+        render_shots_tab(session)
 
 
 def render_session_info_tab(session: DopeSessionModel):
@@ -885,3 +888,130 @@ def export_sessions_to_csv(sessions: List[DopeSessionModel]):
 
     except Exception as e:
         st.error(f"Error exporting sessions: {str(e)}")
+
+
+def render_shots_tab(session: DopeSessionModel):
+    """Render shots/measurements tab"""
+    try:
+        # Initialize Supabase client to get measurements
+        url = st.secrets["supabase"]["url"]
+        key = st.secrets["supabase"]["key"]
+        supabase = create_client(url, key)
+        service = DopeService(supabase)
+        
+        # Get measurements for this DOPE session
+        measurements = service.get_measurements_for_dope_session(session.id, session.user_id)
+        
+        if not measurements:
+            st.info("📊 No shot measurements found for this session.")
+            if session.chrono_session_id:
+                st.write(f"**Linked Chronograph Session:** {session.chrono_session_id}")
+                st.info("Measurements may be available in the linked chronograph session but not yet copied to DOPE measurements.")
+            return
+        
+        # Display shot count and summary
+        shot_count = len(measurements)
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric("Total Shots", shot_count)
+            
+        with col2:
+            # Calculate average velocity if available
+            velocities = [m.get('speed_fps') for m in measurements if m.get('speed_fps')]
+            avg_velocity = sum(velocities) / len(velocities) if velocities else 0
+            st.metric("Avg Velocity", f"{avg_velocity:.1f} fps" if avg_velocity else "N/A")
+            
+        with col3:
+            # Calculate standard deviation if we have velocities
+            if len(velocities) > 1:
+                mean = avg_velocity
+                variance = sum((v - mean) ** 2 for v in velocities) / len(velocities)
+                std_dev = variance ** 0.5
+                st.metric("Std Dev", f"{std_dev:.1f} fps")
+            else:
+                st.metric("Std Dev", "N/A")
+                
+        with col4:
+            # Show linked chrono session if available
+            if session.chrono_session_id:
+                st.metric("Chrono Session", "✅ Linked")
+            else:
+                st.metric("Chrono Session", "❌ None")
+        
+        # Create measurements table
+        df_data = []
+        for measurement in measurements:
+            row = {
+                "Shot #": measurement.get('shot_number', ''),
+                "Time": measurement.get('datetime_shot', ''),
+                "Velocity (fps)": measurement.get('speed_fps', ''),
+                "Energy (ft·lb)": measurement.get('ke_ft_lb', ''),
+                "Power Factor": measurement.get('power_factor', ''),
+                "Distance": measurement.get('distance', ''),
+                "Elevation Adj": measurement.get('elevation_adjustment', ''),
+                "Windage Adj": measurement.get('windage_adjustment', ''),
+                "Temperature (°F)": measurement.get('temperature_f', ''),
+                "Pressure (inHg)": measurement.get('pressure_inhg', ''),
+                "Humidity (%)": measurement.get('humidity_pct', ''),
+                "Clean Bore": measurement.get('clean_bore', ''),
+                "Cold Bore": measurement.get('cold_bore', ''),
+                "Notes": measurement.get('shot_notes', '')
+            }
+            df_data.append(row)
+        
+        # Convert to DataFrame
+        import pandas as pd
+        df = pd.DataFrame(df_data)
+        
+        # Format timestamp column if present
+        if 'Time' in df.columns and not df['Time'].empty:
+            try:
+                df['Time'] = pd.to_datetime(df['Time']).dt.strftime('%H:%M:%S')
+            except:
+                pass  # Keep original format if conversion fails
+        
+        # Replace empty/None values with empty strings for better display
+        df = df.fillna('')
+        
+        # Configure column display
+        column_config = {
+            "Shot #": st.column_config.NumberColumn("Shot #", width="small"),
+            "Time": st.column_config.TextColumn("Time", width="small"),
+            "Velocity (fps)": st.column_config.NumberColumn("Velocity (fps)", width="medium"),
+            "Energy (ft·lb)": st.column_config.NumberColumn("Energy (ft·lb)", width="medium"),
+            "Power Factor": st.column_config.NumberColumn("Power Factor", width="medium"),
+            "Distance": st.column_config.TextColumn("Distance", width="small"),
+            "Elevation Adj": st.column_config.TextColumn("Elevation Adj", width="small"),
+            "Windage Adj": st.column_config.TextColumn("Windage Adj", width="small"),
+            "Temperature (°F)": st.column_config.NumberColumn("Temp (°F)", width="small"),
+            "Pressure (inHg)": st.column_config.NumberColumn("Press (inHg)", width="small"),
+            "Humidity (%)": st.column_config.NumberColumn("Humidity (%)", width="small"),
+            "Clean Bore": st.column_config.TextColumn("Clean Bore", width="small"),
+            "Cold Bore": st.column_config.TextColumn("Cold Bore", width="small"),
+            "Notes": st.column_config.TextColumn("Notes", width="large")
+        }
+        
+        # Display the measurements table
+        st.subheader("📊 Shot Measurements")
+        st.dataframe(
+            df,
+            column_config=column_config,
+            use_container_width=True,
+            hide_index=True
+        )
+        
+        # Export functionality for shots data
+        if st.button("📥 Export Shots to CSV"):
+            csv = df.to_csv(index=False)
+            st.download_button(
+                label="📥 Download Shots CSV",
+                data=csv,
+                file_name=f"dope_shots_{session.id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                mime="text/csv",
+                help="Download shot measurements as CSV file"
+            )
+            
+    except Exception as e:
+        st.error(f"Error loading shot measurements: {str(e)}")
+        st.info("Unable to load shot data. This may be due to database connectivity issues.")

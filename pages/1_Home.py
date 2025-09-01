@@ -30,48 +30,9 @@ def run():
     if not user:
         return
 
-    # Display landing page content
-    st.title(" ChronoLog")
-
-    # Hero section
-    st.markdown(
-        """
-    ###  **The Power of Automation**
-    
-    Stop manually transcribing data between spreadsheets, weather apps, and range cards. 
-    ChronoLog merges data from multiple sources to build your DOPE (Data On Previous Engagements) 
-    with precision and speed.
-    """
-    )
-
-
-    # Quick start section
-    st.markdown("---")
-    st.markdown("##  **Quick Start Guide**")
-
-    st.markdown(
-        """
-    ### Get started ...
-    
-   
-    """
-    )
-
-    # Call to action
-    st.markdown("---")
-    st.info(
-        """
-    💡 **Ready to get started?**
-    
-    Head to the **Chronograph** page to upload your first data file, 
-    then visit the **DOPE** page to create your automated ballistic log
-    """
-    )
-
-    # Disclaimer
-    st.markdown("---")
-    st.warning(
-        "⚠️ **This is a prototype. There are no guarantees. Use at your own risk.**"
+    st.image(
+        "./home/resources/home.png",
+        use_container_width=True
     )
 
 
