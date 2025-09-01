@@ -1,0 +1,2 @@
+id,owner_id,make,model,bullet_id,cartridge_type,data_source_name,data_source_link,cartridge_key,created_at,updated_at,verified_by_id
+42df6ee4-e2bb-405d-afab-2ed2ea9b3f60,,Hornady,Match,98a3aaab-8833-4f3e-a7aa-a295ba0d6e3e,6.5mm Creedmoor,,,hornady|match|6.5mm creedmoor|98a3aaab-8833-4f3e-a7aa-a295ba0d6e3e,2025-08-23 18:17:56.404688+00,2025-09-01 20:01:33.6394+00,

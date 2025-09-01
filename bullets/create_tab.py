@@ -7,9 +7,6 @@ def render_create_bullets_tab(user, supabase):
     """Render the Create Bullets tab"""
     st.header("➕ Create New Bullets Entry")
 
-    # Initialize service
-    bullets_service = BulletsService(supabase)
-
     # Check if user is admin
     is_admin = (
         user.get("user_metadata", {}).get("is_admin", False)
@@ -22,6 +19,9 @@ def render_create_bullets_tab(user, supabase):
             "This global bullet database is maintained by administrators to ensure data quality and consistency."
         )
         return
+
+    # Initialize service (only for admin users)
+    bullets_service = BulletsService(supabase)
 
     # Create form for bullets entry
     with st.form("create_bullets_form"):
