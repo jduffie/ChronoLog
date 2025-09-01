@@ -13,8 +13,6 @@ class ChronographSession:
     user_id: str
     tab_name: str
     session_name: str
-    bullet_type: str
-    bullet_grain: Optional[float]
     datetime_local: datetime
     uploaded_at: datetime
     file_path: Optional[str]
@@ -33,8 +31,6 @@ class ChronographSession:
             user_id=record["user_id"],
             tab_name=record["tab_name"],
             session_name=record.get("session_name", ""),
-            bullet_type=record["bullet_type"],
-            bullet_grain=record.get("bullet_grain"),
             datetime_local=pd.to_datetime(record["datetime_local"]),
             uploaded_at=pd.to_datetime(record["uploaded_at"]),
             file_path=record.get("file_path"),
@@ -61,8 +57,7 @@ class ChronographSession:
 
     def bullet_display(self) -> str:
         """Get a display-friendly bullet description"""
-        grain_str = f" {self.bullet_grain}gr" if self.bullet_grain else ""
-        return f"{self.bullet_type}{grain_str}"
+        return self.session_name if self.session_name else "Unknown Session"
 
     def has_measurements(self) -> bool:
         """Check if this session has any measurements"""

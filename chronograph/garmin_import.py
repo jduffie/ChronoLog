@@ -7,7 +7,7 @@ import pandas as pd
 
 from .business_logic import UnitConverter
 from .models import ChronographSession, ChronographMeasurement
-from .ui_helpers import safe_float, safe_int, extract_session_timestamp_from_excel, extract_session_name, extract_bullet_metadata
+from .ui_helpers import safe_float, safe_int, extract_session_timestamp_from_excel, extract_session_name
 
 
 class GarminExcelProcessor:
@@ -65,8 +65,6 @@ class GarminExcelProcessor:
             user_id=user_id,
             tab_name=ingest_result.session.tab_name,
             session_name=ingest_result.session.session_name,
-            bullet_type=ingest_result.session.bullet_type,
-            bullet_grain=ingest_result.session.bullet_grain,
             datetime_local=ingest_result.session.session_timestamp,
             uploaded_at=datetime.now(timezone.utc),
             file_path=ingest_result.session.file_path
@@ -126,13 +124,10 @@ class GarminExcelProcessor:
         
         # Extract session metadata
         session_name = extract_session_name(df)
-        bullet_type, bullet_grain = extract_bullet_metadata(df)
         session_timestamp = extract_session_timestamp_from_excel(df)
         
         session_data = {
             'session_name': session_name,
-            'bullet_type': bullet_type,
-            'bullet_grain': bullet_grain,
             'session_timestamp': pd.to_datetime(session_timestamp),
             'tab_name': sheet_name,
             'file_path': file_path
@@ -333,7 +328,6 @@ class GarminFileMapper:
         
         # Extract session metadata
         session_name = extract_session_name(df)
-        bullet_type, bullet_grain = extract_bullet_metadata(df)
         session_timestamp = extract_session_timestamp_from_excel(df)
         
         # Create session entity
@@ -342,8 +336,6 @@ class GarminFileMapper:
             user_id="",  # Will be set by caller
             tab_name=sheet_name,
             session_name=session_name,
-            bullet_type=bullet_type,
-            bullet_grain=bullet_grain,
             datetime_local=pd.to_datetime(session_timestamp),
             uploaded_at=datetime.now(timezone.utc),
             file_path=file_path

@@ -21,25 +21,25 @@ def render_logs_tab(user, supabase):
             st.info("No chronograph logs found. Import some data files to get started!")
             return
 
-        # Extract all unique bullet types for dropdown (using bullet_display which includes grain)
-        all_bullet_types = set()
+        # Extract all unique session names for dropdown
+        all_session_names = set()
         for session in sessions:
-            bullet_display = session.bullet_display()
-            if bullet_display:
-                all_bullet_types.add(bullet_display)
+            session_name = session.session_name
+            if session_name:
+                all_session_names.add(session_name)
 
         # Search controls
         st.subheader(" Search & Filter")
         col1, col2 = st.columns(2)
 
         with col1:
-            # Bullet type dropdown filter
-            bullet_options = ["All Bullets"] + sorted(list(all_bullet_types))
-            selected_bullet = st.selectbox(
-                "Filter by Bullet Type:",
-                options=bullet_options,
+            # Session name dropdown filter
+            session_options = ["All Sessions"] + sorted(list(all_session_names))
+            selected_session = st.selectbox(
+                "Filter by Session Name:",
+                options=session_options,
                 index=0,
-                key="chronograph_bullet_filter",
+                key="chronograph_session_filter",
             )
 
         with col2:
@@ -55,12 +55,12 @@ def render_logs_tab(user, supabase):
         # Apply filters
         filtered_sessions = sessions.copy()
 
-        # Filter by bullet type
-        if selected_bullet != "All Bullets":
+        # Filter by session name
+        if selected_session != "All Sessions":
             filtered_sessions = [
                 session
                 for session in filtered_sessions
-                if session.bullet_display() == selected_bullet
+                if session.session_name == selected_session
             ]
 
         # Filter by date range
@@ -101,7 +101,7 @@ def render_logs_tab(user, supabase):
                     "Select": False,  # Radio button column (only one can be True)
                     "Date": session.datetime_local.strftime("%Y-%m-%d %H:%M"),
                     "Session": session.tab_name,
-                    "Bullet": session.bullet_display(),
+                    "Session Name": session.session_name,
                     "Shots": session.shot_count if session.shot_count else 0,
                     "Avg Speed": session.avg_speed_display(),
                     "Session ID": session.id[:8] + "...",
@@ -126,8 +126,8 @@ def render_logs_tab(user, supabase):
                 "Session": st.column_config.TextColumn(
                     "Session", width="medium", disabled=True
                 ),
-                "Bullet": st.column_config.TextColumn(
-                    "Bullet", width="medium", disabled=True
+                "Session Name": st.column_config.TextColumn(
+                    "Session Name", width="medium", disabled=True
                 ),
                 "Shots": st.column_config.NumberColumn(
                     "Shots", width="small", disabled=True
@@ -177,7 +177,7 @@ def render_logs_tab(user, supabase):
                         all_measurements.append(
                             {
                                 "Session": session.tab_name,
-                                "Bullet": session.bullet_display(),
+                                "Session Name": session.session_name,
                                 "Shot #": measurement.shot_number,
                                 "Speed (fps)": measurement.speed_fps,
                                 " AVG (fps)": (

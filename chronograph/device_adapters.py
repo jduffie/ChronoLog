@@ -15,8 +15,6 @@ from .ui_helpers import safe_float, safe_int, extract_session_timestamp_from_exc
 class ChronographSessionEntity:
     """Entity representing a chronograph session from any device type"""
     session_name: str
-    bullet_type: str
-    bullet_grain: Optional[float]
     session_timestamp: datetime
     tab_name: str
     file_path: Optional[str] = None
@@ -94,8 +92,6 @@ class GarminExcelAdapter(ChronographDeviceAdapter):
         
         session_entity = ChronographSessionEntity(
             session_name=session_name,
-            bullet_type="temp_type",
-            bullet_grain=0.0,
             session_timestamp=pd.to_datetime(session_timestamp),
             tab_name=sheet_name,
             file_path=file_path,
