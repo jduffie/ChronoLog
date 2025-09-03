@@ -43,7 +43,7 @@ class SubmissionModel:
             deleted_count = 0
             for range_id in range_ids:
                 print(
-                    f"Attempting to delete range ID: {range_id} for user: {user_email}"
+                    f"Attempting to delete range ID: {range_id} for user: {user_id}"
                 )
 
                 # First check if the range exists and belongs to the user
@@ -58,7 +58,7 @@ class SubmissionModel:
 
                 if not check_result.data:
                     print(
-                        f"Range {range_id} not found or doesn't belong to user {user_email}"
+                        f"Range {range_id} not found or doesn't belong to user {user_id}"
                     )
                     continue
 

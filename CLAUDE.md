@@ -451,3 +451,4 @@ DO NOT use unicode emojis. Use plain text only.
 - each page needs its own private session state
 - Each page should have its own nested session state.
 - use user["id"] for authorization
+- run isort before commit

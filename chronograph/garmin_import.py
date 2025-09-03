@@ -2,6 +2,8 @@
 Garmin-specific file import and mapping module
 Handles Garmin Excel file processing and data mapping
 """
+import uuid
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
