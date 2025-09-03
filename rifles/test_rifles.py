@@ -11,9 +11,9 @@ import pandas as pd
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from rifles.create_tab import render_create_rifle_tab
-from rifles.view_tab import render_view_rifle_tab
 from rifles.models import Rifle
 from rifles.service import RifleService
+from rifles.view_tab import render_view_rifle_tab
 
 
 class TestRiflesCreateTab(unittest.TestCase):

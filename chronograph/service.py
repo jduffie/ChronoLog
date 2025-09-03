@@ -1,11 +1,11 @@
-from typing import List, Optional, Dict, Any
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
+from .business_logic import ChronographDataProcessor, SessionStatisticsCalculator
 from .chronograph_session_models import ChronographMeasurement, ChronographSession
 from .chronograph_source_models import ChronographSource
-from .business_logic import ChronographDataProcessor, SessionStatisticsCalculator
-from .unit_mapping_service import UnitMappingService
 from .device_adapters import ChronographDeviceFactory
+from .unit_mapping_service import UnitMappingService
 
 
 class ChronographService:

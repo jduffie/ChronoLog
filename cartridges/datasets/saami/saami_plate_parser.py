@@ -2,14 +2,16 @@
 # OCR + parse SAAMI cartridge drawings into a normalized row.
 
 from __future__ import annotations
+
 import re
-from typing import Optional, Dict, Any
-from dataclasses import dataclass, asdict
-from PIL import Image
+from dataclasses import asdict, dataclass
+from datetime import datetime
+from typing import Any, Dict, Optional
+
 import cv2
 import numpy as np
 import pytesseract
-from datetime import datetime
+from PIL import Image
 
 TESS_CONFIG = r'--oem 3 --psm 6'  # good general default
 
@@ -332,7 +334,8 @@ def parse_saami_plate(image_path: str) -> Dict[str, Any]:
 # ---- CLI demo ---------------------------------------------------------------
 
 if __name__ == "__main__":
-    import json, sys
+    import json
+    import sys
     if len(sys.argv) < 2:
         print("Usage: python saami_plate_parser.py path/to/plate.png")
         sys.exit(1)

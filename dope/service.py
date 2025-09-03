@@ -2,8 +2,9 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
-from .models import DopeSessionModel
 from chronograph.service import ChronographService
+
+from .models import DopeSessionModel
 
 
 class DopeService:

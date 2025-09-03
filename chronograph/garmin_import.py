@@ -3,11 +3,17 @@ Garmin-specific file import and mapping module
 Handles Garmin Excel file processing and data mapping
 """
 from typing import Dict, List, Optional, Tuple
+
 import pandas as pd
 
 from .business_logic import UnitConverter
-from .chronograph_session_models import ChronographSession, ChronographMeasurement
-from .ui_helpers import safe_float, safe_int, extract_session_timestamp_from_excel, extract_session_name
+from .chronograph_session_models import ChronographMeasurement, ChronographSession
+from .ui_helpers import (
+    extract_session_name,
+    extract_session_timestamp_from_excel,
+    safe_float,
+    safe_int,
+)
 
 
 class GarminExcelProcessor:
@@ -20,9 +26,10 @@ class GarminExcelProcessor:
     
     def process_garmin_excel(self, uploaded_file, user, file_name):
         """Process Garmin Excel file using device adapter architecture"""
-        from .device_adapters import ChronographDeviceFactory
         import streamlit as st
-        
+
+        from .device_adapters import ChronographDeviceFactory
+
         # Create device adapter
         device_factory = ChronographDeviceFactory()
         device_adapter = device_factory.create_adapter("garmin_excel", self.unit_mapping_service)
@@ -57,8 +64,9 @@ class GarminExcelProcessor:
         """Convert entities to models and save to database"""
         import uuid
         from datetime import datetime, timezone
+
         import streamlit as st
-        
+
         # Convert session entity to model
         session_model = ChronographSession(
             id=str(uuid.uuid4()),

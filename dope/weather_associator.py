@@ -5,9 +5,10 @@ This class handles the association of weather measurements with DOPE sessions
 based on chronograph session time windows and shot timestamps.
 """
 
-from datetime import datetime, timedelta
-from typing import List, Dict, Optional, Tuple
 import statistics
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Tuple
+
 from weather.service import WeatherService
 
 

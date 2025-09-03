@@ -1,10 +1,10 @@
+import csv
 import os
 import sys
-import unittest
 import tempfile
-import csv
-from unittest.mock import Mock, patch, MagicMock
+import unittest
 from decimal import Decimal
+from unittest.mock import MagicMock, Mock, patch
 
 # Add the root directory to the path so we can import our modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

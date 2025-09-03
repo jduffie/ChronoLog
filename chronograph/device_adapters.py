@@ -3,12 +3,19 @@ Device Adapter Layer for Chronographs
 Provides device-agnostic interface for different chronograph types
 """
 from abc import ABC, abstractmethod
-from typing import Any, List, Optional
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any, List, Optional
+
 import pandas as pd
+
 from .business_logic import UnitConverter
-from .ui_helpers import safe_float, safe_int, extract_session_timestamp_from_excel, extract_session_name
+from .ui_helpers import (
+    extract_session_name,
+    extract_session_timestamp_from_excel,
+    safe_float,
+    safe_int,
+)
 
 
 @dataclass

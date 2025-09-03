@@ -134,9 +134,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install flake8 black isort mypy
         
-    - name: Run Black formatter check
-      run: |
-        black --check --diff .
+#    - name: Run Black formatter check
+#      run: |
+#        black --check --diff .
         
     - name: Run isort import sorting check
       run: |

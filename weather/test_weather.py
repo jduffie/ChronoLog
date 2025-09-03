@@ -9,7 +9,15 @@ import pandas as pd
 # Add the root directory to the path so we can import our modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from weather.import_tab import render_weather_import_tab, fahrenheit_to_celsius, feet_to_meters, inhg_to_hpa, mph_to_mps, celsius_to_fahrenheit, meters_to_feet
+from weather.import_tab import (
+    celsius_to_fahrenheit,
+    fahrenheit_to_celsius,
+    feet_to_meters,
+    inhg_to_hpa,
+    meters_to_feet,
+    mph_to_mps,
+    render_weather_import_tab,
+)
 from weather.models import WeatherMeasurement, WeatherSource
 from weather.service import WeatherService
 

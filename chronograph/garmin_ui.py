@@ -5,9 +5,9 @@ from typing import List
 import pandas as pd
 import streamlit as st
 
+from .garmin_import import GarminExcelProcessor
 from .service import ChronographService
 from .unit_mapping_service import UnitMappingService
-from .garmin_import import GarminExcelProcessor
 
 
 class GarminImportUI:

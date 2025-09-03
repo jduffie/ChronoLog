@@ -4,14 +4,14 @@ Comprehensive test suite for the cartridges module.
 Tests models, data validation, and UI components.
 """
 
+import csv
 import os
 import sys
-import unittest
 import tempfile
-import csv
+import unittest
 from datetime import datetime, timezone
-from unittest.mock import MagicMock, Mock, patch
 from decimal import Decimal
+from unittest.mock import MagicMock, Mock, patch
 
 # Add root directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -883,7 +883,7 @@ class TestCartridgeViewTabIntegration(unittest.TestCase):
     def test_view_tab_session_state_cleanup(self, mock_st):
         """Test that view tab properly cleans up session state"""
         from cartridges.view_tab import render_view_cartridges_tab
-        
+
         # Create a mock session state that behaves like a dictionary but allows mocking
         mock_session_state = Mock()
         mock_session_state.__contains__ = Mock(return_value=True)
@@ -907,7 +907,7 @@ class TestCartridgeViewTabIntegration(unittest.TestCase):
     def test_view_tab_database_integration(self, mock_st):
         """Test view tab database query integration"""
         from cartridges.view_tab import render_view_cartridges_tab
-        
+
         # Mock successful database response with cartridge data
         mock_response = Mock()
         mock_response.data = [

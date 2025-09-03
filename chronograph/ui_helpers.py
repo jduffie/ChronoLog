@@ -3,8 +3,9 @@ UI Helper utilities for chronograph views
 Handles UI-specific data processing and validation
 """
 import math
+from typing import Any, Optional
+
 import pandas as pd
-from typing import Optional, Any
 
 
 def safe_float(value: Any, default: Optional[float] = None) -> Optional[float]:

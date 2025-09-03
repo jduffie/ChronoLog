@@ -135,7 +135,7 @@ def render_chronograph_import_tab(user, supabase, bucket):
 def render_garmin_file_upload(user, supabase, bucket, chrono_service, selected_source_id):
     """Render Garmin file upload section"""
     from .garmin_ui import GarminImportUI
-    
+
     # Get selected source
     selected_source = chrono_service.get_source_by_id(selected_source_id, user["id"])
     

@@ -12,7 +12,7 @@ import sys
 import unittest
 import uuid
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock, patch, Mock
+from unittest.mock import MagicMock, Mock, patch
 
 # Add the root directory to the path so we can import our modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -1176,8 +1176,8 @@ class TestDopeIntegration(unittest.TestCase):
     """Integration tests for DOPE module components"""
 
     def setUp(self):
-        from dope.service import DopeService
         from dope.models import DopeSessionModel
+        from dope.service import DopeService
         
         self.DopeService = DopeService
         self.DopeSessionModel = DopeSessionModel

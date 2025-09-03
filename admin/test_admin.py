@@ -9,12 +9,17 @@ import sys
 import unittest
 from datetime import datetime
 from unittest.mock import Mock, patch
+
 import pandas as pd
 
 # Add root directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from admin.users_tab import render_users_tab, render_user_edit_form, render_user_delete_form
+from admin.users_tab import (
+    render_user_delete_form,
+    render_user_edit_form,
+    render_users_tab,
+)
 
 
 class TestAdminUsersTab(unittest.TestCase):
@@ -395,8 +400,12 @@ class TestAdminModuleIntegration(unittest.TestCase):
 
     def test_admin_module_imports(self):
         """Test that admin module components can be imported"""
-        from admin.users_tab import render_users_tab, render_user_edit_form, render_user_delete_form
-        
+        from admin.users_tab import (
+            render_user_delete_form,
+            render_user_edit_form,
+            render_users_tab,
+        )
+
         # Verify functions are callable
         self.assertTrue(callable(render_users_tab))
         self.assertTrue(callable(render_user_edit_form))
@@ -405,7 +414,7 @@ class TestAdminModuleIntegration(unittest.TestCase):
     def test_admin_function_signatures(self):
         """Test that admin functions have correct signatures"""
         import inspect
-        
+
         # Test render_users_tab signature
         sig = inspect.signature(render_users_tab)
         params = list(sig.parameters.keys())
