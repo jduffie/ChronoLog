@@ -199,7 +199,7 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
-**/node_modules/**
+**/node_modules
 **/package*.json
 .streamlit/secrets.toml
 

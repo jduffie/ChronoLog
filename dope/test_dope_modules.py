@@ -10,7 +10,9 @@ This module tests the new DOPE page modules located in:
 import os
 import sys
 import unittest
-from unittest.mock import MagicMock, patch
+import uuid
+from datetime import datetime, timedelta
+from unittest.mock import MagicMock, patch, Mock
 
 # Add the root directory to the path so we can import our modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -909,6 +911,443 @@ class TestDopeViewPage(unittest.TestCase):
 
             # Should not raise exceptions and handle filters properly
             render_main_page_filters(service, user_id)
+
+
+class TestDopeModelAdvanced(unittest.TestCase):
+    """Advanced tests for DopeSessionModel functionality"""
+
+    def setUp(self):
+        from dope.models import DopeSessionModel
+        self.DopeSessionModel = DopeSessionModel
+
+    def test_model_display_name_variations(self):
+        """Test different display name scenarios"""
+        # Test with session name
+        session_with_name = self.DopeSessionModel(
+            session_name="My Test Session",
+            cartridge_type="223 Remington",
+            bullet_make="Sierra",
+            bullet_model="MatchKing",
+            distance_m=100.0
+        )
+        self.assertEqual(session_with_name.display_name, "My Test Session")
+
+        # Test without session name - should build from components
+        session_without_name = self.DopeSessionModel(
+            session_name="",
+            cartridge_type="308 Winchester",
+            bullet_make="Hornady",
+            bullet_model="ELD Match",
+            distance_m=600.0
+        )
+        expected = "308 Winchester - Hornady ELD Match - 600.0m"
+        self.assertEqual(session_without_name.display_name, expected)
+
+        # Test minimal data
+        minimal_session = self.DopeSessionModel(session_name="")
+        self.assertEqual(minimal_session.display_name, "Untitled DOPE Session")
+
+    def test_model_weather_summary_variations(self):
+        """Test weather summary with different data combinations"""
+        # Test complete weather data
+        full_weather = self.DopeSessionModel(
+            temperature_c=22.5,
+            relative_humidity_pct=65.0,
+            barometric_pressure_inhg=30.15,
+            wind_speed_1_kmh=8.0
+        )
+        weather_summary = full_weather.weather_summary
+        self.assertIn("22.5°C", weather_summary)
+        self.assertIn("65.0% RH", weather_summary)
+        self.assertIn('30.15" Hg', weather_summary)
+        self.assertIn("8.0 km/h wind", weather_summary)
+
+        # Test partial weather data
+        partial_weather = self.DopeSessionModel(
+            temperature_c=18.0,
+            wind_speed_1_kmh=12.0
+        )
+        partial_summary = partial_weather.weather_summary
+        self.assertIn("18.0°C", partial_summary)
+        self.assertIn("12.0 km/h wind", partial_summary)
+        self.assertNotIn("RH", partial_summary)
+
+        # Test no weather data
+        no_weather = self.DopeSessionModel()
+        self.assertEqual(no_weather.weather_summary, "No weather data")
+
+    def test_model_field_validation_edge_cases(self):
+        """Test edge cases for field validation"""
+        # Test with whitespace-only mandatory fields
+        whitespace_session = self.DopeSessionModel(
+            session_name="   ",
+            rifle_name="  \t  ",
+            cartridge_make="",
+            cartridge_model="Valid Model",
+            cartridge_type="Valid Type",
+            bullet_make="Valid Make",
+            bullet_model="Valid Model",
+            bullet_weight="150"
+        )
+        self.assertFalse(whitespace_session.is_complete())
+        missing_fields = whitespace_session.get_missing_mandatory_fields()
+        self.assertIn("Session Name", missing_fields)
+        self.assertIn("Rifle Name", missing_fields)
+        self.assertIn("Cartridge Make", missing_fields)
+
+    def test_model_to_dict_completeness(self):
+        """Test that to_dict includes all expected fields"""
+        session = self.DopeSessionModel(
+            id="test_001",
+            session_name="Complete Session",
+            user_id="user_123",
+            cartridge_id="cartridge_456",
+            rifle_name="Test Rifle",
+            range_name="Test Range",
+            distance_m=300.0,
+            temperature_c=20.0,
+            notes="Test notes"
+        )
+        
+        data_dict = session.to_dict()
+        
+        # Check core fields are present
+        expected_fields = [
+            "id", "user_id", "session_name", "cartridge_id", 
+            "rifle_name", "range_name", "distance_m", 
+            "temperature_c", "notes"
+        ]
+        
+        # Note: to_dict() doesn't include 'id' field based on the implementation
+        for field in expected_fields[1:]:  # Skip 'id' as it's not in to_dict
+            self.assertIn(field, data_dict)
+
+    def test_model_from_supabase_record_edge_cases(self):
+        """Test creating model from various Supabase record formats"""
+        # Test with minimal record
+        minimal_record = {
+            "id": "minimal_001",
+            "user_id": "user_001"
+        }
+        session = self.DopeSessionModel.from_supabase_record(minimal_record)
+        self.assertEqual(session.id, "minimal_001")
+        self.assertEqual(session.user_id, "user_001")
+        self.assertEqual(session.session_name, "")  # Default value
+        self.assertEqual(session.status, "active")  # Default value
+
+        # Test with null values
+        null_record = {
+            "id": "null_001",
+            "user_id": "user_001", 
+            "session_name": None,
+            "rifle_name": None,
+            "temperature_c": None
+        }
+        session_with_nulls = self.DopeSessionModel.from_supabase_record(null_record)
+        self.assertIsNone(session_with_nulls.session_name)
+        self.assertIsNone(session_with_nulls.rifle_name)
+        self.assertIsNone(session_with_nulls.temperature_c)
+
+
+class TestDopeServiceAdvanced(unittest.TestCase):
+    """Advanced tests for DopeService functionality"""
+
+    def setUp(self):
+        from dope.service import DopeService
+        self.mock_supabase = MagicMock()
+        self.service = DopeService(self.mock_supabase)
+        self.test_user_id = "google-oauth2|111273793361054745867"
+
+    def test_get_measurements_for_dope_session(self):
+        """Test getting DOPE measurements for a session"""
+        # Test with mocked supabase (should return empty list)
+        # The service method checks for MagicMock by name and returns [] for mocks
+        measurements = self.service.get_measurements_for_dope_session("session_001", self.test_user_id)
+        # Mock implementation should return empty list since mock is detected
+        self.assertEqual(measurements, [])
+
+    def test_filter_sessions_complex_filters(self):
+        """Test complex filtering scenarios"""
+        # Test multiple filters combined
+        complex_filters = {
+            "status": "active",
+            "cartridge_type": "223 Remington",
+            "distance_range": (50, 200),
+            "temperature_range": (15, 25)
+        }
+        
+        filtered_sessions = self.service.filter_sessions(self.test_user_id, complex_filters)
+        
+        # All returned sessions should match all filters
+        for session in filtered_sessions:
+            self.assertEqual(session.status, "active")
+            self.assertEqual(session.cartridge_type, "223 Remington")
+            if session.distance_m:
+                self.assertTrue(50 <= session.distance_m <= 200)
+            if session.temperature_c:
+                self.assertTrue(15 <= session.temperature_c <= 25)
+
+    def test_filter_sessions_edge_cases(self):
+        """Test filtering edge cases"""
+        # Test filtering for "Not Defined" values
+        not_defined_filters = {
+            "cartridge_type": "Not Defined",
+            "rifle_name": "Not Defined",
+            "range_name": "Not Defined"
+        }
+        
+        filtered_sessions = self.service.filter_sessions(self.test_user_id, not_defined_filters)
+        
+        # All sessions should have empty or None values for these fields
+        for session in filtered_sessions:
+            self.assertTrue(not session.cartridge_type or session.cartridge_type.strip() == "")
+            self.assertTrue(not session.rifle_name or session.rifle_name.strip() == "")
+            self.assertTrue(not session.range_name or session.range_name.strip() == "")
+
+    def test_search_sessions_comprehensive(self):
+        """Test comprehensive search functionality"""
+        # Test search in different fields
+        search_terms = ["Federal", "Sierra", "Range", "notes"]
+        
+        for term in search_terms:
+            results = self.service.search_sessions(self.test_user_id, term)
+            self.assertIsInstance(results, list)
+            # Each result should contain the search term in at least one field
+            for session in results:
+                session_text = " ".join([
+                    session.session_name or "",
+                    session.cartridge_make or "",
+                    session.cartridge_model or "",
+                    session.bullet_make or "",
+                    session.bullet_model or "",
+                    session.range_name or "",
+                    session.notes or ""
+                ]).lower()
+                self.assertIn(term.lower(), session_text)
+
+    def test_get_unique_values_different_fields(self):
+        """Test getting unique values for different fields"""
+        fields_to_test = [
+            "cartridge_type", "rifle_name", "cartridge_make", 
+            "bullet_make", "range_name"
+        ]
+        
+        for field in fields_to_test:
+            unique_values = self.service.get_unique_values(self.test_user_id, field)
+            self.assertIsInstance(unique_values, list)
+            # Should be sorted and contain no duplicates
+            self.assertEqual(unique_values, sorted(set(unique_values)))
+
+    def test_create_session_with_chrono_data(self):
+        """Test creating session with chronograph data"""
+        session_data = {
+            "session_name": "Chrono Integration Test",
+            "chrono_session_id": "chrono_001",
+            "rifle_name": "Test Rifle",
+            "cartridge_make": "Test Make",
+            "cartridge_model": "Test Model",
+            "cartridge_type": "Test Type",
+            "bullet_make": "Test Bullet",
+            "bullet_model": "Test Model",
+            "bullet_weight": "150"
+        }
+        
+        new_session = self.service.create_session(session_data, self.test_user_id)
+        
+        self.assertIsNotNone(new_session.id)
+        self.assertEqual(new_session.chrono_session_id, "chrono_001")
+        self.assertEqual(new_session.session_name, "Chrono Integration Test")
+
+    def test_service_error_handling(self):
+        """Test service error handling"""
+        # Test with invalid user ID (not the mock user ID)
+        invalid_user_id = "invalid_user_123"
+        
+        # Should return empty list for invalid user
+        sessions = self.service.get_sessions_for_user(invalid_user_id)
+        self.assertEqual(sessions, [])
+        
+        # Search should also return empty for invalid user
+        search_results = self.service.search_sessions(invalid_user_id, "test")
+        self.assertEqual(search_results, [])
+
+
+class TestDopeIntegration(unittest.TestCase):
+    """Integration tests for DOPE module components"""
+
+    def setUp(self):
+        from dope.service import DopeService
+        from dope.models import DopeSessionModel
+        
+        self.DopeService = DopeService
+        self.DopeSessionModel = DopeSessionModel
+        self.test_user_id = "google-oauth2|111273793361054745867"
+
+    def test_service_model_integration(self):
+        """Test service and model integration"""
+        service = self.DopeService(None)  # Mock supabase
+        
+        # Get sessions from service
+        sessions = service.get_sessions_for_user(self.test_user_id)
+        
+        # Verify all returned objects are proper models
+        for session in sessions:
+            self.assertIsInstance(session, self.DopeSessionModel)
+            self.assertTrue(hasattr(session, 'display_name'))
+            self.assertTrue(hasattr(session, 'cartridge_display'))
+            self.assertTrue(hasattr(session, 'bullet_display'))
+            self.assertTrue(hasattr(session, 'weather_summary'))
+
+    def test_create_and_retrieve_workflow(self):
+        """Test complete create and retrieve workflow"""
+        service = self.DopeService(None)  # Mock supabase
+        
+        # Create new session
+        session_data = {
+            "session_name": "Integration Test Session",
+            "rifle_name": "Integration Rifle",
+            "cartridge_make": "Integration Make",
+            "cartridge_model": "Integration Model", 
+            "cartridge_type": "223 Remington",
+            "bullet_make": "Integration Bullet",
+            "bullet_model": "Integration BModel",
+            "bullet_weight": "75",
+            "distance_m": 100.0,
+            "temperature_c": 22.0,
+            "notes": "Integration test notes"
+        }
+        
+        new_session = service.create_session(session_data, self.test_user_id)
+        
+        # Verify creation
+        self.assertIsInstance(new_session, self.DopeSessionModel)
+        self.assertIsNotNone(new_session.id)
+        self.assertEqual(new_session.session_name, "Integration Test Session")
+        
+        # Try to retrieve by ID (mock will return None for non-existing)
+        retrieved_session = service.get_session_by_id(new_session.id, self.test_user_id)
+        self.assertIsNone(retrieved_session)  # Expected for mock implementation
+
+    def test_search_and_filter_integration(self):
+        """Test search and filter integration"""
+        service = self.DopeService(None)  # Mock supabase
+        
+        # Get all sessions
+        all_sessions = service.get_sessions_for_user(self.test_user_id)
+        initial_count = len(all_sessions)
+        
+        # Search for specific term
+        search_results = service.search_sessions(self.test_user_id, "Federal")
+        self.assertLessEqual(len(search_results), initial_count)
+        
+        # Filter by specific criteria
+        filter_results = service.filter_sessions(
+            self.test_user_id, 
+            {"status": "active", "cartridge_type": "223 Remington"}
+        )
+        
+        # Verify all results match filter criteria
+        for session in filter_results:
+            self.assertEqual(session.status, "active")
+            self.assertEqual(session.cartridge_type, "223 Remington")
+
+    def test_statistics_calculation_integration(self):
+        """Test statistics calculation with model data"""
+        service = self.DopeService(None)  # Mock supabase
+        
+        # Get statistics
+        stats = service.get_session_statistics(self.test_user_id)
+        
+        # Verify statistics structure
+        required_stats = [
+            "total_sessions", "active_sessions", "archived_sessions",
+            "unique_cartridge_types", "unique_bullet_makes", 
+            "unique_ranges", "average_distance_m"
+        ]
+        
+        for stat_key in required_stats:
+            self.assertIn(stat_key, stats)
+            self.assertIsInstance(stats[stat_key], (int, float, str))
+        
+        # Verify logical relationships
+        self.assertEqual(
+            stats["total_sessions"], 
+            stats["active_sessions"] + stats["archived_sessions"]
+        )
+
+    def test_bulk_operations_workflow(self):
+        """Test bulk operations workflow"""
+        service = self.DopeService(None)  # Mock supabase
+        
+        # Get multiple sessions
+        sessions = service.get_sessions_for_user(self.test_user_id)
+        
+        if len(sessions) > 1:
+            # Test bulk filtering
+            bulk_filter_results = service.filter_sessions(
+                self.test_user_id, 
+                {"status": "active"}
+            )
+            
+            # Test bulk search
+            bulk_search_results = service.search_sessions(
+                self.test_user_id, 
+                "Range"
+            )
+            
+            # Results should be subsets of original sessions
+            self.assertLessEqual(len(bulk_filter_results), len(sessions))
+            self.assertLessEqual(len(bulk_search_results), len(sessions))
+
+    def test_error_handling_integration(self):
+        """Test error handling across service and model layers"""
+        service = self.DopeService(None)  # Mock supabase
+        
+        # Test with invalid data
+        invalid_session_data = {
+            "session_name": "",  # Empty required field
+            "rifle_name": "",    # Empty required field
+        }
+        
+        # Create session should still work (validation is in model)
+        new_session = service.create_session(invalid_session_data, self.test_user_id)
+        self.assertIsInstance(new_session, self.DopeSessionModel)
+        
+        # But model should report as incomplete
+        self.assertFalse(new_session.is_complete())
+        missing_fields = new_session.get_missing_mandatory_fields()
+        self.assertGreater(len(missing_fields), 0)
+
+    def test_model_service_data_consistency(self):
+        """Test data consistency between model and service"""
+        service = self.DopeService(None)  # Mock supabase
+        
+        # Get sessions from service
+        sessions = service.get_sessions_for_user(self.test_user_id)
+        
+        for session in sessions:
+            # Test that model methods work with service data
+            display_name = session.display_name
+            cartridge_display = session.cartridge_display
+            bullet_display = session.bullet_display
+            weather_summary = session.weather_summary
+            
+            # All should return strings
+            self.assertIsInstance(display_name, str)
+            self.assertIsInstance(cartridge_display, str)
+            self.assertIsInstance(bullet_display, str)
+            self.assertIsInstance(weather_summary, str)
+            
+            # Test completeness check works
+            is_complete = session.is_complete()
+            missing_fields = session.get_missing_mandatory_fields()
+            
+            self.assertIsInstance(is_complete, bool)
+            self.assertIsInstance(missing_fields, list)
+            
+            # If complete, should have no missing fields
+            if is_complete:
+                self.assertEqual(len(missing_fields), 0)
 
 
 if __name__ == "__main__":

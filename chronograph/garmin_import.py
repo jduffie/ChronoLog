@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Tuple
 import pandas as pd
 
 from .business_logic import UnitConverter
-from .models import ChronographSession, ChronographMeasurement
+from .chronograph_session_models import ChronographSession, ChronographMeasurement
 from .ui_helpers import safe_float, safe_int, extract_session_timestamp_from_excel, extract_session_name
 
 

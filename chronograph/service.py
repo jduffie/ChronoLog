@@ -1,7 +1,7 @@
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 
-from .models import ChronographMeasurement, ChronographSession
+from .chronograph_session_models import ChronographMeasurement, ChronographSession
 from .chronograph_source_models import ChronographSource
 from .business_logic import ChronographDataProcessor, SessionStatisticsCalculator
 from .unit_mapping_service import UnitMappingService
