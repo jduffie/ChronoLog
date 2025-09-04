@@ -1,14 +1,8 @@
 import os
 import sys
+from typing import Any, Dict
 
 import streamlit as st
-
-# Add the parent directory to the path so we can import shared modules
-sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
-
-from typing import Any, Dict
 
 from auth import handle_auth
 from mapping.session_state_manager import SessionStateManager
@@ -16,6 +10,13 @@ from supabase import create_client
 
 from .nominate_model import NominateModel
 from .nominate_view import NominateView
+
+# Add the parent directory to the path so we can import shared modules
+sys.path.append(
+    os.path.dirname(
+        os.path.dirname(
+            os.path.dirname(
+                os.path.abspath(__file__)))))
 
 
 class NominateController:
@@ -84,7 +85,8 @@ class NominateController:
                 if "processed_markers" not in st.session_state:
                     st.session_state.processed_markers = set()
 
-                # Process the points and disable draw only if not already processed
+                # Process the points and disable draw only if not already
+                # processed
                 if markers_key not in st.session_state.processed_markers:
                     # Clear existing points and add the two new ones
                     self.model.points = []
@@ -104,12 +106,14 @@ class NominateController:
                         f"✅ Processed points, calculated measurements, and disabled draw"
                     )
 
-                    # Trigger rerun to update map with polyline and disable draw
+                    # Trigger rerun to update map with polyline and disable
+                    # draw
                     st.rerun()
                 else:
                     print(f"⚠️ Markers already processed, skipping rerun")
 
-        # Handle map state changes (update model but don't trigger rerun for map navigation)
+        # Handle map state changes (update model but don't trigger rerun for
+        # map navigation)
         if map_info.get("center"):
             center = map_info["center"]
             print(f"CENTER : {center}")
@@ -175,10 +179,12 @@ class NominateController:
 
     def _debug_session_state(self) -> None:
         """Debug nominate module session state changes."""
-        prev_session_state = getattr(st.session_state, "_prev_nominate_state", {})
+        prev_session_state = getattr(
+            st.session_state, "_prev_nominate_state", {})
 
         # Use SessionStateManager to get filtered nominate state
-        current_nominate_state = SessionStateManager.debug_session_state("nominate")
+        current_nominate_state = SessionStateManager.debug_session_state(
+            "nominate")
 
         # Log starting state
         if current_nominate_state:
@@ -238,7 +244,8 @@ class NominateController:
 
         # Update map center if coordinates changed
         if [search_lat, search_lon] != self.model.map_center:
-            # Set zoom level to max (18) if coordinates were manually entered or from address search
+            # Set zoom level to max (18) if coordinates were manually entered
+            # or from address search
             zoom_level = 18 if should_zoom_to_max else self.model.zoom_level
             self.model.update_map_state(
                 center={"lat": search_lat, "lng": search_lon}, zoom=zoom_level
@@ -287,7 +294,8 @@ class NominateController:
             )
 
         # Display range form and measurements table
-        submission_result = self.view.display_range_form_and_table(measurements)
+        submission_result = self.view.display_range_form_and_table(
+            measurements)
 
         # Handle range submission
         if submission_result and submission_result.get("action") == "submit":
@@ -300,8 +308,9 @@ class NominateController:
         """Main controller method to run the nomination application."""
         # Set page configuration FIRST, before any other Streamlit operations
         st.set_page_config(
-            page_title="Nominate - ChronoLog Mapping", page_icon="📍", layout="wide"
-        )
+            page_title="Nominate - ChronoLog Mapping",
+            page_icon="📍",
+            layout="wide")
 
         # Set app identifier for auth system
         if "app" not in st.query_params:

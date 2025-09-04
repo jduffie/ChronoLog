@@ -22,7 +22,8 @@ class AdminView:
         """Display count of pending submissions."""
         st.markdown(f"### Pending Submissions ({count})")
 
-    def display_submission_details(self, submission: Dict[str, Any], index: int) -> str:
+    def display_submission_details(
+            self, submission: Dict[str, Any], index: int) -> str:
         """Display submission details in an expandable section. Returns review reason."""
         submission_name = submission.get("range_name", "Unnamed Range")
         user_email = submission.get("user_email", "Unknown User")
@@ -37,16 +38,21 @@ class AdminView:
                 st.write(
                     f"**Description:** {submission.get('range_description', 'N/A')}"
                 )
-                st.write(f"**Submitted by:** {submission.get('user_email', 'N/A')}")
-                st.write(f"**Submitted:** {submission.get('submitted_at', 'N/A')}")
+                st.write(
+                    f"**Submitted by:** {submission.get('user_email', 'N/A')}")
+                st.write(
+                    f"**Submitted:** {submission.get('submitted_at', 'N/A')}")
 
                 st.markdown("**Measurements:**")
-                st.write(f"**Distance:** {submission.get('distance_m', 0):.1f} m")
-                st.write(f"**Azimuth:** {submission.get('azimuth_deg', 0):.1f}°")
+                st.write(
+                    f"**Distance:** {submission.get('distance_m', 0):.1f} m")
+                st.write(
+                    f"**Azimuth:** {submission.get('azimuth_deg', 0):.1f}°")
                 st.write(
                     f"**Elevation:** {submission.get('elevation_angle_deg', 0):.2f}°"
                 )
-                st.write(f"**Location:** {submission.get('display_name', 'N/A')}")
+                st.write(
+                    f"**Location:** {submission.get('display_name', 'N/A')}")
 
             with col2:
                 st.markdown("**Coordinates:**")
@@ -100,7 +106,10 @@ class AdminView:
                     action = "approve"
 
         with action_col2:
-            if st.button(f"❌ Deny", key=f"deny_{submission['id']}", type="secondary"):
+            if st.button(
+                f"❌ Deny",
+                key=f"deny_{submission['id']}",
+                    type="secondary"):
                 if not review_reason.strip():
                     st.error("❌ Please provide a reason for denial.")
                 else:
@@ -124,7 +133,12 @@ class AdminView:
         center_lon = (start_lon + end_lon) / 2
 
         # Create map
-        m = folium.Map(location=[center_lat, center_lon], zoom_start=12, tiles=None)
+        m = folium.Map(
+            location=[
+                center_lat,
+                center_lon],
+            zoom_start=12,
+            tiles=None)
 
         # Add satellite imagery
         folium.TileLayer(
@@ -150,16 +164,24 @@ class AdminView:
 
         # Add firing position marker (blue)
         folium.Marker(
-            location=[start_lat, start_lon],
+            location=[
+                start_lat,
+                start_lon],
             popup=f"🔫 Firing Position<br>{submission.get('range_name', 'Unnamed Range')}",
-            icon=folium.Icon(color="blue", icon="play"),
+            icon=folium.Icon(
+                color="blue",
+                icon="play"),
         ).add_to(m)
 
         # Add target marker (red)
         folium.Marker(
-            location=[end_lat, end_lon],
+            location=[
+                end_lat,
+                end_lon],
             popup=f"🎯 Target<br>Distance: {submission.get('distance_m', 0):.1f}m",
-            icon=folium.Icon(color="red", icon="stop"),
+            icon=folium.Icon(
+                color="red",
+                icon="stop"),
         ).add_to(m)
 
         # Add line between points
@@ -248,15 +270,14 @@ class AdminView:
 
         with col3:
             range_filter = st.text_input(
-                "Filter by Range Name:", placeholder="Enter range name to filter"
-            )
+                "Filter by Range Name:",
+                placeholder="Enter range name to filter")
 
         # Apply filters
         filtered_submissions = submissions.copy()
         if status_filter != "All":
             filtered_submissions = [
-                s for s in filtered_submissions if s.get("status") == status_filter
-            ]
+                s for s in filtered_submissions if s.get("status") == status_filter]
         if user_filter:
             filtered_submissions = [
                 s
@@ -299,7 +320,10 @@ class AdminView:
 
         if filtered_display_data:
             filtered_df = pd.DataFrame(filtered_display_data)
-            st.dataframe(filtered_df, use_container_width=True, hide_index=True)
+            st.dataframe(
+                filtered_df,
+                use_container_width=True,
+                hide_index=True)
 
             # Show count
             st.markdown(
@@ -315,7 +339,8 @@ class AdminView:
             "filtered_count": len(filtered_submissions),
         }
 
-    def display_bulk_actions(self, submissions: List[Dict[str, Any]]) -> Optional[str]:
+    def display_bulk_actions(
+            self, submissions: List[Dict[str, Any]]) -> Optional[str]:
         """Display bulk action controls for multiple submissions."""
         if not submissions:
             return None
@@ -373,8 +398,10 @@ class AdminView:
 
         # Calculate statistics
         total = len(submissions)
-        pending = len([s for s in submissions if s.get("status") == "Under Review"])
-        approved = len([s for s in submissions if s.get("status") == "Accepted"])
+        pending = len(
+            [s for s in submissions if s.get("status") == "Under Review"])
+        approved = len(
+            [s for s in submissions if s.get("status") == "Accepted"])
         denied = len([s for s in submissions if s.get("status") == "Denied"])
 
         # Display in columns

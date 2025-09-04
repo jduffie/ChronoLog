@@ -25,21 +25,22 @@ def render_create_rifle_tab(user, supabase):
     # Load cartridge types from database (cached)
     cartridge_options = get_cartridge_types(supabase)
     if not cartridge_options:
-        st.error("❌ Unable to load cartridge types. Please check your database connection.")
+        st.error(
+            "❌ Unable to load cartridge types. Please check your database connection.")
         return
 
     # Create form for rifle entry
     with st.form("create_rifle_form"):
         # Required fields
         col1, col2 = st.columns(2)
-        
+
         with col1:
             name = st.text_input(
                 "Rifle Name *",
                 placeholder="e.g., My Precision Rifle, Hunting Rifle #1",
                 help="A unique name to identify this rifle",
             )
-        
+
         with col2:
             cartridge_type = st.selectbox(
                 "Cartridge Type *",
@@ -91,7 +92,7 @@ def render_create_rifle_tab(user, supabase):
             if not name:
                 st.error("❌ Please enter a rifle name (required field)")
                 return
-            
+
             if not cartridge_type:
                 st.error("❌ Please select a cartridge type (required field)")
                 return

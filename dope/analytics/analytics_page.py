@@ -24,4 +24,5 @@ def render_analytics_page():
     st.info("🚧 This page is under development - TBD")
 
     # TBD: Implementation placeholder
-    st.write("DOPE analytics and visualization functionality will be implemented here.")
+    st.write(
+        "DOPE analytics and visualization functionality will be implemented here.")

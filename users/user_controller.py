@@ -18,7 +18,8 @@ class UserController:
     ) -> Optional[Dict[str, Any]]:
         """Handle profile setup/editing flow."""
         # Display the form
-        form_data = self.view.display_profile_setup_form(user, existing_profile)
+        form_data = self.view.display_profile_setup_form(
+            user, existing_profile)
 
         if form_data:
             # Validate form data
@@ -30,7 +31,8 @@ class UserController:
 
             # Save profile
             if existing_profile:
-                success = self.model.update_user_profile(user["email"], form_data)
+                success = self.model.update_user_profile(
+                    user["email"], form_data)
                 message = "Profile updated successfully!"
             else:
                 success = self.model.create_user_profile(form_data)
@@ -83,7 +85,8 @@ class UserController:
         existing_profile = self.model.get_user_profile(user["email"])
 
         # Check if profile setup is needed
-        if not existing_profile or not existing_profile.get("profile_complete", False):
+        if not existing_profile or not existing_profile.get(
+                "profile_complete", False):
             # Handle profile setup
             self.handle_profile_setup(user, existing_profile)
             return None  # Profile not complete yet
@@ -130,7 +133,8 @@ class UserController:
                         )
                         st.rerun()
                     else:
-                        self.view.display_error_message("Failed to delete users")
+                        self.view.display_error_message(
+                            "Failed to delete users")
 
                 elif confirmation == "cancel":
                     st.rerun()  # Clear confirmation dialog
@@ -144,8 +148,10 @@ class UserController:
         imperial_users = len(
             [u for u in all_users if u.get("unit_system") == "Imperial"]
         )
-        metric_users = len([u for u in all_users if u.get("unit_system") == "Metric"])
-        complete_profiles = len([u for u in all_users if u.get("profile_complete")])
+        metric_users = len(
+            [u for u in all_users if u.get("unit_system") == "Metric"])
+        complete_profiles = len(
+            [u for u in all_users if u.get("profile_complete")])
 
         return {
             "total_users": total_users,

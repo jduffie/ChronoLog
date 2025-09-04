@@ -8,7 +8,10 @@ class SessionStateManager:
 
     # Define page-specific session state keys
     PAGE_STATE_KEYS = {
-        "nominate": ["range_name", "range_description", "nominate_model"],
+        "nominate": [
+            "range_name",
+            "range_description",
+            "nominate_model"],
         "public_ranges": [
             "delete_selected_public_ranges",
             "confirm_delete_public_ranges",
@@ -23,7 +26,9 @@ class SessionStateManager:
             "selected_ranges",
             "ranges_table_checkboxes",
         ],
-        "admin": ["selected_submissions", "admin_submissions_table_checkboxes"],
+        "admin": [
+            "selected_submissions",
+            "admin_submissions_table_checkboxes"],
     }
 
     # Global state that should persist across pages
@@ -54,7 +59,7 @@ class SessionStateManager:
                 elif "admin" in filename.lower():
                     return "admin"
                 frame = frame.f_back
-        except:
+        except BaseException:
             pass
 
         return "unknown"
@@ -111,6 +116,8 @@ class SessionStateManager:
         """Return current session state for debugging, optionally filtered by page."""
         if page and page in cls.PAGE_STATE_KEYS:
             relevant_keys = cls.PAGE_STATE_KEYS[page] + cls.GLOBAL_STATE_KEYS
-            return {k: v for k, v in st.session_state.items() if k in relevant_keys}
+            return {
+                k: v for k,
+                v in st.session_state.items() if k in relevant_keys}
         else:
             return dict(st.session_state)

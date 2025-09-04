@@ -29,7 +29,10 @@ class WeatherService:
         except Exception as e:
             raise Exception(f"Error fetching weather sources: {str(e)}")
 
-    def get_source_by_id(self, source_id: str, user_id: str) -> Optional[WeatherSource]:
+    def get_source_by_id(
+            self,
+            source_id: str,
+            user_id: str) -> Optional[WeatherSource]:
         """Get a specific weather source by ID"""
         try:
             response = (
@@ -49,7 +52,10 @@ class WeatherService:
         except Exception as e:
             raise Exception(f"Error fetching weather source: {str(e)}")
 
-    def get_source_by_name(self, user_id: str, name: str) -> Optional[WeatherSource]:
+    def get_source_by_name(
+            self,
+            user_id: str,
+            name: str) -> Optional[WeatherSource]:
         """Get a weather source by name"""
         try:
             response = (
@@ -73,9 +79,8 @@ class WeatherService:
     def create_source(self, source_data: dict) -> str:
         """Create a new weather source"""
         try:
-            response = (
-                self.supabase.table("weather_source").insert(source_data).execute()
-            )
+            response = (self.supabase.table(
+                "weather_source").insert(source_data).execute())
 
             if not response.data:
                 raise Exception("Failed to create weather source")
@@ -85,7 +90,11 @@ class WeatherService:
         except Exception as e:
             raise Exception(f"Error creating weather source: {str(e)}")
 
-    def update_source(self, source_id: str, user_id: str, updates: dict) -> None:
+    def update_source(
+            self,
+            source_id: str,
+            user_id: str,
+            updates: dict) -> None:
         """Update weather source information"""
         try:
             updates["updated_at"] = "NOW()"
@@ -99,9 +108,8 @@ class WeatherService:
     def delete_source(self, source_id: str, user_id: str) -> None:
         """Delete a weather source and all its measurements"""
         try:
-            self.supabase.table("weather_source").delete().eq("id", source_id).eq(
-                "user_id", user_id
-            ).execute()
+            self.supabase.table("weather_source").delete().eq(
+                "id", source_id).eq("user_id", user_id).execute()
 
         except Exception as e:
             raise Exception(f"Error deleting weather source: {str(e)}")
@@ -129,7 +137,10 @@ class WeatherService:
         except Exception as e:
             raise Exception(f"Error fetching measurements: {str(e)}")
 
-    def get_all_measurements_for_user(self, user_id: str, limit: Optional[int] = None) -> List[WeatherMeasurement]:
+    def get_all_measurements_for_user(
+            self,
+            user_id: str,
+            limit: Optional[int] = None) -> List[WeatherMeasurement]:
         """Get all weather measurements for a user"""
         try:
             query = (
@@ -138,10 +149,10 @@ class WeatherService:
                 .eq("user_id", user_id)
                 .order("measurement_timestamp", desc=True)
             )
-            
+
             if limit:
                 query = query.limit(limit)
-                
+
             response = query.execute()
 
             if not response.data:
@@ -176,7 +187,9 @@ class WeatherService:
             if end_date:
                 query = query.lte("measurement_timestamp", end_date)
 
-            response = query.order("measurement_timestamp", desc=True).execute()
+            response = query.order(
+                "measurement_timestamp",
+                desc=True).execute()
 
             if not response.data:
                 return []
@@ -203,7 +216,8 @@ class WeatherService:
         except Exception as e:
             raise Exception(f"Error creating measurement: {str(e)}")
 
-    def create_measurements_batch(self, measurements_data: List[dict]) -> List[str]:
+    def create_measurements_batch(
+            self, measurements_data: List[dict]) -> List[str]:
         """Create multiple weather measurements in a single batch"""
         try:
             response = (
@@ -261,11 +275,15 @@ class WeatherService:
             ).eq("user_id", user_id).execute()
 
         except Exception as e:
-            raise Exception(f"Error updating weather source with device info: {str(e)}")
+            raise Exception(
+                f"Error updating weather source with device info: {str(e)}")
 
     def create_or_get_source_from_device_info(
-        self, user_id: str, device_name: str, device_model: str, serial_number: str
-    ) -> str:
+            self,
+            user_id: str,
+            device_name: str,
+            device_model: str,
+            serial_number: str) -> str:
         """Create or get existing weather source from device information"""
         try:
             # First try to find existing source by serial number
@@ -283,7 +301,8 @@ class WeatherService:
             # Generate a name from device info
             source_name = f"{device_name}" if device_name else f"{device_model}"
             if serial_number:
-                source_name += f" ({serial_number[-4:]})"  # Last 4 digits of serial
+                # Last 4 digits of serial
+                source_name += f" ({serial_number[-4:]})"
 
             # Check if source with this name already exists
             existing = self.get_source_by_name(user_id, source_name)

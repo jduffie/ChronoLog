@@ -49,7 +49,8 @@ class ChronographSession:
         )
 
     @classmethod
-    def from_supabase_records(cls, records: List[dict]) -> List["ChronographSession"]:
+    def from_supabase_records(
+            cls, records: List[dict]) -> List["ChronographSession"]:
         """Create a list of ChronographSession objects from Supabase records"""
         return [cls.from_supabase_record(record) for record in records]
 
@@ -65,11 +66,12 @@ class ChronographSession:
         """Get the chronograph source name for this session"""
         if not self.chronograph_source_id:
             return "Unknown Source"
-        
+
         try:
-            source = chrono_service.get_source_by_id(self.chronograph_source_id, self.user_id)
+            source = chrono_service.get_source_by_id(
+                self.chronograph_source_id, self.user_id)
             return source.display_name() if source else "Unknown Source"
-        except:
+        except BaseException:
             return "Unknown Source"
 
     def has_measurements(self) -> bool:

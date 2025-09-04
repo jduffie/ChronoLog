@@ -172,7 +172,8 @@ class RifleService:
         """Update a rifle"""
         try:
             updates["updated_at"] = datetime.now().isoformat()
-            self.supabase.table("rifles").update(updates).eq("id", rifle_id).eq("user_id", user_id).execute()
+            self.supabase.table("rifles").update(updates).eq(
+                "id", rifle_id).eq("user_id", user_id).execute()
 
         except Exception as e:
             raise Exception(f"Error updating rifle: {str(e)}")
@@ -180,7 +181,9 @@ class RifleService:
     def delete_rifle(self, rifle_id: str, user_id: str) -> None:
         """Delete a rifle"""
         try:
-            self.supabase.table("rifles").delete().eq("id", rifle_id).eq("user_id", user_id).execute()
+            self.supabase.table("rifles").delete().eq(
+                "id", rifle_id).eq(
+                "user_id", user_id).execute()
 
         except Exception as e:
             raise Exception(f"Error deleting rifle: {str(e)}")
@@ -201,13 +204,14 @@ class RifleService:
                 "created_at": rifle.created_at.isoformat() if rifle.created_at else None,
                 "updated_at": rifle.updated_at.isoformat() if rifle.updated_at else None,
             }
-            
-            response = self.supabase.table("rifles").insert(rifle_data).execute()
-            
+
+            response = self.supabase.table(
+                "rifles").insert(rifle_data).execute()
+
             if not response.data:
                 raise Exception("Failed to save rifle")
-            
+
             return response.data[0]["id"]
-            
+
         except Exception as e:
             raise Exception(f"Error saving rifle: {str(e)}")

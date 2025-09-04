@@ -18,7 +18,8 @@ def render_files_tab(user, supabase, bucket, file_type_filter=None):
 
         # Check root directory first
         try:
-            root_files = supabase.storage.from_(bucket).list(f"{user['email']}")
+            root_files = supabase.storage.from_(
+                bucket).list(f"{user['email']}")
             for file_item in root_files:
                 if file_item.get("name"):
                     # Check if it's a directory (no file extension)
@@ -38,7 +39,7 @@ def render_files_tab(user, supabase, bucket, file_type_filter=None):
                                             "metadata": subfile,
                                         }
                                     )
-                        except:
+                        except BaseException:
                             # Directory might be empty or inaccessible
                             pass
                     else:
@@ -48,9 +49,8 @@ def render_files_tab(user, supabase, bucket, file_type_filter=None):
                                 "filename": file_item["name"],
                                 "full_path": f"{user['email']}/{file_item['name']}",
                                 "metadata": file_item,
-                            }
-                        )
-        except:
+                            })
+        except BaseException:
             pass
 
         # Also explicitly check known directories
@@ -62,7 +62,8 @@ def render_files_tab(user, supabase, bucket, file_type_filter=None):
                 for file_item in dir_files:
                     if file_item.get("name"):
                         # Avoid duplicates
-                        existing_files = [f["filename"] for f in file_tree[dir_name]]
+                        existing_files = [f["filename"]
+                                          for f in file_tree[dir_name]]
                         if file_item["name"] not in existing_files:
                             file_tree[dir_name].append(
                                 {
@@ -71,7 +72,7 @@ def render_files_tab(user, supabase, bucket, file_type_filter=None):
                                     "metadata": file_item,
                                 }
                             )
-            except:
+            except BaseException:
                 # Directory doesn't exist
                 pass
 
@@ -79,7 +80,8 @@ def render_files_tab(user, supabase, bucket, file_type_filter=None):
         file_tree = {k: v for k, v in file_tree.items() if v}
 
         if not file_tree:
-            st.info("No files uploaded yet. Use the 'Upload Files' tab to get started!")
+            st.info(
+                "No files uploaded yet. Use the 'Upload Files' tab to get started!")
             return
 
         # Display file explorer
@@ -126,14 +128,14 @@ def render_files_tab(user, supabase, bucket, file_type_filter=None):
                     st.markdown("---")
 
                     # Display each file
-                    for file_info in sorted(files, key=lambda x: x["filename"]):
+                    for file_info in sorted(
+                            files, key=lambda x: x["filename"]):
                         filename = file_info["filename"]
                         full_path = file_info["full_path"]
                         metadata = file_info["metadata"]
 
                         col_name, col_size, col_type, col_uploaded, col_actions = (
-                            st.columns([3, 1, 1.5, 1.5, 2])
-                        )
+                            st.columns([3, 1, 1.5, 1.5, 2]))
 
                         with col_name:
                             file_icon = get_file_icon(filename)
@@ -161,18 +163,18 @@ def render_files_tab(user, supabase, bucket, file_type_filter=None):
                                     key=f"download_{full_path}",
                                     help="Download file",
                                 ):
-                                    download_file(supabase, bucket, full_path, filename)
+                                    download_file(
+                                        supabase, bucket, full_path, filename)
 
                             with action_col2:
                                 if st.button(
-                                    "🗑️", key=f"delete_{full_path}", help="Delete file"
-                                ):
+                                        "🗑️", key=f"delete_{full_path}", help="Delete file"):
                                     st.session_state[f"confirm_delete_{full_path}"] = (
-                                        True
-                                    )
+                                        True)
 
                         # Handle delete confirmation
-                        if st.session_state.get(f"confirm_delete_{full_path}", False):
+                        if st.session_state.get(
+                                f"confirm_delete_{full_path}", False):
                             st.warning(
                                 f"⚠️ Delete **{filename}**? This cannot be undone!"
                             )
@@ -184,7 +186,8 @@ def render_files_tab(user, supabase, bucket, file_type_filter=None):
                                     key=f"confirm_yes_{full_path}",
                                     type="primary",
                                 ):
-                                    delete_file(supabase, bucket, full_path, filename)
+                                    delete_file(
+                                        supabase, bucket, full_path, filename)
                                     del st.session_state[f"confirm_delete_{full_path}"]
                                     st.rerun()
 
@@ -278,7 +281,7 @@ def get_upload_time(metadata):
         if field in metadata and metadata[field]:
             try:
                 return pd.to_datetime(metadata[field]).strftime("%m/%d/%y")
-            except:
+            except BaseException:
                 continue
 
     # Check metadata
@@ -288,7 +291,7 @@ def get_upload_time(metadata):
             if field in meta and meta[field]:
                 try:
                     return pd.to_datetime(meta[field]).strftime("%m/%d/%y")
-                except:
+                except BaseException:
                     continue
 
     return "Unknown"

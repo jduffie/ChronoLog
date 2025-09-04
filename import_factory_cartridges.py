@@ -9,13 +9,12 @@ import uuid
 from pathlib import Path
 
 import pandas as pd
-
-# Add the root directory to the path so we can import our modules
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
 import streamlit as st
 
 from supabase import create_client
+
+# Add the root directory to the path so we can import our modules
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 
 def import_factory_cartridges_from_csv():
@@ -93,7 +92,7 @@ def import_factory_cartridges_from_csv():
             file_skipped = 0
 
             for i in range(0, len(processed_records), batch_size):
-                batch = processed_records[i : i + batch_size]
+                batch = processed_records[i: i + batch_size]
 
                 try:
                     # Insert batch
@@ -120,7 +119,8 @@ def import_factory_cartridges_from_csv():
                         f"  - Error inserting batch {i//batch_size + 1}: {batch_error}"
                     )
 
-                    # Try inserting records individually to identify problematic ones
+                    # Try inserting records individually to identify
+                    # problematic ones
                     for record in batch:
                         try:
                             response = (
@@ -133,10 +133,12 @@ def import_factory_cartridges_from_csv():
                             else:
                                 file_skipped += 1
                         except Exception as record_error:
-                            print(f"    - Skipping record due to error: {record_error}")
+                            print(
+                                f"    - Skipping record due to error: {record_error}")
                             file_skipped += 1
 
-            print(f"  - Completed: {file_inserted} inserted, {file_skipped} skipped")
+            print(
+                f"  - Completed: {file_inserted} inserted, {file_skipped} skipped")
             total_inserted += file_inserted
             total_skipped += file_skipped
 

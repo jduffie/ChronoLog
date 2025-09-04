@@ -24,7 +24,8 @@ class UserModel:
         """Get user profile from database."""
         try:
             supabase = self._get_supabase_client()
-            result = supabase.table("users").select("*").eq("email", email).execute()
+            result = supabase.table("users").select(
+                "*").eq("email", email).execute()
 
             if result.data and len(result.data) > 0:
                 return result.data[0]
@@ -60,7 +61,8 @@ class UserModel:
             st.error(f"Error creating user profile: {str(e)}")
             return False
 
-    def update_user_profile(self, email: str, user_data: Dict[str, Any]) -> bool:
+    def update_user_profile(
+            self, email: str, user_data: Dict[str, Any]) -> bool:
         """Update existing user profile."""
         try:
             supabase = self._get_supabase_client()
@@ -75,8 +77,8 @@ class UserModel:
             }
 
             result = (
-                supabase.table("users").update(update_data).eq("email", email).execute()
-            )
+                supabase.table("users").update(update_data).eq(
+                    "email", email).execute())
 
             if result.data:
                 return True
@@ -85,11 +87,15 @@ class UserModel:
             st.error(f"Error updating user profile: {str(e)}")
             return False
 
-    def is_username_available(self, username: str, current_email: str = None) -> bool:
+    def is_username_available(
+            self,
+            username: str,
+            current_email: str = None) -> bool:
         """Check if username is available."""
         try:
             supabase = self._get_supabase_client()
-            query = supabase.table("users").select("email").eq("username", username)
+            query = supabase.table("users").select(
+                "email").eq("username", username)
 
             # If updating existing user, exclude their current record
             if current_email:
@@ -142,7 +148,8 @@ class UserModel:
         """Get total number of registered users."""
         try:
             supabase = self._get_supabase_client()
-            result = supabase.table("users").select("id", count="exact").execute()
+            result = supabase.table("users").select(
+                "id", count="exact").execute()
             return result.count if result.count else 0
         except Exception as e:
             st.error(f"Error getting user count: {str(e)}")
@@ -152,7 +159,8 @@ class UserModel:
         """Delete a user profile (admin function)."""
         try:
             supabase = self._get_supabase_client()
-            result = supabase.table("users").delete().eq("email", email).execute()
+            result = supabase.table("users").delete().eq(
+                "email", email).execute()
             return len(result.data) > 0
         except Exception as e:
             st.error(f"Error deleting user: {str(e)}")

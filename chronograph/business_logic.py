@@ -10,7 +10,7 @@ import pandas as pd
 
 class UnitConverter:
     """Handles unit conversions for chronograph measurements"""
-    
+
     @staticmethod
     def fps_to_mps(fps: Optional[float]) -> Optional[float]:
         """Convert feet per second to meters per second"""
@@ -44,51 +44,55 @@ class UnitConverter:
 
 class ChronographDataProcessor:
     """Generic chronograph data processing business logic"""
-    
+
     def __init__(self, device_adapter):
         self.device_adapter = device_adapter
-    
-    def process_file_data(self, df: pd.DataFrame, data_columns) -> Dict[str, Any]:
+
+    def process_file_data(self, df: pd.DataFrame,
+                          data_columns) -> Dict[str, Any]:
         """Process chronograph file data using device-specific adapter"""
         # Extract metadata using device adapter
         metadata = self.device_adapter.extract_session_metadata(df)
-        
+
         # Detect units using device adapter
         column_units = self.device_adapter.detect_units(data_columns)
-        
+
         return {
             'metadata': metadata,
             'column_units': column_units
         }
-    
-    def process_measurement_row(self, row_data: Dict[str, Any], column_units: Dict[str, str]) -> Dict[str, Any]:
+
+    def process_measurement_row(
+            self, row_data: Dict[str, Any], column_units: Dict[str, str]) -> Dict[str, Any]:
         """Process a single measurement row using device adapter"""
-        return self.device_adapter.process_measurement_row(row_data, column_units)
-    
-    def validate_measurement_row(self, row_data: Dict[str, Any]) -> tuple[bool, Optional[str]]:
+        return self.device_adapter.process_measurement_row(
+            row_data, column_units)
+
+    def validate_measurement_row(
+            self, row_data: Dict[str, Any]) -> tuple[bool, Optional[str]]:
         """Validate measurement row using device adapter"""
         return self.device_adapter.validate_required_fields(row_data)
 
 
 class SessionStatisticsCalculator:
     """Handles calculation of session statistics"""
-    
+
     @staticmethod
     def calculate_session_stats(speeds: list) -> Dict[str, float]:
         """Calculate session statistics from speed measurements"""
         if not speeds:
             return {}
-        
+
         avg_speed = sum(speeds) / len(speeds)
         min_speed = min(speeds)
         max_speed = max(speeds)
-        
+
         # Calculate standard deviation
         std_dev = 0
         if len(speeds) > 1:
             variance = sum((x - avg_speed) ** 2 for x in speeds) / len(speeds)
             std_dev = variance ** 0.5
-        
+
         return {
             "shot_count": len(speeds),
             "avg_speed_fps": avg_speed,

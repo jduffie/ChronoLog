@@ -3,12 +3,12 @@ import sys
 import unittest
 from unittest.mock import MagicMock, Mock, patch
 
-# Add the root directory to the path so we can import our modules
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from mapping.admin.admin_controller import AdminController
 from mapping.nominate.nominate_controller import NominateController
 from mapping.public_ranges.public_ranges_controller import PublicRangesController
+
+# Add the root directory to the path so we can import our modules
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 class TestPublicRangesController(unittest.TestCase):
@@ -32,8 +32,7 @@ class TestPublicRangesController(unittest.TestCase):
         """Test error handling in get_public_ranges"""
         mock_supabase = Mock()
         mock_supabase.table.return_value.select.return_value.eq.return_value.execute.side_effect = Exception(
-            "Database error"
-        )
+            "Database error")
 
         try:
             result = self.controller.get_public_ranges(mock_supabase)
@@ -60,8 +59,7 @@ class TestPublicRangesController(unittest.TestCase):
         mock_response = Mock()
         mock_response.data = mock_data
         mock_supabase.table.return_value.select.return_value.order.return_value.execute.return_value = (
-            mock_response
-        )
+            mock_response)
 
         result = self.controller.get_public_ranges(mock_supabase)
 
@@ -74,8 +72,7 @@ class TestPublicRangesController(unittest.TestCase):
         mock_response = Mock()
         mock_response.data = [{"id": "range-1"}]
         mock_supabase.table.return_value.delete.return_value.eq.return_value.execute.return_value = (
-            mock_response
-        )
+            mock_response)
 
         result = self.controller.delete_public_range("range-1", mock_supabase)
 
@@ -143,8 +140,10 @@ class TestMappingPageStructure(unittest.TestCase):
     def test_ranges_page_has_required_imports(self):
         """Test that ranges page has required imports"""
         page_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "pages", "5_🌍_Ranges.py"
-        )
+            os.path.dirname(
+                os.path.dirname(__file__)),
+            "pages",
+            "5_🌍_Ranges.py")
         if os.path.exists(page_path):
             with open(page_path, "r") as f:
                 content = f.read()
@@ -165,21 +164,26 @@ class TestMappingPageStructure(unittest.TestCase):
     def test_ranges_page_has_correct_tabs(self):
         """Test that ranges page has expected tabs"""
         page_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "pages", "5_🌍_Ranges.py"
-        )
+            os.path.dirname(
+                os.path.dirname(__file__)),
+            "pages",
+            "5_🌍_Ranges.py")
         if os.path.exists(page_path):
             with open(page_path, "r") as f:
                 content = f.read()
 
             expected_tabs = ["Public Ranges", "Nominate", "Submissions"]
             for tab in expected_tabs:
-                self.assertIn(tab, content, f"Ranges page should reference {tab}")
+                self.assertIn(
+                    tab, content, f"Ranges page should reference {tab}")
 
     def test_ranges_page_configuration(self):
         """Test ranges page configuration"""
         page_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "pages", "5_🌍_Ranges.py"
-        )
+            os.path.dirname(
+                os.path.dirname(__file__)),
+            "pages",
+            "5_🌍_Ranges.py")
         if os.path.exists(page_path):
             with open(page_path, "r") as f:
                 content = f.read()
@@ -191,8 +195,10 @@ class TestMappingPageStructure(unittest.TestCase):
     def test_ranges_page_auth_app_setting(self):
         """Test that ranges page sets correct app for auth"""
         page_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "pages", "5_🌍_Ranges.py"
-        )
+            os.path.dirname(
+                os.path.dirname(__file__)),
+            "pages",
+            "5_🌍_Ranges.py")
         if os.path.exists(page_path):
             with open(page_path, "r") as f:
                 content = f.read()
@@ -206,8 +212,12 @@ class TestMappingModels(unittest.TestCase):
 
     def test_range_models_exists(self):
         """Test that range models file exists"""
-        models_path = os.path.join(os.path.dirname(__file__), "range_models.py")
-        self.assertTrue(os.path.exists(models_path), "Range models file should exist")
+        models_path = os.path.join(
+            os.path.dirname(__file__),
+            "range_models.py")
+        self.assertTrue(
+            os.path.exists(models_path),
+            "Range models file should exist")
 
     def test_mapping_controllers_exist(self):
         """Test that mapping controller files exist"""
@@ -218,7 +228,8 @@ class TestMappingModels(unittest.TestCase):
         ]
 
         for controller_path in controller_paths:
-            full_path = os.path.join(os.path.dirname(__file__), controller_path)
+            full_path = os.path.join(
+                os.path.dirname(__file__), controller_path)
             self.assertTrue(
                 os.path.exists(full_path),
                 f"Controller file {controller_path} should exist",
@@ -235,8 +246,8 @@ class TestMappingModels(unittest.TestCase):
         for view_path in view_paths:
             full_path = os.path.join(os.path.dirname(__file__), view_path)
             self.assertTrue(
-                os.path.exists(full_path), f"View file {view_path} should exist"
-            )
+                os.path.exists(full_path),
+                f"View file {view_path} should exist")
 
 
 class TestMappingDataValidation(unittest.TestCase):

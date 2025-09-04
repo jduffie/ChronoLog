@@ -11,7 +11,8 @@ class DopeSessionModel:
     id: Optional[str] = None
     user_id: Optional[str] = None
     session_name: str = ""  # NOT NULL
-    datetime_local: Optional[datetime] = None  # NOT NULL - from chrono_sessions
+    # NOT NULL - from chrono_sessions
+    datetime_local: Optional[datetime] = None
 
     # Foreign key relationships
     cartridge_id: Optional[str] = None  # Foreign key to cartridges table
@@ -112,7 +113,8 @@ class DopeSessionModel:
         )
 
     @classmethod
-    def from_supabase_records(cls, records: List[dict]) -> List["DopeSessionModel"]:
+    def from_supabase_records(
+            cls, records: List[dict]) -> List["DopeSessionModel"]:
         """Create a list of DopeSessionModel from Supabase records"""
         return [cls.from_supabase_record(record) for record in records]
 

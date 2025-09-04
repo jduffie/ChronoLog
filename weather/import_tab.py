@@ -11,7 +11,7 @@ def fahrenheit_to_celsius(f_temp):
     """Convert Fahrenheit to Celsius"""
     if f_temp is None:
         return None
-    return (f_temp - 32) * 5/9
+    return (f_temp - 32) * 5 / 9
 
 
 def feet_to_meters(feet):
@@ -39,7 +39,7 @@ def celsius_to_fahrenheit(c_temp):
     """Convert Celsius to Fahrenheit"""
     if c_temp is None:
         return None
-    return (c_temp * 9/5) + 32
+    return (c_temp * 9 / 5) + 32
 
 
 def meters_to_feet(meters):
@@ -67,8 +67,9 @@ def load_kestrel_units_mapping(supabase):
     """Load the Kestrel units mapping from Supabase table"""
     try:
         # Query the kestrel_unit_mappings table
-        response = supabase.table("kestrel_unit_mappings").select("*").execute()
-        
+        response = supabase.table(
+            "kestrel_unit_mappings").select("*").execute()
+
         # Create mapping from measurement name to unit info
         unit_mapping = {}
         for record in response.data:
@@ -79,7 +80,7 @@ def load_kestrel_units_mapping(supabase):
                 'imperial': imperial_unit,
                 'metric': metric_unit
             }
-        
+
         return unit_mapping
     except Exception as e:
         st.error(f"Error loading Kestrel units mapping: {e}")
@@ -91,19 +92,19 @@ def detect_column_units(headers, units_row, supabase):
     # Load the mapping from Supabase
     unit_mapping = load_kestrel_units_mapping(supabase)
     column_units = {}
-    
+
     for i, (header, unit) in enumerate(zip(headers, units_row)):
         unit = unit.strip()
-        
+
         # Skip timestamp column
         if header == "FORMATTED DATE_TIME":
             column_units[i] = "timestamp"
             continue
-            
+
         # Check if this header matches a known measurement type
         if header in unit_mapping:
             measurement_units = unit_mapping[header]
-            
+
             # Check if the actual unit matches imperial or metric
             if unit == measurement_units['imperial']:
                 if unit in ['°F']:
@@ -136,17 +137,17 @@ def detect_column_units(headers, units_row, supabase):
         else:
             # Unknown measurement type
             column_units[i] = "unknown"
-    
+
     return column_units
 
 
 def render_weather_import_tab(user, supabase, bucket):
     """Render weather import wizard"""
     st.header("Weather Data Import Wizard")
-    
+
     # Initialize weather service
     weather_service = WeatherService(supabase)
-    
+
     # Initialize wizard state only if it doesn't exist
     if "weather_wizard_state" not in st.session_state:
         st.session_state.weather_wizard_state = {
@@ -154,76 +155,82 @@ def render_weather_import_tab(user, supabase, bucket):
             "selected_source_id": None,
             "new_source_data": None
         }
-    
+
     wizard_state = st.session_state.weather_wizard_state
-    
+
     # Step 1: Source Selection
     if wizard_state["step"] == "source_selection":
         st.subheader("Step 1: Choose Weather Source")
         st.write("Select an existing weather source or create a new one.")
-        
+
         # Get existing sources
         sources = weather_service.get_sources_for_user(user["id"])
-        
+
         # Source selection options
         source_choice = st.radio(
             "Choose an option:",
             options=["Select existing source", "Create new source"],
             index=0
         )
-        
+
         if source_choice == "Select existing source":
             if not sources:
-                st.warning("No existing weather sources found. Please create a new source.")
+                st.warning(
+                    "No existing weather sources found. Please create a new source.")
             else:
                 # Show existing sources
-                source_options = [f"{s.name} - {s.device_display()}" for s in sources]
+                source_options = [
+                    f"{s.name} - {s.device_display()}" for s in sources]
                 selected_index = st.selectbox(
                     "Select weather source:",
                     options=range(len(source_options)),
                     format_func=lambda x: source_options[x]
                 )
-                
+
                 if st.button("Continue with Selected Source", type="primary"):
                     wizard_state["selected_source_id"] = sources[selected_index].id
                     wizard_state["step"] = "file_upload"
                     st.rerun()
-        
+
         else:  # Create new source
             st.write("#### Create New Weather Source")
-            
+
             with st.form("new_source_form"):
                 col1, col2 = st.columns(2)
-                
+
                 with col1:
                     source_type = st.selectbox(
                         "Source Type*",
                         options=["Meter"],
                         help="Select the type of weather source"
                     )
-                
+
                 with col2:
                     source_make = st.selectbox(
                         "Make*",
                         options=["Kestrel"],
                         help="Select the manufacturer"
                     )
-                
+
                 name = st.text_input(
                     "Source Name*",
                     placeholder="e.g., Range Kestrel, Hunting Meter",
                     help="Give your weather source a unique name"
                 )
-                
-                if st.form_submit_button("Create Source and Continue", type="primary"):
+
+                if st.form_submit_button(
+                    "Create Source and Continue",
+                        type="primary"):
                     if not name.strip():
                         st.error("Source name is required!")
                     else:
                         try:
                             # Check if name already exists
-                            existing = weather_service.get_source_by_name(user["id"], name.strip())
+                            existing = weather_service.get_source_by_name(
+                                user["id"], name.strip())
                             if existing:
-                                st.error(f"A weather source named '{name}' already exists!")
+                                st.error(
+                                    f"A weather source named '{name}' already exists!")
                             else:
                                 source_data = {
                                     "user_id": user["id"],
@@ -231,55 +238,69 @@ def render_weather_import_tab(user, supabase, bucket):
                                     "make": source_make,
                                     "source_type": source_type.lower(),
                                 }
-                                
-                                source_id = weather_service.create_source(source_data)
+
+                                source_id = weather_service.create_source(
+                                    source_data)
                                 wizard_state["selected_source_id"] = source_id
                                 wizard_state["step"] = "file_upload"
-                                st.success(f"Weather source '{name}' created successfully!")
+                                st.success(
+                                    f"Weather source '{name}' created successfully!")
                                 st.rerun()
                         except Exception as e:
                             st.error(f"Error creating weather source: {e}")
-    
+
     # Step 2: File Upload
     elif wizard_state["step"] == "file_upload":
         # Get the selected source
-        selected_source = weather_service.get_source_by_id(wizard_state["selected_source_id"], user["id"])
-        
+        selected_source = weather_service.get_source_by_id(
+            wizard_state["selected_source_id"], user["id"])
+
         if not selected_source:
             st.error("Selected source not found. Returning to source selection.")
             wizard_state["step"] = "source_selection"
             st.rerun()
             return
-        
+
         st.subheader("Step 2: Upload Data File")
-        st.success(f"Selected Source: {selected_source.name} - {selected_source.device_display()}")
-        
+        st.success(
+            f"Selected Source: {selected_source.name} - {selected_source.device_display()}")
+
         # Back button
         if st.button("← Back to Source Selection"):
             wizard_state["step"] = "source_selection"
             wizard_state["selected_source_id"] = None
             st.rerun()
-        
+
         st.write("---")
-        
+
         # Show appropriate upload based on source type
         if selected_source.make and selected_source.make.lower() == "kestrel":
             st.write("### Upload Kestrel CSV Files")
-            render_file_upload(user, supabase, bucket, weather_service, selected_source.id)
+            render_file_upload(
+                user,
+                supabase,
+                bucket,
+                weather_service,
+                selected_source.id)
         else:
             st.info("Upload options for this source type are not yet available.")
 
 
-def render_file_upload(user, supabase, bucket, weather_service, selected_meter_id):
+def render_file_upload(
+        user,
+        supabase,
+        bucket,
+        weather_service,
+        selected_meter_id):
     """Render the file upload section"""
 
     # Get selected meter
-    selected_source = weather_service.get_source_by_id(selected_meter_id, user["id"])
+    selected_source = weather_service.get_source_by_id(
+        selected_meter_id, user["id"])
 
     if not selected_source:
         st.error("❌ Selected weather source not found. Please refresh the page.")
         return
-
 
     # Processing options
     st.write("### Processing Options")
@@ -289,10 +310,11 @@ def render_file_upload(user, supabase, bucket, weather_service, selected_meter_i
         index=0,
         help="Real-time shows progress updates. Background allows you to navigate away during import."
     )
-    
+
     if processing_mode == "Background":
-        st.info("🔄 Background mode: You can navigate away during import. Check back later for results.")
-    
+        st.info(
+            "🔄 Background mode: You can navigate away during import. Check back later for results.")
+
     # Upload and parse CSV
     uploaded_file = st.file_uploader(
         "Upload Kestrel CSV File", type=["csv"], key="weather_upload"
@@ -308,7 +330,8 @@ def render_file_upload(user, supabase, bucket, weather_service, selected_meter_i
                     file_name, file_bytes, {"content-type": "text/csv"}
                 )
             except Exception as upload_error:
-                if "already exists" in str(upload_error) or "409" in str(upload_error):
+                if "already exists" in str(
+                        upload_error) or "409" in str(upload_error):
                     # File already exists - prompt user for action
                     st.warning(
                         f"⚠️ Weather file '{uploaded_file.name}' already exists in storage."
@@ -317,16 +340,19 @@ def render_file_upload(user, supabase, bucket, weather_service, selected_meter_i
                     col1, col2 = st.columns(2)
                     with col1:
                         if st.button(
-                            "🔄 Overwrite File", key="overwrite_file", type="primary"
-                        ):
+                            "🔄 Overwrite File",
+                            key="overwrite_file",
+                                type="primary"):
                             try:
                                 # Remove existing file and upload new one
-                                supabase.storage.from_(bucket).remove([file_name])
+                                supabase.storage.from_(
+                                    bucket).remove([file_name])
                                 supabase.storage.from_(bucket).upload(
                                     file_name, file_bytes, {"content-type": "text/csv"}
                                 )
                                 st.success("✅ File overwritten successfully!")
-                                # Continue with processing by not returning here
+                                # Continue with processing by not returning
+                                # here
                             except Exception as overwrite_error:
                                 st.error(
                                     f"❌ Error overwriting file: {overwrite_error}"
@@ -378,14 +404,18 @@ def render_file_upload(user, supabase, bucket, weather_service, selected_meter_i
                 else ""
             )
 
-            # Headers are in row 4 (index 3), units in row 5 (index 4), data starts row 6 (index 5)
+            # Headers are in row 4 (index 3), units in row 5 (index 4), data
+            # starts row 6 (index 5)
             headers = [h.strip() for h in lines[3].split(",")]
             units_row = [u.strip() for u in lines[4].split(",")]
 
             # Detect units for each column using the mapping
             column_units = detect_column_units(headers, units_row, supabase)
-            recognized_units = [u for u in column_units.values() if u not in ['unknown', 'timestamp']]
-            st.info(f"🔍 Detected units for {len(recognized_units)} columns using Kestrel mapping")
+            recognized_units = [
+                u for u in column_units.values() if u not in [
+                    'unknown', 'timestamp']]
+            st.info(
+                f"🔍 Detected units for {len(recognized_units)} columns using Kestrel mapping")
 
             # Process data rows (starting from index 5)
             data_rows = []
@@ -395,7 +425,8 @@ def render_file_upload(user, supabase, bucket, weather_service, selected_meter_i
                     row_data = [cell.strip() for cell in line.split(",")]
 
                     # Check if we have data in the first column (timestamp)
-                    if len(row_data) > 0 and row_data[0] and row_data[0] != "nan":
+                    if len(
+                            row_data) > 0 and row_data[0] and row_data[0] != "nan":
                         data_rows.append(row_data)
 
             if not data_rows:
@@ -419,42 +450,67 @@ def render_file_upload(user, supabase, bucket, weather_service, selected_meter_i
                 )
                 source_id = selected_meter_id
             except Exception as e:
-                st.error(f"❌ Failed to update weather meter with device info: {e}")
+                st.error(
+                    f"❌ Failed to update weather meter with device info: {e}")
                 return
 
             # Process measurements in batches
             if processing_mode == "Background":
-                process_weather_data_background(data_rows, headers, column_units, user, source_id, file_name, weather_service)
+                process_weather_data_background(
+                    data_rows,
+                    headers,
+                    column_units,
+                    user,
+                    source_id,
+                    file_name,
+                    weather_service)
             else:
-                process_weather_data_realtime(data_rows, headers, column_units, user, source_id, file_name, weather_service)
+                process_weather_data_realtime(
+                    data_rows,
+                    headers,
+                    column_units,
+                    user,
+                    source_id,
+                    file_name,
+                    weather_service)
 
         except Exception as e:
             st.error(f"❌ Error processing weather file: {e}")
 
 
-def process_weather_data_realtime(data_rows, headers, column_units, user, source_id, file_name, weather_service):
+def process_weather_data_realtime(
+        data_rows,
+        headers,
+        column_units,
+        user,
+        source_id,
+        file_name,
+        weather_service):
     """Process weather data with real-time progress updates"""
     valid_measurements = 0
     skipped_measurements = 0
     total_rows = len(data_rows)
-    
+
     # Show processing message and create progress bar
     st.info("🔄 **Processing weather measurements...**")
     progress_bar = st.progress(0)
     status_text = st.empty()
-    
+
     # Process in batches of 50 records
     batch_size = 50
     batch_data = []
-    
+
     for row_index, row_data in enumerate(data_rows):
         try:
-            measurement_data = process_single_measurement(row_data, headers, column_units, user, source_id, file_name)
+            measurement_data = process_single_measurement(
+                row_data, headers, column_units, user, source_id, file_name)
             if measurement_data:
                 batch_data.append(measurement_data)
-                
-                # Process batch when it reaches batch_size or is the last record
-                if len(batch_data) >= batch_size or row_index == len(data_rows) - 1:
+
+                # Process batch when it reaches batch_size or is the last
+                # record
+                if len(batch_data) >= batch_size or row_index == len(
+                        data_rows) - 1:
                     try:
                         weather_service.create_measurements_batch(batch_data)
                         valid_measurements += len(batch_data)
@@ -468,23 +524,36 @@ def process_weather_data_realtime(data_rows, headers, column_units, user, source
 
         except Exception as e:
             skipped_measurements += 1
-        
+
         # Update progress bar and status
         progress = (row_index + 1) / total_rows
         progress_bar.progress(progress)
-        status_text.text(f"Processing record {row_index + 1} of {total_rows} - {valid_measurements} processed, {skipped_measurements} skipped")
-    
+        status_text.text(
+            f"Processing record {row_index + 1} of {total_rows} - {valid_measurements} processed, {skipped_measurements} skipped")
+
     # Clear progress indicators
     progress_bar.empty()
     status_text.empty()
-    
+
     # Show final results
-    show_import_results(valid_measurements, skipped_measurements, source_id, user, weather_service)
+    show_import_results(
+        valid_measurements,
+        skipped_measurements,
+        source_id,
+        user,
+        weather_service)
 
 
-def process_weather_data_background(data_rows, headers, column_units, user, source_id, file_name, weather_service):
+def process_weather_data_background(
+        data_rows,
+        headers,
+        column_units,
+        user,
+        source_id,
+        file_name,
+        weather_service):
     """Process weather data in background with batched commits"""
-    
+
     # Store processing state in session
     if "weather_import_state" not in st.session_state:
         st.session_state.weather_import_state = {
@@ -494,35 +563,36 @@ def process_weather_data_background(data_rows, headers, column_units, user, sour
             "skipped": 0,
             "current_batch": 0
         }
-    
+
     state = st.session_state.weather_import_state
-    
+
     if state["status"] == "starting":
         st.info("🔄 **Starting background processing...**")
         state["status"] = "processing"
-        
+
         # Process all data in larger batches
         batch_size = 100
         total_batches = (len(data_rows) + batch_size - 1) // batch_size
-        
+
         for batch_num in range(total_batches):
             start_idx = batch_num * batch_size
             end_idx = min(start_idx + batch_size, len(data_rows))
             batch_rows = data_rows[start_idx:end_idx]
-            
+
             batch_data = []
             batch_skipped = 0
-            
+
             for row_data in batch_rows:
                 try:
-                    measurement_data = process_single_measurement(row_data, headers, column_units, user, source_id, file_name)
+                    measurement_data = process_single_measurement(
+                        row_data, headers, column_units, user, source_id, file_name)
                     if measurement_data:
                         batch_data.append(measurement_data)
                     else:
                         batch_skipped += 1
-                except:
+                except BaseException:
                     batch_skipped += 1
-            
+
             # Commit batch to database
             if batch_data:
                 try:
@@ -530,23 +600,35 @@ def process_weather_data_background(data_rows, headers, column_units, user, sour
                     state["processed"] += len(batch_data)
                 except Exception as e:
                     state["skipped"] += len(batch_data)
-            
+
             state["skipped"] += batch_skipped
             state["current_batch"] = batch_num + 1
-        
+
         state["status"] = "completed"
         st.rerun()
-    
+
     elif state["status"] == "processing":
-        st.info(f"🔄 Processing batch {state['current_batch']}... ({state['processed']} processed, {state['skipped']} skipped)")
-        
+        st.info(
+            f"🔄 Processing batch {state['current_batch']}... ({state['processed']} processed, {state['skipped']} skipped)")
+
     elif state["status"] == "completed":
-        show_import_results(state["processed"], state["skipped"], source_id, user, weather_service)
+        show_import_results(
+            state["processed"],
+            state["skipped"],
+            source_id,
+            user,
+            weather_service)
         # Clear state for next import
         del st.session_state.weather_import_state
 
 
-def process_single_measurement(row_data, headers, column_units, user, source_id, file_name):
+def process_single_measurement(
+        row_data,
+        headers,
+        column_units,
+        user,
+        source_id,
+        file_name):
     """Process a single measurement row and return measurement data"""
     # Helper function to safely convert to float
     def safe_float(value, default=None):
@@ -556,7 +638,7 @@ def process_single_measurement(row_data, headers, column_units, user, source_id,
             return float(value)
         except (ValueError, TypeError):
             return default
-    
+
     # Parse timestamp (first column)
     timestamp_str = row_data[0]
     if not timestamp_str:
@@ -613,59 +695,73 @@ def process_single_measurement(row_data, headers, column_units, user, source_id,
                 base_field = field_mapping[header]
                 raw_value = safe_float(value)
                 column_unit = column_units.get(i, "unknown")
-                
+
                 # Handle temperature fields
-                if header in ["Temperature", "Wet Bulb Temp", "Heat Index", "Dew Point", "Wind Chill"]:
+                if header in [
+                    "Temperature",
+                    "Wet Bulb Temp",
+                    "Heat Index",
+                    "Dew Point",
+                        "Wind Chill"]:
                     if column_unit == "fahrenheit":
                         measurement_data[f"{base_field}_f"] = raw_value
                         if raw_value is not None:
-                            measurement_data[f"{base_field}_c"] = fahrenheit_to_celsius(raw_value)
+                            measurement_data[f"{base_field}_c"] = fahrenheit_to_celsius(
+                                raw_value)
                     elif column_unit == "celsius":
                         measurement_data[f"{base_field}_c"] = raw_value
                         if raw_value is not None:
-                            measurement_data[f"{base_field}_f"] = celsius_to_fahrenheit(raw_value)
-                
+                            measurement_data[f"{base_field}_f"] = celsius_to_fahrenheit(
+                                raw_value)
+
                 # Handle pressure fields
                 elif header in ["Barometric Pressure", "Station Pressure"]:
                     if column_unit == "inhg":
                         measurement_data[f"{base_field}_inhg"] = raw_value
                         if raw_value is not None:
-                            measurement_data[f"{base_field}_hpa"] = inhg_to_hpa(raw_value)
+                            measurement_data[f"{base_field}_hpa"] = inhg_to_hpa(
+                                raw_value)
                     elif column_unit == "hpa":
                         measurement_data[f"{base_field}_hpa"] = raw_value
                         if raw_value is not None:
-                            measurement_data[f"{base_field}_inhg"] = hpa_to_inhg(raw_value)
-                
+                            measurement_data[f"{base_field}_inhg"] = hpa_to_inhg(
+                                raw_value)
+
                 # Handle altitude fields
                 elif header in ["Altitude", "Density Altitude"]:
                     if column_unit == "feet":
                         measurement_data[f"{base_field}_ft"] = raw_value
                         if raw_value is not None:
-                            measurement_data[f"{base_field}_m"] = feet_to_meters(raw_value)
+                            measurement_data[f"{base_field}_m"] = feet_to_meters(
+                                raw_value)
                     elif column_unit == "meters":
                         measurement_data[f"{base_field}_m"] = raw_value
                         if raw_value is not None:
-                            measurement_data[f"{base_field}_ft"] = meters_to_feet(raw_value)
-                
+                            measurement_data[f"{base_field}_ft"] = meters_to_feet(
+                                raw_value)
+
                 # Handle wind speed fields
                 elif header in ["Wind Speed", "Crosswind", "Headwind"]:
                     if column_unit == "mph":
                         measurement_data[f"{base_field}_mph"] = raw_value
                         if raw_value is not None:
-                            measurement_data[f"{base_field}_mps"] = mph_to_mps(raw_value)
+                            measurement_data[f"{base_field}_mps"] = mph_to_mps(
+                                raw_value)
                     elif column_unit == "mps":
                         measurement_data[f"{base_field}_mps"] = raw_value
                         if raw_value is not None:
-                            measurement_data[f"{base_field}_mph"] = mps_to_mph(raw_value)
-                
-                # Handle fields that don't need conversion (percentages, degrees)
+                            measurement_data[f"{base_field}_mph"] = mps_to_mph(
+                                raw_value)
+
+                # Handle fields that don't need conversion (percentages,
+                # degrees)
                 elif header in [
                     "Relative Humidity",
-                    "Compass Magnetic Direction", 
+                    "Compass Magnetic Direction",
                     "Compass True Direction",
                 ] or column_unit == "no_conversion":
                     measurement_data[base_field] = raw_value
-                
+
                 # Handle text fields
                 else:
                     measurement_data[base_field] = value if value else None
@@ -673,7 +769,12 @@ def process_single_measurement(row_data, headers, column_units, user, source_id,
     return measurement_data
 
 
-def show_import_results(valid_measurements, skipped_measurements, source_id, user, weather_service):
+def show_import_results(
+        valid_measurements,
+        skipped_measurements,
+        source_id,
+        user,
+        weather_service):
     """Display import results"""
     if skipped_measurements > 0:
         st.warning(
@@ -691,5 +792,5 @@ def show_import_results(valid_measurements, skipped_measurements, source_id, use
             st.info(
                 f"📱 Weather Source: {source.display_name()} - {source.device_display()}"
             )
-    except:
+    except BaseException:
         st.info(f"📱 Weather Source: Selected source")

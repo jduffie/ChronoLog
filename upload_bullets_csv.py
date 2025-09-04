@@ -8,13 +8,12 @@ import sys
 from pathlib import Path
 
 import pandas as pd
-
-# Add the root directory to the path so we can import our modules
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
 import streamlit as st
 
 from supabase import create_client
+
+# Add the root directory to the path so we can import our modules
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 
 def upload_bullets_from_csv():
@@ -94,11 +93,12 @@ def upload_bullets_from_csv():
             file_skipped = 0
 
             for i in range(0, len(processed_records), batch_size):
-                batch = processed_records[i : i + batch_size]
+                batch = processed_records[i: i + batch_size]
 
                 try:
                     # Insert batch
-                    response = supabase.table("bullets").insert(batch).execute()
+                    response = supabase.table(
+                        "bullets").insert(batch).execute()
 
                     if response.data:
                         inserted_count = len(response.data)
@@ -117,21 +117,24 @@ def upload_bullets_from_csv():
                         f"  - Error inserting batch {i//batch_size + 1}: {batch_error}"
                     )
 
-                    # Try inserting records individually to identify problematic ones
+                    # Try inserting records individually to identify
+                    # problematic ones
                     for record in batch:
                         try:
                             response = (
-                                supabase.table("bullets").insert([record]).execute()
-                            )
+                                supabase.table("bullets").insert(
+                                    [record]).execute())
                             if response.data:
                                 file_inserted += 1
                             else:
                                 file_skipped += 1
                         except Exception as record_error:
-                            print(f"    - Skipping record due to error: {record_error}")
+                            print(
+                                f"    - Skipping record due to error: {record_error}")
                             file_skipped += 1
 
-            print(f"  - Completed: {file_inserted} inserted, {file_skipped} skipped")
+            print(
+                f"  - Completed: {file_inserted} inserted, {file_skipped} skipped")
             total_inserted += file_inserted
             total_skipped += file_skipped
 

@@ -3,14 +3,16 @@ import sys
 
 import streamlit as st
 
-# Add the root directory to the path so we can import our modules
-sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
-
 from auth import handle_auth
 from mapping.public_ranges.public_ranges_controller import PublicRangesController
 from supabase import create_client
+
+# Add the root directory to the path so we can import our modules
+sys.path.append(
+    os.path.dirname(
+        os.path.dirname(
+            os.path.dirname(
+                os.path.abspath(__file__)))))
 
 
 def main():
@@ -69,7 +71,8 @@ def main():
 
         # Display ranges table with admin capabilities
         if is_admin:
-            action_result = controller.display_public_ranges_table_admin(public_ranges)
+            action_result = controller.display_public_ranges_table_admin(
+                public_ranges)
         else:
             action_result = controller.display_public_ranges_table_readonly(
                 public_ranges
@@ -87,7 +90,8 @@ def main():
                         for idx in selected_indices:
                             if idx < len(public_ranges):
                                 range_id = public_ranges[idx]["id"]
-                                if controller.delete_public_range(range_id, supabase):
+                                if controller.delete_public_range(
+                                        range_id, supabase):
                                     deleted_count += 1
 
                         if deleted_count > 0:

@@ -65,7 +65,8 @@ class WeatherSource:
         )
 
     @classmethod
-    def from_supabase_records(cls, records: List[dict]) -> List["WeatherSource"]:
+    def from_supabase_records(
+            cls, records: List[dict]) -> List["WeatherSource"]:
         """Create a list of WeatherSource objects from Supabase records"""
         return [cls.from_supabase_record(record) for record in records]
 
@@ -153,7 +154,8 @@ class WeatherMeasurement:
             id=record["id"],
             user_id=record["user_id"],
             weather_source_id=record["weather_source_id"],
-            measurement_timestamp=pd.to_datetime(record["measurement_timestamp"]),
+            measurement_timestamp=pd.to_datetime(
+                record["measurement_timestamp"]),
             uploaded_at=pd.to_datetime(record["uploaded_at"]),
             file_path=record.get("file_path"),
             # Imperial units
@@ -197,15 +199,15 @@ class WeatherMeasurement:
         )
 
     @classmethod
-    def from_supabase_records(cls, records: List[dict]) -> List["WeatherMeasurement"]:
+    def from_supabase_records(
+            cls, records: List[dict]) -> List["WeatherMeasurement"]:
         """Create a list of WeatherMeasurement objects from Supabase records"""
         return [cls.from_supabase_record(record) for record in records]
 
     def temperature_display(self) -> str:
         """Get formatted temperature"""
         return (
-            f"{self.temperature_f:.1f}°F" if self.temperature_f is not None else "N/A"
-        )
+            f"{self.temperature_f:.1f}°F" if self.temperature_f is not None else "N/A")
 
     def humidity_display(self) -> str:
         """Get formatted humidity"""

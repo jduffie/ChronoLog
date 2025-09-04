@@ -39,7 +39,7 @@ key = "test-key"
 bucket = "test-bucket"
 
 [auth0]
-domain = "test.auth0.com" 
+domain = "test.auth0.com"
 client_id = "test-client-id"
 client_secret = "test-client-secret"
 """
@@ -71,7 +71,8 @@ def run_pytest_command(markers=None, extra_args=None):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run ChronoLog integration tests")
+    parser = argparse.ArgumentParser(
+        description="Run ChronoLog integration tests")
     parser.add_argument(
         "--fast", action="store_true", help="Skip slow integration tests"
     )
@@ -86,9 +87,14 @@ def main():
         help="Only run file upload integration tests",
     )
     parser.add_argument(
-        "--auth", action="store_true", help="Only run authentication integration tests"
-    )
-    parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
+        "--auth",
+        action="store_true",
+        help="Only run authentication integration tests")
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Verbose output")
     parser.add_argument(
         "--coverage", action="store_true", help="Run with coverage reporting"
     )
@@ -117,7 +123,8 @@ def main():
     extra_args = []
 
     if args.coverage:
-        extra_args.extend(["--cov=.", "--cov-report=html", "--cov-report=term-missing"])
+        extra_args.extend(["--cov=.", "--cov-report=html",
+                          "--cov-report=term-missing"])
 
     if args.verbose:
         extra_args.append("-vv")

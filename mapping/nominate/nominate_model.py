@@ -48,7 +48,10 @@ class NominateModel:
             elevation_m = self.get_elevation(point[0], point[1])
             self.elevations_m.append(elevation_m)
 
-    def calculate_bearing(self, point_a: List[float], point_b: List[float]) -> float:
+    def calculate_bearing(
+            self,
+            point_a: List[float],
+            point_b: List[float]) -> float:
         """Calculate bearing/azimuth from point A to point B."""
         lat1, lon1 = math.radians(point_a[0]), math.radians(point_a[1])
         lat2, lon2 = math.radians(point_b[0]), math.radians(point_b[1])
@@ -74,13 +77,17 @@ class NominateModel:
         distance_3d_m = math.sqrt(distance_2d_m**2 + elevation_diff_m**2)
 
         azimuth = self.calculate_bearing(p1, p2)
-        elevation_angle = math.degrees(math.atan2(elevation_diff_m, distance_2d_m))
+        elevation_angle = math.degrees(
+            math.atan2(elevation_diff_m, distance_2d_m))
 
         # Get address data for both start and end points
-        start_address_data = self.get_address_geojson_with_rate_limit(p1[0], p1[1])
-        end_address_data = self.get_address_geojson_with_rate_limit(p2[0], p2[1])
+        start_address_data = self.get_address_geojson_with_rate_limit(
+            p1[0], p1[1])
+        end_address_data = self.get_address_geojson_with_rate_limit(
+            p2[0], p2[1])
 
-        # Calculate bounding box [min_lon, min_lat, min_alt, max_lon, max_lat, max_alt]
+        # Calculate bounding box [min_lon, min_lat, min_alt, max_lon, max_lat,
+        # max_alt]
         min_lon = min(p1[1], p2[1])
         max_lon = max(p1[1], p2[1])
         min_lat = min(p1[0], p2[0])
@@ -97,7 +104,8 @@ class NominateModel:
                     "type": "Feature",
                     "geometry": {
                         "type": "Point",
-                        "coordinates": [p1[1], p1[0], start_alt],  # [lon, lat, alt]
+                        # [lon, lat, alt]
+                        "coordinates": [p1[1], p1[0], start_alt],
                     },
                     "properties": {
                         "type": "firing_position",
@@ -114,7 +122,8 @@ class NominateModel:
                     "type": "Feature",
                     "geometry": {
                         "type": "Point",
-                        "coordinates": [p2[1], p2[0], end_alt],  # [lon, lat, alt]
+                        # [lon, lat, alt]
+                        "coordinates": [p2[1], p2[0], end_alt],
                     },
                     "properties": {
                         "type": "target_position",
@@ -191,7 +200,10 @@ class NominateModel:
 
     def needs_elevation_fetch(self) -> bool:
         """Check if elevation data needs to be fetched."""
-        return len(self.points) > 0 and len(self.elevations_m) < len(self.points)
+        return len(
+            self.points) > 0 and len(
+            self.elevations_m) < len(
+            self.points)
 
     @staticmethod
     @st.cache_data
@@ -209,7 +221,8 @@ class NominateModel:
             }
             headers = {"User-Agent": "ChronoLog-App/1.0 (mapping application)"}
 
-            response = requests.get(url, params=params, headers=headers, timeout=10)
+            response = requests.get(
+                url, params=params, headers=headers, timeout=10)
             response.raise_for_status()
             data = response.json()
 
@@ -275,18 +288,27 @@ class NominateModel:
             # Parse altitude values (remove " m" suffix if present)
             start_alt_str = measurements.get("start_alt", "0")
             end_alt_str = measurements.get("end_alt", "0")
-            start_alt = float(start_alt_str.replace(" m", "")) if start_alt_str else 0
-            end_alt = float(end_alt_str.replace(" m", "")) if end_alt_str else 0
+            start_alt = float(
+                start_alt_str.replace(
+                    " m", "")) if start_alt_str else 0
+            end_alt = float(
+                end_alt_str.replace(
+                    " m", "")) if end_alt_str else 0
 
-            # Parse distance (remove " m" suffix) - use 2D distance for compatibility
+            # Parse distance (remove " m" suffix) - use 2D distance for
+            # compatibility
             distance_2d_str = measurements.get("distance_2d", "0")
             distance_3d_str = measurements.get("distance_3d", "0")
             distance_2d = (
-                float(distance_2d_str.replace(" m", "")) if distance_2d_str else 0
-            )
+                float(
+                    distance_2d_str.replace(
+                        " m",
+                        "")) if distance_2d_str else 0)
             distance_3d = (
-                float(distance_3d_str.replace(" m", "")) if distance_3d_str else 0
-            )
+                float(
+                    distance_3d_str.replace(
+                        " m",
+                        "")) if distance_3d_str else 0)
 
             # Parse angles (remove "°" suffix)
             azimuth_str = measurements.get("azimuth", "0")
@@ -317,9 +339,8 @@ class NominateModel:
             }
 
             # Insert into database
-            result = (
-                supabase_client.table("ranges_submissions").insert(range_data).execute()
-            )
+            result = (supabase_client.table(
+                "ranges_submissions").insert(range_data).execute())
 
             if result.data:
                 print(f"Successfully saved range submission: {range_name}")

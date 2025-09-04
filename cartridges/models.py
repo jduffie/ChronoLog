@@ -64,12 +64,15 @@ class CartridgeModel:
             ballistic_coefficient_g1=record.get("ballistic_coefficient_g1"),
             ballistic_coefficient_g7=record.get("ballistic_coefficient_g7"),
             sectional_density=record.get("sectional_density"),
-            min_req_twist_rate_in_per_rev=record.get("min_req_twist_rate_in_per_rev"),
-            pref_twist_rate_in_per_rev=record.get("pref_twist_rate_in_per_rev"),
+            min_req_twist_rate_in_per_rev=record.get(
+                "min_req_twist_rate_in_per_rev"),
+            pref_twist_rate_in_per_rev=record.get(
+                "pref_twist_rate_in_per_rev"),
         )
 
     @classmethod
-    def from_supabase_records(cls, records: List[dict]) -> List["CartridgeModel"]:
+    def from_supabase_records(
+            cls, records: List[dict]) -> List["CartridgeModel"]:
         """Create a list of CartridgeModel from Supabase records"""
         return [cls.from_supabase_record(record) for record in records]
 
@@ -188,7 +191,8 @@ class CartridgeTypeModel:
         return cls(name=record.get("name", ""))
 
     @classmethod
-    def from_supabase_records(cls, records: List[dict]) -> List["CartridgeTypeModel"]:
+    def from_supabase_records(
+            cls, records: List[dict]) -> List["CartridgeTypeModel"]:
         """Create a list of CartridgeTypeModel from Supabase records"""
         return [cls.from_supabase_record(record) for record in records]
 

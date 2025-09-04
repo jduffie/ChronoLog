@@ -12,14 +12,14 @@ from unittest.mock import Mock, patch
 
 import pandas as pd
 
-# Add root directory to path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from admin.users_tab import (
     render_user_delete_form,
     render_user_edit_form,
     render_users_tab,
 )
+
+# Add root directory to path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 class TestAdminUsersTab(unittest.TestCase):
@@ -34,7 +34,7 @@ class TestAdminUsersTab(unittest.TestCase):
             "name": "Admin User",
             "roles": ["admin", "user"],
         }
-        
+
         self.sample_users_data = [
             {
                 "id": "user-1",
@@ -90,7 +90,8 @@ class TestAdminUsersTab(unittest.TestCase):
         # Verify database query was constructed correctly
         self.mock_supabase.table.assert_called_with("users")
         self.mock_supabase.table.return_value.select.assert_called_with("*")
-        self.mock_supabase.table.return_value.select.return_value.order.assert_called_with("created_at", desc=True)
+        self.mock_supabase.table.return_value.select.return_value.order.assert_called_with(
+            "created_at", desc=True)
 
     @patch("admin.users_tab.st")
     def test_render_users_tab_no_users(self, mock_st):
@@ -110,7 +111,8 @@ class TestAdminUsersTab(unittest.TestCase):
     def test_render_users_tab_database_error(self, mock_st):
         """Test handling of database errors"""
         # Mock database error
-        self.mock_supabase.table.return_value.select.return_value.order.return_value.execute.side_effect = Exception("Database error")
+        self.mock_supabase.table.return_value.select.return_value.order.return_value.execute.side_effect = Exception(
+            "Database error")
 
         # Call the function
         render_users_tab(self.mock_user, self.mock_supabase)
@@ -143,34 +145,35 @@ class TestAdminUsersTab(unittest.TestCase):
         """Test admin vs regular user role analysis logic"""
         # Create DataFrame with mixed roles
         df = pd.DataFrame(self.sample_users_data)
-        
+
         # Test admin count logic (mimicking the admin module logic)
         admin_count = df["roles"].apply(
             lambda x: "admin" in x if x and isinstance(x, list) else False
         ).sum()
-        
+
         self.assertEqual(admin_count, 1)  # Only one admin in sample data
 
     def test_profile_completeness_analysis(self):
         """Test profile completeness analysis logic"""
         # Create DataFrame
         df = pd.DataFrame(self.sample_users_data)
-        
+
         # Test profile completeness logic
         complete_profiles = df["profile_complete"].sum()
-        
-        self.assertEqual(complete_profiles, 2)  # Two users have complete profiles
+
+        # Two users have complete profiles
+        self.assertEqual(complete_profiles, 2)
 
     def test_country_analysis(self):
         """Test country analysis logic"""
         # Create DataFrame
         df = pd.DataFrame(self.sample_users_data)
-        
+
         # Test most common country logic
         if not df["country"].empty:
             most_common_country = df["country"].mode().iloc[0]
             country_count = (df["country"] == most_common_country).sum()
-            
+
             self.assertEqual(most_common_country, "United States")
             self.assertEqual(country_count, 2)  # Two users from US
 
@@ -178,19 +181,19 @@ class TestAdminUsersTab(unittest.TestCase):
         """Test data filtering logic"""
         # Create DataFrame
         df = pd.DataFrame(self.sample_users_data)
-        
+
         # Test country filtering
         us_users = df[df["country"] == "United States"]
         self.assertEqual(len(us_users), 2)
-        
+
         # Test unit system filtering
         imperial_users = df[df["unit_system"] == "Imperial"]
         self.assertEqual(len(imperial_users), 2)
-        
+
         # Test profile status filtering
-        complete_users = df[df["profile_complete"] == True]
+        complete_users = df[df["profile_complete"]]
         self.assertEqual(len(complete_users), 2)
-        
+
         # Test role filtering (admin users)
         admin_users = df[df["roles"].apply(
             lambda x: "admin" in x if x and isinstance(x, list) else False
@@ -231,7 +234,7 @@ class TestAdminUserEditForm(unittest.TestCase):
             "picture": None,  # Should handle None pictures
             "updated_at": datetime.now().isoformat(),
         }
-        
+
         # Verify data structure is correct
         self.assertIsInstance(update_data["name"], str)
         self.assertIsInstance(update_data["roles"], list)
@@ -244,27 +247,31 @@ class TestAdminUserEditForm(unittest.TestCase):
         test_cases = [
             (True, False, ["user"]),           # Only user role
             (True, True, ["user", "admin"]),   # Both roles
-            (False, True, ["admin"]),          # Only admin role (should default to user)
-            (False, False, ["user"]),          # No roles (should default to user)
+            # Only admin role (should default to user)
+            (False, True, ["admin"]),
+            # No roles (should default to user)
+            (False, False, ["user"]),
         ]
-        
+
         for has_user_role, has_admin_role, expected_roles in test_cases:
             new_roles = []
             if has_user_role:
                 new_roles.append("user")
             if has_admin_role:
                 new_roles.append("admin")
-            
+
             # Ensure at least user role (mimicking admin module logic)
             if not new_roles:
                 new_roles = ["user"]
-            
+
             # For case where only admin is selected, we still need user role
             if "admin" in new_roles and "user" not in new_roles:
-                # This test case shows current logic - admin users should also have user role
+                # This test case shows current logic - admin users should also
+                # have user role
                 pass
-            
-            # The key insight is that the admin module ensures at least user role exists
+
+            # The key insight is that the admin module ensures at least user
+            # role exists
             self.assertGreaterEqual(len(new_roles), 1)
 
     def test_update_data_preparation(self):
@@ -280,7 +287,7 @@ class TestAdminUserEditForm(unittest.TestCase):
             "roles": ["user"],
             "picture": "   ",  # Empty string should become None
         }
-        
+
         # Simulate data cleaning (as done in admin module)
         cleaned_data = {
             "name": raw_data["name"].strip(),
@@ -292,7 +299,7 @@ class TestAdminUserEditForm(unittest.TestCase):
             "roles": raw_data["roles"],
             "picture": raw_data["picture"].strip() if raw_data["picture"].strip() else None,
         }
-        
+
         self.assertEqual(cleaned_data["name"], "Test User")
         self.assertEqual(cleaned_data["username"], "testuser")
         self.assertIsNone(cleaned_data["picture"])
@@ -312,7 +319,7 @@ class TestAdminUserDeleteForm(unittest.TestCase):
             "roles": ["user"],
             "created_at": "2024-01-01T00:00:00Z",
         }
-        
+
         self.admin_user = {
             "id": "admin-123",
             "email": "admin@example.com",
@@ -326,7 +333,7 @@ class TestAdminUserDeleteForm(unittest.TestCase):
         regular_roles = self.sample_user.get("roles", [])
         is_admin = isinstance(regular_roles, list) and "admin" in regular_roles
         self.assertFalse(is_admin)
-        
+
         # Test admin user
         admin_roles = self.admin_user.get("roles", [])
         is_admin = isinstance(admin_roles, list) and "admin" in admin_roles
@@ -338,21 +345,25 @@ class TestAdminUserDeleteForm(unittest.TestCase):
             ("test@example.com", "test@example.com", True),      # Exact match
             ("test@example.com", "TEST@EXAMPLE.COM", False),     # Case sensitive
             ("test@example.com", "test@example.co", False),      # Partial match
-            ("test@example.com", "", False),                     # Empty confirmation
-            ("test@example.com", "   test@example.com   ", True), # Whitespace (should match after strip)
+            # Empty confirmation
+            ("test@example.com", "", False),
+            # Whitespace (should match after strip)
+            ("test@example.com", "   test@example.com   ", True),
         ]
-        
+
         for user_email, confirmation_email, should_match in test_cases:
             email_matches = confirmation_email.strip() == user_email
-            self.assertEqual(email_matches, should_match, 
-                           f"Email match test failed: '{confirmation_email}' vs '{user_email}'")
+            self.assertEqual(
+                email_matches,
+                should_match,
+                f"Email match test failed: '{confirmation_email}' vs '{user_email}'")
 
     def test_related_data_table_checking(self):
         """Test related data table checking logic"""
         # Tables that should be checked for user data
         tables_to_check = [
             "chrono_sessions",
-            "chrono_measurements", 
+            "chrono_measurements",
             "dope_sessions",
             "dope_measurements",
             "weather_measurements",
@@ -361,7 +372,7 @@ class TestAdminUserDeleteForm(unittest.TestCase):
             "rifles",
             "bullets",
         ]
-        
+
         # Verify we have a comprehensive list of tables
         self.assertGreater(len(tables_to_check), 5)
         self.assertIn("chrono_sessions", tables_to_check)
@@ -375,7 +386,7 @@ class TestAdminUserDeleteForm(unittest.TestCase):
             "violates foreign key constraint",
             "FOREIGN KEY constraint failed",
         ]
-        
+
         # Test messages that should be detected
         for error_msg in error_messages:
             # Simulate error detection logic from admin module
@@ -383,16 +394,20 @@ class TestAdminUserDeleteForm(unittest.TestCase):
                 "foreign key constraint" in error_msg.lower() or
                 "violates foreign key" in error_msg.lower()
             )
-            
-            self.assertTrue(is_foreign_key_error, f"Should detect FK error: {error_msg}")
-        
+
+            self.assertTrue(
+                is_foreign_key_error,
+                f"Should detect FK error: {error_msg}")
+
         # Test message that should NOT be detected
         non_fk_error = "Cannot delete or update a parent row"
         is_foreign_key_error = (
             "foreign key constraint" in non_fk_error.lower() or
             "violates foreign key" in non_fk_error.lower()
         )
-        self.assertFalse(is_foreign_key_error, "Should not detect as FK error without specific keywords")
+        self.assertFalse(
+            is_foreign_key_error,
+            "Should not detect as FK error without specific keywords")
 
 
 class TestAdminModuleIntegration(unittest.TestCase):
@@ -438,17 +453,17 @@ class TestAdminModuleIntegration(unittest.TestCase):
             {"roles": ["admin", "user"], "profile_complete": False, "country": "CA"},
             {"roles": ["user"], "profile_complete": True, "country": "US"},
         ]
-        
+
         df = pd.DataFrame(sample_data)
-        
+
         # Test operations used in admin module
         admin_count = df["roles"].apply(
             lambda x: "admin" in x if x and isinstance(x, list) else False
         ).sum()
-        
+
         complete_profiles = df["profile_complete"].sum()
         most_common_country = df["country"].mode().iloc[0]
-        
+
         self.assertEqual(admin_count, 1)
         self.assertEqual(complete_profiles, 2)
         self.assertEqual(most_common_country, "US")
@@ -458,13 +473,14 @@ class TestAdminModuleIntegration(unittest.TestCase):
         # Test that datetime operations work correctly
         current_time = datetime.now()
         iso_string = current_time.isoformat()
-        
+
         # Verify ISO format string creation (used in update operations)
         self.assertIsInstance(iso_string, str)
         self.assertIn("T", iso_string)  # ISO format contains T separator
-        
+
         # Test datetime parsing compatibility
-        parsed_time = datetime.fromisoformat(iso_string.replace('Z', '+00:00') if iso_string.endswith('Z') else iso_string)
+        parsed_time = datetime.fromisoformat(iso_string.replace(
+            'Z', '+00:00') if iso_string.endswith('Z') else iso_string)
         self.assertIsInstance(parsed_time, datetime)
 
     def test_error_handling_patterns(self):
@@ -472,11 +488,11 @@ class TestAdminModuleIntegration(unittest.TestCase):
         # Test exception handling scenarios
         test_exceptions = [
             Exception("General error"),
-            ValueError("Invalid value"), 
+            ValueError("Invalid value"),
             KeyError("Missing key"),
             AttributeError("Missing attribute"),
         ]
-        
+
         for exc in test_exceptions:
             # Simulate error handling pattern from admin module
             try:

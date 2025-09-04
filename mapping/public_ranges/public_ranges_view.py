@@ -8,11 +8,14 @@ class PublicRangesView:
     def __init__(self):
         pass
 
-    def _extract_address_components(self, range_data: Dict[str, Any]) -> Dict[str, str]:
+    def _extract_address_components(
+            self, range_data: Dict[str, Any]) -> Dict[str, str]:
         """Extract county, state, and country from address_geojson."""
         try:
             address_geojson = range_data.get("address_geojson", {})
-            if isinstance(address_geojson, dict) and "features" in address_geojson:
+            if isinstance(
+                    address_geojson,
+                    dict) and "features" in address_geojson:
                 features = address_geojson["features"]
                 if features and len(features) > 0:
                     # Get the firing position feature (first feature)
@@ -73,8 +76,10 @@ class PublicRangesView:
             )
             state_options = ["All States"] + sorted(list(all_states))
             selected_state = st.selectbox(
-                "Filter by State:", options=state_options, index=0, key=state_key
-            )
+                "Filter by State:",
+                options=state_options,
+                index=0,
+                key=state_key)
 
         with col2:
             # Location text search - use different keys for admin vs readonly
@@ -112,7 +117,8 @@ class PublicRangesView:
 
         # Show filtered count
         if len(filtered_ranges) != len(ranges):
-            st.info(f"📍 Showing {len(filtered_ranges)} of {len(ranges)} ranges")
+            st.info(
+                f"📍 Showing {len(filtered_ranges)} of {len(ranges)} ranges")
         else:
             if not is_admin:
                 st.subheader(f"Public Ranges ({len(ranges)})")
@@ -133,10 +139,12 @@ class PublicRangesView:
                 try:
                     from datetime import datetime
 
-                    dt = datetime.fromisoformat(submitted_at.replace("Z", "+00:00"))
+                    dt = datetime.fromisoformat(
+                        submitted_at.replace("Z", "+00:00"))
                     formatted_date = dt.strftime("%Y-%m-%d %H:%M")
-                except:
-                    formatted_date = submitted_at[:16]  # Fallback to first 16 chars
+                except BaseException:
+                    # Fallback to first 16 chars
+                    formatted_date = submitted_at[:16]
             else:
                 formatted_date = "Unknown"
 
@@ -239,7 +247,7 @@ class PublicRangesView:
         # Get selected rows
         selected_indices = []
         if edited_df is not None:
-            selected_rows = edited_df[edited_df["Select"] == True]
+            selected_rows = edited_df[edited_df["Select"]]
             selected_indices = selected_rows.index.tolist()
 
         action_result = {"action": None, "selected_indices": selected_indices}
@@ -266,7 +274,8 @@ class PublicRangesView:
                     disabled=not bool(selected_indices),
                 ):
                     if selected_indices:
-                        # Store the delete action and selected indices in session state
+                        # Store the delete action and selected indices in
+                        # session state
                         st.session_state["delete_selected_public_ranges"] = (
                             selected_indices
                         )
@@ -278,7 +287,8 @@ class PublicRangesView:
                 action_result["selected_indices"] = st.session_state[
                     "delete_selected_public_ranges"
                 ]
-            # Auto-map selected ranges - any selected ranges should be mapped immediately
+            # Auto-map selected ranges - any selected ranges should be mapped
+            # immediately
             elif selected_indices:
                 action_result["action"] = "map"
                 action_result["selected_indices"] = selected_indices
@@ -398,18 +408,26 @@ class PublicRangesView:
                     if start_lat and start_lon and end_lat and end_lon:
                         # Add firing position marker
                         folium.Marker(
-                            location=[start_lat, start_lon],
+                            location=[
+                                start_lat,
+                                start_lon],
                             popup=f"🎯 {range_data.get('range_name', 'Range')} - Firing Position<br><a href='https://www.google.com/maps?q={start_lat},{start_lon}' target='_blank'>📍 View in Google Maps</a>",
                             tooltip=f"Firing Position: {range_data.get('range_name', 'Range')}",
-                            icon=folium.Icon(color=color, icon="play"),
+                            icon=folium.Icon(
+                                color=color,
+                                icon="play"),
                         ).add_to(m)
 
                         # Add target position marker
                         folium.Marker(
-                            location=[end_lat, end_lon],
+                            location=[
+                                end_lat,
+                                end_lon],
                             popup=f"🎯 {range_data.get('range_name', 'Range')} - Target<br><a href='https://www.google.com/maps?q={end_lat},{end_lon}' target='_blank'>📍 View in Google Maps</a>",
                             tooltip=f"Target: {range_data.get('range_name', 'Range')}",
-                            icon=folium.Icon(color=color, icon="stop"),
+                            icon=folium.Icon(
+                                color=color,
+                                icon="stop"),
                         ).add_to(m)
 
                         # Add line between points

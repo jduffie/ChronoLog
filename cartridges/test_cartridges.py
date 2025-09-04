@@ -4,19 +4,15 @@ Comprehensive test suite for the cartridges module.
 Tests models, data validation, and UI components.
 """
 
-import csv
 import os
 import sys
-import tempfile
 import unittest
-from datetime import datetime, timezone
-from decimal import Decimal
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
+
+from cartridges.models import CartridgeModel, CartridgeTypeModel
 
 # Add root directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from cartridges.models import CartridgeModel, CartridgeTypeModel
 
 
 class TestCartridgeModel(unittest.TestCase):
@@ -65,7 +61,9 @@ class TestCartridgeModel(unittest.TestCase):
 
     def test_from_supabase_records_list(self):
         """Test creating multiple CartridgeModels from records"""
-        records = [self.sample_record, {**self.sample_record, "id": "test-id-456"}]
+        records = [
+            self.sample_record, {
+                **self.sample_record, "id": "test-id-456"}]
         cartridges = CartridgeModel.from_supabase_records(records)
 
         self.assertEqual(len(cartridges), 2)
@@ -172,7 +170,9 @@ class TestCartridgeModel(unittest.TestCase):
     def test_twist_rate_recommendation_no_data(self):
         """Test twist_rate_recommendation with no data"""
         cartridge = CartridgeModel()
-        self.assertEqual(cartridge.twist_rate_recommendation, "No twist rate data")
+        self.assertEqual(
+            cartridge.twist_rate_recommendation,
+            "No twist rate data")
 
     def test_is_complete_true(self):
         """Test is_complete method returns True for complete cartridge"""
@@ -333,7 +333,12 @@ class TestCartridgeManufacturers(unittest.TestCase):
 
     def test_model_format(self):
         """Test cartridge model format"""
-        models = ["Premium", "Match", "Gold Medal", "Black Hills", "Custom Competition"]
+        models = [
+            "Premium",
+            "Match",
+            "Gold Medal",
+            "Black Hills",
+            "Custom Competition"]
 
         for model in models:
             cartridge = CartridgeModel(model=model)
@@ -373,17 +378,18 @@ class TestCartridgeModelEnhancements(unittest.TestCase):
     def test_cartridge_model_field_types_validation(self):
         """Test that CartridgeModel handles different field types correctly"""
         cartridge = CartridgeModel.from_supabase_record(self.complete_record)
-        
+
         # Test string fields
         self.assertIsInstance(cartridge.make, str)
         self.assertIsInstance(cartridge.model, str)
         self.assertIsInstance(cartridge.cartridge_type, str)
-        
+
         # Test numeric fields
         if cartridge.bullet_weight_grains is not None:
             self.assertIsInstance(cartridge.bullet_weight_grains, (int, float))
         if cartridge.ballistic_coefficient_g1 is not None:
-            self.assertIsInstance(cartridge.ballistic_coefficient_g1, (int, float))
+            self.assertIsInstance(
+                cartridge.ballistic_coefficient_g1, (int, float))
         if cartridge.sectional_density is not None:
             self.assertIsInstance(cartridge.sectional_density, (int, float))
 
@@ -393,9 +399,9 @@ class TestCartridgeModelEnhancements(unittest.TestCase):
         record["bullet_weight_grains"] = 143.5
         record["ballistic_coefficient_g1"] = 0.6247
         record["sectional_density"] = 0.2935
-        
+
         cartridge = CartridgeModel.from_supabase_record(record)
-        
+
         self.assertEqual(cartridge.bullet_weight_grains, 143.5)
         self.assertEqual(cartridge.ballistic_coefficient_g1, 0.6247)
         self.assertEqual(cartridge.sectional_density, 0.2935)
@@ -406,7 +412,7 @@ class TestCartridgeModelEnhancements(unittest.TestCase):
         record = self.complete_record.copy()
         record["bullet_weight_grains"] = 0
         record["ballistic_coefficient_g1"] = 0.0
-        
+
         cartridge = CartridgeModel.from_supabase_record(record)
         self.assertEqual(cartridge.bullet_weight_grains, 0)
         self.assertEqual(cartridge.ballistic_coefficient_g1, 0.0)
@@ -418,11 +424,11 @@ class TestCartridgeModelEnhancements(unittest.TestCase):
         record["make"] = "Winchester"
         record["model"] = "Super-X"
         record["cartridge_type"] = ".300 Winchester Magnum"
-        
+
         cartridge = CartridgeModel.from_supabase_record(record)
         expected = "Winchester Super-X (.300 Winchester Magnum)"
         self.assertEqual(cartridge.display_name, expected)
-        
+
         # Test with only make
         record = {"make": "Federal", "model": "", "cartridge_type": ""}
         cartridge = CartridgeModel.from_supabase_record(record)
@@ -433,17 +439,17 @@ class TestCartridgeModelEnhancements(unittest.TestCase):
         # Test with decimal weight
         record = self.complete_record.copy()
         record["bullet_weight_grains"] = 147.5
-        
+
         cartridge = CartridgeModel.from_supabase_record(record)
         expected = "Hornady ELD-X 147.5gr"
         self.assertEqual(cartridge.bullet_display, expected)
-        
+
         # Test with missing manufacturer but has model
         record = self.complete_record.copy()
         record["bullet_manufacturer"] = ""
         record["bullet_model"] = "MatchKing"
         record["bullet_weight_grains"] = 168
-        
+
         cartridge = CartridgeModel.from_supabase_record(record)
         expected = "MatchKing 168gr"
         self.assertEqual(cartridge.bullet_display, expected)
@@ -455,16 +461,16 @@ class TestCartridgeModelEnhancements(unittest.TestCase):
         record["ballistic_coefficient_g1"] = 0.625
         record["ballistic_coefficient_g7"] = None
         record["sectional_density"] = None
-        
+
         cartridge = CartridgeModel.from_supabase_record(record)
         self.assertEqual(cartridge.ballistic_data_summary, "G1 BC: 0.625")
-        
+
         # Test with only sectional density
         record = self.complete_record.copy()
         record["ballistic_coefficient_g1"] = None
         record["ballistic_coefficient_g7"] = None
         record["sectional_density"] = 0.293
-        
+
         cartridge = CartridgeModel.from_supabase_record(record)
         self.assertEqual(cartridge.ballistic_data_summary, "SD: 0.293")
 
@@ -474,16 +480,16 @@ class TestCartridgeModelEnhancements(unittest.TestCase):
         record = self.complete_record.copy()
         record["min_req_twist_rate_in_per_rev"] = None
         record["pref_twist_rate_in_per_rev"] = 7.5
-        
+
         cartridge = CartridgeModel.from_supabase_record(record)
         expected = 'Pref: 1:7.5"'
         self.assertEqual(cartridge.twist_rate_recommendation, expected)
-        
+
         # Test with same values for min and preferred
         record = self.complete_record.copy()
         record["min_req_twist_rate_in_per_rev"] = 8.0
         record["pref_twist_rate_in_per_rev"] = 8.0
-        
+
         cartridge = CartridgeModel.from_supabase_record(record)
         expected = 'Min: 1:8.0", Pref: 1:8.0"'
         self.assertEqual(cartridge.twist_rate_recommendation, expected)
@@ -493,14 +499,14 @@ class TestCartridgeModelEnhancements(unittest.TestCase):
         # Test with whitespace-only values
         record = self.complete_record.copy()
         record["make"] = "   "  # Only whitespace
-        
+
         cartridge = CartridgeModel.from_supabase_record(record)
         self.assertFalse(cartridge.is_complete())
-        
+
         # Test with None bullet_id
         record = self.complete_record.copy()
         record["bullet_id"] = None
-        
+
         cartridge = CartridgeModel.from_supabase_record(record)
         self.assertFalse(cartridge.is_complete())
 
@@ -513,10 +519,10 @@ class TestCartridgeModelEnhancements(unittest.TestCase):
             "bullet_id": None,
             "cartridge_type": "6.5 Creedmoor",
         }
-        
+
         cartridge = CartridgeModel.from_supabase_record(record)
         missing = cartridge.get_missing_mandatory_fields()
-        
+
         self.assertIn("Make", missing)
         self.assertIn("Model", missing)
         self.assertIn("Bullet Id", missing)
@@ -526,9 +532,9 @@ class TestCartridgeModelEnhancements(unittest.TestCase):
     def test_datetime_handling(self):
         """Test datetime field handling"""
         record = self.complete_record.copy()
-        
+
         cartridge = CartridgeModel.from_supabase_record(record)
-        
+
         # Test that datetime strings are preserved
         self.assertEqual(cartridge.created_at, "2023-06-01T12:00:00Z")
         self.assertEqual(cartridge.updated_at, "2023-06-15T14:30:00Z")
@@ -545,7 +551,7 @@ class TestCartridgeTypeModelEnhancements(unittest.TestCase):
             ".22-250 Remington",
             "7mm Remington Magnum",
         ]
-        
+
         for name in special_names:
             record = {"name": name}
             cartridge_type = CartridgeTypeModel.from_supabase_record(record)
@@ -556,15 +562,19 @@ class TestCartridgeTypeModelEnhancements(unittest.TestCase):
         """Test CartridgeTypeModel whitespace handling"""
         record = {"name": "  6mm Creedmoor  "}
         cartridge_type = CartridgeTypeModel.from_supabase_record(record)
-        self.assertEqual(cartridge_type.name, "  6mm Creedmoor  ")  # Preserves original
-        
+        self.assertEqual(cartridge_type.name,
+                         "  6mm Creedmoor  ")  # Preserves original
+
     def test_cartridge_type_none_values(self):
         """Test CartridgeTypeModel with None values"""
         record = {"name": None}
         cartridge_type = CartridgeTypeModel.from_supabase_record(record)
-        # When record has key with None value, .get() returns None (not the default)
+        # When record has key with None value, .get() returns None (not the
+        # default)
         self.assertIsNone(cartridge_type.name)  # None value is preserved
-        self.assertEqual(cartridge_type.display_name, "Unknown Type")  # display_name handles None
+        self.assertEqual(
+            cartridge_type.display_name,
+            "Unknown Type")  # display_name handles None
 
 
 class TestCartridgeDataValidationEnhancements(unittest.TestCase):
@@ -577,16 +587,16 @@ class TestCartridgeDataValidationEnhancements(unittest.TestCase):
             ballistic_coefficient_g1=0.125,
             ballistic_coefficient_g7=0.063
         )
-        
+
         self.assertGreater(cartridge.ballistic_coefficient_g1, 0.0)
         self.assertGreater(cartridge.ballistic_coefficient_g7, 0.0)
-        
+
         # Test high BC values (like long-range match bullets)
         cartridge = CartridgeModel(
             ballistic_coefficient_g1=0.850,
             ballistic_coefficient_g7=0.435
         )
-        
+
         self.assertLess(cartridge.ballistic_coefficient_g1, 1.0)
         self.assertLess(cartridge.ballistic_coefficient_g7, 0.6)
 
@@ -597,7 +607,7 @@ class TestCartridgeDataValidationEnhancements(unittest.TestCase):
         for weight in light_weights:
             cartridge = CartridgeModel(bullet_weight_grains=weight)
             self.assertGreater(cartridge.bullet_weight_grains, 10)
-            
+
         # Very heavy bullets (like .50 caliber)
         heavy_weights = [500, 650, 750]
         for weight in heavy_weights:
@@ -611,7 +621,7 @@ class TestCartridgeDataValidationEnhancements(unittest.TestCase):
         for rate in fast_rates:
             cartridge = CartridgeModel(min_req_twist_rate_in_per_rev=rate)
             self.assertGreater(cartridge.min_req_twist_rate_in_per_rev, 5.0)
-            
+
         # Slow twist rates for light bullets
         slow_rates = [14.0, 16.0, 18.0]
         for rate in slow_rates:
@@ -629,13 +639,14 @@ class TestCartridgeDataValidationEnhancements(unittest.TestCase):
             "7mm Remington Magnum",
             ".17 Remington Fireball",
         ]
-        
+
         for cartridge_type in valid_formats:
             cartridge = CartridgeModel(cartridge_type=cartridge_type)
             self.assertTrue(len(cartridge.cartridge_type) > 0)
-            # Basic format validation - should contain either caliber or cartridge designation
+            # Basic format validation - should contain either caliber or
+            # cartridge designation
             self.assertTrue(
-                any(char.isdigit() for char in cartridge_type) or 
+                any(char.isdigit() for char in cartridge_type) or
                 "mm" in cartridge_type.lower() or
                 "magnum" in cartridge_type.lower() or
                 "remington" in cartridge_type.lower()
@@ -650,7 +661,7 @@ class TestCartridgeDataValidationEnhancements(unittest.TestCase):
             "Winchester Ammunition",
             "Nosler, Inc.",  # With punctuation
         ]
-        
+
         for make in variations:
             cartridge = CartridgeModel(make=make)
             self.assertTrue(len(cartridge.make) > 0)
@@ -659,7 +670,7 @@ class TestCartridgeDataValidationEnhancements(unittest.TestCase):
 
 class TestCartridgeIntegration(unittest.TestCase):
     """Integration tests for cartridge module components"""
-    
+
     def setUp(self):
         # Sample data that mimics real cartridge database records
         self.cartridge_records = [
@@ -716,67 +727,86 @@ class TestCartridgeIntegration(unittest.TestCase):
     def test_cartridge_model_integration_with_bullet_data(self):
         """Test CartridgeModel integration with complete bullet data"""
         # Test global cartridge
-        global_cartridge = CartridgeModel.from_supabase_record(self.cartridge_records[0])
-        
+        global_cartridge = CartridgeModel.from_supabase_record(
+            self.cartridge_records[0])
+
         self.assertTrue(global_cartridge.is_global)
         self.assertFalse(global_cartridge.is_user_owned)
-        self.assertEqual(global_cartridge.display_name, "Hornady Precision Hunter (6mm Creedmoor)")
-        self.assertEqual(global_cartridge.bullet_display, "Hornady ELD-X 143gr")
-        self.assertEqual(global_cartridge.ballistic_data_summary, "G1 BC: 0.625, G7 BC: 0.315, SD: 0.293")
-        self.assertEqual(global_cartridge.twist_rate_recommendation, 'Min: 1:8.0", Pref: 1:7.5"')
+        self.assertEqual(
+            global_cartridge.display_name,
+            "Hornady Precision Hunter (6mm Creedmoor)")
+        self.assertEqual(
+            global_cartridge.bullet_display,
+            "Hornady ELD-X 143gr")
+        self.assertEqual(
+            global_cartridge.ballistic_data_summary,
+            "G1 BC: 0.625, G7 BC: 0.315, SD: 0.293")
+        self.assertEqual(
+            global_cartridge.twist_rate_recommendation,
+            'Min: 1:8.0", Pref: 1:7.5"')
         self.assertTrue(global_cartridge.is_complete())
-        
+
         # Test user-owned cartridge
-        user_cartridge = CartridgeModel.from_supabase_record(self.cartridge_records[1])
-        
+        user_cartridge = CartridgeModel.from_supabase_record(
+            self.cartridge_records[1])
+
         self.assertFalse(user_cartridge.is_global)
         self.assertTrue(user_cartridge.is_user_owned)
-        self.assertEqual(user_cartridge.display_name, "Federal Gold Medal (.308 Winchester)")
-        self.assertEqual(user_cartridge.bullet_display, "Sierra MatchKing 168gr")
+        self.assertEqual(
+            user_cartridge.display_name,
+            "Federal Gold Medal (.308 Winchester)")
+        self.assertEqual(
+            user_cartridge.bullet_display,
+            "Sierra MatchKing 168gr")
 
     def test_multiple_cartridge_processing(self):
         """Test processing multiple cartridge records"""
-        cartridges = CartridgeModel.from_supabase_records(self.cartridge_records)
-        
+        cartridges = CartridgeModel.from_supabase_records(
+            self.cartridge_records)
+
         self.assertEqual(len(cartridges), 2)
-        
+
         # Verify first cartridge
         self.assertEqual(cartridges[0].cartridge_type, "6mm Creedmoor")
         self.assertTrue(cartridges[0].is_global)
-        
+
         # Verify second cartridge
         self.assertEqual(cartridges[1].cartridge_type, ".308 Winchester")
         self.assertTrue(cartridges[1].is_user_owned)
 
     def test_cartridge_filtering_scenarios(self):
         """Test various cartridge filtering scenarios"""
-        cartridges = CartridgeModel.from_supabase_records(self.cartridge_records)
-        
+        cartridges = CartridgeModel.from_supabase_records(
+            self.cartridge_records)
+
         # Filter by ownership type
         global_cartridges = [c for c in cartridges if c.is_global]
         user_cartridges = [c for c in cartridges if c.is_user_owned]
-        
+
         self.assertEqual(len(global_cartridges), 1)
         self.assertEqual(len(user_cartridges), 1)
-        
+
         # Filter by cartridge type
-        creedmoor_cartridges = [c for c in cartridges if "Creedmoor" in c.cartridge_type]
-        winchester_cartridges = [c for c in cartridges if "Winchester" in c.cartridge_type]
-        
+        creedmoor_cartridges = [
+            c for c in cartridges if "Creedmoor" in c.cartridge_type]
+        winchester_cartridges = [
+            c for c in cartridges if "Winchester" in c.cartridge_type]
+
         self.assertEqual(len(creedmoor_cartridges), 1)
         self.assertEqual(len(winchester_cartridges), 1)
-        
+
         # Filter by manufacturer
         hornady_cartridges = [c for c in cartridges if c.make == "Hornady"]
         federal_cartridges = [c for c in cartridges if c.make == "Federal"]
-        
+
         self.assertEqual(len(hornady_cartridges), 1)
         self.assertEqual(len(federal_cartridges), 1)
 
     def test_cartridge_data_consistency(self):
         """Test data consistency across cartridge records"""
-        cartridges = CartridgeModel.from_supabase_records(self.cartridge_records)
-        
+        cartridges = CartridgeModel.from_supabase_records(
+            self.cartridge_records)
+
         for cartridge in cartridges:
             # Test that all complete cartridges have valid data
             if cartridge.is_complete():
@@ -784,33 +814,38 @@ class TestCartridgeIntegration(unittest.TestCase):
                 self.assertTrue(len(cartridge.model.strip()) > 0)
                 self.assertIsNotNone(cartridge.bullet_id)
                 self.assertTrue(len(cartridge.cartridge_type.strip()) > 0)
-                
+
             # Test bullet data consistency
             if cartridge.bullet_weight_grains:
                 self.assertGreater(cartridge.bullet_weight_grains, 0)
                 self.assertLess(cartridge.bullet_weight_grains, 1000)
-                
+
             # Test ballistic coefficient consistency
             if cartridge.ballistic_coefficient_g1 and cartridge.ballistic_coefficient_g7:
                 # G1 BC should typically be higher than G7 BC
-                self.assertGreater(cartridge.ballistic_coefficient_g1, cartridge.ballistic_coefficient_g7)
+                self.assertGreater(
+                    cartridge.ballistic_coefficient_g1,
+                    cartridge.ballistic_coefficient_g7)
 
     def test_cartridge_to_dict_conversion_workflow(self):
         """Test cartridge to dictionary conversion workflow"""
-        cartridge = CartridgeModel.from_supabase_record(self.cartridge_records[0])
-        
+        cartridge = CartridgeModel.from_supabase_record(
+            self.cartridge_records[0])
+
         # Convert to dict for database operations
         cartridge_dict = cartridge.to_dict()
-        
+
         # Verify essential fields are present
         self.assertEqual(cartridge_dict["make"], "Hornady")
         self.assertEqual(cartridge_dict["model"], "Precision Hunter")
         self.assertEqual(cartridge_dict["cartridge_type"], "6mm Creedmoor")
-        self.assertEqual(cartridge_dict["bullet_id"], "bullet-hornady-eldx-143")
-        
+        self.assertEqual(
+            cartridge_dict["bullet_id"],
+            "bullet-hornady-eldx-143")
+
         # Verify id is not included (for database insert operations)
         self.assertNotIn("id", cartridge_dict)
-        
+
         # Verify bullet data is not included (separate table)
         self.assertNotIn("bullet_manufacturer", cartridge_dict)
         self.assertNotIn("bullet_weight_grains", cartridge_dict)
@@ -823,16 +858,17 @@ class TestCartridgeIntegration(unittest.TestCase):
             {"name": ".300 Winchester Magnum"},
             {"name": "5.56x45mm NATO"},
         ]
-        
-        cartridge_types = CartridgeTypeModel.from_supabase_records(cartridge_type_records)
-        
+
+        cartridge_types = CartridgeTypeModel.from_supabase_records(
+            cartridge_type_records)
+
         self.assertEqual(len(cartridge_types), 4)
-        
+
         # Test that all types have valid names
         for cartridge_type in cartridge_types:
             self.assertTrue(len(cartridge_type.name) > 0)
             self.assertEqual(cartridge_type.display_name, cartridge_type.name)
-            
+
         # Test to_dict conversion
         type_dict = cartridge_types[0].to_dict()
         self.assertEqual(type_dict["name"], "6mm Creedmoor")
@@ -860,13 +896,16 @@ class TestCartridgeIntegration(unittest.TestCase):
             "min_req_twist_rate_in_per_rev": 11.0,
             "pref_twist_rate_in_per_rev": None,  # Not always specified
         }
-        
+
         cartridge = CartridgeModel.from_supabase_record(csv_style_record)
-        
+
         # Test that model handles missing optional data gracefully
-        self.assertEqual(cartridge.display_name, "Lapua Naturalis (.300 Winchester Magnum)")
+        self.assertEqual(cartridge.display_name,
+                         "Lapua Naturalis (.300 Winchester Magnum)")
         self.assertEqual(cartridge.bullet_display, "Lapua Naturalis 170gr")
-        self.assertEqual(cartridge.ballistic_data_summary, "G1 BC: 0.485, SD: 0.256")
+        self.assertEqual(
+            cartridge.ballistic_data_summary,
+            "G1 BC: 0.485, SD: 0.256")
         self.assertEqual(cartridge.twist_rate_recommendation, 'Min: 1:11.0"')
         self.assertTrue(cartridge.is_complete())
         self.assertTrue(cartridge.is_global)
@@ -874,7 +913,7 @@ class TestCartridgeIntegration(unittest.TestCase):
 
 class TestCartridgeViewTabIntegration(unittest.TestCase):
     """Integration tests for cartridge view tab functionality"""
-    
+
     def setUp(self):
         self.mock_supabase = Mock()
         self.mock_user = {"id": "user-123", "email": "test@example.com"}
@@ -884,22 +923,23 @@ class TestCartridgeViewTabIntegration(unittest.TestCase):
         """Test that view tab properly cleans up session state"""
         from cartridges.view_tab import render_view_cartridges_tab
 
-        # Create a mock session state that behaves like a dictionary but allows mocking
+        # Create a mock session state that behaves like a dictionary but allows
+        # mocking
         mock_session_state = Mock()
         mock_session_state.__contains__ = Mock(return_value=True)
         mock_session_state.__delitem__ = Mock()
-        
+
         mock_st.session_state = mock_session_state
-        
+
         # Mock successful database response
         mock_response = Mock()
         mock_response.data = []
-        
+
         self.mock_supabase.table.return_value.select.return_value.order.return_value.execute.return_value = mock_response
-        
+
         # Call the function
         render_view_cartridges_tab(self.mock_user, self.mock_supabase)
-        
+
         # Verify session state cleanup was attempted
         mock_session_state.__contains__.assert_called_with('cartridges')
 
@@ -923,17 +963,17 @@ class TestCartridgeViewTabIntegration(unittest.TestCase):
                 }
             }
         ]
-        
+
         self.mock_supabase.table.return_value.select.return_value.order.return_value.execute.return_value = mock_response
-        
+
         # Create a mock session state that behaves correctly
         mock_session_state = Mock()
         mock_session_state.__contains__ = Mock(return_value=False)
         mock_st.session_state = mock_session_state
-        
+
         # Call the function
         render_view_cartridges_tab(self.mock_user, self.mock_supabase)
-        
+
         # Verify database query was made with correct parameters
         self.mock_supabase.table.assert_called_with("cartridges")
 

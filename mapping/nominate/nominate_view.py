@@ -38,12 +38,11 @@ class NominateView:
     def display_instruction_message(self) -> None:
         """Display instruction message for range nomination."""
         st.info(
-            "📍 To submit a new range for review, use the **Draw** toolbar on the map to add markers for the firing position and target. \n\n"
-            + "1. Click the marker tool (📍) in the map's draw toolbar\n"
-            + "2. Click on the map to place the firing position (1st point)\n"
-            + "3. Click again to place the target position (2nd point)\n\n"
-            + "The app will automatically look up addresses and elevations, then compute distance, azimuth, and elevation angles."
-        )
+            "📍 To submit a new range for review, use the **Draw** toolbar on the map to add markers for the firing position and target. \n\n" +
+            "1. Click the marker tool (📍) in the map's draw toolbar\n" +
+            "2. Click on the map to place the firing position (1st point)\n" +
+            "3. Click again to place the target position (2nd point)\n\n" +
+            "The app will automatically look up addresses and elevations, then compute distance, azimuth, and elevation angles.")
 
     def display_search_controls(
         self, default_lat: float = 37.76, default_lon: float = -122.4
@@ -58,7 +57,8 @@ class NominateView:
             address = st.text_input("Enter address:")
             if address:
                 try:
-                    geolocator = Nominatim(user_agent="streamlit_map", timeout=10)
+                    geolocator = Nominatim(
+                        user_agent="streamlit_map", timeout=10)
                     location = geolocator.geocode(address)
                     if location:
                         lat, lon = location.latitude, location.longitude
@@ -133,9 +133,8 @@ class NominateView:
         import html
 
         range_name_escaped = html.escape(range_name_value)
-        range_description_escaped = html.escape(range_description_value).replace(
-            "\n", "<br>"
-        )
+        range_description_escaped = html.escape(
+            range_description_value).replace("\n", "<br>")
         location_escaped = html.escape(location_display)
 
         html_table = f"""
@@ -234,7 +233,8 @@ class NominateView:
         import html
 
         range_name_escaped = html.escape(range_name)
-        range_description_escaped = html.escape(range_description).replace("\n", "<br>")
+        range_description_escaped = html.escape(
+            range_description).replace("\n", "<br>")
         location_escaped = html.escape(location_display)
 
         # Update form values in the measurements table
@@ -336,7 +336,8 @@ class NominateView:
         for i, point in enumerate(points):
             color = "blue" if i == 0 else "red"
 
-            # Handle both list [lat, lng] and dict {"lat": lat, "lng": lng} formats
+            # Handle both list [lat, lng] and dict {"lat": lat, "lng": lng}
+            # formats
             if isinstance(point, dict):
                 lat = point.get("lat", 0)
                 lng = point.get("lng", 0)
@@ -344,7 +345,10 @@ class NominateView:
                 lat = point[0]
                 lng = point[1]
 
-            folium.Marker(location=[lat, lng], icon=folium.Icon(color=color)).add_to(m)
+            folium.Marker(
+                location=[
+                    lat, lng], icon=folium.Icon(
+                    color=color)).add_to(m)
 
         # Draw line between two points
         if len(points) == 2:

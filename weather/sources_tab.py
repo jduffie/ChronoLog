@@ -40,7 +40,8 @@ def render_weather_sources_tab(user, supabase):
                 )
 
             # Get measurements for statistics
-            measurements = weather_service.get_all_measurements_for_user(user["id"])
+            measurements = weather_service.get_all_measurements_for_user(
+                user["id"])
 
             # Display sources with their statistics
             for source in sources:
@@ -57,7 +58,8 @@ def render_weather_sources_tab(user, supabase):
                         st.write(f"• **Name:** {source.name}")
                         st.write(f"• **Device:** {source.device_display()}")
                         if source.serial_number:
-                            st.write(f"• **Serial Number:** {source.serial_number}")
+                            st.write(
+                                f"• **Serial Number:** {source.serial_number}")
                         if source.created_at:
                             st.write(
                                 f"• **Created:** {pd.to_datetime(source.created_at).strftime('%Y-%m-%d %H:%M')}"
@@ -67,7 +69,8 @@ def render_weather_sources_tab(user, supabase):
                         st.write("**Measurement Statistics:**")
                         if source_measurements:
                             measurement_count = len(source_measurements)
-                            st.write(f"• **Total Measurements:** {measurement_count}")
+                            st.write(
+                                f"• **Total Measurements:** {measurement_count}")
 
                             # Date range
                             timestamps = [
@@ -107,31 +110,32 @@ def render_weather_sources_tab(user, supabase):
 
                     with button_col2:
                         if st.button(
-                            "Delete", key=f"delete_{source.id}", type="secondary"
-                        ):
+                            "Delete",
+                            key=f"delete_{source.id}",
+                                type="secondary"):
                             st.session_state.weather_sources_page_state[
                                 "confirm_deletes"
                             ][source.id] = True
 
                     # Edit form
                     if st.session_state.weather_sources_page_state["edit_sources"].get(
-                        source.id, False
-                    ):
+                            source.id, False):
                         st.write("---")
                         st.write("**Edit Weather Source:**")
 
                         with st.form(f"edit_form_{source.id}"):
-                            new_name = st.text_input("Source Name", value=source.name)
+                            new_name = st.text_input(
+                                "Source Name", value=source.name)
                             new_device_name = st.text_input(
                                 "Device Name", value=source.device_name or ""
                             )
                             new_make = st.text_input(
                                 "Make/Manufacturer", value=source.make or ""
                             )
-                            new_model = st.text_input("Model", value=source.model or "")
+                            new_model = st.text_input(
+                                "Model", value=source.model or "")
                             new_serial = st.text_input(
-                                "Serial Number", value=source.serial_number or ""
-                            )
+                                "Serial Number", value=source.serial_number or "")
 
                             col1, col2 = st.columns(2)
                             with col1:
@@ -140,15 +144,11 @@ def render_weather_sources_tab(user, supabase):
                                         updates = {
                                             "name": new_name,
                                             "device_name": (
-                                                new_device_name
-                                                if new_device_name
-                                                else None
-                                            ),
+                                                new_device_name if new_device_name else None),
                                             "make": new_make if new_make else None,
                                             "model": new_model if new_model else None,
                                             "serial_number": (
-                                                new_serial if new_serial else None
-                                            ),
+                                                new_serial if new_serial else None),
                                         }
                                         weather_service.update_source(
                                             source.id, user["id"], updates
@@ -157,17 +157,16 @@ def render_weather_sources_tab(user, supabase):
                                             "Weather source updated successfully!"
                                         )
                                         st.session_state.weather_sources_page_state[
-                                            "edit_sources"
-                                        ][source.id] = False
+                                            "edit_sources"][source.id] = False
                                         st.rerun()
                                     except Exception as e:
-                                        st.error(f"Error updating weather source: {e}")
+                                        st.error(
+                                            f"Error updating weather source: {e}")
 
                             with col2:
                                 if st.form_submit_button("Cancel"):
                                     st.session_state.weather_sources_page_state[
-                                        "edit_sources"
-                                    ][source.id] = False
+                                        "edit_sources"][source.id] = False
                                     st.rerun()
 
                     # Delete confirmation
@@ -191,19 +190,21 @@ def render_weather_sources_tab(user, supabase):
                                 type="primary",
                             ):
                                 try:
-                                    weather_service.delete_source(source.id, user["id"])
+                                    weather_service.delete_source(
+                                        source.id, user["id"])
                                     st.success(
                                         f"Weather source '{source.name}' deleted successfully!"
                                     )
                                     st.session_state.weather_sources_page_state[
-                                        "confirm_deletes"
-                                    ][source.id] = False
+                                        "confirm_deletes"][source.id] = False
                                     st.rerun()
                                 except Exception as e:
-                                    st.error(f"Error deleting weather source: {e}")
+                                    st.error(
+                                        f"Error deleting weather source: {e}")
 
                         with col2:
-                            if st.button("Cancel", key=f"confirm_no_{source.id}"):
+                            if st.button(
+                                    "Cancel", key=f"confirm_no_{source.id}"):
                                 st.session_state.weather_sources_page_state[
                                     "confirm_deletes"
                                 ][source.id] = False
@@ -211,7 +212,8 @@ def render_weather_sources_tab(user, supabase):
 
         with add_tab:
             st.subheader(" Add New Weather Source")
-            st.write("Create a new weather source for organizing your weather data.")
+            st.write(
+                "Create a new weather source for organizing your weather data.")
 
             with st.form("add_source_form"):
                 col1, col2 = st.columns(2)
@@ -237,7 +239,8 @@ def render_weather_sources_tab(user, supabase):
                     help="Give your weather source a unique name",
                 )
 
-                if st.form_submit_button("Save Weather Source", type="primary"):
+                if st.form_submit_button(
+                        "Save Weather Source", type="primary"):
                     if not name.strip():
                         st.error("Source name is required!")
                     else:
@@ -258,7 +261,8 @@ def render_weather_sources_tab(user, supabase):
                                     "source_type": source_type.lower(),
                                 }
 
-                                source_id = weather_service.create_source(source_data)
+                                source_id = weather_service.create_source(
+                                    source_data)
                                 st.success(
                                     f"Weather source '{name}' created successfully!"
                                 )

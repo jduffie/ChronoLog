@@ -25,7 +25,8 @@ def render_weather_logs_tab(user, supabase):
             return
 
         # Get all measurements for the user
-        measurements = weather_service.get_all_measurements_for_user(user["id"])
+        measurements = weather_service.get_all_measurements_for_user(
+            user["id"])
 
         # Detailed measurements with filtering
         st.subheader("️ Detailed Weather Measurements")
@@ -40,12 +41,14 @@ def render_weather_logs_tab(user, supabase):
             source_options = ["All"] + [
                 f"{source.display_name()}" for source in sources
             ]
-            selected_source = st.selectbox("Filter by Weather Source", source_options)
+            selected_source = st.selectbox(
+                "Filter by Weather Source", source_options)
 
         with col2:
             date_range = st.date_input(
-                "Filter by Date Range", value=[], max_value=datetime.now().date()
-            )
+                "Filter by Date Range",
+                value=[],
+                max_value=datetime.now().date())
 
         with col3:
             # Limit number of records to display
@@ -105,9 +108,8 @@ def render_weather_logs_tab(user, supabase):
                 if source_id not in measurements_by_source:
                     measurements_by_source[source_id] = {}
 
-                date_key = pd.to_datetime(measurement.measurement_timestamp).strftime(
-                    "%Y-%m-%d"
-                )
+                date_key = pd.to_datetime(
+                    measurement.measurement_timestamp).strftime("%Y-%m-%d")
                 if date_key not in measurements_by_source[source_id]:
                     measurements_by_source[source_id][date_key] = []
                 measurements_by_source[source_id][date_key].append(measurement)
@@ -142,7 +144,8 @@ def render_weather_logs_tab(user, supabase):
                                 expanded=False,
                             ):
 
-                                # Convert measurements to dict format for DataFrame
+                                # Convert measurements to dict format for
+                                # DataFrame
                                 measurements_dict = []
                                 for m in date_measurements:
                                     measurements_dict.append(
@@ -153,8 +156,7 @@ def render_weather_logs_tab(user, supabase):
                                             "barometric_pressure_inhg": m.barometric_pressure_inhg,
                                             "wind_speed_mph": m.wind_speed_mph,
                                             "location_description": m.location_description,
-                                        }
-                                    )
+                                        })
 
                                 # Create DataFrame for this date
                                 df_date = pd.DataFrame(measurements_dict)
@@ -190,7 +192,8 @@ def render_weather_logs_tab(user, supabase):
                                             column_renames[col] = "Wind (mph)"
 
                                 if available_columns:
-                                    display_df = df_date[available_columns].copy()
+                                    display_df = df_date[available_columns].copy(
+                                    )
 
                                     # Format timestamp
                                     if "measurement_timestamp" in display_df.columns:
@@ -209,19 +212,20 @@ def render_weather_logs_tab(user, supabase):
                                     ]
                                     for col in numeric_columns:
                                         if col in display_df.columns:
-                                            display_df[col] = display_df[col].round(1)
+                                            display_df[col] = display_df[col].round(
+                                                1)
 
                                     # Rename columns
                                     display_df = display_df.rename(
                                         columns=column_renames
                                     )
 
-                                    st.dataframe(display_df, use_container_width=True)
+                                    st.dataframe(
+                                        display_df, use_container_width=True)
 
                                     # Show location if available
                                     if measurements_dict and measurements_dict[0].get(
-                                        "location_description"
-                                    ):
+                                            "location_description"):
                                         st.write(
                                             f"**Location:** {measurements_dict[0]['location_description']}"
                                         )
@@ -269,7 +273,8 @@ def render_weather_logs_tab(user, supabase):
                                         f"View Detailed Analysis",
                                         key=f"view_weather_{source_obj.id}_{date_str}",
                                     ):
-                                        # Update weather sources page state for navigation
+                                        # Update weather sources page state for
+                                        # navigation
                                         if (
                                             "weather_sources_page_state"
                                             not in st.session_state
@@ -281,20 +286,18 @@ def render_weather_logs_tab(user, supabase):
                                                 "confirm_deletes": {},
                                             }
                                             st.session_state.weather_sources_page_state = (
-                                                weather_state
-                                            )
+                                                weather_state)
 
-                                        # Type cast to avoid type checker warnings
+                                        # Type cast to avoid type checker
+                                        # warnings
                                         weather_state = cast(
                                             Dict[str, Any],
                                             st.session_state.weather_sources_page_state,
                                         )
                                         weather_state["selected_weather_source_id"] = (
-                                            source_obj.id
-                                        )
+                                            source_obj.id)
                                         weather_state["selected_weather_date"] = (
-                                            date_str
-                                        )
+                                            date_str)
                                         st.info(
                                             "Date and source selected! Go to the 'View Log' tab to see detailed weather analysis."
                                         )

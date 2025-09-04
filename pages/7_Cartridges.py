@@ -3,20 +3,23 @@ import sys
 
 import streamlit as st
 
-# Add the root directory to the path so we can import our modules
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 import navigation
 from auth import handle_auth
 from cartridges.edit_tab import render_edit_cartridges_tab
 from cartridges.view_tab import render_view_cartridges_tab
 from supabase import create_client
 
+# Add the root directory to the path so we can import our modules
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 
 def main():
     """Main function for the Cartridges page."""
     # Set page configuration FIRST, before any other Streamlit operations
-    st.set_page_config(page_title="Cartridges", layout="wide", initial_sidebar_state="expanded")
+    st.set_page_config(
+        page_title="Cartridges",
+        layout="wide",
+        initial_sidebar_state="expanded")
 
     # Load custom navigation
     navigation.load()

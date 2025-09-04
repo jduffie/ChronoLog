@@ -37,7 +37,8 @@ def discover_and_run_tests():
         if os.path.exists(test_dir):
             try:
                 # Look for test files in the directory
-                discovered_tests = loader.discover(test_dir, pattern="test_*.py")
+                discovered_tests = loader.discover(
+                    test_dir, pattern="test_*.py")
                 suite.addTest(discovered_tests)
                 print(f"✓ Loaded tests from {test_dir}")
             except Exception as e:

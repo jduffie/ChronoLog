@@ -51,11 +51,13 @@ class BulletsService:
         import uuid
 
         try:
-            # Generate UUID for the bullet entry (database expects explicit UUID)
+            # Generate UUID for the bullet entry (database expects explicit
+            # UUID)
             insert_data = bullet_data.copy()
             insert_data["id"] = str(uuid.uuid4())
 
-            response = self.supabase.table("bullets").insert(insert_data).execute()
+            response = self.supabase.table(
+                "bullets").insert(insert_data).execute()
 
             if not response.data:
                 raise Exception("Failed to create bullet entry")
@@ -89,8 +91,8 @@ class BulletsService:
         """Delete a bullet entry"""
         try:
             response = (
-                self.supabase.table("bullets").delete().eq("id", bullet_id).execute()
-            )
+                self.supabase.table("bullets").delete().eq(
+                    "id", bullet_id).execute())
 
             return bool(response.data)
 
@@ -114,7 +116,8 @@ class BulletsService:
             if weight_grains:
                 query = query.eq("weight_grains", weight_grains)
 
-            response = query.order("manufacturer, model, weight_grains").execute()
+            response = query.order(
+                "manufacturer, model, weight_grains").execute()
 
             if not response.data:
                 return []
@@ -128,7 +131,8 @@ class BulletsService:
         """Get list of unique manufacturers"""
         try:
             bullets = self.get_all_bullets()
-            manufacturers = list(set(bullet.manufacturer for bullet in bullets))
+            manufacturers = list(
+                set(bullet.manufacturer for bullet in bullets))
             return sorted(manufacturers)
         except Exception as e:
             raise Exception(f"Error getting manufacturers: {str(e)}")
@@ -137,7 +141,8 @@ class BulletsService:
         """Get list of unique bore diameters"""
         try:
             bullets = self.get_all_bullets()
-            diameters = list(set(bullet.bore_diameter_land_mm for bullet in bullets))
+            diameters = list(
+                set(bullet.bore_diameter_land_mm for bullet in bullets))
             return sorted(diameters)
         except Exception as e:
             raise Exception(f"Error getting bore diameters: {str(e)}")

@@ -43,19 +43,20 @@ def main():
                 full_path = f"{path}/{item_name}" if path else item_name
 
                 # Check if it's a file or directory
-                if item.get("metadata") and item["metadata"].get("size") is not None:
+                if item.get("metadata") and item["metadata"].get(
+                        "size") is not None:
                     # It's a file
                     print(f"{indent}📄 Downloading file: {full_path}")
 
                     try:
                         # Download file
-                        file_data = supabase.storage.from_(BUCKET_NAME).download(
-                            full_path
-                        )
+                        file_data = supabase.storage.from_(
+                            BUCKET_NAME).download(full_path)
 
                         # Create local directory structure
                         local_file_path = download_dir / full_path
-                        local_file_path.parent.mkdir(parents=True, exist_ok=True)
+                        local_file_path.parent.mkdir(
+                            parents=True, exist_ok=True)
 
                         # Write file
                         with open(local_file_path, "wb") as f:

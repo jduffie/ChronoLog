@@ -5,7 +5,7 @@ import streamlit as st
 
 
 def render_view_cartridges_tab(user, supabase):
-    
+
     # Clear any existing cartridges session state when navigating to page
     if 'cartridges' in st.session_state:
         del st.session_state.cartridges
@@ -95,7 +95,8 @@ def render_view_cartridges_tab(user, supabase):
         # Convert to DataFrame for better display
         df = pd.DataFrame(processed_data)
 
-        # Convert all columns to string type to avoid Arrow serialization issues
+        # Convert all columns to string type to avoid Arrow serialization
+        # issues
         df = df.astype(str)
 
         col1, col2, col3, col4 = st.columns(4)
@@ -105,8 +106,7 @@ def render_view_cartridges_tab(user, supabase):
 
         with col2:
             unique_cartridge_types = (
-                df["cartridge_type"].nunique() if "cartridge_type" in df.columns else 0
-            )
+                df["cartridge_type"].nunique() if "cartridge_type" in df.columns else 0)
             st.metric("Cartridge Types", unique_cartridge_types)
 
         with col3:
@@ -118,12 +118,10 @@ def render_view_cartridges_tab(user, supabase):
             st.metric("Manufacturers", unique_manufacturers)
 
         with col4:
-            global_count = (
-                len(df[df["source"] == "Public"]) if "source" in df.columns else 0
-            )
-            user_count = (
-                len(df[df["source"] == "User"]) if "source" in df.columns else 0
-            )
+            global_count = (len(df[df["source"] == "Public"])
+                            if "source" in df.columns else 0)
+            user_count = (len(df[df["source"] == "User"])
+                          if "source" in df.columns else 0)
             st.metric("Public/User", f"{global_count}/{user_count}")
 
         # Collapsible filters section
@@ -167,7 +165,6 @@ def render_view_cartridges_tab(user, supabase):
                 selected_bullet_weight = st.selectbox(
                     "Filter by Bullet Weight:", bullet_weights
                 )
-
 
         # Apply filters
         filtered_df = df.copy()
@@ -237,7 +234,8 @@ def render_view_cartridges_tab(user, supabase):
         ]
 
         # Only include columns that exist in the DataFrame
-        display_cols = [col for col in available_cols if col in display_df.columns]
+        display_cols = [
+            col for col in available_cols if col in display_df.columns]
 
         display_df = display_df[display_cols].rename(
             columns={
@@ -274,7 +272,8 @@ def render_view_cartridges_tab(user, supabase):
                 "Min Twist",
                 "Pref Twist",
             ]:
-                column_config[col] = st.column_config.TextColumn(col, width="small")
+                column_config[col] = st.column_config.TextColumn(
+                    col, width="small")
             elif col in [
                 "Cartridge Type",
                 "Cartridge Model",
@@ -282,9 +281,11 @@ def render_view_cartridges_tab(user, supabase):
                 "Bullet Make",
                 "Bullet Model",
             ]:
-                column_config[col] = st.column_config.TextColumn(col, width="medium")
+                column_config[col] = st.column_config.TextColumn(
+                    col, width="medium")
             else:
-                column_config[col] = st.column_config.TextColumn(col, width="small")
+                column_config[col] = st.column_config.TextColumn(
+                    col, width="small")
 
         # Display the table with enhanced formatting and selection
         selected_cartridge_event = st.dataframe(
@@ -300,19 +301,22 @@ def render_view_cartridges_tab(user, supabase):
         selected_cartridge_data = None
         if selected_cartridge_event["selection"]["rows"]:
             selected_row_index = selected_cartridge_event["selection"]["rows"][0]
-            # Get the cartridge data from the filtered_df using the display index
+            # Get the cartridge data from the filtered_df using the display
+            # index
             selected_cartridge_data = filtered_df.iloc[selected_row_index]
 
         # Show read-only details when a cartridge is selected
         if selected_cartridge_data is not None:
             source = selected_cartridge_data.get("source", "N/A")
             manufacturer = selected_cartridge_data.get("manufacturer", "N/A")
-            cartridge_type = selected_cartridge_data.get("cartridge_type", "N/A")
+            cartridge_type = selected_cartridge_data.get(
+                "cartridge_type", "N/A")
             model = selected_cartridge_data.get("model", "N/A")
             bullet_name = selected_cartridge_data.get("bullet_name", "N/A")
-            
-            st.markdown(f"**Details: {manufacturer} {cartridge_type} {model} - {bullet_name}**")
-            
+
+            st.markdown(
+                f"**Details: {manufacturer} {cartridge_type} {model} - {bullet_name}**")
+
             # Display detailed information in columns
             col1, col2, col3, col4 = st.columns([2, 2, 2, 1])
 
@@ -322,53 +326,76 @@ def render_view_cartridges_tab(user, supabase):
                 st.write(f"**Manufacturer:** {manufacturer}")
                 st.write(f"**Cartridge Type:** {cartridge_type}")
                 st.write(f"**Cartridge Model:** {model}")
-                if selected_cartridge_data.get("data_source_name") and selected_cartridge_data.get("data_source_name") != "":
-                    st.write(f"**Data Source:** {selected_cartridge_data['data_source_name']}")
+                if selected_cartridge_data.get(
+                        "data_source_name") and selected_cartridge_data.get("data_source_name") != "":
+                    st.write(
+                        f"**Data Source:** {selected_cartridge_data['data_source_name']}")
                 if selected_cartridge_data.get("created_at"):
-                    st.write(f"**Created:** {selected_cartridge_data['created_at'][:10]}")
+                    st.write(
+                        f"**Created:** {selected_cartridge_data['created_at'][:10]}")
 
             with col2:
                 st.markdown("**Bullet Info**")
                 st.write(f"**Description:** {bullet_name}")
-                st.write(f"**Bullet Manufacturer:** {selected_cartridge_data.get('bullet_manufacturer', 'N/A')}")
-                st.write(f"**Bullet Model:** {selected_cartridge_data.get('bullet_model', 'N/A')}")
-                st.write(f"**Weight:** {selected_cartridge_data.get('bullet_weight_grains', 'N/A')} gr")
-                st.write(f"**Bullet Diameter:** {selected_cartridge_data.get('bullet_diameter_groove_mm', 'N/A')} mm")
-                st.write(f"**Bore Diameter:** {selected_cartridge_data.get('bore_diameter_land_mm', 'N/A')} mm")
-                if selected_cartridge_data.get("bullet_length_mm") and selected_cartridge_data.get("bullet_length_mm") != "":
-                    st.write(f"**Length:** {selected_cartridge_data['bullet_length_mm']} mm")
+                st.write(
+                    f"**Bullet Manufacturer:** {selected_cartridge_data.get('bullet_manufacturer', 'N/A')}")
+                st.write(
+                    f"**Bullet Model:** {selected_cartridge_data.get('bullet_model', 'N/A')}")
+                st.write(
+                    f"**Weight:** {selected_cartridge_data.get('bullet_weight_grains', 'N/A')} gr")
+                st.write(
+                    f"**Bullet Diameter:** {selected_cartridge_data.get('bullet_diameter_groove_mm', 'N/A')} mm")
+                st.write(
+                    f"**Bore Diameter:** {selected_cartridge_data.get('bore_diameter_land_mm', 'N/A')} mm")
+                if selected_cartridge_data.get(
+                        "bullet_length_mm") and selected_cartridge_data.get("bullet_length_mm") != "":
+                    st.write(
+                        f"**Length:** {selected_cartridge_data['bullet_length_mm']} mm")
 
             with col3:
                 st.markdown("**Ballistic Properties**")
-                if selected_cartridge_data.get("ballistic_coefficient_g1") and selected_cartridge_data.get("ballistic_coefficient_g1") != "":
-                    st.write(f"**BC G1:** {selected_cartridge_data['ballistic_coefficient_g1']}")
+                if selected_cartridge_data.get("ballistic_coefficient_g1") and selected_cartridge_data.get(
+                        "ballistic_coefficient_g1") != "":
+                    st.write(
+                        f"**BC G1:** {selected_cartridge_data['ballistic_coefficient_g1']}")
                 else:
                     st.write("**BC G1:** N/A")
-                if selected_cartridge_data.get("ballistic_coefficient_g7") and selected_cartridge_data.get("ballistic_coefficient_g7") != "":
-                    st.write(f"**BC G7:** {selected_cartridge_data['ballistic_coefficient_g7']}")
+                if selected_cartridge_data.get("ballistic_coefficient_g7") and selected_cartridge_data.get(
+                        "ballistic_coefficient_g7") != "":
+                    st.write(
+                        f"**BC G7:** {selected_cartridge_data['ballistic_coefficient_g7']}")
                 else:
                     st.write("**BC G7:** N/A")
-                if selected_cartridge_data.get("sectional_density") and selected_cartridge_data.get("sectional_density") != "":
-                    st.write(f"**Sectional Density:** {selected_cartridge_data['sectional_density']}")
+                if selected_cartridge_data.get(
+                        "sectional_density") and selected_cartridge_data.get("sectional_density") != "":
+                    st.write(
+                        f"**Sectional Density:** {selected_cartridge_data['sectional_density']}")
                 else:
                     st.write("**Sectional Density:** N/A")
-                if selected_cartridge_data.get("min_req_twist_rate_in_per_rev") and selected_cartridge_data.get("min_req_twist_rate_in_per_rev") != "":
-                    st.write(f"**Min Twist Rate:** {selected_cartridge_data['min_req_twist_rate_in_per_rev']} in/rev")
+                if selected_cartridge_data.get("min_req_twist_rate_in_per_rev") and selected_cartridge_data.get(
+                        "min_req_twist_rate_in_per_rev") != "":
+                    st.write(
+                        f"**Min Twist Rate:** {selected_cartridge_data['min_req_twist_rate_in_per_rev']} in/rev")
                 else:
                     st.write("**Min Twist Rate:** N/A")
-                if selected_cartridge_data.get("pref_twist_rate_in_per_rev") and selected_cartridge_data.get("pref_twist_rate_in_per_rev") != "":
-                    st.write(f"**Pref Twist Rate:** {selected_cartridge_data['pref_twist_rate_in_per_rev']} in/rev")
+                if selected_cartridge_data.get("pref_twist_rate_in_per_rev") and selected_cartridge_data.get(
+                        "pref_twist_rate_in_per_rev") != "":
+                    st.write(
+                        f"**Pref Twist Rate:** {selected_cartridge_data['pref_twist_rate_in_per_rev']} in/rev")
                 else:
                     st.write("**Pref Twist Rate:** N/A")
-            
+
             with col4:
                 st.markdown("**Actions**")
                 # Delete button
-                if st.button("Delete", type="secondary", use_container_width=True):
+                if st.button(
+                    "Delete",
+                    type="secondary",
+                        use_container_width=True):
                     if 'cartridges' not in st.session_state:
                         st.session_state.cartridges = {}
                     st.session_state.cartridges['deleting_cartridge_id'] = selected_cartridge_data['id']
-        
+
         else:
             st.info("Click on a cartridge in the table above to view details")
 
@@ -378,33 +405,35 @@ def render_view_cartridges_tab(user, supabase):
             cartridge_to_delete = filtered_df[
                 filtered_df["id"] == st.session_state.cartridges['deleting_cartridge_id']
             ].iloc[0] if not filtered_df[filtered_df["id"] == st.session_state.cartridges['deleting_cartridge_id']].empty else None
-            
+
             if cartridge_to_delete is not None:
-                st.subheader(f"Delete {cartridge_to_delete['make']} {cartridge_to_delete['model']}")
+                st.subheader(
+                    f"Delete {cartridge_to_delete['make']} {cartridge_to_delete['model']}")
                 st.warning("⚠️ This action cannot be undone!")
-                st.write(f"Are you sure you want to delete **{cartridge_to_delete['make']} {cartridge_to_delete['model']}** ({cartridge_to_delete['cartridge_type']})?")
-                
+                st.write(
+                    f"Are you sure you want to delete **{cartridge_to_delete['make']} {cartridge_to_delete['model']}** ({cartridge_to_delete['cartridge_type']})?")
+
                 col1, col2 = st.columns([1, 1])
                 with col1:
-                    if st.button("Yes, Delete", type="primary", use_container_width=True):
+                    if st.button(
+                        "Yes, Delete",
+                        type="primary",
+                            use_container_width=True):
                         try:
                             # Delete the cartridge
-                            delete_response = (
-                                supabase.table("cartridges")
-                                .delete()
-                                .eq("id", st.session_state.cartridges['deleting_cartridge_id'])
-                                .execute()
-                            )
+                            delete_response = ( supabase.table("cartridges") .delete() .eq(
+                                "id", st.session_state.cartridges['deleting_cartridge_id']) .execute())
 
                             if delete_response.data:
-                                st.success(f"Deleted: {cartridge_to_delete['make']} {cartridge_to_delete['model']}")
+                                st.success(
+                                    f"Deleted: {cartridge_to_delete['make']} {cartridge_to_delete['model']}")
                                 del st.session_state.cartridges['deleting_cartridge_id']
                                 st.rerun()
                             else:
                                 st.error("Failed to delete cartridge.")
                         except Exception as e:
                             st.error(f"Error deleting cartridge: {str(e)}")
-                
+
                 with col2:
                     if st.button("Cancel", use_container_width=True):
                         del st.session_state.cartridges['deleting_cartridge_id']

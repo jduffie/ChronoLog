@@ -23,7 +23,8 @@ def render_edit_cartridges_tab(user, supabase):
             )
             return
 
-        cartridge_type_options = [ct["name"] for ct in cartridge_types_response.data]
+        cartridge_type_options = [ct["name"]
+                                  for ct in cartridge_types_response.data]
 
         # Get available bullets
         bullets_response = (
@@ -106,11 +107,13 @@ def render_edit_cartridges_tab(user, supabase):
                 col1, col2, col3 = st.columns(3)
 
                 with col1:
-                    st.write(f"**Manufacturer:** {selected_bullet['manufacturer']}")
+                    st.write(
+                        f"**Manufacturer:** {selected_bullet['manufacturer']}")
                     st.write(f"**Model:** {selected_bullet['model']}")
 
                 with col2:
-                    st.write(f"**Weight:** {selected_bullet['weight_grains']} grains")
+                    st.write(
+                        f"**Weight:** {selected_bullet['weight_grains']} grains")
                     if selected_bullet.get("ballistic_coefficient_g1"):
                         st.write(
                             f"**BC G1:** {selected_bullet['ballistic_coefficient_g1']}"
@@ -142,9 +145,9 @@ def render_edit_cartridges_tab(user, supabase):
 
                 # Validate URL format if provided
                 if data_source_link.strip() and not data_source_link.startswith(
-                    ("http://", "https://")
-                ):
-                    errors.append("Data Source URL must start with http:// or https://")
+                        ("http://", "https://")):
+                    errors.append(
+                        "Data Source URL must start with http:// or https://")
 
                 if errors:
                     st.error("Please fix the following errors:")
@@ -174,8 +177,7 @@ def render_edit_cartridges_tab(user, supabase):
 
                     # Insert the cartridge
                     response = (
-                        supabase.table("cartridges").insert(cartridge_data).execute()
-                    )
+                        supabase.table("cartridges").insert(cartridge_data).execute())
 
                     if response.data:
                         st.success("✅ Cartridge created successfully!")
@@ -183,12 +185,15 @@ def render_edit_cartridges_tab(user, supabase):
                             "The new cartridge will appear in the View tab after refresh."
                         )
                     else:
-                        st.error("Failed to create cartridge. Please try again.")
+                        st.error(
+                            "Failed to create cartridge. Please try again.")
 
                 except Exception as e:
                     st.error(f"Error creating cartridge: {str(e)}")
-                    if "duplicate key value violates unique constraint" in str(e):
-                        st.info("A cartridge with this combination already exists.")
+                    if "duplicate key value violates unique constraint" in str(
+                            e):
+                        st.info(
+                            "A cartridge with this combination already exists.")
 
         # Show existing user cartridges
         st.subheader(" Your Cartridges")
@@ -234,7 +239,8 @@ def render_edit_cartridges_tab(user, supabase):
                     use_container_width=True,
                     hide_index=True,
                 )
-                st.info(f"You have created {len(user_cartridges)} custom cartridge(s).")
+                st.info(
+                    f"You have created {len(user_cartridges)} custom cartridge(s).")
             else:
                 st.info("You haven't created any custom cartridges yet.")
         else:

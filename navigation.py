@@ -15,34 +15,34 @@ def load():
         height: 0 !important;
         overflow: hidden !important;
     }
-    
+
     [data-testid='stSidebarNav'] > ul {
         display: none !important;
         visibility: hidden !important;
     }
-    
+
     .css-1d391kg {
         display: none !important;
     }
-    
+
     .css-1y4p8pa {
         display: none !important;
     }
-    
+
     /* Additional selectors to ensure navigation is hidden */
     [data-testid='stSidebarNav'] ul li {
         display: none !important;
     }
-    
+
     [data-testid='stSidebarNav'] ul li a {
         display: none !important;
     }
-    
+
     /* Hide any navigation list items */
     .css-1vencpc {
         display: none !important;
     }
-    
+
     /* Hide navigation container */
     .css-17lntkn {
         display: none !important;

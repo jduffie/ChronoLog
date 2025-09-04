@@ -4,21 +4,24 @@ import sys
 import streamlit as st
 
 import navigation
-
-# Add the root directory to the path so we can import our modules
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from auth import handle_auth
 from files_tab import render_files_tab
 from supabase import create_client
 from weather.import_tab import render_weather_import_tab
 from weather.view_tab import render_weather_view_tab
 
+# Add the root directory to the path so we can import our modules
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 
 def main():
     """Main function for the Weather page."""
     # Set page configuration FIRST, before any other Streamlit operations
-    st.set_page_config(page_title="Weather - ChronoLog", page_icon="🌤️", layout="wide", initial_sidebar_state="expanded")
+    st.set_page_config(
+        page_title="Weather - ChronoLog",
+        page_icon="🌤️",
+        layout="wide",
+        initial_sidebar_state="expanded")
 
     # Load custom navigation
     navigation.load()

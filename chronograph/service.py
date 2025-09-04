@@ -85,7 +85,8 @@ class ChronographService:
             return self.get_measurements_for_session(user_id, session_id)
 
         except Exception as e:
-            raise Exception(f"Error fetching measurements by session ID: {str(e)}")
+            raise Exception(
+                f"Error fetching measurements by session ID: {str(e)}")
 
     def get_sessions_filtered(
         self,
@@ -148,7 +149,11 @@ class ChronographService:
         except Exception as e:
             raise Exception(f"Error fetching bullet types: {str(e)}")
 
-    def session_exists(self, user_id: str, tab_name: str, datetime_local: str) -> bool:
+    def session_exists(
+            self,
+            user_id: str,
+            tab_name: str,
+            datetime_local: str) -> bool:
         """Check if a session already exists"""
         try:
             response = (
@@ -164,7 +169,6 @@ class ChronographService:
 
         except Exception as e:
             raise Exception(f"Error checking session existence: {str(e)}")
-
 
     def update_session_stats(self, session_id: str, stats: dict) -> None:
         """Update session statistics"""
@@ -193,7 +197,10 @@ class ChronographService:
         except Exception as e:
             raise Exception(f"Error creating measurement: {str(e)}")
 
-    def get_measurements_for_stats(self, user_id: str, session_id: str) -> List[float]:
+    def get_measurements_for_stats(
+            self,
+            user_id: str,
+            session_id: str) -> List[float]:
         """Get speed measurements for calculating session statistics"""
         try:
             response = (
@@ -216,7 +223,7 @@ class ChronographService:
 
         except Exception as e:
             raise Exception(f"Error fetching measurements for stats: {str(e)}")
-    
+
     def save_chronograph_session(self, session: ChronographSession) -> str:
         """Save a ChronographSession entity to Supabase"""
         try:
@@ -236,18 +243,20 @@ class ChronographService:
                 "min_speed_fps": session.min_speed_fps,
                 "max_speed_fps": session.max_speed_fps,
             }
-            
-            response = self.supabase.table("chrono_sessions").insert(session_data).execute()
-            
+
+            response = self.supabase.table(
+                "chrono_sessions").insert(session_data).execute()
+
             if not response.data:
                 raise Exception("Failed to save session")
-            
+
             return response.data[0]["id"]
-            
+
         except Exception as e:
             raise Exception(f"Error saving session: {str(e)}")
-    
-    def save_chronograph_measurement(self, measurement: ChronographMeasurement) -> str:
+
+    def save_chronograph_measurement(
+            self, measurement: ChronographMeasurement) -> str:
         """Save a ChronographMeasurement entity to Supabase"""
         try:
             measurement_data = {
@@ -268,18 +277,20 @@ class ChronographService:
                 "cold_bore": measurement.cold_bore,
                 "shot_notes": measurement.shot_notes,
             }
-            
-            response = self.supabase.table("chrono_measurements").insert(measurement_data).execute()
-            
+
+            response = self.supabase.table(
+                "chrono_measurements").insert(measurement_data).execute()
+
             if not response.data:
                 raise Exception("Failed to save measurement")
-            
+
             return response.data[0]["id"]
-            
+
         except Exception as e:
             raise Exception(f"Error saving measurement: {str(e)}")
-    
-    def calculate_and_update_session_stats(self, user_id: str, session_id: str) -> None:
+
+    def calculate_and_update_session_stats(
+            self, user_id: str, session_id: str) -> None:
         """Calculate and update session statistics"""
         speeds = self.get_measurements_for_stats(user_id, session_id)
         if speeds:
@@ -305,7 +316,10 @@ class ChronographService:
         except Exception as e:
             raise Exception(f"Error fetching chronograph sources: {str(e)}")
 
-    def get_source_by_id(self, source_id: str, user_id: str) -> Optional[ChronographSource]:
+    def get_source_by_id(
+            self,
+            source_id: str,
+            user_id: str) -> Optional[ChronographSource]:
         """Get a specific chronograph source by ID"""
         try:
             response = (
@@ -325,7 +339,10 @@ class ChronographService:
         except Exception as e:
             raise Exception(f"Error fetching chronograph source: {str(e)}")
 
-    def get_source_by_name(self, user_id: str, name: str) -> Optional[ChronographSource]:
+    def get_source_by_name(
+            self,
+            user_id: str,
+            name: str) -> Optional[ChronographSource]:
         """Get a chronograph source by name"""
         try:
             response = (
@@ -348,9 +365,8 @@ class ChronographService:
     def create_source(self, source_data: dict) -> str:
         """Create a new chronograph source"""
         try:
-            response = (
-                self.supabase.table("chronograph_sources").insert(source_data).execute()
-            )
+            response = (self.supabase.table(
+                "chronograph_sources").insert(source_data).execute())
 
             if not response.data:
                 raise Exception("Failed to create chronograph source")
@@ -360,11 +376,16 @@ class ChronographService:
         except Exception as e:
             raise Exception(f"Error creating chronograph source: {str(e)}")
 
-    def update_source(self, source_id: str, user_id: str, updates: dict) -> None:
+    def update_source(
+            self,
+            source_id: str,
+            user_id: str,
+            updates: dict) -> None:
         """Update a chronograph source"""
         try:
             updates["updated_at"] = datetime.now().isoformat()
-            self.supabase.table("chronograph_sources").update(updates).eq("id", source_id).eq("user_id", user_id).execute()
+            self.supabase.table("chronograph_sources").update(updates).eq(
+                "id", source_id).eq("user_id", user_id).execute()
 
         except Exception as e:
             raise Exception(f"Error updating chronograph source: {str(e)}")
@@ -372,12 +393,19 @@ class ChronographService:
     def delete_source(self, source_id: str, user_id: str) -> None:
         """Delete a chronograph source"""
         try:
-            self.supabase.table("chronograph_sources").delete().eq("id", source_id).eq("user_id", user_id).execute()
+            self.supabase.table("chronograph_sources").delete().eq(
+                "id", source_id).eq("user_id", user_id).execute()
 
         except Exception as e:
             raise Exception(f"Error deleting chronograph source: {str(e)}")
 
-    def update_source_with_device_info(self, source_id: str, user_id: str, device_name: str, device_model: str, serial_number: str) -> None:
+    def update_source_with_device_info(
+            self,
+            source_id: str,
+            user_id: str,
+            device_name: str,
+            device_model: str,
+            serial_number: str) -> None:
         """Update chronograph source with device info from uploaded file"""
         try:
             updates = {
@@ -386,8 +414,10 @@ class ChronographService:
                 "serial_number": serial_number if serial_number else None,
                 "updated_at": datetime.now().isoformat()
             }
-            
-            self.supabase.table("chronograph_sources").update(updates).eq("id", source_id).eq("user_id", user_id).execute()
+
+            self.supabase.table("chronograph_sources").update(updates).eq(
+                "id", source_id).eq("user_id", user_id).execute()
 
         except Exception as e:
-            raise Exception(f"Error updating chronograph source with device info: {str(e)}")
+            raise Exception(
+                f"Error updating chronograph source with device info: {str(e)}")

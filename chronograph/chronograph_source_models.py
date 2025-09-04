@@ -45,7 +45,8 @@ class ChronographSource:
         )
 
     @classmethod
-    def from_supabase_records(cls, records: List[dict]) -> List["ChronographSource"]:
+    def from_supabase_records(
+            cls, records: List[dict]) -> List["ChronographSource"]:
         """Create a list of ChronographSource objects from Supabase records"""
         return [cls.from_supabase_record(record) for record in records]
 

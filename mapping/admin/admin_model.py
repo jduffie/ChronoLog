@@ -4,20 +4,17 @@ from typing import Any, Dict, List
 class AdminModel:
     """Model for admin range submission review functionality."""
 
-    def get_all_pending_submissions(self, supabase_client) -> List[Dict[str, Any]]:
+    def get_all_pending_submissions(
+            self, supabase_client) -> List[Dict[str, Any]]:
         """Get all range submissions that are pending review."""
         try:
             result = (
-                supabase_client.table("ranges_submissions")
-                .select(
+                supabase_client.table("ranges_submissions") .select(
                     "id, user_email, range_name, range_description, start_lat, start_lon, end_lat, end_lon, "
                     "start_altitude_m, end_altitude_m, distance_m, azimuth_deg, elevation_angle_deg, "
-                    "display_name, submitted_at, status, review_reason, address_geojson"
-                )
-                .eq("status", "Under Review")
-                .order("submitted_at", desc=False)
-                .execute()
-            )
+                    "display_name, submitted_at, status, review_reason, address_geojson") .eq(
+                    "status", "Under Review") .order(
+                    "submitted_at", desc=False) .execute())
             return result.data if result.data else []
         except Exception as e:
             print(f"Error getting pending submissions: {e}")
@@ -27,15 +24,11 @@ class AdminModel:
         """Get all range submissions regardless of status."""
         try:
             result = (
-                supabase_client.table("ranges_submissions")
-                .select(
+                supabase_client.table("ranges_submissions") .select(
                     "id, user_email, range_name, range_description, start_lat, start_lon, end_lat, end_lon, "
                     "start_altitude_m, end_altitude_m, distance_m, azimuth_deg, elevation_angle_deg, "
-                    "display_name, submitted_at, status, review_reason, address_geojson"
-                )
-                .order("submitted_at", desc=True)
-                .execute()
-            )
+                    "display_name, submitted_at, status, review_reason, address_geojson") .order(
+                    "submitted_at", desc=True) .execute())
             return result.data if result.data else []
         except Exception as e:
             print(f"Error getting all submissions: {e}")
@@ -47,16 +40,12 @@ class AdminModel:
         """Get submissions filtered by status."""
         try:
             result = (
-                supabase_client.table("ranges_submissions")
-                .select(
+                supabase_client.table("ranges_submissions") .select(
                     "id, user_email, range_name, range_description, start_lat, start_lon, end_lat, end_lon, "
                     "start_altitude_m, end_altitude_m, distance_m, azimuth_deg, elevation_angle_deg, "
-                    "display_name, submitted_at, status, review_reason, address_geojson"
-                )
-                .eq("status", status)
-                .order("submitted_at", desc=False)
-                .execute()
-            )
+                    "display_name, submitted_at, status, review_reason, address_geojson") .eq(
+                    "status", status) .order(
+                    "submitted_at", desc=False) .execute())
             return result.data if result.data else []
         except Exception as e:
             print(f"Error getting submissions by status: {e}")
@@ -100,7 +89,8 @@ class AdminModel:
             }
 
             # Insert into ranges table
-            ranges_result = supabase_client.table("ranges").insert(range_data).execute()
+            ranges_result = supabase_client.table(
+                "ranges").insert(range_data).execute()
             if not ranges_result.data:
                 print("Failed to insert into ranges table")
                 return False
@@ -117,7 +107,8 @@ class AdminModel:
                 print(f"Successfully approved submission {submission_id}")
                 return True
             else:
-                print(f"Failed to update submission status for {submission_id}")
+                print(
+                    f"Failed to update submission status for {submission_id}")
                 return False
 
         except Exception as e:
@@ -147,7 +138,10 @@ class AdminModel:
             print(f"Error denying submission: {e}")
             return False
 
-    def reset_submission_status(self, submission_id: str, supabase_client) -> bool:
+    def reset_submission_status(
+            self,
+            submission_id: str,
+            supabase_client) -> bool:
         """Reset submission status back to Under Review."""
         try:
             result = (
@@ -158,7 +152,8 @@ class AdminModel:
             )
 
             if result.data:
-                print(f"Successfully reset status for submission {submission_id}")
+                print(
+                    f"Successfully reset status for submission {submission_id}")
                 return True
             else:
                 print(f"Failed to reset status for submission {submission_id}")
@@ -185,8 +180,11 @@ class AdminModel:
             return {}
 
     def update_submission_review(
-        self, submission_id: str, status: str, review_reason: str, supabase_client
-    ) -> bool:
+            self,
+            submission_id: str,
+            status: str,
+            review_reason: str,
+            supabase_client) -> bool:
         """Update submission review status and reason."""
         try:
             result = (
@@ -197,7 +195,8 @@ class AdminModel:
             )
 
             if result.data:
-                print(f"Successfully updated submission {submission_id} to {status}")
+                print(
+                    f"Successfully updated submission {submission_id} to {status}")
                 return True
             else:
                 print(f"Failed to update submission {submission_id}")

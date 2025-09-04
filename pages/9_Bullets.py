@@ -4,20 +4,23 @@ import sys
 import streamlit as st
 
 import navigation
-
-# Add the root directory to the path so we can import our modules
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from auth import handle_auth
 from bullets.create_tab import render_create_bullets_tab
 from bullets.view_tab import render_view_bullets_tab
 from supabase import create_client
 
+# Add the root directory to the path so we can import our modules
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 
 def main():
     """Main function for the Ammo page."""
     # Set page configuration FIRST, before any other Streamlit operations
-    st.set_page_config(page_title="Bullets", page_icon="📦", layout="wide", initial_sidebar_state="expanded")
+    st.set_page_config(
+        page_title="Bullets",
+        page_icon="📦",
+        layout="wide",
+        initial_sidebar_state="expanded")
 
     # Load custom navigation
     navigation.load()

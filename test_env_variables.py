@@ -60,7 +60,8 @@ def test_env_variables():
     print("=" * 50)
 
     if missing_required:
-        print(f"❌ Missing {len(missing_required)} required environment variables:")
+        print(
+            f"❌ Missing {len(missing_required)} required environment variables:")
         for var in missing_required:
             print(f"   - {var}")
         print("\n💡 To set environment variables from 1Password:")

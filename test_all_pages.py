@@ -3,21 +3,11 @@ import sys
 import unittest
 from unittest.mock import MagicMock, Mock, patch
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-# Import modular tests from subdirectories
 from chronograph.test_chronograph import (
     TestChronographModels,
     TestChronographPageStructure,
     TestChronographService,
 )
-
-# from dope.test_dope import (  # Removed - test_dope.py deleted
-#     TestDopeCreateSessionTab,
-#     TestDopeModel,
-#     TestDopePageStructure,
-#     TestDopeSessionManagement,
-# )
 from mapping.test_mapping import (
     TestMappingModels,
     TestMappingPageStructure,
@@ -35,6 +25,17 @@ from weather.test_weather import (
     TestWeatherPageStructure,
     TestWeatherSource,
 )
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+# Import modular tests from subdirectories
+
+# from dope.test_dope import (  # Removed - test_dope.py deleted
+#     TestDopeCreateSessionTab,
+#     TestDopeModel,
+#     TestDopePageStructure,
+#     TestDopeSessionManagement,
+# )
 
 
 class TestPageStructure(unittest.TestCase):
@@ -57,8 +58,8 @@ class TestPageStructure(unittest.TestCase):
         for page_file in expected_pages:
             with self.subTest(page=page_file):
                 self.assertTrue(
-                    os.path.exists(page_file), f"Page file {page_file} should exist"
-                )
+                    os.path.exists(page_file),
+                    f"Page file {page_file} should exist")
 
     def test_pages_have_required_imports(self):
         """Test that pages have required imports"""
@@ -181,7 +182,8 @@ class TestPageConfiguration(unittest.TestCase):
             "pages/6_Rifles.py": ("Rifles", "📏"),
         }
 
-        for page_file, (expected_title, expected_icon) in expected_configs.items():
+        for page_file, (expected_title,
+                        expected_icon) in expected_configs.items():
             with self.subTest(page=page_file):
                 if os.path.exists(page_file):
                     with open(page_file, "r") as f:
@@ -227,7 +229,9 @@ class TestMainAppStructure(unittest.TestCase):
 
     def test_chronolog_main_exists(self):
         """Test that ChronoLog.py exists"""
-        self.assertTrue(os.path.exists("ChronoLog.py"), "ChronoLog.py should exist")
+        self.assertTrue(
+            os.path.exists("ChronoLog.py"),
+            "ChronoLog.py should exist")
 
     def test_chronolog_imports_home_page(self):
         """Test that ChronoLog.py imports the home page"""
@@ -250,8 +254,6 @@ class TestMainAppStructure(unittest.TestCase):
 class TestPageTabStructure(unittest.TestCase):
     """Test that pages have appropriate tab structures"""
 
-
-
     def test_dope_has_separate_pages(self):
         """Test that DOPE has separate pages instead of tabs"""
         expected_dope_pages = [
@@ -263,8 +265,8 @@ class TestPageTabStructure(unittest.TestCase):
 
         for page_file in expected_dope_pages:
             self.assertTrue(
-                os.path.exists(page_file), f"DOPE page {page_file} should exist"
-            )
+                os.path.exists(page_file),
+                f"DOPE page {page_file} should exist")
 
     def test_ranges_has_correct_tabs(self):
         """Test that ranges page has expected tabs"""
@@ -272,7 +274,10 @@ class TestPageTabStructure(unittest.TestCase):
             with open("pages/5_Ranges.py", "r") as f:
                 content = f.read()
 
-            expected_tabs = ["Public Ranges", "Nominate Range", "My Submissions"]
+            expected_tabs = [
+                "Public Ranges",
+                "Nominate Range",
+                "My Submissions"]
             # Check for partial matches since the full tab names include emojis
             tab_patterns = ["Public Ranges", "Nominate", "Submissions"]
             for pattern in tab_patterns:

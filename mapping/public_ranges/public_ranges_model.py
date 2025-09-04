@@ -8,26 +8,22 @@ class PublicRangesModel:
         """Get all public ranges from the ranges table."""
         try:
             result = (
-                supabase_client.table("ranges")
-                .select(
+                supabase_client.table("ranges") .select(
                     "id, range_name, range_description, start_lat, start_lon, end_lat, end_lon, "
                     "start_altitude_m, end_altitude_m, distance_m, azimuth_deg, elevation_angle_deg, "
-                    "display_name, submitted_at, address_geojson"
-                )
-                .order("submitted_at", desc=True)
-                .execute()
-            )
+                    "display_name, submitted_at, address_geojson") .order(
+                    "submitted_at", desc=True) .execute())
             return result.data if result.data else []
         except Exception as e:
             print(f"Error getting public ranges: {e}")
             return []
 
-    def get_public_range_by_id(self, range_id: str, supabase_client) -> Dict[str, Any]:
+    def get_public_range_by_id(
+            self, range_id: str, supabase_client) -> Dict[str, Any]:
         """Get a specific public range by ID."""
         try:
-            result = (
-                supabase_client.table("ranges").select("*").eq("id", range_id).execute()
-            )
+            result = (supabase_client.table("ranges").select(
+                "*").eq("id", range_id).execute())
             return result.data[0] if result.data else {}
         except Exception as e:
             print(f"Error getting public range by ID: {e}")
@@ -37,13 +33,14 @@ class PublicRangesModel:
         """Delete a range from the public ranges table."""
         try:
             result = (
-                supabase_client.table("ranges").delete().eq("id", range_id).execute()
-            )
+                supabase_client.table("ranges").delete().eq(
+                    "id", range_id).execute())
             if hasattr(result, "data") and result.data is not None:
                 print(f"Successfully deleted public range {range_id}")
                 return True
             elif hasattr(result, "count") and result.count > 0:
-                print(f"Successfully deleted public range {range_id} (count method)")
+                print(
+                    f"Successfully deleted public range {range_id} (count method)")
                 return True
             else:
                 print(f"Failed to delete public range {range_id}")
@@ -86,19 +83,20 @@ class PublicRangesModel:
         """Get public ranges within a geographic bounding box."""
         try:
             result = (
-                supabase_client.table("ranges")
-                .select(
+                supabase_client.table("ranges") .select(
                     "id, range_name, range_description, start_lat, start_lon, end_lat, end_lon, "
                     "start_altitude_m, end_altitude_m, distance_m, azimuth_deg, elevation_angle_deg, "
-                    "display_name, submitted_at, address_geojson"
-                )
-                .gte("start_lat", min_lat)
-                .lte("start_lat", max_lat)
-                .gte("start_lon", min_lon)
-                .lte("start_lon", max_lon)
-                .order("submitted_at", desc=True)
-                .execute()
-            )
+                    "display_name, submitted_at, address_geojson") .gte(
+                    "start_lat",
+                    min_lat) .lte(
+                    "start_lat",
+                    max_lat) .gte(
+                    "start_lon",
+                    min_lon) .lte(
+                        "start_lon",
+                        max_lon) .order(
+                            "submitted_at",
+                    desc=True) .execute())
             return result.data if result.data else []
         except Exception as e:
             print(f"Error getting ranges by location: {e}")
@@ -110,17 +108,13 @@ class PublicRangesModel:
         """Get public ranges filtered by distance range."""
         try:
             result = (
-                supabase_client.table("ranges")
-                .select(
+                supabase_client.table("ranges") .select(
                     "id, range_name, range_description, start_lat, start_lon, end_lat, end_lon, "
                     "start_altitude_m, end_altitude_m, distance_m, azimuth_deg, elevation_angle_deg, "
-                    "display_name, submitted_at, address_geojson"
-                )
-                .gte("distance_m", min_distance)
-                .lte("distance_m", max_distance)
-                .order("distance_m", desc=False)
-                .execute()
-            )
+                    "display_name, submitted_at, address_geojson") .gte(
+                    "distance_m", min_distance) .lte(
+                    "distance_m", max_distance) .order(
+                    "distance_m", desc=False) .execute())
             return result.data if result.data else []
         except Exception as e:
             print(f"Error getting ranges by distance: {e}")
@@ -129,13 +123,13 @@ class PublicRangesModel:
     def get_range_statistics(self, supabase_client) -> Dict[str, Any]:
         """Get statistics about public ranges."""
         try:
-            result = supabase_client.table("ranges").select("distance_m").execute()
+            result = supabase_client.table(
+                "ranges").select("distance_m").execute()
             if not result.data:
                 return {}
 
-            distances = [
-                r["distance_m"] for r in result.data if r["distance_m"] is not None
-            ]
+            distances = [r["distance_m"]
+                         for r in result.data if r["distance_m"] is not None]
             if not distances:
                 return {}
 
@@ -150,10 +144,12 @@ class PublicRangesModel:
             print(f"Error getting range statistics: {e}")
             return {}
 
-    def add_public_range(self, range_data: Dict[str, Any], supabase_client) -> bool:
+    def add_public_range(
+            self, range_data: Dict[str, Any], supabase_client) -> bool:
         """Add a new public range directly (admin function)."""
         try:
-            result = supabase_client.table("ranges").insert(range_data).execute()
+            result = supabase_client.table(
+                "ranges").insert(range_data).execute()
             if result.data:
                 print(
                     f"Successfully added public range: {range_data.get('range_name', 'Unknown')}"

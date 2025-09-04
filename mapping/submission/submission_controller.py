@@ -1,14 +1,8 @@
 import os
 import sys
+from typing import Any, Dict, List
 
 import streamlit as st
-
-# Add the parent directory to the path so we can import shared modules
-sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
-
-from typing import Any, Dict, List
 
 from auth import handle_auth
 from mapping.session_state_manager import SessionStateManager
@@ -16,6 +10,13 @@ from supabase import create_client
 
 from .submission_model import SubmissionModel
 from .submission_view import SubmissionView
+
+# Add the parent directory to the path so we can import shared modules
+sys.path.append(
+    os.path.dirname(
+        os.path.dirname(
+            os.path.dirname(
+                os.path.abspath(__file__)))))
 
 
 class SubmissionController:
@@ -40,7 +41,8 @@ class SubmissionController:
         if not selected_indices:
             return
 
-        confirmation = self.view.display_delete_confirmation(ranges, selected_indices)
+        confirmation = self.view.display_delete_confirmation(
+            ranges, selected_indices)
 
         if confirmation == "confirm":
             # Perform deletion
@@ -69,7 +71,8 @@ class SubmissionController:
                     )
 
             except Exception as e:
-                self.view.display_error_message(f"❌ Error deleting ranges: {str(e)}")
+                self.view.display_error_message(
+                    f"❌ Error deleting ranges: {str(e)}")
 
         elif confirmation == "cancel":
             # Clear the delete session state when canceling
@@ -89,7 +92,8 @@ class SubmissionController:
             return True  # Allow access regardless of count for viewing submissions
 
         except Exception as e:
-            self.view.display_error_message(f"Error checking range limit: {str(e)}")
+            self.view.display_error_message(
+                f"Error checking range limit: {str(e)}")
             return False
 
     def _run_submission_functionality(self, user, supabase):
@@ -142,8 +146,9 @@ class SubmissionController:
         """Main controller method to run the submissions page."""
         # Set page configuration
         st.set_page_config(
-            page_title="Submissions - ChronoLog Mapping", page_icon="📋", layout="wide"
-        )
+            page_title="Submissions - ChronoLog Mapping",
+            page_icon="📋",
+            layout="wide")
 
         # Set app identifier for auth system
         if "app" not in st.query_params:
@@ -173,7 +178,8 @@ class SubmissionController:
             supabase = self._get_supabase_client()
             return self.model.get_user_ranges(user_id, supabase)
         except Exception as e:
-            self.view.display_error_message(f"Error fetching user ranges: {str(e)}")
+            self.view.display_error_message(
+                f"Error fetching user ranges: {str(e)}")
             return []
 
     def delete_ranges(self, user_id: str, range_ids: List[str]) -> bool:

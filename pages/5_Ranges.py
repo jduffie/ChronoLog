@@ -4,17 +4,18 @@ import sys
 import streamlit as st
 
 import navigation
-
-# Add the root directory to the path so we can import our modules
-sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
-
 from auth import handle_auth
 from mapping.nominate.nominate_controller import NominateController
 from mapping.public_ranges.public_ranges_controller import PublicRangesController
 from mapping.submission.submission_controller import SubmissionController
 from supabase import create_client
+
+# Add the root directory to the path so we can import our modules
+sys.path.append(
+    os.path.dirname(
+        os.path.dirname(
+            os.path.dirname(
+                os.path.abspath(__file__)))))
 
 
 def render_public_ranges_tab(user, supabase):
@@ -45,7 +46,8 @@ def render_public_ranges_tab(user, supabase):
 
         # Display ranges table with admin capabilities
         if is_admin:
-            action_result = controller.display_public_ranges_table_admin(public_ranges)
+            action_result = controller.display_public_ranges_table_admin(
+                public_ranges)
         else:
             action_result = controller.display_public_ranges_table_readonly(
                 public_ranges
@@ -63,7 +65,8 @@ def render_public_ranges_tab(user, supabase):
                         for idx in selected_indices:
                             if idx < len(public_ranges):
                                 range_id = public_ranges[idx]["id"]
-                                if controller.delete_public_range(range_id, supabase):
+                                if controller.delete_public_range(
+                                        range_id, supabase):
                                     deleted_count += 1
 
                         if deleted_count > 0:
@@ -148,7 +151,11 @@ def render_submissions_tab(user, supabase):
 def main():
     """Main function for the Ranges page."""
     # Set page configuration FIRST, before any other Streamlit operations
-    st.set_page_config(page_title="Ranges", page_icon="🌍", layout="wide", initial_sidebar_state="expanded")
+    st.set_page_config(
+        page_title="Ranges",
+        page_icon="🌍",
+        layout="wide",
+        initial_sidebar_state="expanded")
 
     # Load custom navigation
     navigation.load()
@@ -180,7 +187,8 @@ def main():
     st.title(" Ranges")
 
     # Create tabs
-    tab1, tab2, tab3 = st.tabs([" Public Ranges", " Nominate Range", " My Submissions"])
+    tab1, tab2, tab3 = st.tabs(
+        [" Public Ranges", " Nominate Range", " My Submissions"])
 
     with tab1:
         render_public_ranges_tab(user, supabase)

@@ -14,7 +14,8 @@ def render_create_bullets_tab(user, supabase):
     )
 
     if not is_admin:
-        st.warning("🔒 Access Denied: Only administrators can create bullet entries.")
+        st.warning(
+            "🔒 Access Denied: Only administrators can create bullet entries.")
         st.info(
             "This global bullet database is maintained by administrators to ensure data quality and consistency."
         )
@@ -156,7 +157,8 @@ def render_create_bullets_tab(user, supabase):
             )
 
         # Submit button
-        submitted = st.form_submit_button(" Create Bullets Entry", type="primary")
+        submitted = st.form_submit_button(
+            " Create Bullets Entry", type="primary")
 
         if submitted:
             # Validate required fields
@@ -183,11 +185,9 @@ def render_create_bullets_tab(user, supabase):
             # Convert zero values to None for optional fields
             bullet_length_mm_value = bullet_length_mm if bullet_length_mm > 0 else None
             ballistic_coefficient_g1_value = (
-                ballistic_coefficient_g1 if ballistic_coefficient_g1 > 0 else None
-            )
+                ballistic_coefficient_g1 if ballistic_coefficient_g1 > 0 else None)
             ballistic_coefficient_g7_value = (
-                ballistic_coefficient_g7 if ballistic_coefficient_g7 > 0 else None
-            )
+                ballistic_coefficient_g7 if ballistic_coefficient_g7 > 0 else None)
             sectional_density_value = (
                 sectional_density if sectional_density > 0 else None
             )
@@ -197,8 +197,7 @@ def render_create_bullets_tab(user, supabase):
                 else None
             )
             pref_twist_rate_value = (
-                pref_twist_rate_in_per_rev if pref_twist_rate_in_per_rev > 0 else None
-            )
+                pref_twist_rate_in_per_rev if pref_twist_rate_in_per_rev > 0 else None)
 
             # Convert empty strings to None for data source fields
             data_source_name_value = (

@@ -4,19 +4,22 @@ import sys
 import streamlit as st
 
 import navigation
-
-# Add the root directory to the path so we can import our modules
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from auth import handle_auth
 from dope.analytics.analytics_page import render_analytics_page
 from supabase import create_client
+
+# Add the root directory to the path so we can import our modules
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def main():
     """Main function for the DOPE Analytics page."""
     # Set page configuration FIRST, before any other Streamlit operations
-    st.set_page_config(page_title="DOPE Analytics", page_icon="📊", layout="wide", initial_sidebar_state="expanded")
+    st.set_page_config(
+        page_title="DOPE Analytics",
+        page_icon="📊",
+        layout="wide",
+        initial_sidebar_state="expanded")
 
     # Load custom navigation
     navigation.load()

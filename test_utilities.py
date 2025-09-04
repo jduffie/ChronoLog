@@ -56,7 +56,9 @@ class TestEnvironmentVariables(unittest.TestCase):
 
     def test_env_variables_script_structure(self):
         """Test that env variables test script has proper structure"""
-        script_path = os.path.join(os.path.dirname(__file__), "test_env_variables.py")
+        script_path = os.path.join(
+            os.path.dirname(__file__),
+            "test_env_variables.py")
         self.assertTrue(
             os.path.exists(script_path), "test_env_variables.py should exist"
         )
@@ -101,7 +103,8 @@ class TestResetSystem(unittest.TestCase):
         except ImportError as e:
             self.fail(f"reset_system.py should be importable: {e}")
 
-    @patch("reset_system.input", return_value="n")  # Always answer 'no' to confirmation
+    # Always answer 'no' to confirmation
+    @patch("reset_system.input", return_value="n")
     @patch("sys.exit")
     def test_reset_system_safety_confirmation(self, mock_exit, mock_input):
         """Test that reset_system requires confirmation before proceeding"""
@@ -120,8 +123,12 @@ class TestResetSystem(unittest.TestCase):
 
     def test_reset_system_has_safety_checks(self):
         """Test that reset_system script has proper safety checks"""
-        script_path = os.path.join(os.path.dirname(__file__), "reset_system.py")
-        self.assertTrue(os.path.exists(script_path), "reset_system.py should exist")
+        script_path = os.path.join(
+            os.path.dirname(__file__),
+            "reset_system.py")
+        self.assertTrue(
+            os.path.exists(script_path),
+            "reset_system.py should exist")
 
         with open(script_path, "r") as f:
             content = f.read()
@@ -135,13 +142,19 @@ class TestFilesUtilities(unittest.TestCase):
 
     def test_download_uploads_exists(self):
         """Test that download_uploads.py exists"""
-        script_path = os.path.join(os.path.dirname(__file__), "download_uploads.py")
-        self.assertTrue(os.path.exists(script_path), "download_uploads.py should exist")
+        script_path = os.path.join(
+            os.path.dirname(__file__),
+            "download_uploads.py")
+        self.assertTrue(
+            os.path.exists(script_path),
+            "download_uploads.py should exist")
 
     def test_files_tab_exists(self):
         """Test that files_tab.py exists"""
         script_path = os.path.join(os.path.dirname(__file__), "files_tab.py")
-        self.assertTrue(os.path.exists(script_path), "files_tab.py should exist")
+        self.assertTrue(
+            os.path.exists(script_path),
+            "files_tab.py should exist")
 
     def test_import_factory_cartridges_exists(self):
         """Test that import_factory_cartridges.py exists"""
@@ -149,8 +162,8 @@ class TestFilesUtilities(unittest.TestCase):
             os.path.dirname(__file__), "import_factory_cartridges.py"
         )
         self.assertTrue(
-            os.path.exists(script_path), "import_factory_cartridges.py should exist"
-        )
+            os.path.exists(script_path),
+            "import_factory_cartridges.py should exist")
 
 
 class TestRunAllTestsScript(unittest.TestCase):
@@ -158,8 +171,12 @@ class TestRunAllTestsScript(unittest.TestCase):
 
     def test_run_all_tests_structure(self):
         """Test that run_all_tests script has proper structure"""
-        script_path = os.path.join(os.path.dirname(__file__), "run_all_tests.py")
-        self.assertTrue(os.path.exists(script_path), "run_all_tests.py should exist")
+        script_path = os.path.join(
+            os.path.dirname(__file__),
+            "run_all_tests.py")
+        self.assertTrue(
+            os.path.exists(script_path),
+            "run_all_tests.py should exist")
 
         with open(script_path, "r") as f:
             content = f.read()
@@ -203,13 +220,17 @@ class TestIntegrationScripts(unittest.TestCase):
             os.path.dirname(__file__), "run_integration_tests.py"
         )
         self.assertTrue(
-            os.path.exists(script_path), "run_integration_tests.py should exist"
-        )
+            os.path.exists(script_path),
+            "run_integration_tests.py should exist")
 
     def test_test_integration_exists(self):
         """Test that test_integration.py exists"""
-        script_path = os.path.join(os.path.dirname(__file__), "test_integration.py")
-        self.assertTrue(os.path.exists(script_path), "test_integration.py should exist")
+        script_path = os.path.join(
+            os.path.dirname(__file__),
+            "test_integration.py")
+        self.assertTrue(
+            os.path.exists(script_path),
+            "test_integration.py should exist")
 
 
 class TestNavigationUtilities(unittest.TestCase):
@@ -218,7 +239,9 @@ class TestNavigationUtilities(unittest.TestCase):
     def test_navigation_module_exists(self):
         """Test that navigation.py exists"""
         script_path = os.path.join(os.path.dirname(__file__), "navigation.py")
-        self.assertTrue(os.path.exists(script_path), "navigation.py should exist")
+        self.assertTrue(
+            os.path.exists(script_path),
+            "navigation.py should exist")
 
 
 class TestDataManagementScripts(unittest.TestCase):
@@ -226,11 +249,12 @@ class TestDataManagementScripts(unittest.TestCase):
 
     def test_upload_bullets_csv_exists(self):
         """Test that upload_bullets_csv.py exists"""
-        script_path = os.path.join(os.path.dirname(__file__), "upload_bullets_csv.py")
+        script_path = os.path.join(
+            os.path.dirname(__file__),
+            "upload_bullets_csv.py")
         self.assertTrue(
             os.path.exists(script_path), "upload_bullets_csv.py should exist"
         )
-
 
 
 class TestMainApplications(unittest.TestCase):
@@ -239,7 +263,9 @@ class TestMainApplications(unittest.TestCase):
     def test_chronolog_main_exists(self):
         """Test that ChronoLog.py main application exists"""
         script_path = os.path.join(os.path.dirname(__file__), "ChronoLog.py")
-        self.assertTrue(os.path.exists(script_path), "ChronoLog.py should exist")
+        self.assertTrue(
+            os.path.exists(script_path),
+            "ChronoLog.py should exist")
 
     def test_chronolog_structure(self):
         """Test that ChronoLog.py has proper structure"""
@@ -259,7 +285,9 @@ class TestMainApplications(unittest.TestCase):
     def test_pages_directory_structure(self):
         """Test that pages directory has proper structure"""
         pages_dir = os.path.join(os.path.dirname(__file__), "pages")
-        self.assertTrue(os.path.exists(pages_dir), "pages directory should exist")
+        self.assertTrue(
+            os.path.exists(pages_dir),
+            "pages directory should exist")
 
         # Should have some page files
         page_files = [f for f in os.listdir(pages_dir) if f.endswith(".py")]
@@ -271,7 +299,8 @@ class TestMainApplications(unittest.TestCase):
 
         for expected in expected_pages:
             has_page = any(expected in name for name in page_names)
-            self.assertTrue(has_page, f"Should have a page containing '{expected}'")
+            self.assertTrue(
+                has_page, f"Should have a page containing '{expected}'")
 
 
 class TestScriptExecutability(unittest.TestCase):

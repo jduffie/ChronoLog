@@ -22,7 +22,8 @@ class UserView:
         default_username = (
             existing_profile.get("username", "") if existing_profile else ""
         )
-        default_state = existing_profile.get("state", "") if existing_profile else ""
+        default_state = existing_profile.get(
+            "state", "") if existing_profile else ""
         default_country = (
             existing_profile.get("country", "United States")
             if existing_profile
@@ -100,7 +101,9 @@ class UserView:
             # Unit system preference
             unit_system = st.radio(
                 "Preferred Unit System *",
-                options=["Imperial", "Metric"],
+                options=[
+                    "Imperial",
+                    "Metric"],
                 index=0 if default_units == "Imperial" else 1,
                 help="Imperial: yards, feet, inches, pounds | Metric: meters, centimeters, kilograms",
             )
@@ -243,7 +246,7 @@ class UserView:
         # Get selected users
         selected_indices = []
         if edited_df is not None:
-            selected_rows = edited_df[edited_df["Select"] == True]
+            selected_rows = edited_df[edited_df["Select"]]
             selected_indices = selected_rows.index.tolist()
 
         # Action buttons
@@ -259,8 +262,9 @@ class UserView:
 
         with col2:
             if st.button(
-                "🗑️ Delete Selected", disabled=not selected_indices, type="secondary"
-            ):
+                "🗑️ Delete Selected",
+                disabled=not selected_indices,
+                    type="secondary"):
                 action_result["action"] = "delete"
 
         with col3:
@@ -288,7 +292,10 @@ class UserView:
         col1, col2 = st.columns(2)
 
         with col1:
-            if st.button("✅ Confirm Delete", type="primary", use_container_width=True):
+            if st.button(
+                "✅ Confirm Delete",
+                type="primary",
+                    use_container_width=True):
                 return "confirm"
 
         with col2:

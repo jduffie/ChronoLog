@@ -13,7 +13,10 @@ class SubmissionView:
         """Display the submissions page title."""
         st.title("Submissions")
 
-    def display_range_count(self, current_count: int, max_count: int = 40) -> None:
+    def display_range_count(
+            self,
+            current_count: int,
+            max_count: int = 40) -> None:
         """Display current range submission count in sidebar."""
         st.sidebar.info(f"Ranges submitted: {current_count}/{max_count}")
 
@@ -22,7 +25,8 @@ class SubmissionView:
         st.info("📋 You haven't submitted any ranges yet.")
         st.markdown("To submit a new range, visit the **Nominate** page.")
 
-    def display_ranges_table(self, ranges: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def display_ranges_table(
+            self, ranges: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Display user ranges in an interactive table with action buttons."""
         if not ranges:
             self.display_no_submissions_message()
@@ -94,7 +98,7 @@ class SubmissionView:
         # Get selected rows
         selected_indices = []
         if edited_df is not None:
-            selected_rows = edited_df[edited_df["Select"] == True]
+            selected_rows = edited_df[edited_df["Select"]]
             selected_indices = selected_rows.index.tolist()
 
         # Selection and action controls
@@ -113,8 +117,9 @@ class SubmissionView:
 
         with col1:
             if st.button(
-                "🗺️ Show on Map", disabled=not selected_indices, use_container_width=True
-            ):
+                "🗺️ Show on Map",
+                disabled=not selected_indices,
+                    use_container_width=True):
                 action = "map"
 
         with col2:
@@ -142,8 +147,9 @@ class SubmissionView:
             return None
 
         selected_names = [
-            ranges[i].get("range_name", f"Range {i+1}") for i in selected_indices
-        ]
+            ranges[i].get(
+                "range_name",
+                f"Range {i+1}") for i in selected_indices]
 
         st.warning(
             f"⚠️ Are you sure you want to delete the following {len(selected_names)} range(s)?"
@@ -154,7 +160,10 @@ class SubmissionView:
         col1, col2 = st.columns(2)
 
         with col1:
-            if st.button("✅ Confirm Delete", type="primary", use_container_width=True):
+            if st.button(
+                "✅ Confirm Delete",
+                type="primary",
+                    use_container_width=True):
                 return "confirm"
 
         with col2:
@@ -172,8 +181,10 @@ class SubmissionView:
 
         if ranges and selected_indices:
             # Calculate center based on selected ranges
-            lats = [ranges[i]["start_lat"] for i in selected_indices if i < len(ranges)]
-            lons = [ranges[i]["start_lon"] for i in selected_indices if i < len(ranges)]
+            lats = [ranges[i]["start_lat"]
+                    for i in selected_indices if i < len(ranges)]
+            lons = [ranges[i]["start_lon"]
+                    for i in selected_indices if i < len(ranges)]
             if lats and lons:
                 map_center = [sum(lats) / len(lats), sum(lons) / len(lons)]
 
@@ -209,16 +220,24 @@ class SubmissionView:
 
                 # Start point (firing position) - blue
                 folium.Marker(
-                    location=[range_data["start_lat"], range_data["start_lon"]],
+                    location=[
+                        range_data["start_lat"],
+                        range_data["start_lon"]],
                     popup=f"🔫 Firing Position<br>{range_data.get('range_name', 'Unnamed Range')}<br>Status: {range_data.get('status', 'Unknown')}<br><a href='https://www.google.com/maps?q={range_data['start_lat']},{range_data['start_lon']}' target='_blank'>📍 View in Google Maps</a>",
-                    icon=folium.Icon(color="blue", icon="play"),
+                    icon=folium.Icon(
+                        color="blue",
+                        icon="play"),
                 ).add_to(m)
 
                 # End point (target) - red
                 folium.Marker(
-                    location=[range_data["end_lat"], range_data["end_lon"]],
+                    location=[
+                        range_data["end_lat"],
+                        range_data["end_lon"]],
                     popup=f"🎯 Target<br>{range_data.get('range_name', 'Unnamed Range')}<br>Distance: {range_data.get('distance_m', 0):.1f}m<br><a href='https://www.google.com/maps?q={range_data['end_lat']},{range_data['end_lon']}' target='_blank'>📍 View in Google Maps</a>",
-                    icon=folium.Icon(color="red", icon="stop"),
+                    icon=folium.Icon(
+                        color="red",
+                        icon="stop"),
                 ).add_to(m)
 
                 # Line between points

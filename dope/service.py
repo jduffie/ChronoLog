@@ -15,7 +15,8 @@ class DopeService:
 
     def get_sessions_for_user(self, user_id: str) -> List[DopeSessionModel]:
         """Get all DOPE sessions for a specific user with joined data"""
-        if not self.supabase or str(type(self.supabase).__name__) == "MagicMock":
+        if not self.supabase or str(
+                type(self.supabase).__name__) == "MagicMock":
             return self._get_mock_sessions(user_id)
 
         try:
@@ -69,7 +70,8 @@ class DopeService:
             sessions = []
             for record in response.data:
                 session_data = self._flatten_joined_record(record)
-                sessions.append(DopeSessionModel.from_supabase_record(session_data))
+                sessions.append(
+                    DopeSessionModel.from_supabase_record(session_data))
 
             return sessions
 
@@ -82,11 +84,12 @@ class DopeService:
         self, session_id: str, user_id: str
     ) -> Optional[DopeSessionModel]:
         """Get a specific DOPE session by ID with joined data"""
-        if not self.supabase or str(type(self.supabase).__name__) == "MagicMock":
+        if not self.supabase or str(
+                type(self.supabase).__name__) == "MagicMock":
             mock_sessions = self._get_mock_sessions(user_id)
             return next(
-                (session for session in mock_sessions if session.id == session_id), None
-            )
+                (session for session in mock_sessions if session.id == session_id),
+                None)
 
         try:
             response = (
@@ -145,15 +148,17 @@ class DopeService:
             # Fallback to mock data
             mock_sessions = self._get_mock_sessions(user_id)
             return next(
-                (session for session in mock_sessions if session.id == session_id), None
-            )
+                (session for session in mock_sessions if session.id == session_id),
+                None)
 
-    def get_measurements_for_dope_session(self, dope_session_id: str, user_id: str) -> List[Dict[str, Any]]:
+    def get_measurements_for_dope_session(
+            self, dope_session_id: str, user_id: str) -> List[Dict[str, Any]]:
         """Get all measurements for a specific DOPE session"""
         try:
-            if not self.supabase or str(type(self.supabase).__name__) == "MagicMock":
+            if not self.supabase or str(
+                    type(self.supabase).__name__) == "MagicMock":
                 return []
-                
+
             response = (
                 self.supabase.table("dope_measurements")
                 .select("*")
@@ -162,18 +167,20 @@ class DopeService:
                 .order("shot_number", desc=False)
                 .execute()
             )
-            
+
             return response.data if response.data else []
-            
+
         except Exception as e:
-            print(f"Error fetching DOPE measurements for session {dope_session_id}: {e}")
+            print(
+                f"Error fetching DOPE measurements for session {dope_session_id}: {e}")
             return []
 
     def create_session(
         self, session_data: Dict[str, Any], user_id: str
     ) -> DopeSessionModel:
         """Create a new DOPE session"""
-        if not self.supabase or str(type(self.supabase).__name__) == "MagicMock":
+        if not self.supabase or str(
+                type(self.supabase).__name__) == "MagicMock":
             # Mock implementation
             new_session = DopeSessionModel(
                 id=str(uuid.uuid4()),
@@ -194,21 +201,21 @@ class DopeService:
             if "updated_at" not in insert_data:
                 insert_data["updated_at"] = datetime.now().isoformat()
 
-            response = (
-                self.supabase.table("dope_sessions").insert(insert_data).execute()
-            )
+            response = (self.supabase.table(
+                "dope_sessions").insert(insert_data).execute())
 
             if response.data:
                 new_session_id = response.data[0]["id"]
-                
-                # Copy chronograph measurements to DOPE measurements if chrono_session_id is provided
+
+                # Copy chronograph measurements to DOPE measurements if
+                # chrono_session_id is provided
                 if session_data.get("chrono_session_id"):
                     self._create_dope_measurements_from_chrono(
-                        new_session_id, 
-                        session_data["chrono_session_id"], 
+                        new_session_id,
+                        session_data["chrono_session_id"],
                         user_id
                     )
-                
+
                 # Fetch the complete session with joined data
                 return self.get_session_by_id(new_session_id, user_id)
             else:
@@ -264,9 +271,13 @@ class DopeService:
         # Mock implementation
         return True
 
-    def search_sessions(self, user_id: str, search_term: str) -> List[DopeSessionModel]:
+    def search_sessions(
+            self,
+            user_id: str,
+            search_term: str) -> List[DopeSessionModel]:
         """Search DOPE sessions by text across multiple fields"""
-        if not self.supabase or str(type(self.supabase).__name__) == "MagicMock":
+        if not self.supabase or str(
+                type(self.supabase).__name__) == "MagicMock":
             # Mock implementation
             all_sessions = self._get_mock_sessions(user_id)
             search_lower = search_term.lower()
@@ -290,7 +301,8 @@ class DopeService:
             return filtered_sessions
 
         try:
-            # Use text search with PostgreSQL's ilike operator across joined tables
+            # Use text search with PostgreSQL's ilike operator across joined
+            # tables
             response = (
                 self.supabase.table("dope_sessions")
                 .select(
@@ -337,9 +349,11 @@ class DopeService:
                 sessions = []
                 for record in response.data:
                     session_data = self._flatten_joined_record(record)
-                    sessions.append(DopeSessionModel.from_supabase_record(session_data))
+                    sessions.append(
+                        DopeSessionModel.from_supabase_record(session_data))
 
-                # Additional filtering on joined data that can't be done in the SQL query
+                # Additional filtering on joined data that can't be done in the
+                # SQL query
                 if search_term:
                     search_lower = search_term.lower()
                     filtered_sessions = []
@@ -402,7 +416,8 @@ class DopeService:
         self, user_id: str, filters: Dict[str, Any]
     ) -> List[DopeSessionModel]:
         """Filter DOPE sessions based on various criteria"""
-        if not self.supabase or str(type(self.supabase).__name__) == "MagicMock":
+        if not self.supabase or str(
+                type(self.supabase).__name__) == "MagicMock":
             # Mock implementation
             all_sessions = self._get_mock_sessions(user_id)
             filtered_sessions = all_sessions
@@ -410,8 +425,7 @@ class DopeService:
             # Apply status filter
             if filters.get("status") and filters["status"] != "All":
                 filtered_sessions = [
-                    s for s in filtered_sessions if s.status == filters["status"]
-                ]
+                    s for s in filtered_sessions if s.status == filters["status"]]
 
             # Apply cartridge type filter
             if filters.get("cartridge_type"):
@@ -595,7 +609,8 @@ class DopeService:
                 query = query.eq("status", filters["status"])
 
             if filters.get("date_from"):
-                query = query.gte("created_at", filters["date_from"].isoformat())
+                query = query.gte(
+                    "created_at", filters["date_from"].isoformat())
             if filters.get("date_to"):
                 query = query.lte("created_at", filters["date_to"].isoformat())
 
@@ -606,13 +621,15 @@ class DopeService:
                 sessions = []
                 for record in response.data:
                     session_data = self._flatten_joined_record(record)
-                    sessions.append(DopeSessionModel.from_supabase_record(session_data))
+                    sessions.append(
+                        DopeSessionModel.from_supabase_record(session_data))
 
                 # Apply filters that require post-processing (joined data)
                 filtered_sessions = sessions
 
                 # Apply cartridge type filter on joined data
-                if filters.get("cartridge_type") and filters["cartridge_type"] != "All":
+                if filters.get(
+                        "cartridge_type") and filters["cartridge_type"] != "All":
                     if filters["cartridge_type"] == "Not Defined":
                         filtered_sessions = [
                             s for s in filtered_sessions
@@ -626,7 +643,8 @@ class DopeService:
                         ]
 
                 # Apply rifle filter on joined data
-                if filters.get("rifle_name") and filters["rifle_name"] != "All":
+                if filters.get(
+                        "rifle_name") and filters["rifle_name"] != "All":
                     if filters["rifle_name"] == "Not Defined":
                         filtered_sessions = [
                             s for s in filtered_sessions
@@ -649,7 +667,8 @@ class DopeService:
                     ]
 
                 # Apply cartridge make filter
-                if filters.get("cartridge_make") and filters["cartridge_make"] != "All":
+                if filters.get(
+                        "cartridge_make") and filters["cartridge_make"] != "All":
                     if filters["cartridge_make"] == "Not Defined":
                         filtered_sessions = [
                             s for s in filtered_sessions
@@ -663,7 +682,8 @@ class DopeService:
                         ]
 
                 # Apply bullet make filter
-                if filters.get("bullet_make") and filters["bullet_make"] != "All":
+                if filters.get(
+                        "bullet_make") and filters["bullet_make"] != "All":
                     if filters["bullet_make"] == "Not Defined":
                         filtered_sessions = [
                             s for s in filtered_sessions
@@ -677,7 +697,8 @@ class DopeService:
                         ]
 
                 # Apply range name filter
-                if filters.get("range_name") and filters["range_name"] != "All":
+                if filters.get(
+                        "range_name") and filters["range_name"] != "All":
                     if filters["range_name"] == "Not Defined":
                         filtered_sessions = [
                             s for s in filtered_sessions
@@ -742,8 +763,7 @@ class DopeService:
             # Apply same filters as mock implementation
             if filters.get("status") and filters["status"] != "All":
                 filtered_sessions = [
-                    s for s in filtered_sessions if s.status == filters["status"]
-                ]
+                    s for s in filtered_sessions if s.status == filters["status"]]
 
             if filters.get("cartridge_type"):
                 filtered_sessions = [
@@ -841,7 +861,8 @@ class DopeService:
 
     def get_unique_values(self, user_id: str, field_name: str) -> List[str]:
         """Get unique values for a specific field for autocomplete filters"""
-        if not self.supabase or str(type(self.supabase).__name__) == "MagicMock":
+        if not self.supabase or str(
+                type(self.supabase).__name__) == "MagicMock":
             # Mock implementation
             all_sessions = self._get_mock_sessions(user_id)
             values = set()
@@ -855,7 +876,8 @@ class DopeService:
 
         try:
             # Get all sessions and extract unique values from the flattened data
-            # This is more efficient than querying each field separately since we need JOIN data
+            # This is more efficient than querying each field separately since
+            # we need JOIN data
             sessions = self.get_sessions_for_user(user_id)
             values = set()
 
@@ -889,7 +911,8 @@ class DopeService:
         total_sessions = len(sessions)
         active_sessions = len([s for s in sessions if s.status == "active"])
 
-        cartridge_types = set(s.cartridge_type for s in sessions if s.cartridge_type)
+        cartridge_types = set(
+            s.cartridge_type for s in sessions if s.cartridge_type)
         bullet_makes = set(s.bullet_make for s in sessions if s.bullet_make)
         ranges = set(s.range_name for s in sessions if s.range_name)
 
@@ -899,21 +922,24 @@ class DopeService:
         return {
             "total_sessions": total_sessions,
             "active_sessions": active_sessions,
-            "archived_sessions": total_sessions - active_sessions,
+            "archived_sessions": total_sessions -
+            active_sessions,
             "unique_cartridge_types": len(cartridge_types),
             "unique_bullet_makes": len(bullet_makes),
             "unique_ranges": len(ranges),
-            "average_distance_m": round(avg_distance, 1),
+            "average_distance_m": round(
+                avg_distance,
+                1),
             "distance_range": (
-                f"{min(distances)}-{max(distances)}m" if distances else "No data"
-            ),
+                f"{min(distances)}-{max(distances)}m" if distances else "No data"),
         }
 
     def _get_mock_sessions(self, user_id: str) -> List[DopeSessionModel]:
         """Generate mock DOPE sessions for development/testing"""
         base_date = datetime.now()
 
-        # Only return mock data for the specific user ID, otherwise return empty list
+        # Only return mock data for the specific user ID, otherwise return
+        # empty list
         if user_id != "google-oauth2|111273793361054745867":
             return []
 
@@ -1056,8 +1082,10 @@ class DopeService:
                 bullet = cartridge["bullets"]
                 flattened["bullet_make"] = bullet.get("manufacturer")
                 flattened["bullet_model"] = bullet.get("model")
-                flattened["bullet_weight"] = str(bullet.get("weight_grains", ""))
-                flattened["bullet_length_mm"] = str(bullet.get("bullet_length_mm", ""))
+                flattened["bullet_weight"] = str(
+                    bullet.get("weight_grains", ""))
+                flattened["bullet_length_mm"] = str(
+                    bullet.get("bullet_length_mm", ""))
                 flattened["ballistic_coefficient_g1"] = str(
                     bullet.get("ballistic_coefficient_g1", "")
                 )
@@ -1082,7 +1110,8 @@ class DopeService:
             rifle = record["rifles"]
             flattened["rifle_name"] = rifle.get("name")
             flattened["rifle_barrel_length_cm"] = rifle.get("barrel_length")
-            flattened["rifle_barrel_twist_in_per_rev"] = rifle.get("barrel_twist_ratio")
+            flattened["rifle_barrel_twist_in_per_rev"] = rifle.get(
+                "barrel_twist_ratio")
             del flattened["rifles"]
 
         # Extract range data
@@ -1094,7 +1123,8 @@ class DopeService:
             flattened["start_altitude_m"] = range_data.get("start_altitude_m")
             flattened["distance_m"] = range_data.get("distance_m")
             flattened["azimuth_deg"] = range_data.get("azimuth_deg")
-            flattened["elevation_angle_deg"] = range_data.get("elevation_angle_deg")
+            flattened["elevation_angle_deg"] = range_data.get(
+                "elevation_angle_deg")
             del flattened["ranges_submissions"]
 
         # Extract weather source data
@@ -1105,16 +1135,21 @@ class DopeService:
 
         return flattened
 
-    def _create_dope_measurements_from_chrono(self, dope_session_id: str, chrono_session_id: str, user_id: str) -> None:
+    def _create_dope_measurements_from_chrono(
+            self,
+            dope_session_id: str,
+            chrono_session_id: str,
+            user_id: str) -> None:
         """Copy chronograph measurements to DOPE measurements"""
         try:
             # Get chronograph measurements
             chrono_service = ChronographService(self.supabase)
-            chrono_measurements = chrono_service.get_measurements_by_session_id(chrono_session_id, user_id)
-            
+            chrono_measurements = chrono_service.get_measurements_by_session_id(
+                chrono_session_id, user_id)
+
             if not chrono_measurements:
                 return
-            
+
             # Prepare DOPE measurement records
             dope_measurement_records = []
             for measurement in chrono_measurements:
@@ -1130,13 +1165,14 @@ class DopeService:
                     "cold_bore": "yes" if measurement.cold_bore else "no" if measurement.cold_bore is False else None,
                     "shot_notes": measurement.shot_notes,
                     "created_at": datetime.now().isoformat(),
-                    "updated_at": datetime.now().isoformat()
-                }
+                    "updated_at": datetime.now().isoformat()}
                 dope_measurement_records.append(dope_record)
-            
+
             # Insert all DOPE measurements in batch
             if dope_measurement_records:
-                self.supabase.table("dope_measurements").insert(dope_measurement_records).execute()
-                
+                self.supabase.table("dope_measurements").insert(
+                    dope_measurement_records).execute()
+
         except Exception as e:
-            raise Exception(f"Error creating DOPE measurements from chronograph: {str(e)}")
+            raise Exception(
+                f"Error creating DOPE measurements from chronograph: {str(e)}")

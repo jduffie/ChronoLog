@@ -1,14 +1,8 @@
 import os
 import sys
+from typing import Any, Dict, List
 
 import streamlit as st
-
-# Add the parent directory to the path so we can import shared modules
-sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
-
-from typing import Any, Dict, List
 
 from auth import handle_auth
 from mapping.session_state_manager import SessionStateManager
@@ -16,6 +10,13 @@ from supabase import create_client
 
 from .admin_model import AdminModel
 from .admin_view import AdminView
+
+# Add the parent directory to the path so we can import shared modules
+sys.path.append(
+    os.path.dirname(
+        os.path.dirname(
+            os.path.dirname(
+                os.path.abspath(__file__)))))
 
 
 class AdminController:
@@ -72,7 +73,8 @@ class AdminController:
                     )
 
             elif action == "reset":
-                success = self.model.reset_submission_status(submission["id"], supabase)
+                success = self.model.reset_submission_status(
+                    submission["id"], supabase)
                 if success:
                     self.view.display_success_message(
                         "✅ Status reset to 'Under Review'."
@@ -84,7 +86,8 @@ class AdminController:
                     )
 
         except Exception as e:
-            self.view.display_error_message(f"❌ Error processing action: {str(e)}")
+            self.view.display_error_message(
+                f"❌ Error processing action: {str(e)}")
 
     def _handle_bulk_actions(
         self, submissions: List[Dict[str, Any]], action: str
@@ -107,13 +110,14 @@ class AdminController:
         )
 
         if not bulk_reason.strip() and action in ["bulk_approve", "bulk_deny"]:
-            self.view.display_error_message("Please provide a reason for bulk action.")
+            self.view.display_error_message(
+                "Please provide a reason for bulk action.")
             return
 
         # Confirm bulk action
         if st.button(
-            f"Confirm Bulk {action.replace('bulk_', '').title()}", type="primary"
-        ):
+            f"Confirm Bulk {action.replace('bulk_', '').title()}",
+                type="primary"):
             try:
                 supabase = self._get_supabase_client()
                 success_count = 0
@@ -147,7 +151,8 @@ class AdminController:
                         del st.session_state["selected_submissions"]
                     st.rerun()
                 else:
-                    self.view.display_error_message("❌ Failed to process submissions.")
+                    self.view.display_error_message(
+                        "❌ Failed to process submissions.")
 
             except Exception as e:
                 self.view.display_error_message(
@@ -158,8 +163,9 @@ class AdminController:
         """Main controller method to run the admin page."""
         # Set page configuration
         st.set_page_config(
-            page_title="Admin - ChronoLog Mapping", page_icon="👑", layout="wide"
-        )
+            page_title="Admin - ChronoLog Mapping",
+            page_icon="👑",
+            layout="wide")
 
         # Set app identifier for auth system
         if "app" not in st.query_params:
@@ -191,12 +197,14 @@ class AdminController:
 
             with tab1:
                 # Fetch pending submissions
-                pending_submissions = self.model.get_all_pending_submissions(supabase)
+                pending_submissions = self.model.get_all_pending_submissions(
+                    supabase)
 
                 if not pending_submissions:
                     self.view.display_no_submissions_message()
                 else:
-                    self.view.display_submission_count(len(pending_submissions))
+                    self.view.display_submission_count(
+                        len(pending_submissions))
 
                     # Display each submission for review
                     for submission in pending_submissions:
@@ -218,7 +226,8 @@ class AdminController:
 
                 if all_submissions:
                     # Display submissions table with filtering
-                    table_result = self.view.display_submissions_table(all_submissions)
+                    table_result = self.view.display_submissions_table(
+                        all_submissions)
 
                     # Display bulk actions
                     bulk_action = self.view.display_bulk_actions(
@@ -226,9 +235,8 @@ class AdminController:
                     )
 
                     if bulk_action:
-                        self._handle_bulk_actions(
-                            table_result.get("filtered_submissions", []), bulk_action
-                        )
+                        self._handle_bulk_actions(table_result.get(
+                            "filtered_submissions", []), bulk_action)
                 else:
                     self.view.display_info_message(
                         "No submissions found in the system."
@@ -253,15 +261,18 @@ class AdminController:
 
                     for status, submissions in status_groups.items():
                         with st.expander(f"{status} ({len(submissions)} submissions)"):
-                            for submission in submissions[:10]:  # Show first 10
+                            # Show first 10
+                            for submission in submissions[:10]:
                                 st.write(
                                     f"**{submission.get('range_name', 'Unnamed')}** by {submission.get('user_email', 'Unknown')}"
                                 )
                             if len(submissions) > 10:
-                                st.write(f"... and {len(submissions) - 10} more")
+                                st.write(
+                                    f"... and {len(submissions) - 10} more")
 
         except Exception as e:
-            self.view.display_error_message(f"Error loading admin data: {str(e)}")
+            self.view.display_error_message(
+                f"Error loading admin data: {str(e)}")
 
     def get_pending_submissions(self):
         """Get all pending submissions."""
@@ -278,9 +289,11 @@ class AdminController:
         """Approve a specific submission."""
         try:
             supabase = self._get_supabase_client()
-            return self.model.approve_submission(submission_id, reason, supabase)
+            return self.model.approve_submission(
+                submission_id, reason, supabase)
         except Exception as e:
-            self.view.display_error_message(f"Error approving submission: {str(e)}")
+            self.view.display_error_message(
+                f"Error approving submission: {str(e)}")
             return False
 
     def deny_submission(self, submission_id: str, reason: str) -> bool:
@@ -289,5 +302,6 @@ class AdminController:
             supabase = self._get_supabase_client()
             return self.model.deny_submission(submission_id, reason, supabase)
         except Exception as e:
-            self.view.display_error_message(f"Error denying submission: {str(e)}")
+            self.view.display_error_message(
+                f"Error denying submission: {str(e)}")
             return False

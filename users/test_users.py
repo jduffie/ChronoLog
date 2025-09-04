@@ -14,12 +14,12 @@ from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
 
-# Add root directory to path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from users.user_controller import UserController
 from users.user_model import UserModel
 from users.user_view import UserView
+
+# Add root directory to path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 class TestUserModel(unittest.TestCase):
@@ -32,9 +32,9 @@ class TestUserModel(unittest.TestCase):
 
         # Mock Streamlit secrets
         self.patcher = patch(
-            "users.user_model.st.secrets",
-            {"supabase": {"url": "https://test.supabase.co", "key": "test-key"}},
-        )
+            "users.user_model.st.secrets", {
+                "supabase": {
+                    "url": "https://test.supabase.co", "key": "test-key"}}, )
         self.patcher.start()
 
         # Sample user data
@@ -72,8 +72,7 @@ class TestUserModel(unittest.TestCase):
         mock_result = Mock()
         mock_result.data = [self.sample_user]
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.execute.return_value = (
-            mock_result
-        )
+            mock_result)
 
         result = self.user_model.get_user_profile("test@example.com")
 
@@ -87,8 +86,7 @@ class TestUserModel(unittest.TestCase):
         mock_result = Mock()
         mock_result.data = []
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.execute.return_value = (
-            mock_result
-        )
+            mock_result)
 
         result = self.user_model.get_user_profile("nonexistent@example.com")
 
@@ -100,8 +98,7 @@ class TestUserModel(unittest.TestCase):
         """Test user profile retrieval with database error"""
         mock_create_client.return_value = self.mock_supabase
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.execute.side_effect = Exception(
-            "DB Error"
-        )
+            "DB Error")
 
         result = self.user_model.get_user_profile("test@example.com")
 
@@ -115,8 +112,7 @@ class TestUserModel(unittest.TestCase):
         mock_result = Mock()
         mock_result.data = [{"id": "user-123"}]
         self.mock_supabase.table.return_value.insert.return_value.execute.return_value = (
-            mock_result
-        )
+            mock_result)
 
         result = self.user_model.create_user_profile(self.sample_user)
 
@@ -125,12 +121,12 @@ class TestUserModel(unittest.TestCase):
 
     @patch("users.user_model.st.error")
     @patch("users.user_model.create_client")
-    def test_create_user_profile_error(self, mock_create_client, mock_st_error):
+    def test_create_user_profile_error(
+            self, mock_create_client, mock_st_error):
         """Test user profile creation with database error"""
         mock_create_client.return_value = self.mock_supabase
         self.mock_supabase.table.return_value.insert.return_value.execute.side_effect = Exception(
-            "DB Error"
-        )
+            "DB Error")
 
         result = self.user_model.create_user_profile(self.sample_user)
 
@@ -144,8 +140,7 @@ class TestUserModel(unittest.TestCase):
         mock_result = Mock()
         mock_result.data = [{"id": "user-123"}]
         self.mock_supabase.table.return_value.update.return_value.eq.return_value.execute.return_value = (
-            mock_result
-        )
+            mock_result)
 
         result = self.user_model.update_user_profile(
             "test@example.com", self.sample_user
@@ -160,8 +155,7 @@ class TestUserModel(unittest.TestCase):
         mock_result = Mock()
         mock_result.data = []
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.execute.return_value = (
-            mock_result
-        )
+            mock_result)
 
         result = self.user_model.is_username_available("newuser")
 
@@ -174,8 +168,7 @@ class TestUserModel(unittest.TestCase):
         mock_result = Mock()
         mock_result.data = [{"email": "other@example.com"}]
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.execute.return_value = (
-            mock_result
-        )
+            mock_result)
 
         result = self.user_model.is_username_available("takenuser")
 
@@ -207,12 +200,19 @@ class TestUserModel(unittest.TestCase):
 
     def test_validate_username_invalid_characters(self):
         """Test username with invalid characters"""
-        invalid_usernames = ["user@name", "user name", "user.name", "user%name"]
+        invalid_usernames = [
+            "user@name",
+            "user name",
+            "user.name",
+            "user%name"]
 
         for username in invalid_usernames:
             is_valid, message = self.user_model.validate_username(username)
-            self.assertFalse(is_valid, f"Username '{username}' should be invalid")
-            self.assertIn("letters, numbers, underscores, and hyphens", message)
+            self.assertFalse(
+                is_valid, f"Username '{username}' should be invalid")
+            self.assertIn(
+                "letters, numbers, underscores, and hyphens",
+                message)
 
     def test_validate_username_invalid_start(self):
         """Test username starting with invalid character"""
@@ -220,7 +220,8 @@ class TestUserModel(unittest.TestCase):
 
         for username in invalid_usernames:
             is_valid, message = self.user_model.validate_username(username)
-            self.assertFalse(is_valid, f"Username '{username}' should be invalid")
+            self.assertFalse(
+                is_valid, f"Username '{username}' should be invalid")
             self.assertIn("start with a letter or number", message)
 
     @patch("users.user_model.create_client")
@@ -230,8 +231,7 @@ class TestUserModel(unittest.TestCase):
         mock_result = Mock()
         mock_result.data = [self.sample_user, {"email": "user2@example.com"}]
         self.mock_supabase.table.return_value.select.return_value.order.return_value.execute.return_value = (
-            mock_result
-        )
+            mock_result)
 
         result = self.user_model.get_all_users()
 
@@ -245,8 +245,7 @@ class TestUserModel(unittest.TestCase):
         mock_result = Mock()
         mock_result.count = 42
         self.mock_supabase.table.return_value.select.return_value.execute.return_value = (
-            mock_result
-        )
+            mock_result)
 
         result = self.user_model.get_user_count()
 
@@ -259,8 +258,7 @@ class TestUserModel(unittest.TestCase):
         mock_result = Mock()
         mock_result.data = [{"id": "user-123"}]
         self.mock_supabase.table.return_value.delete.return_value.eq.return_value.execute.return_value = (
-            mock_result
-        )
+            mock_result)
 
         result = self.user_model.delete_user("test@example.com")
 
@@ -319,7 +317,8 @@ class TestUserController(unittest.TestCase):
 
         with patch.object(self.controller.model, 'validate_username', return_value=(True, "")):
             with patch.object(self.controller.model, 'is_username_available', return_value=True):
-                errors = self.controller._validate_form_data(form_data, "test@example.com")
+                errors = self.controller._validate_form_data(
+                    form_data, "test@example.com")
                 self.assertEqual(len(errors), 0)
 
     @patch('users.user_controller.st.session_state', {})
@@ -333,9 +332,11 @@ class TestUserController(unittest.TestCase):
         }
 
         with patch.object(self.controller.model, 'validate_username', return_value=(False, "Invalid username")):
-            errors = self.controller._validate_form_data(form_data, "test@example.com")
+            errors = self.controller._validate_form_data(
+                form_data, "test@example.com")
             self.assertGreater(len(errors), 0)
-            self.assertTrue(any("Invalid username" in error for error in errors))
+            self.assertTrue(
+                any("Invalid username" in error for error in errors))
 
     @patch('users.user_controller.st.session_state', {})
     def test_validate_form_data_username_taken(self):
@@ -349,9 +350,11 @@ class TestUserController(unittest.TestCase):
 
         with patch.object(self.controller.model, 'validate_username', return_value=(True, "")):
             with patch.object(self.controller.model, 'is_username_available', return_value=False):
-                errors = self.controller._validate_form_data(form_data, "test@example.com")
+                errors = self.controller._validate_form_data(
+                    form_data, "test@example.com")
                 self.assertGreater(len(errors), 0)
-                self.assertTrue(any("Username is already taken" in error for error in errors))
+                self.assertTrue(
+                    any("Username is already taken" in error for error in errors))
 
 
 class TestUserView(unittest.TestCase):
@@ -390,7 +393,8 @@ class TestUserView(unittest.TestCase):
             mock_radio.return_value = "Imperial"
             mock_submit.return_value = True
 
-            result = self.user_view.display_profile_setup_form(self.sample_user)
+            result = self.user_view.display_profile_setup_form(
+                self.sample_user)
 
             self.assertIsNotNone(result)
             self.assertEqual(result["username"], "testuser")
@@ -534,12 +538,12 @@ class TestUserModelAdvanced(unittest.TestCase):
     def setUp(self):
         self.user_model = UserModel()
         self.mock_supabase = Mock()
-        
+
         # Mock Streamlit secrets
         self.patcher = patch(
-            "users.user_model.st.secrets",
-            {"supabase": {"url": "https://test.supabase.co", "key": "test-key"}},
-        )
+            "users.user_model.st.secrets", {
+                "supabase": {
+                    "url": "https://test.supabase.co", "key": "test-key"}}, )
         self.patcher.start()
 
         self.advanced_user_data = {
@@ -570,7 +574,7 @@ class TestUserModelAdvanced(unittest.TestCase):
             "valid-name": (True, ""),
             "A1B2C3": (True, ""),
             "x" * 30: (True, ""),  # Maximum length
-            
+
             # Invalid cases
             "ab": (False, "at least 3 characters"),  # Too short
             "x" * 31: (False, "30 characters or less"),  # Too long
@@ -583,79 +587,92 @@ class TestUserModelAdvanced(unittest.TestCase):
             "user#name": (False, "letters, numbers, underscores, and hyphens"),
             "": (False, "at least 3 characters"),  # Empty
         }
-        
-        for username, (expected_valid, expected_msg_fragment) in edge_cases.items():
+
+        for username, (expected_valid,
+                       expected_msg_fragment) in edge_cases.items():
             is_valid, message = self.user_model.validate_username(username)
-            self.assertEqual(is_valid, expected_valid, f"Username '{username}' validation failed")
+            self.assertEqual(
+                is_valid,
+                expected_valid,
+                f"Username '{username}' validation failed")
             if not expected_valid:
-                self.assertIn(expected_msg_fragment, message, f"Error message for '{username}' incorrect")
+                self.assertIn(
+                    expected_msg_fragment,
+                    message,
+                    f"Error message for '{username}' incorrect")
 
     @patch("users.user_model.create_client")
     def test_user_profile_crud_operations(self, mock_create_client):
         """Test complete CRUD operations for user profiles"""
         mock_create_client.return_value = self.mock_supabase
-        
+
         # Test CREATE
         mock_create_response = Mock()
         mock_create_response.data = [{"id": "new-user-123"}]
         self.mock_supabase.table.return_value.insert.return_value.execute.return_value = mock_create_response
-        
-        create_result = self.user_model.create_user_profile(self.advanced_user_data)
+
+        create_result = self.user_model.create_user_profile(
+            self.advanced_user_data)
         self.assertTrue(create_result)
-        
+
         # Test READ
         mock_read_response = Mock()
         mock_read_response.data = [self.advanced_user_data]
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.execute.return_value = mock_read_response
-        
-        read_result = self.user_model.get_user_profile("advanced.user@example.com")
+
+        read_result = self.user_model.get_user_profile(
+            "advanced.user@example.com")
         self.assertEqual(read_result, self.advanced_user_data)
-        
+
         # Test UPDATE
         mock_update_response = Mock()
         mock_update_response.data = [{"id": "updated-user-123"}]
         self.mock_supabase.table.return_value.update.return_value.eq.return_value.execute.return_value = mock_update_response
-        
+
         updated_data = {
             "username": "updateduser",
             "state": "California",
             "country": "United States",
             "unit_system": "Imperial",
         }
-        update_result = self.user_model.update_user_profile("advanced.user@example.com", updated_data)
+        update_result = self.user_model.update_user_profile(
+            "advanced.user@example.com", updated_data)
         self.assertTrue(update_result)
-        
+
         # Test DELETE
         mock_delete_response = Mock()
         mock_delete_response.data = [{"id": "deleted-user-123"}]
         self.mock_supabase.table.return_value.delete.return_value.eq.return_value.execute.return_value = mock_delete_response
-        
-        delete_result = self.user_model.delete_user("advanced.user@example.com")
+
+        delete_result = self.user_model.delete_user(
+            "advanced.user@example.com")
         self.assertTrue(delete_result)
 
     @patch("users.user_model.create_client")
     def test_username_availability_with_exclusions(self, mock_create_client):
         """Test username availability with current user exclusion"""
         mock_create_client.return_value = self.mock_supabase
-        
+
         # Test username taken by another user
         mock_response = Mock()
         mock_response.data = [{"email": "other@example.com"}]
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.neq.return_value.execute.return_value = mock_response
-        
-        is_available = self.user_model.is_username_available("takenuser", "current@example.com")
+
+        is_available = self.user_model.is_username_available(
+            "takenuser", "current@example.com")
         self.assertFalse(is_available)
-        
+
         # Test username available (no other users have it)
         mock_response.data = []
-        is_available = self.user_model.is_username_available("availableuser", "current@example.com")
+        is_available = self.user_model.is_username_available(
+            "availableuser", "current@example.com")
         self.assertTrue(is_available)
 
     @patch("users.user_model.create_client")
     def test_bulk_user_operations(self, mock_create_client):
         """Test bulk user operations and performance scenarios"""
         mock_create_client.return_value = self.mock_supabase
-        
+
         # Mock bulk user data
         bulk_users = []
         for i in range(100):
@@ -671,28 +688,29 @@ class TestUserModelAdvanced(unittest.TestCase):
                 "created_at": (datetime.now() - timedelta(days=i)).isoformat()
             }
             bulk_users.append(user_data)
-        
+
         mock_response = Mock()
         mock_response.data = bulk_users
         self.mock_supabase.table.return_value.select.return_value.order.return_value.execute.return_value = mock_response
-        
+
         all_users = self.user_model.get_all_users()
         self.assertEqual(len(all_users), 100)
-        
+
         # Test user count
         mock_count_response = Mock()
         mock_count_response.count = 100
         self.mock_supabase.table.return_value.select.return_value.execute.return_value = mock_count_response
-        
+
         user_count = self.user_model.get_user_count()
         self.assertEqual(user_count, 100)
 
     @patch("users.user_model.st.error")
     @patch("users.user_model.create_client")
-    def test_error_handling_comprehensive(self, mock_create_client, mock_st_error):
+    def test_error_handling_comprehensive(
+            self, mock_create_client, mock_st_error):
         """Test comprehensive error handling scenarios"""
         mock_create_client.return_value = self.mock_supabase
-        
+
         # Test various database errors
         error_scenarios = [
             ("Connection timeout", "get_user_profile"),
@@ -702,35 +720,44 @@ class TestUserModelAdvanced(unittest.TestCase):
             ("Network error", "get_all_users"),
             ("Authentication failed", "get_user_count")
         ]
-        
+
         for error_msg, method_name in error_scenarios:
             with self.subTest(error=error_msg, method=method_name):
                 # Reset mocks before each subtest
                 self.mock_supabase.reset_mock()
-                
+
                 # Setup error scenario
                 if method_name == "get_user_profile":
-                    self.mock_supabase.table.return_value.select.return_value.eq.return_value.execute.side_effect = Exception(error_msg)
+                    self.mock_supabase.table.return_value.select.return_value.eq.return_value.execute.side_effect = Exception(
+                        error_msg)
                 elif method_name == "get_all_users":
-                    self.mock_supabase.table.return_value.select.return_value.order.return_value.execute.side_effect = Exception(error_msg)
+                    self.mock_supabase.table.return_value.select.return_value.order.return_value.execute.side_effect = Exception(
+                        error_msg)
                 elif method_name == "create_user_profile":
-                    self.mock_supabase.table.return_value.insert.return_value.execute.side_effect = Exception(error_msg)
+                    self.mock_supabase.table.return_value.insert.return_value.execute.side_effect = Exception(
+                        error_msg)
                 elif method_name == "update_user_profile":
-                    self.mock_supabase.table.return_value.update.return_value.eq.return_value.execute.side_effect = Exception(error_msg)
+                    self.mock_supabase.table.return_value.update.return_value.eq.return_value.execute.side_effect = Exception(
+                        error_msg)
                 elif method_name == "delete_user":
-                    self.mock_supabase.table.return_value.delete.return_value.eq.return_value.execute.side_effect = Exception(error_msg)
+                    self.mock_supabase.table.return_value.delete.return_value.eq.return_value.execute.side_effect = Exception(
+                        error_msg)
                 elif method_name == "get_user_count":
-                    self.mock_supabase.table.return_value.select.return_value.execute.side_effect = Exception(error_msg)
-                
+                    self.mock_supabase.table.return_value.select.return_value.execute.side_effect = Exception(
+                        error_msg)
+
                 # Call method and verify error handling
                 if method_name == "get_user_profile":
-                    result = self.user_model.get_user_profile("test@example.com")
+                    result = self.user_model.get_user_profile(
+                        "test@example.com")
                     self.assertIsNone(result)
                 elif method_name == "create_user_profile":
-                    result = self.user_model.create_user_profile(self.advanced_user_data)
+                    result = self.user_model.create_user_profile(
+                        self.advanced_user_data)
                     self.assertFalse(result)
                 elif method_name == "update_user_profile":
-                    result = self.user_model.update_user_profile("test@example.com", {"username": "updated"})
+                    result = self.user_model.update_user_profile(
+                        "test@example.com", {"username": "updated"})
                     self.assertFalse(result)
                 elif method_name == "delete_user":
                     result = self.user_model.delete_user("test@example.com")
@@ -741,9 +768,11 @@ class TestUserModelAdvanced(unittest.TestCase):
                 elif method_name == "get_user_count":
                     result = self.user_model.get_user_count()
                     self.assertEqual(result, 0)
-                
+
                 # Reset side effects
-                if hasattr(self.mock_supabase.table.return_value.select.return_value.eq.return_value.execute, 'side_effect'):
+                if hasattr(
+                        self.mock_supabase.table.return_value.select.return_value.eq.return_value.execute,
+                        'side_effect'):
                     self.mock_supabase.table.return_value.select.return_value.eq.return_value.execute.side_effect = None
 
     def test_user_data_sanitization(self):
@@ -757,11 +786,11 @@ class TestUserModelAdvanced(unittest.TestCase):
             "country": "United States",
             "unit_system": "imperial",  # Case sensitivity
         }
-        
+
         # Username validation should handle case sensitivity
         is_valid, _ = self.user_model.validate_username("TestUser123")
         self.assertTrue(is_valid)
-        
+
         # Test edge case usernames
         edge_usernames = ["test123", "TEST123", "Test123", "tEsT123"]
         for username in edge_usernames:
@@ -794,10 +823,11 @@ class TestUserControllerAdvanced(unittest.TestCase):
             "country": "",  # Empty
             "unit_system": "Metric"
         }
-        
+
         with patch.object(self.controller.model, 'validate_username', return_value=(False, "Too short")):
-            errors = self.controller._validate_form_data(invalid_form_data, "test@example.com")
-            
+            errors = self.controller._validate_form_data(
+                invalid_form_data, "test@example.com")
+
             self.assertGreater(len(errors), 1)
             error_text = " ".join(errors).lower()
             self.assertIn("username", error_text)
@@ -813,14 +843,15 @@ class TestUserControllerAdvanced(unittest.TestCase):
             with patch.object(self.controller.view, 'display_profile_setup_form', return_value={
                 "username": "newuser",
                 "state": "California",
-                "country": "United States", 
+                "country": "United States",
                 "unit_system": "Imperial"
             }):
                 with patch.object(self.controller.model, 'validate_username', return_value=(True, "")):
                     with patch.object(self.controller.model, 'is_username_available', return_value=True):
                         with patch.object(self.controller.model, 'create_user_profile', return_value=True):
                             with patch.object(self.controller.view, 'display_success_message'):
-                                result = self.controller.handle_profile_setup(self.advanced_user)
+                                result = self.controller.handle_profile_setup(
+                                    self.advanced_user)
                                 mock_rerun.assert_called_once()
 
     def test_user_statistics_calculation(self):
@@ -832,11 +863,11 @@ class TestUserControllerAdvanced(unittest.TestCase):
             {"unit_system": "Metric", "profile_complete": True},
             {"unit_system": "Imperial", "profile_complete": True},
         ]
-        
+
         with patch.object(self.controller.model, 'get_user_count', return_value=5):
             with patch.object(self.controller.model, 'get_all_users', return_value=mock_users):
                 stats = self.controller.get_user_stats()
-                
+
                 self.assertEqual(stats["total_users"], 5)
                 self.assertEqual(stats["imperial_users"], 3)
                 self.assertEqual(stats["metric_users"], 2)
@@ -852,7 +883,7 @@ class TestUserControllerAdvanced(unittest.TestCase):
             "username": "existinguser",
             "profile_complete": True
         }
-        
+
         with patch.object(self.controller.model, 'get_user_profile', return_value=existing_profile):
             with patch.object(self.controller.view, 'display_profile_setup_form', return_value={
                 "username": "updateduser",
@@ -864,7 +895,8 @@ class TestUserControllerAdvanced(unittest.TestCase):
                     with patch.object(self.controller.model, 'is_username_available', return_value=True):
                         with patch.object(self.controller.model, 'update_user_profile', return_value=True):
                             with patch.object(self.controller.view, 'display_success_message'):
-                                result = self.controller.handle_profile_setup(self.advanced_user, existing_profile)
+                                result = self.controller.handle_profile_setup(
+                                    self.advanced_user, existing_profile)
                                 mock_rerun.assert_called_once()
 
     @patch('users.user_controller.st.session_state', {})
@@ -876,7 +908,7 @@ class TestUserControllerAdvanced(unittest.TestCase):
             {"email": "user2@example.com", "name": "User 2"},
             {"email": "user3@example.com", "name": "User 3"}
         ]
-        
+
         with patch.object(self.controller.model, 'get_all_users', return_value=mock_users):
             with patch.object(self.controller.view, 'display_user_management_admin', return_value={
                 "action": "delete",
@@ -914,21 +946,29 @@ class TestUserViewAdvanced(unittest.TestCase):
     @patch("users.user_view.st.selectbox")
     @patch("users.user_view.st.radio")
     @patch("users.user_view.st.form_submit_button")
-    def test_profile_setup_form_comprehensive(self, mock_submit, mock_radio, mock_selectbox, mock_text_input, mock_title, mock_form):
+    def test_profile_setup_form_comprehensive(
+            self,
+            mock_submit,
+            mock_radio,
+            mock_selectbox,
+            mock_text_input,
+            mock_title,
+            mock_form):
         """Test comprehensive profile setup form scenarios"""
         # Mock form context manager
         mock_form_context = Mock()
         mock_form.return_value.__enter__ = Mock(return_value=mock_form_context)
         mock_form.return_value.__exit__ = Mock()
-        
+
         # Test form with all fields filled
         mock_text_input.side_effect = ["comprehensiveuser", "Oregon"]
         mock_selectbox.return_value = "Canada"
         mock_radio.return_value = "Metric"
         mock_submit.return_value = True
-        
-        result = self.user_view.display_profile_setup_form(self.comprehensive_user)
-        
+
+        result = self.user_view.display_profile_setup_form(
+            self.comprehensive_user)
+
         self.assertIsNotNone(result)
         self.assertEqual(result["username"], "comprehensiveuser")
         self.assertEqual(result["state"], "Oregon")
@@ -941,17 +981,25 @@ class TestUserViewAdvanced(unittest.TestCase):
     @patch("users.user_view.st.selectbox")
     @patch("users.user_view.st.radio")
     @patch("users.user_view.st.form_submit_button")
-    def test_profile_setup_form_not_submitted(self, mock_submit, mock_radio, mock_selectbox, mock_text_input, mock_title, mock_form):
+    def test_profile_setup_form_not_submitted(
+            self,
+            mock_submit,
+            mock_radio,
+            mock_selectbox,
+            mock_text_input,
+            mock_title,
+            mock_form):
         """Test profile setup form when not submitted"""
         # Mock form context manager
         mock_form_context = Mock()
         mock_form.return_value.__enter__ = Mock(return_value=mock_form_context)
         mock_form.return_value.__exit__ = Mock()
-        
+
         mock_submit.return_value = False  # Form not submitted
-        
-        result = self.user_view.display_profile_setup_form(self.comprehensive_user)
-        
+
+        result = self.user_view.display_profile_setup_form(
+            self.comprehensive_user)
+
         self.assertIsNone(result)
 
     @patch("users.user_view.st.error")
@@ -964,9 +1012,9 @@ class TestUserViewAdvanced(unittest.TestCase):
             "Country is required",
             "Username is already taken"
         ]
-        
+
         self.user_view.display_validation_errors(errors)
-        
+
         self.assertEqual(mock_error.call_count, 5)
         for error in errors:
             mock_error.assert_any_call(error)
@@ -976,7 +1024,7 @@ class TestUserViewAdvanced(unittest.TestCase):
         with patch("users.user_view.st.success") as mock_success:
             self.user_view.display_success_message("Operation successful")
             mock_success.assert_called_once_with("Operation successful")
-        
+
         with patch("users.user_view.st.error") as mock_error:
             self.user_view.display_error_message("Operation failed")
             mock_error.assert_called_once_with("Operation failed")
@@ -1002,7 +1050,7 @@ class TestUserIntegrationAdvanced(unittest.TestCase):
     def test_complete_user_lifecycle_integration(self):
         """Test complete user lifecycle integration"""
         controller = UserController()
-        
+
         # Test user registration workflow
         with patch.object(controller.model, 'get_user_profile', return_value=None):
             with patch.object(controller.view, 'display_profile_setup_form', return_value={
@@ -1018,7 +1066,8 @@ class TestUserIntegrationAdvanced(unittest.TestCase):
                                 with patch('users.user_controller.st.rerun'):
                                     with patch.object(controller.view, 'display_success_message'):
                                         # Should create new profile
-                                        result = controller.handle_profile_setup(self.sample_user)
+                                        result = controller.handle_profile_setup(
+                                            self.sample_user)
 
         # Test user profile retrieval
         with patch.object(controller.model, 'get_user_profile', return_value=self.sample_user):
@@ -1028,7 +1077,7 @@ class TestUserIntegrationAdvanced(unittest.TestCase):
     def test_error_recovery_integration(self):
         """Test error recovery in integrated workflows"""
         controller = UserController()
-        
+
         # Test database failure during profile creation
         with patch.object(controller.model, 'get_user_profile', return_value=None):
             with patch.object(controller.view, 'display_profile_setup_form', return_value={
@@ -1041,18 +1090,20 @@ class TestUserIntegrationAdvanced(unittest.TestCase):
                     with patch.object(controller.model, 'is_username_available', return_value=True):
                         with patch.object(controller.model, 'create_user_profile', return_value=False):
                             with patch.object(controller.view, 'display_error_message') as mock_error:
-                                result = controller.handle_profile_setup(self.sample_user)
-                                mock_error.assert_called_with("Failed to save profile. Please try again.")
+                                result = controller.handle_profile_setup(
+                                    self.sample_user)
+                                mock_error.assert_called_with(
+                                    "Failed to save profile. Please try again.")
 
     def test_concurrent_user_operations_simulation(self):
         """Test simulation of concurrent user operations"""
         model = UserModel()
-        
+
         # Mock multiple users accessing system simultaneously
         with patch("users.user_model.create_client") as mock_create_client:
             mock_supabase = Mock()
             mock_create_client.return_value = mock_supabase
-            
+
             concurrent_users = []
             for i in range(10):
                 user_data = {
@@ -1065,21 +1116,23 @@ class TestUserIntegrationAdvanced(unittest.TestCase):
                     "profile_complete": True
                 }
                 concurrent_users.append(user_data)
-            
+
             # Mock availability checks for all users
             mock_response = Mock()
             mock_response.data = []  # All usernames available
             mock_supabase.table.return_value.select.return_value.eq.return_value.execute.return_value = mock_response
-            
+
             # Test that all usernames are validated as available
             for i, user in enumerate(concurrent_users):
                 is_available = model.is_username_available(user["username"])
-                self.assertTrue(is_available, f"Username {user['username']} should be available")
+                self.assertTrue(
+                    is_available,
+                    f"Username {user['username']} should be available")
 
     def test_data_consistency_across_operations(self):
         """Test data consistency across different operations"""
         controller = UserController()
-        
+
         # Test profile creation and immediate retrieval consistency
         test_profile = {
             "email": "consistency@example.com",
@@ -1089,18 +1142,23 @@ class TestUserIntegrationAdvanced(unittest.TestCase):
             "country": "United States",
             "unit_system": "Metric"
         }
-        
+
         with patch.object(controller.model, 'create_user_profile', return_value=True):
             with patch.object(controller.model, 'get_user_profile', return_value={**test_profile, "profile_complete": True}):
                 # Create profile
                 created = controller.model.create_user_profile(test_profile)
                 self.assertTrue(created)
-                
+
                 # Immediately retrieve and verify consistency
-                retrieved = controller.model.get_user_profile("consistency@example.com")
-                self.assertEqual(retrieved["username"], test_profile["username"])
+                retrieved = controller.model.get_user_profile(
+                    "consistency@example.com")
+                self.assertEqual(
+                    retrieved["username"],
+                    test_profile["username"])
                 self.assertEqual(retrieved["state"], test_profile["state"])
-                self.assertEqual(retrieved["unit_system"], test_profile["unit_system"])
+                self.assertEqual(
+                    retrieved["unit_system"],
+                    test_profile["unit_system"])
 
     def test_user_permissions_and_roles(self):
         """Test user permissions and roles handling"""
@@ -1109,23 +1167,23 @@ class TestUserIntegrationAdvanced(unittest.TestCase):
             "email": "admin@example.com",
             "roles": ["user", "admin"]
         }
-        
+
         premium_user = {
             **self.sample_user,
-            "email": "premium@example.com", 
+            "email": "premium@example.com",
             "roles": ["user", "premium"]
         }
-        
+
         basic_user = {
             **self.sample_user,
             "email": "basic@example.com",
             "roles": ["user"]
         }
-        
+
         # Test role validation
         for user in [admin_user, premium_user, basic_user]:
             self.assertIn("user", user.get("roles", []))
-            
+
         self.assertIn("admin", admin_user.get("roles", []))
         self.assertIn("premium", premium_user.get("roles", []))
         self.assertNotIn("admin", basic_user.get("roles", []))
@@ -1133,11 +1191,11 @@ class TestUserIntegrationAdvanced(unittest.TestCase):
     def test_performance_with_large_user_datasets(self):
         """Test performance considerations with large user datasets"""
         model = UserModel()
-        
+
         with patch("users.user_model.create_client") as mock_create_client:
             mock_supabase = Mock()
             mock_create_client.return_value = mock_supabase
-            
+
             # Mock large dataset (1000 users)
             large_dataset = []
             for i in range(1000):
@@ -1153,25 +1211,25 @@ class TestUserIntegrationAdvanced(unittest.TestCase):
                     "created_at": (datetime.now() - timedelta(days=i)).isoformat()
                 }
                 large_dataset.append(user)
-            
+
             # Mock responses for large dataset
             mock_response = Mock()
             mock_response.data = large_dataset
             mock_response.count = 1000
             mock_supabase.table.return_value.select.return_value.order.return_value.execute.return_value = mock_response
             mock_supabase.table.return_value.select.return_value.execute.return_value = mock_response
-            
+
             # Test operations with large dataset
             all_users = model.get_all_users()
             self.assertEqual(len(all_users), 1000)
-            
+
             user_count = model.get_user_count()
             self.assertEqual(user_count, 1000)
-            
+
             # Verify data integrity with large dataset
             first_user = all_users[0]
             last_user = all_users[-1]
-            
+
             self.assertIn("@example.com", first_user["email"])
             self.assertIn("@example.com", last_user["email"])
 

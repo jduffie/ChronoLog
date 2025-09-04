@@ -10,9 +10,8 @@ def render_users_tab(user, supabase):
 
     try:
         # Get all users from the database
-        response = (
-            supabase.table("users").select("*").order("created_at", desc=True).execute()
-        )
+        response = (supabase.table("users").select(
+            "*").order("created_at", desc=True).execute())
 
         if not response.data:
             st.info("📭 No users found in the database.")
@@ -30,9 +29,8 @@ def render_users_tab(user, supabase):
 
         with col2:
             # Count users with complete profiles
-            complete_profiles = (
-                df["profile_complete"].sum() if "profile_complete" in df.columns else 0
-            )
+            complete_profiles = (df["profile_complete"].sum(
+            ) if "profile_complete" in df.columns else 0)
             st.metric("Complete Profiles", complete_profiles)
 
         with col3:
@@ -40,12 +38,9 @@ def render_users_tab(user, supabase):
             admin_count = 0
             if "roles" in df.columns:
                 admin_count = (
-                    df["roles"]
-                    .apply(
-                        lambda x: "admin" in x if x and isinstance(x, list) else False
-                    )
-                    .sum()
-                )
+                    df["roles"] .apply(
+                        lambda x: "admin" in x if x and isinstance(
+                            x, list) else False) .sum())
             st.metric("Admin Users", admin_count)
 
         with col4:
@@ -87,7 +82,8 @@ def render_users_tab(user, supabase):
 
         with col3:
             profile_status = ["All", "Complete", "Incomplete"]
-            selected_profile_status = st.selectbox("Profile Status:", profile_status)
+            selected_profile_status = st.selectbox(
+                "Profile Status:", profile_status)
 
         with col4:
             role_filter = ["All", "Admin", "User"]
@@ -96,31 +92,24 @@ def render_users_tab(user, supabase):
         # Apply filters
         filtered_df = df.copy()
         if selected_country != "All":
-            filtered_df = filtered_df[filtered_df["country"] == selected_country]
+            filtered_df = filtered_df[filtered_df["country"]
+                                      == selected_country]
         if selected_unit_system != "All":
             filtered_df = filtered_df[
                 filtered_df["unit_system"] == selected_unit_system
             ]
         if selected_profile_status != "All":
             if selected_profile_status == "Complete":
-                filtered_df = filtered_df[filtered_df["profile_complete"] == True]
+                filtered_df = filtered_df[filtered_df["profile_complete"]]
             else:  # Incomplete
                 filtered_df = filtered_df[filtered_df["profile_complete"] != True]
         if selected_role != "All":
             if selected_role == "Admin":
-                filtered_df = filtered_df[
-                    filtered_df["roles"].apply(
-                        lambda x: "admin" in x if x and isinstance(x, list) else False
-                    )
-                ]
+                filtered_df = filtered_df[filtered_df["roles"].apply(
+                    lambda x: "admin" in x if x and isinstance(x, list) else False)]
             else:  # User
-                filtered_df = filtered_df[
-                    filtered_df["roles"].apply(
-                        lambda x: (
-                            "admin" not in x if x and isinstance(x, list) else True
-                        )
-                    )
-                ]
+                filtered_df = filtered_df[filtered_df["roles"].apply(lambda x: (
+                    "admin" not in x if x and isinstance(x, list) else True))]
 
         # Display filtered results count
         if len(filtered_df) != len(df):
@@ -189,19 +178,33 @@ def render_users_tab(user, supabase):
             on_select="rerun",
             selection_mode="single-row",
             column_config={
-                "Email": st.column_config.TextColumn("Email", width="medium"),
-                "Name": st.column_config.TextColumn("Name", width="medium"),
-                "Username": st.column_config.TextColumn("Username", width="small"),
-                "Country": st.column_config.TextColumn("Country", width="small"),
-                "State": st.column_config.TextColumn("State", width="small"),
+                "Email": st.column_config.TextColumn(
+                    "Email",
+                    width="medium"),
+                "Name": st.column_config.TextColumn(
+                    "Name",
+                    width="medium"),
+                "Username": st.column_config.TextColumn(
+                    "Username",
+                    width="small"),
+                "Country": st.column_config.TextColumn(
+                    "Country",
+                    width="small"),
+                "State": st.column_config.TextColumn(
+                    "State",
+                    width="small"),
                 "Unit System": st.column_config.TextColumn(
-                    "Unit System", width="small"
-                ),
+                    "Unit System",
+                    width="small"),
                 "Profile Complete": st.column_config.CheckboxColumn(
-                    "Profile Complete", width="small"
-                ),
-                "Roles": st.column_config.TextColumn("Roles", width="small"),
-                "Created At": st.column_config.TextColumn("Created At", width="medium"),
+                    "Profile Complete",
+                    width="small"),
+                "Roles": st.column_config.TextColumn(
+                    "Roles",
+                    width="small"),
+                "Created At": st.column_config.TextColumn(
+                    "Created At",
+                    width="medium"),
             },
         )
 
@@ -251,8 +254,12 @@ def render_user_edit_form(user_data, supabase):
 
             # Location
             st.markdown("**Location**")
-            new_country = st.text_input("Country:", value=user_data.get("country", ""))
-            new_state = st.text_input("State:", value=user_data.get("state", ""))
+            new_country = st.text_input(
+                "Country:", value=user_data.get(
+                    "country", ""))
+            new_state = st.text_input(
+                "State:", value=user_data.get(
+                    "state", ""))
 
         with col2:
             # Settings
@@ -270,8 +277,8 @@ def render_user_edit_form(user_data, supabase):
             )
 
             new_profile_complete = st.checkbox(
-                "Profile Complete:", value=user_data.get("profile_complete", False)
-            )
+                "Profile Complete:", value=user_data.get(
+                    "profile_complete", False))
 
             # Roles management
             st.markdown("**Roles**")
@@ -280,8 +287,10 @@ def render_user_edit_form(user_data, supabase):
                 current_roles = ["user"]
 
             # Individual role checkboxes
-            has_user_role = st.checkbox("User Role", value="user" in current_roles)
-            has_admin_role = st.checkbox("Admin Role", value="admin" in current_roles)
+            has_user_role = st.checkbox(
+                "User Role", value="user" in current_roles)
+            has_admin_role = st.checkbox(
+                "Admin Role", value="admin" in current_roles)
 
             # Build new roles list
             new_roles = []
@@ -296,15 +305,18 @@ def render_user_edit_form(user_data, supabase):
                 st.warning("⚠️ Users must have at least the 'user' role.")
 
         # Picture URL (if exists)
-        new_picture = st.text_input("Picture URL:", value=user_data.get("picture", ""))
+        new_picture = st.text_input(
+            "Picture URL:", value=user_data.get(
+                "picture", ""))
 
         # Display current picture if exists
         if user_data.get("picture"):
             try:
                 st.image(
-                    user_data["picture"], width=100, caption="Current Profile Picture"
-                )
-            except:
+                    user_data["picture"],
+                    width=100,
+                    caption="Current Profile Picture")
+            except BaseException:
                 st.warning("Unable to display current profile picture")
 
         # Submit button
@@ -366,16 +378,19 @@ def render_user_delete_form(user_data, supabase):
 
     with col2:
         st.write(f"**Unit System:** {user_data.get('unit_system', 'N/A')}")
-        st.write(f"**Profile Complete:** {user_data.get('profile_complete', False)}")
+        st.write(
+            f"**Profile Complete:** {user_data.get('profile_complete', False)}")
         roles = user_data.get("roles", ["user"])
-        roles_text = ", ".join(roles) if isinstance(roles, list) else str(roles)
+        roles_text = ", ".join(roles) if isinstance(
+            roles, list) else str(roles)
         st.write(f"**Roles:** {roles_text}")
         created_at = user_data.get("created_at", "")
         if created_at:
             try:
-                formatted_date = pd.to_datetime(created_at).strftime("%Y-%m-%d %H:%M")
+                formatted_date = pd.to_datetime(
+                    created_at).strftime("%Y-%m-%d %H:%M")
                 st.write(f"**Created:** {formatted_date}")
-            except:
+            except BaseException:
                 st.write(f"**Created:** {created_at}")
 
     # Safety checks
@@ -421,13 +436,15 @@ def render_user_delete_form(user_data, supabase):
                     .execute()
                 )
                 if count_response.count and count_response.count > 0:
-                    related_data.append(f"{table}: {count_response.count} records")
-            except:
+                    related_data.append(
+                        f"{table}: {count_response.count} records")
+            except BaseException:
                 # Table might not exist or might not have user_email column
                 continue
 
         if related_data:
-            st.warning("**User has associated data that will also be deleted:**")
+            st.warning(
+                "**User has associated data that will also be deleted:**")
             for data in related_data:
                 st.write(f"• {data}")
 
@@ -466,8 +483,8 @@ def render_user_delete_form(user_data, supabase):
         try:
             # Delete user from database
             delete_response = (
-                supabase.table("users").delete().eq("id", user_data["id"]).execute()
-            )
+                supabase.table("users").delete().eq(
+                    "id", user_data["id"]).execute())
 
             if delete_response.data:
                 st.success(

@@ -26,7 +26,8 @@ def render_weather_view_log_tab(user, supabase):
             return
 
         # Get all measurements for the user
-        measurements = weather_service.get_all_measurements_for_user(user["id"])
+        measurements = weather_service.get_all_measurements_for_user(
+            user["id"])
 
         if not measurements:
             st.info("No weather measurements found.")
@@ -43,9 +44,8 @@ def render_weather_view_log_tab(user, supabase):
                     break
 
             if source_obj:
-                date_str = pd.to_datetime(measurement.measurement_timestamp).strftime(
-                    "%Y-%m-%d"
-                )
+                date_str = pd.to_datetime(
+                    measurement.measurement_timestamp).strftime("%Y-%m-%d")
                 option_key = f"{source_obj.display_name()} | {date_str}"
                 source_date_options[option_key] = {
                     "source_id": source_obj.id,
@@ -113,7 +113,8 @@ def render_weather_view_log_tab(user, supabase):
         ]
 
         if not selected_measurements:
-            st.warning("No measurements found for selected weather source and date.")
+            st.warning(
+                "No measurements found for selected weather source and date.")
             return
 
         # Convert to DataFrame for analysis
@@ -147,7 +148,8 @@ def render_weather_view_log_tab(user, supabase):
             time_range = f"{df['timestamp'].min().strftime('%H:%M')} - {df['timestamp'].max().strftime('%H:%M')}"
             st.write(f"**Time Range:** {time_range}")
         with col3:
-            if measurements_dict and measurements_dict[0].get("location_description"):
+            if measurements_dict and measurements_dict[0].get(
+                    "location_description"):
                 st.write(
                     f"**Location:** {measurements_dict[0]['location_description']}"
                 )
@@ -156,7 +158,8 @@ def render_weather_view_log_tab(user, supabase):
         st.subheader(" Weather Statistics")
 
         # Temperature stats
-        if "temperature_f" in df.columns and not df["temperature_f"].isna().all():
+        if "temperature_f" in df.columns and not df["temperature_f"].isna(
+        ).all():
             temps = df["temperature_f"].dropna()
             col1, col2, col3, col4 = st.columns(4)
             with col1:
@@ -187,7 +190,8 @@ def render_weather_view_log_tab(user, supabase):
             with col2:
                 st.metric("Avg Pressure", f"{pressure.mean():.2f} inHg")
 
-        if "wind_speed_mph" in df.columns and not df["wind_speed_mph"].isna().all():
+        if "wind_speed_mph" in df.columns and not df["wind_speed_mph"].isna(
+        ).all():
             wind = df["wind_speed_mph"].dropna()
             with col3:
                 st.metric("Avg Wind Speed", f"{wind.mean():.1f} mph")
@@ -213,7 +217,8 @@ def render_weather_view_log_tab(user, supabase):
             fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
 
             # Temperature plot
-            if "temperature_f" in df.columns and not df["temperature_f"].isna().all():
+            if "temperature_f" in df.columns and not df["temperature_f"].isna(
+            ).all():
                 ax1.plot(
                     df["timestamp"],
                     df["temperature_f"],
@@ -273,7 +278,8 @@ def render_weather_view_log_tab(user, supabase):
                 ax1.set_title("Barometric Pressure Over Time")
 
             # Wind speed plot
-            if "wind_speed_mph" in df.columns and not df["wind_speed_mph"].isna().all():
+            if "wind_speed_mph" in df.columns and not df["wind_speed_mph"].isna(
+            ).all():
                 ax2.plot(
                     df["timestamp"],
                     df["wind_speed_mph"],
@@ -299,7 +305,8 @@ def render_weather_view_log_tab(user, supabase):
             # Normalize all parameters to 0-1 scale for comparison
             params_to_plot = []
 
-            if "temperature_f" in df.columns and not df["temperature_f"].isna().all():
+            if "temperature_f" in df.columns and not df["temperature_f"].isna(
+            ).all():
                 temp_norm = (df["temperature_f"] - df["temperature_f"].min()) / (
                     df["temperature_f"].max() - df["temperature_f"].min()
                 )

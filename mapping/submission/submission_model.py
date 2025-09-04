@@ -18,7 +18,8 @@ class SubmissionModel:
             print(f"Error getting user range count: {e}")
             return 0
 
-    def get_user_ranges(self, user_id: str, supabase_client) -> List[Dict[str, Any]]:
+    def get_user_ranges(self, user_id: str,
+                        supabase_client) -> List[Dict[str, Any]]:
         """Get all ranges submitted by a user."""
         try:
             result = (
@@ -78,13 +79,15 @@ class SubmissionModel:
                     print(f"Successfully deleted range {range_id}")
                 elif hasattr(result, "count") and result.count > 0:
                     deleted_count += 1
-                    print(f"Successfully deleted range {range_id} (count method)")
+                    print(
+                        f"Successfully deleted range {range_id} (count method)")
                 else:
                     print(
                         f"Failed to delete range with ID: {range_id} - result: {result}"
                     )
 
-            print(f"Total ranges deleted: {deleted_count} out of {len(range_ids)}")
+            print(
+                f"Total ranges deleted: {deleted_count} out of {len(range_ids)}")
             return deleted_count > 0
 
         except Exception as e:

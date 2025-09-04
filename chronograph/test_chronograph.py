@@ -9,9 +9,6 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pandas as pd
 
-# Add the root directory to the path so we can import our modules
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from chronograph.chronograph_session_models import (
     ChronographMeasurement,
     ChronographSession,
@@ -19,6 +16,9 @@ from chronograph.chronograph_session_models import (
 from chronograph.chronograph_source_models import ChronographSource
 from chronograph.import_tab import render_chronograph_import_tab
 from chronograph.service import ChronographService
+
+# Add the root directory to the path so we can import our modules
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 class TestChronographService(unittest.TestCase):
@@ -29,19 +29,16 @@ class TestChronographService(unittest.TestCase):
         self.user_id = "test@example.com"
         self.user_id = "google-oauth2|111273793361054745867"
 
-
     def test_get_sessions_for_user_empty(self):
         mock_response = Mock()
         mock_response.data = []
 
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = (
-            mock_response
-        )
+            mock_response)
 
         sessions = self.service.get_sessions_for_user(self.user_id)
 
         self.assertEqual(len(sessions), 0)
-
 
     def test_get_measurements_for_session(self):
         session_id = "session-1"
@@ -63,8 +60,7 @@ class TestChronographService(unittest.TestCase):
         mock_response.data = mock_data
 
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.order.return_value.execute.return_value = (
-            mock_response
-        )
+            mock_response)
 
         measurements = self.service.get_measurements_for_session(
             self.user_id, session_id
@@ -80,8 +76,7 @@ class TestChronographService(unittest.TestCase):
         mock_response.data = [{"id": "session-1"}]
 
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.eq.return_value.execute.return_value = (
-            mock_response
-        )
+            mock_response)
 
         exists = self.service.session_exists(
             self.user_id, "Sheet1", "2023-12-01T10:00:00"
@@ -94,15 +89,13 @@ class TestChronographService(unittest.TestCase):
         mock_response.data = []
 
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.eq.return_value.execute.return_value = (
-            mock_response
-        )
+            mock_response)
 
         exists = self.service.session_exists(
             self.user_id, "Sheet1", "2023-12-01T10:00:00"
         )
 
         self.assertFalse(exists)
-
 
     def test_get_unique_bullet_types(self):
         mock_data = [
@@ -116,8 +109,7 @@ class TestChronographService(unittest.TestCase):
         mock_response.data = mock_data
 
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.execute.return_value = (
-            mock_response
-        )
+            mock_response)
 
         bullet_types = self.service.get_unique_bullet_types(self.user_id)
 
@@ -145,8 +137,7 @@ class TestChronographService(unittest.TestCase):
         mock_response.data = mock_data
 
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = (
-            mock_response
-        )
+            mock_response)
 
         sessions = self.service.get_sessions_for_user(self.user_id)
 
@@ -158,12 +149,11 @@ class TestChronographService(unittest.TestCase):
     def test_get_sessions_for_user_database_error(self):
         """Test database error handling in get_sessions_for_user"""
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.side_effect = Exception(
-            "Database connection failed"
-        )
-        
+            "Database connection failed")
+
         with self.assertRaises(Exception) as context:
             self.service.get_sessions_for_user(self.user_id)
-        
+
         self.assertIn("Error fetching sessions", str(context.exception))
         self.assertIn("Database connection failed", str(context.exception))
 
@@ -173,34 +163,36 @@ class TestChronographService(unittest.TestCase):
         mock_response.data = []
 
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.order.return_value.execute.return_value = (
-            mock_response
-        )
+            mock_response)
 
-        measurements = self.service.get_measurements_for_session(self.user_id, "session-1")
+        measurements = self.service.get_measurements_for_session(
+            self.user_id, "session-1")
 
         self.assertEqual(len(measurements), 0)
 
     def test_get_measurements_for_session_database_error(self):
         """Test database error handling in get_measurements_for_session"""
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.order.return_value.execute.side_effect = Exception(
-            "Query failed"
-        )
-        
+            "Query failed")
+
         with self.assertRaises(Exception) as context:
-            self.service.get_measurements_for_session(self.user_id, "session-1")
-        
+            self.service.get_measurements_for_session(
+                self.user_id, "session-1")
+
         self.assertIn("Error fetching measurements", str(context.exception))
 
     def test_session_exists_database_error(self):
         """Test database error handling in session_exists"""
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.eq.return_value.execute.side_effect = Exception(
-            "Query failed"
-        )
-        
+            "Query failed")
+
         with self.assertRaises(Exception) as context:
-            self.service.session_exists(self.user_id, "Sheet1", "2023-12-01T10:00:00")
-        
-        self.assertIn("Error checking session existence", str(context.exception))
+            self.service.session_exists(
+                self.user_id, "Sheet1", "2023-12-01T10:00:00")
+
+        self.assertIn(
+            "Error checking session existence", str(
+                context.exception))
 
     def test_get_unique_bullet_types_empty(self):
         """Test getting unique bullet types with no data"""
@@ -208,8 +200,7 @@ class TestChronographService(unittest.TestCase):
         mock_response.data = []
 
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.execute.return_value = (
-            mock_response
-        )
+            mock_response)
 
         bullet_types = self.service.get_unique_bullet_types(self.user_id)
 
@@ -218,12 +209,11 @@ class TestChronographService(unittest.TestCase):
     def test_get_unique_bullet_types_database_error(self):
         """Test database error handling in get_unique_bullet_types"""
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.execute.side_effect = Exception(
-            "Query failed"
-        )
-        
+            "Query failed")
+
         with self.assertRaises(Exception) as context:
             self.service.get_unique_bullet_types(self.user_id)
-        
+
         self.assertIn("Error fetching bullet types", str(context.exception))
 
 
@@ -268,8 +258,9 @@ class TestChronographModels(unittest.TestCase):
 
     def test_chronograph_session_from_supabase_record(self):
         """Test creating ChronographSession from Supabase record"""
-        session = ChronographSession.from_supabase_record(self.sample_session_record)
-        
+        session = ChronographSession.from_supabase_record(
+            self.sample_session_record)
+
         self.assertEqual(session.id, "session-123")
         self.assertEqual(session.user_id, "user-456")
         self.assertEqual(session.tab_name, "Sheet1")
@@ -283,13 +274,13 @@ class TestChronographModels(unittest.TestCase):
 
     def test_chronograph_session_from_supabase_records(self):
         """Test creating multiple ChronographSession objects from records"""
-        records = [
-            self.sample_session_record,
-            {**self.sample_session_record, "id": "session-456", "session_name": "45 ACP Test"}
-        ]
-        
+        records = [self.sample_session_record,
+                   {**self.sample_session_record,
+                    "id": "session-456",
+                    "session_name": "45 ACP Test"}]
+
         sessions = ChronographSession.from_supabase_records(records)
-        
+
         self.assertEqual(len(sessions), 2)
         self.assertEqual(sessions[0].id, "session-123")
         self.assertEqual(sessions[1].id, "session-456")
@@ -297,31 +288,32 @@ class TestChronographModels(unittest.TestCase):
 
     def test_chronograph_session_display_methods(self):
         """Test ChronographSession display methods"""
-        session = ChronographSession.from_supabase_record(self.sample_session_record)
-        
+        session = ChronographSession.from_supabase_record(
+            self.sample_session_record)
+
         # Test display_name
         expected_display = "Sheet1 - 2023-12-01 10:00"
         self.assertEqual(session.display_name(), expected_display)
-        
+
         # Test bullet_display
         self.assertEqual(session.bullet_display(), "9mm Test Session")
-        
+
         # Test muzzle_vel_speed_units
         self.assertEqual(session.muzzle_vel_speed_units(), "fps")
-        
+
         # Test avg_speed_display
         self.assertEqual(session.avg_speed_display(), "1150")
-        
+
         # Test std_dev_display
         self.assertEqual(session.std_dev_display(), "15.3 fps")
-        
+
         # Test velocity_range_display
         expected_range = f"{1175.8 - 1120.2:.0f} fps"
         self.assertEqual(session.velocity_range_display(), expected_range)
-        
+
         # Test file_name
         self.assertEqual(session.file_name(), "garmin_data.xlsx")
-        
+
         # Test has_measurements
         self.assertTrue(session.has_measurements())
 
@@ -341,9 +333,9 @@ class TestChronographModels(unittest.TestCase):
             "min_speed_fps": None,
             "max_speed_fps": None,
         }
-        
+
         session = ChronographSession.from_supabase_record(minimal_record)
-        
+
         # Test with None/empty values
         self.assertEqual(session.bullet_display(), "Unknown Session")
         self.assertEqual(session.avg_speed_display(), "N/A")
@@ -354,7 +346,8 @@ class TestChronographModels(unittest.TestCase):
 
     def test_chronograph_measurement_from_supabase_record(self):
         """Test creating ChronographMeasurement from Supabase record"""
-        measurement = ChronographMeasurement.from_supabase_record(self.sample_measurement_record)
+        measurement = ChronographMeasurement.from_supabase_record(
+            self.sample_measurement_record)
 
         self.assertEqual(measurement.id, "measurement-1")
         self.assertEqual(measurement.shot_number, 1)
@@ -372,13 +365,14 @@ class TestChronographModels(unittest.TestCase):
 
     def test_chronograph_measurement_from_supabase_records(self):
         """Test creating multiple ChronographMeasurement objects from records"""
-        records = [
-            self.sample_measurement_record,
-            {**self.sample_measurement_record, "id": "measurement-2", "shot_number": 2, "speed_fps": 1195.3}
-        ]
-        
+        records = [self.sample_measurement_record,
+                   {**self.sample_measurement_record,
+                    "id": "measurement-2",
+                    "shot_number": 2,
+                    "speed_fps": 1195.3}]
+
         measurements = ChronographMeasurement.from_supabase_records(records)
-        
+
         self.assertEqual(len(measurements), 2)
         self.assertEqual(measurements[0].id, "measurement-1")
         self.assertEqual(measurements[1].id, "measurement-2")
@@ -395,9 +389,10 @@ class TestChronographModels(unittest.TestCase):
             "speed_fps": 1200.0,
             "datetime_local": "2023-12-01T10:01:00",
         }
-        
-        measurement = ChronographMeasurement.from_supabase_record(minimal_record)
-        
+
+        measurement = ChronographMeasurement.from_supabase_record(
+            minimal_record)
+
         self.assertEqual(measurement.id, "measurement-minimal")
         self.assertEqual(measurement.speed_fps, 1200.0)
         self.assertEqual(measurement.speed_mps, 0)  # Default value
@@ -410,13 +405,14 @@ class TestChronographModels(unittest.TestCase):
 
     def test_chronograph_measurement_field_types(self):
         """Test ChronographMeasurement field types"""
-        measurement = ChronographMeasurement.from_supabase_record(self.sample_measurement_record)
-        
+        measurement = ChronographMeasurement.from_supabase_record(
+            self.sample_measurement_record)
+
         # Test numeric fields
         self.assertIsInstance(measurement.shot_number, int)
         self.assertIsInstance(measurement.speed_fps, float)
         self.assertIsInstance(measurement.speed_mps, (int, float))
-        
+
         # Test optional numeric fields
         if measurement.delta_avg_fps is not None:
             self.assertIsInstance(measurement.delta_avg_fps, (int, float))
@@ -424,17 +420,17 @@ class TestChronographModels(unittest.TestCase):
             self.assertIsInstance(measurement.ke_ft_lb, (int, float))
         if measurement.power_factor is not None:
             self.assertIsInstance(measurement.power_factor, (int, float))
-        
+
         # Test boolean fields
         if measurement.clean_bore is not None:
             self.assertIsInstance(measurement.clean_bore, bool)
         if measurement.cold_bore is not None:
             self.assertIsInstance(measurement.cold_bore, bool)
-        
+
         # Test string fields
         if measurement.shot_notes is not None:
             self.assertIsInstance(measurement.shot_notes, str)
-        
+
         # Test datetime field
         self.assertIsInstance(measurement.datetime_local, pd.Timestamp)
 
@@ -458,8 +454,9 @@ class TestChronographSourceModels(unittest.TestCase):
 
     def test_chronograph_source_from_supabase_record(self):
         """Test creating ChronographSource from Supabase record"""
-        source = ChronographSource.from_supabase_record(self.sample_source_record)
-        
+        source = ChronographSource.from_supabase_record(
+            self.sample_source_record)
+
         self.assertEqual(source.id, "source-123")
         self.assertEqual(source.user_id, "user-456")
         self.assertEqual(source.name, "Garmin Xero C1 Pro")
@@ -473,13 +470,14 @@ class TestChronographSourceModels(unittest.TestCase):
 
     def test_chronograph_source_from_supabase_records(self):
         """Test creating multiple ChronographSource objects from records"""
-        records = [
-            self.sample_source_record,
-            {**self.sample_source_record, "id": "source-456", "name": "LabRadar", "make": "LabRadar"}
-        ]
-        
+        records = [self.sample_source_record,
+                   {**self.sample_source_record,
+                    "id": "source-456",
+                    "name": "LabRadar",
+                    "make": "LabRadar"}]
+
         sources = ChronographSource.from_supabase_records(records)
-        
+
         self.assertEqual(len(sources), 2)
         self.assertEqual(sources[0].id, "source-123")
         self.assertEqual(sources[1].id, "source-456")
@@ -488,15 +486,16 @@ class TestChronographSourceModels(unittest.TestCase):
 
     def test_chronograph_source_display_methods(self):
         """Test ChronographSource display methods"""
-        source = ChronographSource.from_supabase_record(self.sample_source_record)
-        
+        source = ChronographSource.from_supabase_record(
+            self.sample_source_record)
+
         # Test display_name
         self.assertEqual(source.display_name(), "Garmin Xero C1 Pro")
-        
+
         # Test device_display with make and model
         expected_device = "Garmin Xero C1 Pro (S/N: ABC123456)"
         self.assertEqual(source.device_display(), expected_device)
-        
+
         # Test short_display
         expected_short = "Garmin Xero C1 Pro - Garmin Xero C1 Pro (S/N: ABC123456)"
         self.assertEqual(source.short_display(), expected_short)
@@ -504,17 +503,30 @@ class TestChronographSourceModels(unittest.TestCase):
     def test_chronograph_source_device_display_variations(self):
         """Test device_display with different data combinations"""
         # Test with only device_name
-        record_device_only = {**self.sample_source_record, "make": None, "model": None, "serial_number": None}
+        record_device_only = {
+            **self.sample_source_record,
+            "make": None,
+            "model": None,
+            "serial_number": None}
         source = ChronographSource.from_supabase_record(record_device_only)
         self.assertEqual(source.device_display(), "Garmin Xero C1 Pro")
-        
+
         # Test with only model
-        record_model_only = {**self.sample_source_record, "make": None, "device_name": None, "serial_number": None}
+        record_model_only = {
+            **self.sample_source_record,
+            "make": None,
+            "device_name": None,
+            "serial_number": None}
         source = ChronographSource.from_supabase_record(record_model_only)
         self.assertEqual(source.device_display(), "Xero C1 Pro")
-        
+
         # Test with unknown device
-        record_unknown = {**self.sample_source_record, "make": None, "model": None, "device_name": None, "serial_number": None}
+        record_unknown = {
+            **self.sample_source_record,
+            "make": None,
+            "model": None,
+            "device_name": None,
+            "serial_number": None}
         source = ChronographSource.from_supabase_record(record_unknown)
         self.assertEqual(source.device_display(), "Unknown Device")
 
@@ -525,9 +537,9 @@ class TestChronographSourceModels(unittest.TestCase):
             "user_id": "user-123",
             "name": "Test Source"
         }
-        
+
         source = ChronographSource.from_supabase_record(minimal_record)
-        
+
         self.assertEqual(source.id, "source-minimal")
         self.assertEqual(source.name, "Test Source")
         self.assertEqual(source.source_type, "chronograph")  # Default value
@@ -565,15 +577,15 @@ class TestChronographIntegration(unittest.TestCase):
         mock_response = Mock()
         mock_response.data = [session_data]
         self.mock_supabase.table.return_value.insert.return_value.execute.return_value = mock_response
-        
+
         result_id = self.service.create_measurement(session_data)
-        
+
         self.assertEqual(result_id, session_data["id"])
 
     def test_measurement_stats_calculation_workflow(self):
         """Test measurement statistics calculation workflow"""
         session_id = "session-123"
-        
+
         # Mock speed data for stats calculation
         speed_data = [
             {"speed_fps": 1150.0},
@@ -582,23 +594,24 @@ class TestChronographIntegration(unittest.TestCase):
             {"speed_fps": 1152.0},
             {"speed_fps": 1149.0}
         ]
-        
+
         mock_response = Mock()
         mock_response.data = speed_data
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.execute.return_value = mock_response
-        
+
         # Mock stats update
         self.mock_supabase.table.return_value.update.return_value.eq.return_value.execute.return_value = Mock()
-        
-        speeds = self.service.get_measurements_for_stats(self.user_id, session_id)
+
+        speeds = self.service.get_measurements_for_stats(
+            self.user_id, session_id)
         expected_speeds = [1150.0, 1155.0, 1148.0, 1152.0, 1149.0]
-        
+
         self.assertEqual(speeds, expected_speeds)
 
     def test_session_with_measurements_integration(self):
         """Test session and measurements integration"""
         session_id = "integration-session-123"
-        
+
         # Mock session data
         session_data = {
             "id": session_id,
@@ -611,7 +624,7 @@ class TestChronographIntegration(unittest.TestCase):
             "shot_count": 3,
             "avg_speed_fps": 1150.0
         }
-        
+
         # Mock measurement data
         measurements_data = [
             {
@@ -639,29 +652,30 @@ class TestChronographIntegration(unittest.TestCase):
                 "datetime_local": "2023-12-01T10:03:00"
             }
         ]
-        
+
         # Mock session retrieval
         mock_session_response = Mock()
         mock_session_response.data = session_data
-        
+
         # Mock measurements retrieval
         mock_measurements_response = Mock()
         mock_measurements_response.data = measurements_data
-        
+
         # Setup mock chain for session
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.single.return_value.execute.return_value = mock_session_response
-        
+
         # Setup mock chain for measurements
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.order.return_value.execute.return_value = mock_measurements_response
-        
+
         # Get session
         session = self.service.get_session_by_id(session_id, self.user_id)
         self.assertIsNotNone(session)
         self.assertEqual(session.shot_count, 3)
         self.assertTrue(session.has_measurements())
-        
+
         # Get measurements
-        measurements = self.service.get_measurements_for_session(self.user_id, session_id)
+        measurements = self.service.get_measurements_for_session(
+            self.user_id, session_id)
         self.assertEqual(len(measurements), 3)
         self.assertEqual(measurements[0].shot_number, 1)
         self.assertEqual(measurements[2].speed_fps, 1155.0)
@@ -678,15 +692,15 @@ class TestChronographIntegration(unittest.TestCase):
             "model": "Test Model",
             "serial_number": "TEST123"
         }
-        
+
         # Mock source retrieval
         mock_response = Mock()
         mock_response.data = source_data
-        
+
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.single.return_value.execute.return_value = mock_response
-        
+
         source = self.service.get_source_by_id("source-123", self.user_id)
-        
+
         self.assertIsNotNone(source)
         self.assertEqual(source.name, "Test Chronograph")
         self.assertEqual(source.make, "Test Make")
@@ -696,11 +710,12 @@ class TestChronographIntegration(unittest.TestCase):
     def test_error_propagation_integration(self):
         """Test error propagation through service layers"""
         # Test database connection error
-        self.mock_supabase.table.side_effect = Exception("Database connection failed")
-        
+        self.mock_supabase.table.side_effect = Exception(
+            "Database connection failed")
+
         with self.assertRaises(Exception) as context:
             self.service.get_sessions_for_user(self.user_id)
-        
+
         self.assertIn("Error fetching sessions", str(context.exception))
         self.assertIn("Database connection failed", str(context.exception))
 
@@ -717,19 +732,19 @@ class TestChronographIntegration(unittest.TestCase):
                 "datetime_local": f"2023-12-0{i+1}T10:00:00",
                 "uploaded_at": f"2023-12-0{i+1}T10:05:00",
                 "file_path": f"/uploads/test_{i}.xlsx",
-                "shot_count": (i+1) * 5,
+                "shot_count": (i + 1) * 5,
                 "avg_speed_fps": 1150.0 + (i * 10)
             }
             bulk_sessions.append(session_data)
-        
+
         # Mock bulk session retrieval
         mock_response = Mock()
         mock_response.data = bulk_sessions
-        
+
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = mock_response
-        
+
         sessions = self.service.get_sessions_for_user(self.user_id)
-        
+
         self.assertEqual(len(sessions), 5)
         self.assertEqual(sessions[0].session_name, "Test Session 0")
         self.assertEqual(sessions[4].avg_speed_fps, 1190.0)
@@ -750,11 +765,11 @@ class TestChronographIntegration(unittest.TestCase):
                 "bullet_type": "9mm FMJ"
             }
         ]
-        
+
         # Mock filtered query response
         mock_response = Mock()
         mock_response.data = filtered_data
-        
+
         # Setup complex mock chain for filtered query
         mock_table = Mock()
         mock_select = Mock()
@@ -763,7 +778,7 @@ class TestChronographIntegration(unittest.TestCase):
         mock_gte = Mock()
         mock_lte = Mock()
         mock_order = Mock()
-        
+
         self.mock_supabase.table.return_value = mock_table
         mock_table.select.return_value = mock_select
         mock_select.eq.return_value = mock_eq1
@@ -772,14 +787,14 @@ class TestChronographIntegration(unittest.TestCase):
         mock_gte.lte.return_value = mock_lte
         mock_lte.order.return_value = mock_order
         mock_order.execute.return_value = mock_response
-        
+
         sessions = self.service.get_sessions_filtered(
             user_id=self.user_id,
             bullet_type="9mm FMJ",
             start_date="2023-12-01",
             end_date="2023-12-31"
         )
-        
+
         self.assertEqual(len(sessions), 1)
         self.assertEqual(sessions[0].session_name, "9mm Filtered Session")
 
@@ -790,15 +805,21 @@ class TestChronographPageStructure(unittest.TestCase):
     def test_chronograph_page_exists(self):
         """Test that the chronograph page file exists"""
         page_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "pages", "3_Chronograph.py"
-        )
-        self.assertTrue(os.path.exists(page_path), "Chronograph page should exist")
+            os.path.dirname(
+                os.path.dirname(__file__)),
+            "pages",
+            "3_Chronograph.py")
+        self.assertTrue(
+            os.path.exists(page_path),
+            "Chronograph page should exist")
 
     def test_chronograph_page_has_required_imports(self):
         """Test that chronograph page has required imports"""
         page_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "pages", "3_⏱️_Chronograph.py"
-        )
+            os.path.dirname(
+                os.path.dirname(__file__)),
+            "pages",
+            "3_⏱️_Chronograph.py")
         if os.path.exists(page_path):
             with open(page_path, "r") as f:
                 content = f.read()
@@ -819,8 +840,10 @@ class TestChronographPageStructure(unittest.TestCase):
     def test_chronograph_page_has_correct_tabs(self):
         """Test that chronograph page has expected tabs"""
         page_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "pages", "3_⏱️_Chronograph.py"
-        )
+            os.path.dirname(
+                os.path.dirname(__file__)),
+            "pages",
+            "3_⏱️_Chronograph.py")
         if os.path.exists(page_path):
             with open(page_path, "r") as f:
                 content = f.read()
@@ -828,14 +851,17 @@ class TestChronographPageStructure(unittest.TestCase):
             expected_tabs = ["Import", "View", "Edit", "My Files"]
             for tab in expected_tabs:
                 self.assertIn(
-                    f'"{tab}"', content, f"Chronograph page should have {tab} tab"
-                )
+                    f'"{tab}"',
+                    content,
+                    f"Chronograph page should have {tab} tab")
 
     def test_chronograph_page_configuration(self):
         """Test chronograph page configuration"""
         page_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "pages", "3_⏱️_Chronograph.py"
-        )
+            os.path.dirname(
+                os.path.dirname(__file__)),
+            "pages",
+            "3_⏱️_Chronograph.py")
         if os.path.exists(page_path):
             with open(page_path, "r") as f:
                 content = f.read()

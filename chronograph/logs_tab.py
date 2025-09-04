@@ -18,12 +18,15 @@ def render_logs_tab(user, supabase):
         sessions = chrono_service.get_sessions_for_user(user["id"])
 
         if not sessions:
-            st.info("No chronograph logs found. Import some data files to get started!")
+            st.info(
+                "No chronograph logs found. Import some data files to get started!")
             return
 
-        # Get all chronograph sources for the user to create a lookup dictionary
+        # Get all chronograph sources for the user to create a lookup
+        # dictionary
         sources = chrono_service.get_sources_for_user(user["id"])
-        source_lookup = {source.id: source.display_name() for source in sources}
+        source_lookup = {source.id: source.display_name()
+                         for source in sources}
 
         # Extract all unique session names and source names for dropdowns
         all_session_names = set()
@@ -32,9 +35,10 @@ def render_logs_tab(user, supabase):
             session_name = session.session_name
             if session_name:
                 all_session_names.add(session_name)
-            
+
             # Get chronograph source name from lookup
-            source_name = source_lookup.get(session.chronograph_source_id, "Unknown Source")
+            source_name = source_lookup.get(
+                session.chronograph_source_id, "Unknown Source")
             all_source_names.add(source_name)
 
         # Search controls
@@ -43,7 +47,8 @@ def render_logs_tab(user, supabase):
 
         with col1:
             # Session name dropdown filter
-            session_options = ["All Sessions"] + sorted(list(all_session_names))
+            session_options = ["All Sessions"] + \
+                sorted(list(all_session_names))
             selected_session = st.selectbox(
                 "Filter by Session Name:",
                 options=session_options,
@@ -85,10 +90,9 @@ def render_logs_tab(user, supabase):
         # Filter by chronograph source
         if selected_source != "All Sources":
             filtered_sessions = [
-                session
-                for session in filtered_sessions
-                if source_lookup.get(session.chronograph_source_id, "Unknown Source") == selected_source
-            ]
+                session for session in filtered_sessions if source_lookup.get(
+                    session.chronograph_source_id,
+                    "Unknown Source") == selected_source]
 
         # Filter by date range
         if date_range:
@@ -109,7 +113,8 @@ def render_logs_tab(user, supabase):
 
         # Show filtered count
         if len(filtered_sessions) != len(sessions):
-            st.info(f" Showing {len(filtered_sessions)} of {len(sessions)} sessions")
+            st.info(
+                f" Showing {len(filtered_sessions)} of {len(sessions)} sessions")
         else:
             st.subheader(f"Chronograph Sessions ({len(sessions)})")
 
@@ -126,7 +131,8 @@ def render_logs_tab(user, supabase):
             speed_units = session.muzzle_vel_speed_units()
             table_data.append(
                 {
-                    "Select": False,  # Radio button column (only one can be True)
+                    # Radio button column (only one can be True)
+                    "Select": False,
                     "Date": session.datetime_local.strftime("%Y-%m-%d %H:%M"),
                     "Session Name": session.session_name,
                     "Shots": session.shot_count if session.shot_count else 0,
@@ -182,7 +188,8 @@ def render_logs_tab(user, supabase):
 
         # Store selected sessions in session state
         if selected_indices:
-            selected_sessions = [filtered_sessions[i] for i in selected_indices]
+            selected_sessions = [filtered_sessions[i]
+                                 for i in selected_indices]
             st.session_state["selected_session_ids"] = [
                 session.id for session in selected_sessions
             ]
@@ -202,8 +209,7 @@ def render_logs_tab(user, supabase):
                 session = filtered_sessions[idx]
                 try:
                     measurements = chrono_service.get_measurements_by_session_id(
-                        session.id, user["id"]
-                    )
+                        session.id, user["id"])
                     for measurement in measurements:
                         all_measurements.append(
                             {
@@ -262,7 +268,10 @@ def render_logs_tab(user, supabase):
             if all_measurements:
                 # Display measurements table
                 measurements_df = pd.DataFrame(all_measurements)
-                st.dataframe(measurements_df, use_container_width=True, hide_index=True)
+                st.dataframe(
+                    measurements_df,
+                    use_container_width=True,
+                    hide_index=True)
 
                 # Show summary stats
                 if len(all_measurements) > 0:
@@ -287,9 +296,8 @@ def render_logs_tab(user, supabase):
                         avg_speed = sum(speeds) / len(speeds)
 
                         # Calculate standard deviation
-                        variance = sum((x - avg_speed) ** 2 for x in speeds) / len(
-                            speeds
-                        )
+                        variance = sum(
+                            (x - avg_speed) ** 2 for x in speeds) / len(speeds)
                         std_dev = variance**0.5
 
                         # Calculate spread (max - min)
@@ -318,7 +326,8 @@ def render_logs_tab(user, supabase):
                             st.metric("Spread", f"{spread:.1f} fps")
                         with col6:
                             if avg_power_factor is not None:
-                                st.metric("Avg Power Factor", f"{avg_power_factor:.1f}")
+                                st.metric(
+                                    "Avg Power Factor", f"{avg_power_factor:.1f}")
                             else:
                                 st.metric("Avg Power Factor", "N/A")
 
@@ -330,7 +339,8 @@ def render_logs_tab(user, supabase):
                         fig, ax = plt.subplots(figsize=(10, 6))
 
                         # Create histogram
-                        n_bins = min(20, len(speeds) // 2) if len(speeds) > 10 else 10
+                        n_bins = min(
+                            20, len(speeds) // 2) if len(speeds) > 10 else 10
                         counts, bins, patches = ax.hist(
                             speeds,
                             bins=n_bins,
@@ -366,8 +376,9 @@ def render_logs_tab(user, supabase):
                         ax.set_xlabel("Velocity (fps)", fontsize=12)
                         ax.set_ylabel("Frequency", fontsize=12)
                         ax.set_title(
-                            "Shot Velocity Distribution", fontsize=14, fontweight="bold"
-                        )
+                            "Shot Velocity Distribution",
+                            fontsize=14,
+                            fontweight="bold")
                         ax.grid(True, alpha=0.3)
                         ax.legend()
 

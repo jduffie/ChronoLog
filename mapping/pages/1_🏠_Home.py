@@ -3,12 +3,14 @@ import sys
 
 import streamlit as st
 
+from auth import handle_auth
+
 # Add the root directory to the path so we can import our modules
 sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
-
-from auth import handle_auth
+    os.path.dirname(
+        os.path.dirname(
+            os.path.dirname(
+                os.path.abspath(__file__)))))
 
 
 def run():
@@ -34,7 +36,8 @@ def run():
 
     # Display landing page content
     st.title("Welcome to ChronoLog Mapping")
-    st.subheader("Precision range data for ballistic calculations and range discovery")
+    st.subheader(
+        "Precision range data for ballistic calculations and range discovery")
 
     # Key benefits
     st.markdown("---")
@@ -81,7 +84,7 @@ def run():
     st.markdown(
         """
     ## How It Works
-    
+
     1. **Submit Range Data**: Select starting and ending points on the interactive map
     2. **GIS Processing**: System automatically computes:
        - Precise three-dimensional distance measurements
@@ -90,7 +93,7 @@ def run():
        - Addresses
     3. **Admin Review**: Submitted ranges undergo approval before being added to the library
     4. **Community Access**: Approved ranges become available for ballistic calculations and range discovery
-    
+
     Use the navigation menu on the left to access different sections of the application.
     """
     )

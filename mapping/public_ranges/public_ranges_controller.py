@@ -1,19 +1,20 @@
 import os
 import sys
+from typing import Any, Dict
 
 import streamlit as st
-
-# Add the parent directory to the path so we can import shared modules
-sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
-
-from typing import Any, Dict
 
 from mapping.session_state_manager import SessionStateManager
 
 from .public_ranges_model import PublicRangesModel
 from .public_ranges_view import PublicRangesView
+
+# Add the parent directory to the path so we can import shared modules
+sys.path.append(
+    os.path.dirname(
+        os.path.dirname(
+            os.path.dirname(
+                os.path.abspath(__file__)))))
 
 
 class PublicRangesController:

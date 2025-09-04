@@ -7,13 +7,13 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pandas as pd
 
-# Add the root directory to the path so we can import our modules
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from rifles.create_tab import render_create_rifle_tab
 from rifles.models import Rifle
 from rifles.service import RifleService
 from rifles.view_tab import render_view_rifle_tab
+
+# Add the root directory to the path so we can import our modules
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 class TestRiflesCreateTab(unittest.TestCase):
@@ -39,11 +39,15 @@ class TestRiflesCreateTab(unittest.TestCase):
         mock_markdown,
         mock_get_cartridge_types,
     ):
-        user = {"id": "test-user-id", "email": "test@example.com", "name": "Test User"}
+        user = {
+            "id": "test-user-id",
+            "email": "test@example.com",
+            "name": "Test User"}
         mock_supabase = Mock()
 
         # Mock get_cartridge_types to return available cartridge types
-        mock_get_cartridge_types.return_value = [".308 Winchester", "6.5 Creedmoor", ".223 Remington"]
+        mock_get_cartridge_types.return_value = [
+            ".308 Winchester", "6.5 Creedmoor", ".223 Remington"]
 
         # Mock form context manager
         mock_form_ctx = Mock()
@@ -104,18 +108,21 @@ class TestRiflesCreateTab(unittest.TestCase):
         mock_rerun,
         mock_get_cartridge_types,
     ):
-        user = {"id": "test-user-id", "email": "test@example.com", "name": "Test User"}
+        user = {
+            "id": "test-user-id",
+            "email": "test@example.com",
+            "name": "Test User"}
         mock_supabase = Mock()
 
         # Mock get_cartridge_types to return available cartridge types
-        mock_get_cartridge_types.return_value = [".308 Winchester", "6.5 Creedmoor", ".223 Remington"]
+        mock_get_cartridge_types.return_value = [
+            ".308 Winchester", "6.5 Creedmoor", ".223 Remington"]
 
         # Mock successful database insertion
         mock_response = Mock()
         mock_response.data = [{"id": "new-rifle-id"}]
         mock_supabase.table.return_value.insert.return_value.execute.return_value = (
-            mock_response
-        )
+            mock_response)
 
         # Mock form context manager
         mock_form_ctx = Mock()
@@ -155,15 +162,17 @@ class TestRiflesViewTab(unittest.TestCase):
     @patch("streamlit.subheader")
     @patch("streamlit.info")
     def test_render_view_rifle_tab_no_rifles(self, mock_info, mock_subheader):
-        user = {"id": "test-user-id", "email": "test@example.com", "name": "Test User"}
+        user = {
+            "id": "test-user-id",
+            "email": "test@example.com",
+            "name": "Test User"}
         mock_supabase = Mock()
 
         # Mock empty rifles list
         mock_response = Mock()
         mock_response.data = []
         mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = (
-            mock_response
-        )
+            mock_response)
 
         result = render_view_rifle_tab(user, mock_supabase)
 
@@ -200,7 +209,10 @@ class TestRiflesViewTab(unittest.TestCase):
         mock_column_config,
         mock_to_datetime,
     ):
-        user = {"id": "test-user-id", "email": "test@example.com", "name": "Test User"}
+        user = {
+            "id": "test-user-id",
+            "email": "test@example.com",
+            "name": "Test User"}
         mock_supabase = Mock()
 
         # Mock rifle data with all required fields
@@ -222,8 +234,7 @@ class TestRiflesViewTab(unittest.TestCase):
         mock_response = Mock()
         mock_response.data = mock_data
         mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = (
-            mock_response
-        )
+            mock_response)
 
         # Mock Streamlit widgets
         mock_col = Mock()
@@ -249,7 +260,8 @@ class TestRiflesViewTab(unittest.TestCase):
 
         result = render_view_rifle_tab(user, mock_supabase)
 
-        # Function should complete without error (dataframe may or may not be called due to complex logic)
+        # Function should complete without error (dataframe may or may not be
+        # called due to complex logic)
         self.assertIsNone(result)
 
 
@@ -266,8 +278,10 @@ class TestRiflesPageStructure(unittest.TestCase):
     def test_rifles_page_has_required_imports(self):
         """Test that rifles page has required imports"""
         page_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "pages", "6_📏_Rifles.py"
-        )
+            os.path.dirname(
+                os.path.dirname(__file__)),
+            "pages",
+            "6_📏_Rifles.py")
         if os.path.exists(page_path):
             with open(page_path, "r") as f:
                 content = f.read()
@@ -288,21 +302,28 @@ class TestRiflesPageStructure(unittest.TestCase):
     def test_rifles_page_has_correct_tabs(self):
         """Test that rifles page has expected tabs"""
         page_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "pages", "6_📏_Rifles.py"
-        )
+            os.path.dirname(
+                os.path.dirname(__file__)),
+            "pages",
+            "6_📏_Rifles.py")
         if os.path.exists(page_path):
             with open(page_path, "r") as f:
                 content = f.read()
 
             expected_tabs = ["Create", "View"]
             for tab in expected_tabs:
-                self.assertIn(f'"{tab}"', content, f"Rifles page should have {tab} tab")
+                self.assertIn(
+                    f'"{tab}"',
+                    content,
+                    f"Rifles page should have {tab} tab")
 
     def test_rifles_page_configuration(self):
         """Test rifles page configuration"""
         page_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "pages", "6_📏_Rifles.py"
-        )
+            os.path.dirname(
+                os.path.dirname(__file__)),
+            "pages",
+            "6_📏_Rifles.py")
         if os.path.exists(page_path):
             with open(page_path, "r") as f:
                 content = f.read()
@@ -314,8 +335,10 @@ class TestRiflesPageStructure(unittest.TestCase):
     def test_rifles_page_title(self):
         """Test rifles page displays correct title"""
         page_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "pages", "6_📏_Rifles.py"
-        )
+            os.path.dirname(
+                os.path.dirname(__file__)),
+            "pages",
+            "6_📏_Rifles.py")
         if os.path.exists(page_path):
             with open(page_path, "r") as f:
                 content = f.read()
@@ -520,7 +543,9 @@ class TestRifleModel(unittest.TestCase):
         rifle = Rifle.from_supabase_record(self.sample_record)
         optics_display = rifle.optics_display()
 
-        self.assertEqual(optics_display, "Scope: Leupold Mark 4 - Offset: 1.5 inches")
+        self.assertEqual(
+            optics_display,
+            "Scope: Leupold Mark 4 - Offset: 1.5 inches")
 
     def test_optics_display_scope_only(self):
         """Test optics display with scope only"""
@@ -607,7 +632,8 @@ class TestRifleService(unittest.TestCase):
 
     def test_get_rifles_for_user_exception(self):
         """Test exception handling in get_rifles_for_user"""
-        self.mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.side_effect = Exception("Database error")
+        self.mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.side_effect = Exception(
+            "Database error")
 
         with self.assertRaises(Exception) as context:
             self.service.get_rifles_for_user(self.user_id)
@@ -651,7 +677,8 @@ class TestRifleService(unittest.TestCase):
 
     def test_get_rifle_by_name_exception(self):
         """Test exception handling in get_rifle_by_name"""
-        self.mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.single.return_value.execute.side_effect = Exception("Database error")
+        self.mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.single.return_value.execute.side_effect = Exception(
+            "Database error")
 
         rifle = self.service.get_rifle_by_name(self.user_id, "Test Rifle")
 
@@ -676,7 +703,8 @@ class TestRifleService(unittest.TestCase):
         mock_query = self.mock_supabase.table.return_value.select.return_value.eq.return_value
         mock_query.eq.return_value.order.return_value.execute.return_value = mock_response
 
-        rifles = self.service.get_rifles_filtered(self.user_id, cartridge_type=".308 Winchester")
+        rifles = self.service.get_rifles_filtered(
+            self.user_id, cartridge_type=".308 Winchester")
 
         self.assertEqual(len(rifles), 1)
 
@@ -751,13 +779,15 @@ class TestRifleService(unittest.TestCase):
             "updated_at": "2023-12-02T10:00:00"
         }
 
-        self.mock_supabase.table.return_value.update.assert_called_with(expected_updates)
+        self.mock_supabase.table.return_value.update.assert_called_with(
+            expected_updates)
 
     def test_delete_rifle(self):
         """Test rifle deletion"""
         self.service.delete_rifle("rifle-123", self.user_id)
 
-        self.mock_supabase.table.return_value.delete.return_value.eq.return_value.eq.assert_called_with("user_id", self.user_id)
+        self.mock_supabase.table.return_value.delete.return_value.eq.return_value.eq.assert_called_with(
+            "user_id", self.user_id)
 
     def test_save_rifle_complete(self):
         """Test saving complete rifle entity"""
@@ -890,7 +920,8 @@ class TestRifleEdgeCases(unittest.TestCase):
 
         # Mock for methods that use order() (like get_rifles_for_user)
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = mock_response
-        # Mock for methods that don't use order() (like get_unique_cartridge_types and get_unique_twist_ratios)
+        # Mock for methods that don't use order() (like
+        # get_unique_cartridge_types and get_unique_twist_ratios)
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.execute.return_value = mock_response
 
         rifles = self.service.get_rifles_for_user(self.user_id)
@@ -941,7 +972,8 @@ class TestRifleEdgeCases(unittest.TestCase):
 
     def test_service_exception_propagation(self):
         """Test that service exceptions are properly propagated"""
-        self.mock_supabase.table.return_value.select.side_effect = Exception("Connection error")
+        self.mock_supabase.table.return_value.select.side_effect = Exception(
+            "Connection error")
 
         with self.assertRaises(Exception) as context:
             self.service.get_rifles_for_user(self.user_id)
@@ -971,18 +1003,20 @@ class TestRifleModelAdvanced(unittest.TestCase):
     def test_rifle_display_methods_comprehensive(self):
         """Test all rifle display methods with various data combinations"""
         rifle = Rifle.from_supabase_record(self.complete_record)
-        
+
         # Test display_name
-        self.assertEqual(rifle.display_name(), "Advanced Test Rifle (6.5 Creedmoor)")
-        
+        self.assertEqual(
+            rifle.display_name(),
+            "Advanced Test Rifle (6.5 Creedmoor)")
+
         # Test barrel_display
         expected_barrel = "26 inches - Twist: 1:8"
         self.assertEqual(rifle.barrel_display(), expected_barrel)
-        
+
         # Test optics_display
         expected_optics = "Scope: Nightforce NX8 2.5-20x50 - Offset: 2.0 inches"
         self.assertEqual(rifle.optics_display(), expected_optics)
-        
+
         # Test trigger_display
         self.assertEqual(rifle.trigger_display(), "Geissele SSA-E 3.5lb")
 
@@ -993,18 +1027,20 @@ class TestRifleModelAdvanced(unittest.TestCase):
         partial_record["barrel_twist_ratio"] = None
         rifle = Rifle.from_supabase_record(partial_record)
         self.assertEqual(rifle.barrel_display(), "26 inches")
-        
+
         # Test with only twist ratio, no length
         partial_record = self.complete_record.copy()
         partial_record["barrel_length"] = None
         rifle = Rifle.from_supabase_record(partial_record)
         self.assertEqual(rifle.barrel_display(), "Twist: 1:8")
-        
+
         # Test with only scope, no offset
         partial_record = self.complete_record.copy()
         partial_record["sight_offset"] = None
         rifle = Rifle.from_supabase_record(partial_record)
-        self.assertEqual(rifle.optics_display(), "Scope: Nightforce NX8 2.5-20x50")
+        self.assertEqual(
+            rifle.optics_display(),
+            "Scope: Nightforce NX8 2.5-20x50")
 
     def test_rifle_creation_edge_cases(self):
         """Test rifle creation with edge cases"""
@@ -1020,10 +1056,11 @@ class TestRifleModelAdvanced(unittest.TestCase):
             "trigger": "  Timney  ",
             "scope": "  Leupold  "
         }
-        
+
         rifle = Rifle.from_supabase_record(whitespace_record)
-        
-        # Fields should be preserved as-is (trimming would be done at input validation level)
+
+        # Fields should be preserved as-is (trimming would be done at input
+        # validation level)
         self.assertEqual(rifle.name, "  Test Rifle  ")
         self.assertEqual(rifle.cartridge_type, "  .308 Winchester  ")
 
@@ -1036,9 +1073,9 @@ class TestRifleModelAdvanced(unittest.TestCase):
             record["name"] = f"Bulk Test Rifle {i}"
             record["cartridge_type"] = f"Test Cartridge {i}"
             records.append(record)
-        
+
         rifles = Rifle.from_supabase_records(records)
-        
+
         self.assertEqual(len(rifles), 10)
         for i, rifle in enumerate(rifles):
             self.assertEqual(rifle.id, f"rifle-bulk-{i}")
@@ -1050,18 +1087,18 @@ class TestRifleModelAdvanced(unittest.TestCase):
         # Test with ISO datetime strings
         iso_record = self.complete_record.copy()
         rifle = Rifle.from_supabase_record(iso_record)
-        
+
         self.assertIsNotNone(rifle.created_at)
         self.assertIsNotNone(rifle.updated_at)
         self.assertIsInstance(rifle.created_at, pd.Timestamp)
         self.assertIsInstance(rifle.updated_at, pd.Timestamp)
-        
+
         # Test with None datetime values
         none_record = self.complete_record.copy()
         none_record["created_at"] = None
         none_record["updated_at"] = None
         rifle = Rifle.from_supabase_record(none_record)
-        
+
         self.assertIsNone(rifle.created_at)
         self.assertIsNone(rifle.updated_at)
 
@@ -1069,19 +1106,19 @@ class TestRifleModelAdvanced(unittest.TestCase):
         """Test different cartridge type formats"""
         cartridge_variations = [
             ".308 Winchester",
-            "6.5 Creedmoor", 
+            "6.5 Creedmoor",
             ".223 Remington",
             ".22-250 Rem",
             ".300 Win Mag",
             "7mm Rem Mag",
             ".338 Lapua Mag"
         ]
-        
+
         for cartridge in cartridge_variations:
             record = self.complete_record.copy()
             record["cartridge_type"] = cartridge
             rifle = Rifle.from_supabase_record(record)
-            
+
             self.assertEqual(rifle.cartridge_type, cartridge)
             self.assertIn(cartridge, rifle.display_name())
 
@@ -1106,13 +1143,13 @@ class TestRifleServiceAdvanced(unittest.TestCase):
             "trigger": "Geissele SSA-E 2.5lb",
             "scope": "Nightforce ATACR 7-35x56"
         }
-        
+
         mock_response = Mock()
         mock_response.data = [{"id": "rifle-precision-001"}]
         self.mock_supabase.table.return_value.insert.return_value.execute.return_value = mock_response
-        
+
         rifle_id = self.service.create_rifle(advanced_rifle_data)
-        
+
         self.assertEqual(rifle_id, "rifle-precision-001")
         self.mock_supabase.table.assert_called_with("rifles")
 
@@ -1128,20 +1165,20 @@ class TestRifleServiceAdvanced(unittest.TestCase):
                 "created_at": "2023-12-01T10:00:00"
             }
         ]
-        
+
         mock_response = Mock()
         mock_response.data = rifle_data
-        
+
         # Mock the filtering query chain
         mock_query = self.mock_supabase.table.return_value.select.return_value.eq.return_value
         mock_query.eq.return_value.eq.return_value.order.return_value.execute.return_value = mock_response
-        
+
         filtered_rifles = self.service.get_rifles_filtered(
             self.test_user_id,
             cartridge_type="6.5 Creedmoor",
             twist_ratio="1:8"
         )
-        
+
         self.assertEqual(len(filtered_rifles), 1)
         self.assertEqual(filtered_rifles[0].cartridge_type, "6.5 Creedmoor")
         self.assertEqual(filtered_rifles[0].barrel_twist_ratio, "1:8")
@@ -1154,16 +1191,18 @@ class TestRifleServiceAdvanced(unittest.TestCase):
             "scope": "Updated Scope",
             "trigger": "Updated Trigger"
         }
-        
+
         with patch('rifles.service.datetime') as mock_datetime:
             mock_datetime.now.return_value.isoformat.return_value = "2023-12-02T15:30:00"
-            
-            self.service.update_rifle("rifle-update-test", self.test_user_id, updates)
-            
+
+            self.service.update_rifle(
+                "rifle-update-test", self.test_user_id, updates)
+
             expected_updates = updates.copy()
             expected_updates["updated_at"] = "2023-12-02T15:30:00"
-            
-            self.mock_supabase.table.return_value.update.assert_called_with(expected_updates)
+
+            self.mock_supabase.table.return_value.update.assert_called_with(
+                expected_updates)
 
     def test_service_error_handling_comprehensive(self):
         """Test comprehensive error handling scenarios"""
@@ -1171,14 +1210,15 @@ class TestRifleServiceAdvanced(unittest.TestCase):
         mock_response = Mock()
         mock_response.data = None
         self.mock_supabase.table.return_value.insert.return_value.execute.return_value = mock_response
-        
+
         with self.assertRaises(Exception) as context:
             self.service.create_rifle({"name": "Test Rifle"})
         self.assertIn("Failed to create rifle", str(context.exception))
-        
+
         # Test database connection error
-        self.mock_supabase.table.side_effect = Exception("Database connection failed")
-        
+        self.mock_supabase.table.side_effect = Exception(
+            "Database connection failed")
+
         with self.assertRaises(Exception) as context:
             self.service.get_rifles_for_user(self.test_user_id)
         self.assertIn("Error fetching rifles", str(context.exception))
@@ -1198,13 +1238,13 @@ class TestRifleServiceAdvanced(unittest.TestCase):
                 "created_at": f"2023-12-{(i % 30) + 1:02d}T10:00:00"
             }
             bulk_rifles.append(rifle_data)
-        
+
         mock_response = Mock()
         mock_response.data = bulk_rifles
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = mock_response
-        
+
         rifles = self.service.get_rifles_for_user(self.test_user_id)
-        
+
         self.assertEqual(len(rifles), 50)
         self.assertEqual(rifles[0].name, "Bulk Rifle 0")
         self.assertEqual(rifles[49].name, "Bulk Rifle 49")
@@ -1221,14 +1261,16 @@ class TestRifleServiceAdvanced(unittest.TestCase):
             {"cartridge_type": None},  # None value
             {"cartridge_type": ""}  # Empty string
         ]
-        
+
         mock_response = Mock()
         mock_response.data = cartridge_data
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.execute.return_value = mock_response
-        
-        unique_types = self.service.get_unique_cartridge_types(self.test_user_id)
-        
-        # Should only include non-empty, non-None values, sorted and deduplicated
+
+        unique_types = self.service.get_unique_cartridge_types(
+            self.test_user_id)
+
+        # Should only include non-empty, non-None values, sorted and
+        # deduplicated
         expected_types = [".223 Remington", ".308 Winchester", "6.5 Creedmoor"]
         self.assertEqual(unique_types, expected_types)
 
@@ -1247,13 +1289,13 @@ class TestRifleServiceAdvanced(unittest.TestCase):
             created_at=datetime(2023, 12, 1, 10, 0, 0),
             updated_at=datetime(2023, 12, 1, 15, 30, 0)
         )
-        
+
         mock_response = Mock()
         mock_response.data = [{"id": "entity-save-test"}]
         self.mock_supabase.table.return_value.insert.return_value.execute.return_value = mock_response
-        
+
         result_id = self.service.save_rifle(rifle)
-        
+
         self.assertEqual(result_id, "entity-save-test")
 
 
@@ -1275,14 +1317,14 @@ class TestRifleIntegrationAdvanced(unittest.TestCase):
             "barrel_twist_ratio": "1:8",
             "barrel_length": "26 inches"
         }
-        
+
         mock_create_response = Mock()
         mock_create_response.data = [{"id": "lifecycle-rifle-001"}]
         self.mock_supabase.table.return_value.insert.return_value.execute.return_value = mock_create_response
-        
+
         rifle_id = self.service.create_rifle(create_data)
         self.assertEqual(rifle_id, "lifecycle-rifle-001")
-        
+
         # Step 2: Read rifle
         rifle_data = {
             "id": "lifecycle-rifle-001",
@@ -1293,25 +1335,26 @@ class TestRifleIntegrationAdvanced(unittest.TestCase):
             "barrel_length": "26 inches",
             "created_at": "2023-12-01T10:00:00"
         }
-        
+
         mock_read_response = Mock()
         mock_read_response.data = rifle_data
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.single.return_value.execute.return_value = mock_read_response
-        
-        retrieved_rifle = self.service.get_rifle_by_id(rifle_id, self.test_user_id)
+
+        retrieved_rifle = self.service.get_rifle_by_id(
+            rifle_id, self.test_user_id)
         self.assertIsNotNone(retrieved_rifle)
         self.assertEqual(retrieved_rifle.name, "Lifecycle Test Rifle")
-        
+
         # Step 3: Update rifle
         updates = {"name": "Updated Lifecycle Rifle", "scope": "New Scope"}
-        
+
         with patch('rifles.service.datetime') as mock_datetime:
             mock_datetime.now.return_value.isoformat.return_value = "2023-12-02T10:00:00"
             self.service.update_rifle(rifle_id, self.test_user_id, updates)
-        
+
         # Step 4: Delete rifle
         self.service.delete_rifle(rifle_id, self.test_user_id)
-        
+
         # Verify delete was called
         self.mock_supabase.table.return_value.delete.return_value.eq.return_value.eq.assert_called()
 
@@ -1328,7 +1371,7 @@ class TestRifleIntegrationAdvanced(unittest.TestCase):
                 "created_at": "2023-12-01T10:00:00"
             },
             {
-                "id": "filter-test-2", 
+                "id": "filter-test-2",
                 "user_id": self.test_user_id,
                 "name": "Hunting Rifle 1",
                 "cartridge_type": ".308 Winchester",
@@ -1346,20 +1389,20 @@ class TestRifleIntegrationAdvanced(unittest.TestCase):
                 "created_at": "2023-12-03T10:00:00"
             }
         ]
-        
+
         # Test cartridge type filtering
         creedmoor_rifles = [rifles_data[0], rifles_data[2]]
         mock_response_creedmoor = Mock()
         mock_response_creedmoor.data = creedmoor_rifles
-        
+
         mock_query = self.mock_supabase.table.return_value.select.return_value.eq.return_value
         mock_query.eq.return_value.order.return_value.execute.return_value = mock_response_creedmoor
-        
+
         filtered_rifles = self.service.get_rifles_filtered(
-            self.test_user_id, 
+            self.test_user_id,
             cartridge_type="6.5 Creedmoor"
         )
-        
+
         self.assertEqual(len(filtered_rifles), 2)
         for rifle in filtered_rifles:
             self.assertEqual(rifle.cartridge_type, "6.5 Creedmoor")
@@ -1379,45 +1422,49 @@ class TestRifleIntegrationAdvanced(unittest.TestCase):
             "scope": "Nightforce",
             "created_at": "2023-12-01T10:00:00"
         }
-        
+
         mock_response = Mock()
         mock_response.data = [rifle_data]
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = mock_response
-        
+
         rifles = self.service.get_rifles_for_user(self.test_user_id)
-        
+
         self.assertEqual(len(rifles), 1)
         rifle = rifles[0]
-        
+
         # Verify it's a proper Rifle model instance
         self.assertIsInstance(rifle, Rifle)
-        
+
         # Verify all model methods work
-        self.assertEqual(rifle.display_name(), "Model Integration Rifle (6.5 Creedmoor)")
+        self.assertEqual(rifle.display_name(),
+                         "Model Integration Rifle (6.5 Creedmoor)")
         self.assertEqual(rifle.barrel_display(), "26 inches - Twist: 1:8")
-        self.assertEqual(rifle.optics_display(), "Scope: Nightforce - Offset: 2.0 inches")
+        self.assertEqual(
+            rifle.optics_display(),
+            "Scope: Nightforce - Offset: 2.0 inches")
         self.assertEqual(rifle.trigger_display(), "Timney")
 
     def test_error_recovery_integration(self):
         """Test error recovery in integrated workflows"""
         # Test partial failure recovery
-        
+
         # First attempt should fail - setup the mock to raise an exception
-        self.mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.side_effect = Exception("Temporary connection error")
-        
+        self.mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.side_effect = Exception(
+            "Temporary connection error")
+
         # First attempt should fail
         with self.assertRaises(Exception) as context:
             self.service.get_rifles_for_user(self.test_user_id)
-        
+
         self.assertIn("Error fetching rifles", str(context.exception))
         self.assertIn("Temporary connection error", str(context.exception))
-        
+
         # Reset the mock for second attempt
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.side_effect = None
         mock_response = Mock()
         mock_response.data = []
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = mock_response
-        
+
         # Second attempt should succeed
         rifles = self.service.get_rifles_for_user(self.test_user_id)
         self.assertEqual(len(rifles), 0)
@@ -1426,7 +1473,7 @@ class TestRifleIntegrationAdvanced(unittest.TestCase):
         """Test simulation of concurrent operations"""
         # Simulate multiple users accessing rifles simultaneously
         user_ids = [f"concurrent-user-{i}" for i in range(5)]
-        
+
         for user_id in user_ids:
             rifles_data = [
                 {
@@ -1437,13 +1484,13 @@ class TestRifleIntegrationAdvanced(unittest.TestCase):
                     "created_at": "2023-12-01T10:00:00"
                 }
             ]
-            
+
             mock_response = Mock()
             mock_response.data = rifles_data
             self.mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = mock_response
-            
+
             rifles = self.service.get_rifles_for_user(user_id)
-            
+
             self.assertEqual(len(rifles), 1)
             self.assertEqual(rifles[0].user_id, user_id)
             self.assertIn(user_id, rifles[0].name)
@@ -1458,14 +1505,14 @@ class TestRifleIntegrationAdvanced(unittest.TestCase):
             "barrel_twist_ratio": "1:8",
             "barrel_length": "26 inches"
         }
-        
+
         # Mock creation
         mock_create_response = Mock()
         mock_create_response.data = [{"id": "consistency-test-001"}]
         self.mock_supabase.table.return_value.insert.return_value.execute.return_value = mock_create_response
-        
+
         rifle_id = self.service.create_rifle(rifle_data)
-        
+
         # Mock retrieval with same data plus generated fields
         full_rifle_data = rifle_data.copy()
         full_rifle_data.update({
@@ -1473,19 +1520,26 @@ class TestRifleIntegrationAdvanced(unittest.TestCase):
             "created_at": "2023-12-01T10:00:00",
             "updated_at": "2023-12-01T10:00:00"
         })
-        
+
         mock_get_response = Mock()
         mock_get_response.data = full_rifle_data
         self.mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.single.return_value.execute.return_value = mock_get_response
-        
-        retrieved_rifle = self.service.get_rifle_by_id(rifle_id, self.test_user_id)
-        
+
+        retrieved_rifle = self.service.get_rifle_by_id(
+            rifle_id, self.test_user_id)
+
         # Verify consistency
         self.assertEqual(retrieved_rifle.id, rifle_id)
         self.assertEqual(retrieved_rifle.name, rifle_data["name"])
-        self.assertEqual(retrieved_rifle.cartridge_type, rifle_data["cartridge_type"])
-        self.assertEqual(retrieved_rifle.barrel_twist_ratio, rifle_data["barrel_twist_ratio"])
-        self.assertEqual(retrieved_rifle.barrel_length, rifle_data["barrel_length"])
+        self.assertEqual(
+            retrieved_rifle.cartridge_type,
+            rifle_data["cartridge_type"])
+        self.assertEqual(
+            retrieved_rifle.barrel_twist_ratio,
+            rifle_data["barrel_twist_ratio"])
+        self.assertEqual(
+            retrieved_rifle.barrel_length,
+            rifle_data["barrel_length"])
 
 
 class TestRifleUIIntegration(unittest.TestCase):
@@ -1507,27 +1561,31 @@ class TestRifleUIIntegration(unittest.TestCase):
         mock_get_cartridge_types
     ):
         """Test create rifle tab with successful submission"""
-        user = {"id": "ui-test-user", "email": "test@example.com", "name": "UI Test User"}
+        user = {
+            "id": "ui-test-user",
+            "email": "test@example.com",
+            "name": "UI Test User"}
         mock_supabase = Mock()
-        
+
         # Mock successful database insertion
         mock_response = Mock()
         mock_response.data = [{"id": "ui-created-rifle-001"}]
         mock_supabase.table.return_value.insert.return_value.execute.return_value = mock_response
-        
+
         # Mock form context manager
         mock_form_ctx = Mock()
         mock_form.return_value.__enter__ = Mock(return_value=mock_form_ctx)
         mock_form.return_value.__exit__ = Mock(return_value=None)
-        
+
         # Mock columns
         mock_col = Mock()
         mock_col.__enter__ = Mock(return_value=mock_col)
         mock_col.__exit__ = Mock(return_value=None)
         mock_columns.return_value = [mock_col, mock_col]
-        
+
         # Mock form inputs
-        mock_get_cartridge_types.return_value = ["6.5 Creedmoor", ".308 Winchester"]
+        mock_get_cartridge_types.return_value = [
+            "6.5 Creedmoor", ".308 Winchester"]
         mock_text_input.side_effect = [
             "UI Integration Rifle",  # name
             "1:8",  # barrel_twist_ratio
@@ -1538,15 +1596,16 @@ class TestRifleUIIntegration(unittest.TestCase):
         ]
         mock_selectbox.return_value = "6.5 Creedmoor"
         mock_submit.return_value = True
-        
+
         result = render_create_rifle_tab(user, mock_supabase)
-        
+
         # Should show success message
         mock_success.assert_called()
-        
-        # Verify database insert was called (it will have additional generated fields)
+
+        # Verify database insert was called (it will have additional generated
+        # fields)
         mock_supabase.table.return_value.insert.assert_called_once()
-        
+
         # Get the actual call args and verify core fields
         actual_call = mock_supabase.table.return_value.insert.call_args[0][0]
         expected_fields = {
@@ -1559,7 +1618,7 @@ class TestRifleUIIntegration(unittest.TestCase):
             "trigger": "Timney SSA-E",
             "scope": "Nightforce ATACR"
         }
-        
+
         # Verify all expected fields are present
         for key, value in expected_fields.items():
             self.assertEqual(actual_call[key], value)
@@ -1576,9 +1635,12 @@ class TestRifleUIIntegration(unittest.TestCase):
         mock_metric, mock_dataframe, mock_to_datetime
     ):
         """Test view rifle tab with rifle data"""
-        user = {"id": "ui-view-user", "email": "view@example.com", "name": "View User"}
+        user = {
+            "id": "ui-view-user",
+            "email": "view@example.com",
+            "name": "View User"}
         mock_supabase = Mock()
-        
+
         # Mock rifle data
         rifle_data = [
             {
@@ -1595,29 +1657,29 @@ class TestRifleUIIntegration(unittest.TestCase):
                 "updated_at": "2023-12-01T15:30:00"
             }
         ]
-        
+
         mock_response = Mock()
         mock_response.data = rifle_data
         mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = mock_response
-        
+
         # Mock UI components
         mock_col = Mock()
         mock_col.__enter__ = Mock(return_value=mock_col)
         mock_col.__exit__ = Mock(return_value=None)
         mock_columns.return_value = [mock_col, mock_col, mock_col, mock_col]
-        
+
         mock_selectbox.side_effect = ["All", "All", "view-rifle-001"]
-        
+
         # Mock pandas datetime
         mock_datetime_obj = Mock()
         mock_datetime_obj.dt.strftime.return_value = ["2023-12-01 10:00"]
         mock_to_datetime.return_value = mock_datetime_obj
-        
+
         result = render_view_rifle_tab(user, mock_supabase)
-        
+
         # Should complete without error
         self.assertIsNone(result)
-        
+
         # Verify metrics were displayed
         mock_metric.assert_called()
 

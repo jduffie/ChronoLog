@@ -10,10 +10,10 @@ import unittest
 from unittest.mock import MagicMock, Mock, call, patch
 from urllib.parse import parse_qs, urlparse
 
+import auth
+
 # Add root directory to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-import auth
 
 
 class TestAuthConfiguration(unittest.TestCase):
@@ -165,8 +165,9 @@ class TestLoginButton(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures"""
         self.secrets_patcher = patch(
-            "auth.st.secrets", {"auth0": {"redirect_uri": "https://app.chronolog.com"}}
-        )
+            "auth.st.secrets", {
+                "auth0": {
+                    "redirect_uri": "https://app.chronolog.com"}})
         self.secrets_patcher.start()
 
     def tearDown(self):
@@ -197,9 +198,10 @@ class TestLoginButton(unittest.TestCase):
         # Check that HTML button was rendered
         markdown_calls = [call[0][0] for call in mock_markdown.call_args_list]
         html_calls = [
-            call for call in markdown_calls if "Sign in with Google" in str(call)
-        ]
-        self.assertTrue(len(html_calls) > 0, "Login button HTML should be rendered")
+            call for call in markdown_calls if "Sign in with Google" in str(call)]
+        self.assertTrue(
+            len(html_calls) > 0,
+            "Login button HTML should be rendered")
 
     @patch("auth.st.query_params", {})
     @patch("auth.st.columns")
@@ -237,8 +239,9 @@ class TestUserInfoRetrieval(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures"""
         self.secrets_patcher = patch(
-            "auth.st.secrets", {"auth0": {"redirect_uri": "https://app.chronolog.com"}}
-        )
+            "auth.st.secrets", {
+                "auth0": {
+                    "redirect_uri": "https://app.chronolog.com"}})
         self.secrets_patcher.start()
 
     def tearDown(self):
@@ -252,7 +255,8 @@ class TestUserInfoRetrieval(unittest.TestCase):
         """Test successful user info retrieval"""
         # Mock token exchange
         mock_token_response = Mock()
-        mock_token_response.json.return_value = {"access_token": "test-access-token"}
+        mock_token_response.json.return_value = {
+            "access_token": "test-access-token"}
         mock_post.return_value = mock_token_response
 
         # Mock user info retrieval
@@ -278,8 +282,8 @@ class TestUserInfoRetrieval(unittest.TestCase):
         userinfo_call = mock_get.call_args
         self.assertIn("Authorization", userinfo_call[1]["headers"])
         self.assertEqual(
-            userinfo_call[1]["headers"]["Authorization"], "Bearer test-access-token"
-        )
+            userinfo_call[1]["headers"]["Authorization"],
+            "Bearer test-access-token")
 
         # Verify result
         self.assertEqual(result["email"], "test@example.com")
@@ -302,7 +306,8 @@ class TestUserInfoRetrieval(unittest.TestCase):
 
         result = auth.get_user_info("invalid-code")
 
-        # Should return the userinfo error response (since that's what the function returns)
+        # Should return the userinfo error response (since that's what the
+        # function returns)
         self.assertEqual(result["error"], "unauthorized")
 
 
@@ -312,8 +317,9 @@ class TestAuthenticationFlow(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures"""
         self.secrets_patcher = patch(
-            "auth.st.secrets", {"auth0": {"redirect_uri": "https://app.chronolog.com"}}
-        )
+            "auth.st.secrets", {
+                "auth0": {
+                    "redirect_uri": "https://app.chronolog.com"}})
         self.secrets_patcher.start()
 
     def tearDown(self):
@@ -324,7 +330,10 @@ class TestAuthenticationFlow(unittest.TestCase):
     @patch("auth.st.query_params", {"code": "test-auth-code"})
     @patch("auth.get_user_info")
     @patch("auth.handle_user_profile")
-    def test_handle_auth_with_code(self, mock_handle_profile, mock_get_user_info):
+    def test_handle_auth_with_code(
+            self,
+            mock_handle_profile,
+            mock_get_user_info):
         """Test authentication handling with authorization code"""
         # Mock user info retrieval
         mock_user_info = {

@@ -6,7 +6,7 @@ from .service import BulletsService
 
 
 def render_view_bullets_tab(user, supabase):
-    
+
     # Clear any existing bullets session state when navigating to page
     if 'bullets' in st.session_state:
         del st.session_state.bullets
@@ -33,21 +33,23 @@ def render_view_bullets_tab(user, supabase):
             col1, col2, col3 = st.columns(3)
 
             with col1:
-                manufacturers = ["All"] + sorted(df["manufacturer"].unique().tolist())
+                manufacturers = ["All"] + \
+                    sorted(df["manufacturer"].unique().tolist())
                 selected_manufacturer = st.selectbox(
                     "Filter by Manufacturer:", manufacturers
                 )
 
             with col2:
-                calibers = ["All"] + sorted(df["bore_diameter_land_mm"].unique().tolist())
+                calibers = ["All"] + \
+                    sorted(df["bore_diameter_land_mm"].unique().tolist())
                 selected_bore_diameter_mm = st.selectbox(
                     "Filter by Bore Diameter (Caliber):", calibers
                 )
 
             with col3:
-                weights = ["All"] + sorted(df["weight_grains"].unique().tolist())
+                weights = ["All"] + \
+                    sorted(df["weight_grains"].unique().tolist())
                 selected_weight = st.selectbox("Filter by Weight:", weights)
-
 
         # Apply filters using service
         if (
@@ -70,14 +72,15 @@ def render_view_bullets_tab(user, supabase):
             )
 
         # Convert filtered results to DataFrame
-        filtered_bullet_dicts = [bullet.__dict__ for bullet in filtered_bullets]
-        filtered_df = (
-            pd.DataFrame(filtered_bullet_dicts) if filtered_bullets else pd.DataFrame()
-        )
+        filtered_bullet_dicts = [
+            bullet.__dict__ for bullet in filtered_bullets]
+        filtered_df = (pd.DataFrame(filtered_bullet_dicts)
+                       if filtered_bullets else pd.DataFrame())
 
         # Display filtered results count
         if len(filtered_bullets) != len(bullets):
-            st.info(f"Showing {len(filtered_bullets)} of {len(bullets)} entries")
+            st.info(
+                f"Showing {len(filtered_bullets)} of {len(bullets)} entries")
 
         if len(filtered_df) == 0:
             st.warning("No entries match the selected filters.")
@@ -88,24 +91,29 @@ def render_view_bullets_tab(user, supabase):
 
         # No date formatting needed since we removed created_at and updated_at
 
-        # Handle nullable fields by filling NaN values and converting to strings
+        # Handle nullable fields by filling NaN values and converting to
+        # strings
         display_df["weight_grains"] = display_df["weight_grains"].astype(str)
-        display_df["bullet_length_mm"] = display_df["bullet_length_mm"].fillna("N/A").astype(str)
+        display_df["bullet_length_mm"] = display_df["bullet_length_mm"].fillna(
+            "N/A").astype(str)
         display_df["ballistic_coefficient_g1"] = display_df[
             "ballistic_coefficient_g1"
         ].fillna("N/A").astype(str)
         display_df["ballistic_coefficient_g7"] = display_df[
             "ballistic_coefficient_g7"
         ].fillna("N/A").astype(str)
-        display_df["sectional_density"] = display_df["sectional_density"].fillna("N/A").astype(str)
+        display_df["sectional_density"] = display_df["sectional_density"].fillna(
+            "N/A").astype(str)
         display_df["min_req_twist_rate_in_per_rev"] = display_df[
             "min_req_twist_rate_in_per_rev"
         ].fillna("N/A").astype(str)
         display_df["pref_twist_rate_in_per_rev"] = display_df[
             "pref_twist_rate_in_per_rev"
         ].fillna("N/A").astype(str)
-        display_df["data_source_name"] = display_df["data_source_name"].fillna("N/A").astype(str)
-        display_df["data_source_url"] = display_df["data_source_url"].fillna("N/A").astype(str)
+        display_df["data_source_name"] = display_df["data_source_name"].fillna(
+            "N/A").astype(str)
+        display_df["data_source_url"] = display_df["data_source_url"].fillna(
+            "N/A").astype(str)
 
         # Select and rename columns for display
         display_df = display_df[
@@ -188,7 +196,8 @@ def render_view_bullets_tab(user, supabase):
         selected_bullet_data = None
         if selected_bullet_event["selection"]["rows"]:
             selected_row_index = selected_bullet_event["selection"]["rows"][0]
-            # Get the bullet data from the filtered_bullets using the display index
+            # Get the bullet data from the filtered_bullets using the display
+            # index
             selected_bullet_data = filtered_bullets[selected_row_index]
 
         # Show form/details when a bullet is selected
@@ -198,11 +207,11 @@ def render_view_bullets_tab(user, supabase):
                 user.get("user_metadata", {}).get("is_admin", False)
                 or user.get("email") == "johnduffie91@gmail.com"
             )
-            
+
             if is_admin:
                 # Admin sees edit form
                 st.markdown(f"**Edit: {selected_bullet_data.display_name}**")
-                
+
                 with st.form(f"edit_bullet_form_{selected_bullet_data.id}"):
                     col1, col2 = st.columns(2)
 
@@ -321,7 +330,7 @@ def render_view_bullets_tab(user, supabase):
                         )
 
                     col3, col4 = st.columns(2)
-                    
+
                     with col3:
                         pref_twist_rate_in_per_rev = st.number_input(
                             "Preferred Twist Rate (in/rev)",
@@ -361,9 +370,11 @@ def render_view_bullets_tab(user, supabase):
                     # Form buttons
                     col_save, col_cancel = st.columns([1, 1])
                     with col_save:
-                        submitted = st.form_submit_button("Save Changes", type="primary", use_container_width=True)
+                        submitted = st.form_submit_button(
+                            "Save Changes", type="primary", use_container_width=True)
                     with col_cancel:
-                        cancelled = st.form_submit_button("Cancel", use_container_width=True)
+                        cancelled = st.form_submit_button(
+                            "Cancel", use_container_width=True)
 
                     if cancelled:
                         st.rerun()
@@ -377,20 +388,20 @@ def render_view_bullets_tab(user, supabase):
                             or bullet_diameter_groove_mm == 0.0
                             or bore_diameter_land_mm == 0.0
                         ):
-                            st.error("Please fill in all required fields (marked with *)")
+                            st.error(
+                                "Please fill in all required fields (marked with *)")
                         else:
                             try:
                                 # Clean up text inputs
                                 manufacturer = manufacturer.strip()
                                 model = model.strip()
                                 data_source_name_cleaned = (
-                                    data_source_name.strip() if data_source_name else None
-                                )
+                                    data_source_name.strip() if data_source_name else None)
                                 data_source_url_cleaned = (
-                                    data_source_url.strip() if data_source_url else None
-                                )
+                                    data_source_url.strip() if data_source_url else None)
 
-                                # Convert zero values to None for optional fields
+                                # Convert zero values to None for optional
+                                # fields
                                 bullet_length_mm_value = bullet_length_mm if bullet_length_mm > 0 else None
                                 ballistic_coefficient_g1_value = ballistic_coefficient_g1 if ballistic_coefficient_g1 > 0 else None
                                 ballistic_coefficient_g7_value = ballistic_coefficient_g7 if ballistic_coefficient_g7 > 0 else None
@@ -398,7 +409,8 @@ def render_view_bullets_tab(user, supabase):
                                 min_req_twist_rate_value = min_req_twist_rate_in_per_rev if min_req_twist_rate_in_per_rev > 0 else None
                                 pref_twist_rate_value = pref_twist_rate_in_per_rev if pref_twist_rate_in_per_rev > 0 else None
 
-                                # Convert empty strings to None for data source fields
+                                # Convert empty strings to None for data source
+                                # fields
                                 data_source_name_value = data_source_name_cleaned if data_source_name_cleaned else None
                                 data_source_url_value = data_source_url_cleaned if data_source_url_cleaned else None
 
@@ -422,59 +434,79 @@ def render_view_bullets_tab(user, supabase):
                                 updated_bullet = bullets_service.update_bullet(
                                     selected_bullet_data.id, update_data
                                 )
-                                st.success(f"Successfully updated: {updated_bullet.display_name}")
+                                st.success(
+                                    f"Successfully updated: {updated_bullet.display_name}")
                                 st.rerun()
 
                             except Exception as e:
                                 st.error(f"Error updating bullet: {str(e)}")
             else:
                 # Non-admin sees read-only details
-                st.markdown(f"**Details: {selected_bullet_data.display_name}**")
-                
+                st.markdown(
+                    f"**Details: {selected_bullet_data.display_name}**")
+
                 col1, col2, col3 = st.columns(3)
 
                 with col1:
                     st.markdown("**Basic Information**")
-                    st.write(f"**Manufacturer:** {selected_bullet_data.manufacturer}")
+                    st.write(
+                        f"**Manufacturer:** {selected_bullet_data.manufacturer}")
                     st.write(f"**Model:** {selected_bullet_data.model}")
-                    st.write(f"**Weight:** {selected_bullet_data.weight_grains:1f} grains")
-                    st.write(f"**Bullet Diameter:** {selected_bullet_data.bullet_diameter_groove_mm:.3f} mm")
-                    st.write(f"**Bore Diameter:** {selected_bullet_data.bore_diameter_land_mm:.3f} mm")
+                    st.write(
+                        f"**Weight:** {selected_bullet_data.weight_grains:1f} grains")
+                    st.write(
+                        f"**Bullet Diameter:** {selected_bullet_data.bullet_diameter_groove_mm:.3f} mm")
+                    st.write(
+                        f"**Bore Diameter:** {selected_bullet_data.bore_diameter_land_mm:.3f} mm")
                     if selected_bullet_data.bullet_length_mm:
-                        st.write(f"**Length:** {selected_bullet_data.bullet_length_mm:.1f} mm")
+                        st.write(
+                            f"**Length:** {selected_bullet_data.bullet_length_mm:.1f} mm")
 
                 with col2:
                     st.markdown("**Ballistic Properties**")
                     if selected_bullet_data.ballistic_coefficient_g1:
-                        st.write(f"**BC G1:** {selected_bullet_data.ballistic_coefficient_g1:.3f}")
+                        st.write(
+                            f"**BC G1:** {selected_bullet_data.ballistic_coefficient_g1:.3f}")
                     else:
                         st.write("**BC G1:** N/A")
                     if selected_bullet_data.ballistic_coefficient_g7:
-                        st.write(f"**BC G7:** {selected_bullet_data.ballistic_coefficient_g7:.3f}")
+                        st.write(
+                            f"**BC G7:** {selected_bullet_data.ballistic_coefficient_g7:.3f}")
                     else:
                         st.write("**BC G7:** N/A")
                     if selected_bullet_data.sectional_density:
-                        st.write(f"**Sectional Density:** {selected_bullet_data.sectional_density:.3f}")
+                        st.write(
+                            f"**Sectional Density:** {selected_bullet_data.sectional_density:.3f}")
                     else:
                         st.write("**Sectional Density:** N/A")
 
                 with col3:
                     st.markdown("**Twist Rate Requirements**")
                     if selected_bullet_data.min_req_twist_rate_in_per_rev:
-                        st.write(f"**Min Required:** {selected_bullet_data.min_req_twist_rate_in_per_rev:.1f} in/rev")
+                        st.write(
+                            f"**Min Required:** {selected_bullet_data.min_req_twist_rate_in_per_rev:.1f} in/rev")
                     else:
                         st.write("**Min Required:** N/A")
                     if selected_bullet_data.pref_twist_rate_in_per_rev:
-                        st.write(f"**Preferred:** {selected_bullet_data.pref_twist_rate_in_per_rev:.1f} in/rev")
+                        st.write(
+                            f"**Preferred:** {selected_bullet_data.pref_twist_rate_in_per_rev:.1f} in/rev")
                     else:
                         st.write("**Preferred:** N/A")
                     if selected_bullet_data.data_source_name:
-                        st.write(f"**Data Source:** {selected_bullet_data.data_source_name}")
+                        st.write(
+                            f"**Data Source:** {selected_bullet_data.data_source_name}")
                     if selected_bullet_data.data_source_url:
-                        st.write(f"**Source URL:** [Link]({selected_bullet_data.data_source_url})")
-        
+                        st.write(
+                            f"**Source URL:** [Link]({selected_bullet_data.data_source_url})")
+
         else:
-            st.info("Click on a bullet in the table above to view details" + (" or edit (admins)" if user.get("user_metadata", {}).get("is_admin", False) or user.get("email") == "johnduffie91@gmail.com" else ""))
+            st.info(
+                "Click on a bullet in the table above to view details" + (
+                    " or edit (admins)" if user.get(
+                        "user_metadata",
+                        {}).get(
+                        "is_admin",
+                        False) or user.get("email") == "johnduffie91@gmail.com" else ""))
 
     except Exception as e:
         st.error(f"Error loading bullets entries: {str(e)}")

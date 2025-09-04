@@ -13,22 +13,24 @@ from typing import Any, Dict, List, Optional
 import pandas as pd
 import streamlit as st
 
+from dope.models import DopeSessionModel
+from dope.service import DopeService
 from supabase import create_client
 
 # Add the root directory to the path so we can import our modules
 sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
-
-from dope.models import DopeSessionModel
-from dope.service import DopeService
+    os.path.dirname(
+        os.path.dirname(
+            os.path.dirname(
+                os.path.abspath(__file__)))))
 
 
 def render_view_page():
     """Render the comprehensive DOPE view page with filtering and session management"""
     # Check authentication - with fallback for testing
     if "user" not in st.session_state or not st.session_state.user:
-        st.warning("No user authentication found - using test user for development")
+        st.warning(
+            "No user authentication found - using test user for development")
         # Create a mock user for testing
         st.session_state.user = {
             "id": "google-oauth2|111273793361054745867",
@@ -40,7 +42,8 @@ def render_view_page():
     user_id = st.session_state.user.get("id")
     if not user_id:
         # Try alternative ways to get user ID
-        user_id = st.session_state.user.get("sub")  # Auth0 sometimes uses 'sub' field
+        # Auth0 sometimes uses 'sub' field
+        user_id = st.session_state.user.get("sub")
         if not user_id:
             user_id = st.session_state.user.get("user_id")
         if not user_id:
@@ -173,8 +176,10 @@ def render_main_page_filters(service: DopeService, user_id: str):
         # Get unique values for filters
         try:
             rifle_names = service.get_unique_values(user_id, "rifle_name")
-            cartridge_types = service.get_unique_values(user_id, "cartridge_type")
-            cartridge_makes = service.get_unique_values(user_id, "cartridge_make")
+            cartridge_types = service.get_unique_values(
+                user_id, "cartridge_type")
+            cartridge_makes = service.get_unique_values(
+                user_id, "cartridge_make")
             bullet_makes = service.get_unique_values(user_id, "bullet_make")
             range_names = service.get_unique_values(user_id, "range_name")
         except Exception:
@@ -679,7 +684,9 @@ def render_session_info_tab(session: DopeSessionModel):
     col1, col2 = st.columns(2)
 
     with col1:
-        st.write("**Session Name:**", session.session_name or "Unnamed Session")
+        st.write(
+            "**Session Name:**",
+            session.session_name or "Unnamed Session")
         st.write("**Status:**", session.status or "Unknown")
         st.write(
             "**Created:**",
@@ -698,12 +705,13 @@ def render_session_info_tab(session: DopeSessionModel):
     with col2:
         st.write("**Session ID:**", session.id or "Unknown")
         st.write("**Cartridge ID:**", session.cartridge_id or "Unknown")
-        st.write("**Chrono Session ID:**", session.chrono_session_id or "Not linked")
+        st.write("**Chrono Session ID:**",
+                 session.chrono_session_id or "Not linked")
 
         if session.start_lat and session.start_lon:
             st.write(
-                "**Position:**", f"{session.start_lat:.6f}, {session.start_lon:.6f}"
-            )
+                "**Position:**",
+                f"{session.start_lat:.6f}, {session.start_lon:.6f}")
         if session.azimuth_deg:
             st.write("**Azimuth:**", f"{session.azimuth_deg}°")
 
@@ -753,7 +761,9 @@ def render_cartridge_info_tab(session: DopeSessionModel):
         st.write("**Make:**", session.cartridge_make or "Unknown")
         st.write("**Model:**", session.cartridge_model or "Unknown")
         st.write("**Type:**", session.cartridge_type or "Unknown")
-        st.write("**Lot Number:**", session.cartridge_lot_number or "Not specified")
+        st.write(
+            "**Lot Number:**",
+            session.cartridge_lot_number or "Not specified")
 
     with col2:
         st.write("**Display:**", session.cartridge_display)
@@ -778,7 +788,8 @@ def render_bullet_info_tab(session: DopeSessionModel):
 
     with col2:
         st.write("**BC G7:**", session.ballistic_coefficient_g7 or "Unknown")
-        st.write("**Sectional Density:**", session.sectional_density or "Unknown")
+        st.write("**Sectional Density:**",
+                 session.sectional_density or "Unknown")
         st.write(
             "**Diameter (Groove):**",
             (
@@ -853,7 +864,9 @@ def render_weather_info_tab(session: DopeSessionModel):
                 else "Unknown"
             ),
         )
-        st.write("**Weather Source:**", session.weather_source_name or "Unknown")
+        st.write(
+            "**Weather Source:**",
+            session.weather_source_name or "Unknown")
         st.write("**Summary:**", session.weather_summary)
 
 
@@ -898,47 +911,55 @@ def render_shots_tab(session: DopeSessionModel):
         key = st.secrets["supabase"]["key"]
         supabase = create_client(url, key)
         service = DopeService(supabase)
-        
+
         # Get measurements for this DOPE session
-        measurements = service.get_measurements_for_dope_session(session.id, session.user_id)
-        
+        measurements = service.get_measurements_for_dope_session(
+            session.id, session.user_id)
+
         if not measurements:
             st.info("📊 No shot measurements found for this session.")
             if session.chrono_session_id:
-                st.write(f"**Linked Chronograph Session:** {session.chrono_session_id}")
-                st.info("Measurements may be available in the linked chronograph session but not yet copied to DOPE measurements.")
+                st.write(
+                    f"**Linked Chronograph Session:** {session.chrono_session_id}")
+                st.info(
+                    "Measurements may be available in the linked chronograph session but not yet copied to DOPE measurements.")
             return
-        
+
         # Display shot count and summary
         shot_count = len(measurements)
         col1, col2, col3, col4 = st.columns(4)
-        
+
         with col1:
             st.metric("Total Shots", shot_count)
-            
+
         with col2:
             # Calculate average velocity if available
-            velocities = [m.get('speed_fps') for m in measurements if m.get('speed_fps')]
-            avg_velocity = sum(velocities) / len(velocities) if velocities else 0
-            st.metric("Avg Velocity", f"{avg_velocity:.1f} fps" if avg_velocity else "N/A")
-            
+            velocities = [m.get('speed_fps')
+                          for m in measurements if m.get('speed_fps')]
+            avg_velocity = sum(velocities) / \
+                len(velocities) if velocities else 0
+            st.metric(
+                "Avg Velocity",
+                f"{avg_velocity:.1f} fps" if avg_velocity else "N/A")
+
         with col3:
             # Calculate standard deviation if we have velocities
             if len(velocities) > 1:
                 mean = avg_velocity
-                variance = sum((v - mean) ** 2 for v in velocities) / len(velocities)
+                variance = sum(
+                    (v - mean) ** 2 for v in velocities) / len(velocities)
                 std_dev = variance ** 0.5
                 st.metric("Std Dev", f"{std_dev:.1f} fps")
             else:
                 st.metric("Std Dev", "N/A")
-                
+
         with col4:
             # Show linked chrono session if available
             if session.chrono_session_id:
                 st.metric("Chrono Session", "✅ Linked")
             else:
                 st.metric("Chrono Session", "❌ None")
-        
+
         # Create measurements table
         df_data = []
         for measurement in measurements:
@@ -959,21 +980,21 @@ def render_shots_tab(session: DopeSessionModel):
                 "Notes": measurement.get('shot_notes', '')
             }
             df_data.append(row)
-        
+
         # Convert to DataFrame
         import pandas as pd
         df = pd.DataFrame(df_data)
-        
+
         # Format timestamp column if present
         if 'Time' in df.columns and not df['Time'].empty:
             try:
                 df['Time'] = pd.to_datetime(df['Time']).dt.strftime('%H:%M:%S')
-            except:
+            except BaseException:
                 pass  # Keep original format if conversion fails
-        
+
         # Replace empty/None values with empty strings for better display
         df = df.fillna('')
-        
+
         # Configure column display
         column_config = {
             "Shot #": st.column_config.NumberColumn("Shot #", width="small"),
@@ -991,7 +1012,7 @@ def render_shots_tab(session: DopeSessionModel):
             "Cold Bore": st.column_config.TextColumn("Cold Bore", width="small"),
             "Notes": st.column_config.TextColumn("Notes", width="large")
         }
-        
+
         # Display the measurements table
         st.subheader("📊 Shot Measurements")
         st.dataframe(
@@ -1000,7 +1021,7 @@ def render_shots_tab(session: DopeSessionModel):
             use_container_width=True,
             hide_index=True
         )
-        
+
         # Export functionality for shots data
         if st.button("📥 Export Shots to CSV"):
             csv = df.to_csv(index=False)
@@ -1009,9 +1030,9 @@ def render_shots_tab(session: DopeSessionModel):
                 data=csv,
                 file_name=f"dope_shots_{session.id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
                 mime="text/csv",
-                help="Download shot measurements as CSV file"
-            )
-            
+                help="Download shot measurements as CSV file")
+
     except Exception as e:
         st.error(f"Error loading shot measurements: {str(e)}")
-        st.info("Unable to load shot data. This may be due to database connectivity issues.")
+        st.info(
+            "Unable to load shot data. This may be due to database connectivity issues.")

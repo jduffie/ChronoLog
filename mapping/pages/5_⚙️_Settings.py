@@ -9,21 +9,24 @@ import sys
 
 import streamlit as st
 
-# Add the parent directory to the path so we can import shared modules
-sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
-
 from auth import handle_auth
 from users import UserController
+
+# Add the parent directory to the path so we can import shared modules
+sys.path.append(
+    os.path.dirname(
+        os.path.dirname(
+            os.path.dirname(
+                os.path.abspath(__file__)))))
 
 
 def main():
     """Main settings page function."""
     # Set page configuration
     st.set_page_config(
-        page_title="Settings - ChronoLog Mapping", page_icon="⚙️", layout="wide"
-    )
+        page_title="Settings - ChronoLog Mapping",
+        page_icon="⚙️",
+        layout="wide")
 
     # Set app identifier for auth system
     if "app" not in st.query_params:
@@ -44,7 +47,8 @@ def display_settings_page(user_profile):
     st.markdown("Manage your account settings and preferences.")
 
     # Create tabs for different settings sections
-    tab1, tab2, tab3 = st.tabs(["👤 Profile", "🔧 Preferences", "📊 Account Info"])
+    tab1, tab2, tab3 = st.tabs(
+        ["👤 Profile", "🔧 Preferences", "📊 Account Info"])
 
     with tab1:
         display_profile_settings(user_profile)
@@ -74,23 +78,29 @@ def display_profile_settings(user_profile):
         st.write(f"**Name:** {user_profile['name']}")
         st.write(f"**Email:** {user_profile['email']}")
         st.write(f"**Username:** {user_profile['username']}")
-        st.write(f"**Location:** {user_profile['state']}, {user_profile['country']}")
+        st.write(
+            f"**Location:** {user_profile['state']}, {user_profile['country']}")
         st.write(f"**Unit System:** {user_profile['unit_system']}")
 
         # Account dates
         if user_profile.get("created_at"):
-            created_date = user_profile["created_at"][:10]  # Just the date part
+            # Just the date part
+            created_date = user_profile["created_at"][:10]
             st.write(f"**Member Since:** {created_date}")
 
         if user_profile.get("updated_at"):
-            updated_date = user_profile["updated_at"][:10]  # Just the date part
+            # Just the date part
+            updated_date = user_profile["updated_at"][:10]
             st.write(f"**Last Updated:** {updated_date}")
 
     with col2:
         st.subheader("Edit Profile")
 
         # Edit profile button
-        if st.button("✏️ Edit Profile", type="primary", use_container_width=True):
+        if st.button(
+            "✏️ Edit Profile",
+            type="primary",
+                use_container_width=True):
             st.session_state["edit_profile"] = True
             st.rerun()
 
@@ -179,13 +189,12 @@ def display_account_info(user_profile):
             range_count = result.count if result.count else 0
 
             st.metric("📍 Ranges Submitted", f"{range_count}/40")
-        except:
+        except BaseException:
             st.metric("📍 Ranges Submitted", "N/A")
 
     with col3:
-        profile_complete = (
-            "✅ Complete" if user_profile.get("profile_complete") else "❌ Incomplete"
-        )
+        profile_complete = ("✅ Complete" if user_profile.get(
+            "profile_complete") else "❌ Incomplete")
         st.metric("📋 Profile Status", profile_complete)
 
     # Account details
@@ -227,7 +236,8 @@ def display_account_info(user_profile):
 
     # Privacy and security section
     st.subheader("🔒 Privacy & Security")
-    st.markdown("Your account is secured through Google authentication via Auth0.")
+    st.markdown(
+        "Your account is secured through Google authentication via Auth0.")
 
     privacy_info = [
         "🔐 **Authentication**: Your account uses Google OAuth for secure login",

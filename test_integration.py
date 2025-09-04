@@ -16,16 +16,15 @@ from unittest.mock import MagicMock, Mock, patch
 import pandas as pd
 import pytest
 
-from supabase import create_client
-
-# Add the root directory to the path so we can import our modules
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
 from chronograph.chronograph_session_models import (
     ChronographMeasurement,
     ChronographSession,
 )
 from chronograph.service import ChronographService
+from supabase import create_client
+
+# Add the root directory to the path so we can import our modules
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 
 class BaseIntegrationTest(unittest.TestCase):
@@ -35,7 +34,8 @@ class BaseIntegrationTest(unittest.TestCase):
     def setUpClass(cls):
         """Set up test database connection"""
         # Use environment variables or test secrets
-        cls.supabase_url = os.getenv("SUPABASE_URL", "https://test.supabase.co")
+        cls.supabase_url = os.getenv(
+            "SUPABASE_URL", "https://test.supabase.co")
         cls.supabase_key = os.getenv("SUPABASE_KEY", "test-key")
         cls.test_user_email = "integration-test@chronolog.test"
         cls.test_user_id = "google-oauth2|111273793361054745867"
@@ -100,8 +100,13 @@ class TestFileUploadIntegration(BaseIntegrationTest):
         # Add metadata row (bullet info)
         with pd.ExcelWriter(temp_file.name, engine="openpyxl") as writer:
             # First row with bullet metadata
-            metadata_df = pd.DataFrame([["9mm FMJ, 124gr"]], columns=["Bullet Info"])
-            metadata_df.to_excel(writer, sheet_name="Sheet1", index=False, startrow=0)
+            metadata_df = pd.DataFrame(
+                [["9mm FMJ, 124gr"]], columns=["Bullet Info"])
+            metadata_df.to_excel(
+                writer,
+                sheet_name="Sheet1",
+                index=False,
+                startrow=0)
 
             # Data starting from row 2
             df.to_excel(writer, sheet_name="Sheet1", index=False, startrow=2)
@@ -122,25 +127,27 @@ class TestFileUploadIntegration(BaseIntegrationTest):
                 mock_session_response = Mock()
                 mock_session_response.data = [{"id": "test-session-123"}]
                 self.supabase.table.return_value.insert.return_value.execute.return_value = (
-                    mock_session_response
-                )
+                    mock_session_response)
 
                 mock_measurements_response = Mock()
                 mock_measurements_response.data = [
                     {"id": f"measurement-{i}"} for i in range(5)
                 ]
                 self.supabase.table.return_value.insert.return_value.execute.return_value = (
-                    mock_measurements_response
-                )
+                    mock_measurements_response)
 
             # Read and process the Excel file
-            df = pd.read_excel(excel_file_path, sheet_name="Sheet1", skiprows=2)
+            df = pd.read_excel(
+                excel_file_path,
+                sheet_name="Sheet1",
+                skiprows=2)
             bullet_info = pd.read_excel(
                 excel_file_path, sheet_name="Sheet1", nrows=1
             ).iloc[0, 0]
 
             # Parse bullet type and grain
-            # Create session using session_name instead of bullet_type and bullet_grain
+            # Create session using session_name instead of bullet_type and
+            # bullet_grain
             session = ChronographSession(
                 id="test-session-123",
                 user_id=self.test_user_id,
@@ -168,7 +175,8 @@ class TestFileUploadIntegration(BaseIntegrationTest):
                     chrono_session_id=session_id,
                     shot_number=int(row["Shot"]),
                     speed_fps=float(row["Velocity (fps)"]),
-                    speed_mps=float(row["Velocity (fps)"]) * 0.3048,  # Convert to m/s
+                    speed_mps=float(row["Velocity (fps)"]) *
+                    0.3048,  # Convert to m/s
                     ke_ft_lb=float(row["Kinetic Energy (ft-lbs)"]),
                     power_factor=float(row["Power Factor"]),
                     datetime_local=pd.to_datetime(row["Date/Time"]),
@@ -199,8 +207,7 @@ class TestCrossModuleIntegration(BaseIntegrationTest):
             mock_response = Mock()
             mock_response.data = [{"id": "test-session-123"}]
             self.supabase.table.return_value.insert.return_value.execute.return_value = (
-                mock_response
-            )
+                mock_response)
 
         # Create chronograph service
         chronograph_service = ChronographService(self.supabase)
@@ -269,8 +276,7 @@ class TestAuthenticationIntegration(BaseIntegrationTest):
                 }
             ]
             self.supabase.table.return_value.select.return_value.eq.return_value.execute.return_value = (
-                mock_response
-            )
+                mock_response)
 
         # Verify that data access is user-scoped
         # In real implementation, this would query actual database
@@ -280,7 +286,9 @@ class TestAuthenticationIntegration(BaseIntegrationTest):
 
         # Assert authentication state
         self.assertTrue(mock_session_state.authenticated)
-        self.assertEqual(mock_session_state.user_info["email"], self.test_user_email)
+        self.assertEqual(
+            mock_session_state.user_info["email"],
+            self.test_user_email)
 
 
 @pytest.mark.integration
@@ -295,7 +303,8 @@ class TestDatabaseTransactionIntegration(BaseIntegrationTest):
         chronograph_service = ChronographService(self.supabase)
 
         if self.mock_mode:
-            # Mock a scenario where session creation succeeds but measurements fail
+            # Mock a scenario where session creation succeeds but measurements
+            # fail
             success_response = Mock()
             success_response.data = [{"id": "test-session-123"}]
 
