@@ -22,4 +22,4 @@ black==25.1.0
 isort==6.0.1
 
 # Security constraint - compatible with LibreSSL
-urllib3>=1.26.0,<2.0
+urllib3>=1.26.0,<3.0
