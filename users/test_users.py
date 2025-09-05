@@ -10,7 +10,6 @@ import unittest
 from datetime import datetime, timedelta
 from unittest.mock import Mock, call, patch
 
-
 from users.user_controller import UserController
 from users.user_model import UserModel
 from users.user_view import UserView

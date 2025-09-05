@@ -1,7 +1,6 @@
 import os
 import sys
 
-
 from mapping.submission.submission_controller import SubmissionController
 
 # Add the root directory to the path so we can import our modules

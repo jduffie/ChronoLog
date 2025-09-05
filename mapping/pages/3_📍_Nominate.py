@@ -1,7 +1,6 @@
 import os
 import sys
 
-
 from mapping.nominate.nominate_controller import NominateController
 
 # Add the root directory to the path so we can import our modules

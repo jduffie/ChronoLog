@@ -1,7 +1,6 @@
 import os
 import sys
 
-
 from mapping.session_state_manager import SessionStateManager
 
 from .public_ranges_model import PublicRangesModel

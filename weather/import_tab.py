@@ -5,7 +5,6 @@ import streamlit as st
 
 from .service import WeatherService
 
-
 # Configuration for field mappings
 FIELD_MAPPINGS = {
     "Temperature": {"db_field": "temperature", "type": "temperature"},
