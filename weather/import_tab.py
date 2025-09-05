@@ -1,10 +1,64 @@
-import os
 from datetime import datetime, timezone
 
 import pandas as pd
 import streamlit as st
 
 from .service import WeatherService
+
+
+# Configuration for field mappings
+FIELD_MAPPINGS = {
+    "Temperature": {"db_field": "temperature", "type": "temperature"},
+    "Wet Bulb Temp": {"db_field": "wet_bulb_temp", "type": "temperature"},
+    "Relative Humidity": {"db_field": "relative_humidity_pct", "type": "percentage"},
+    "Barometric Pressure": {"db_field": "barometric_pressure", "type": "pressure"},
+    "Altitude": {"db_field": "altitude", "type": "altitude"},
+    "Station Pressure": {"db_field": "station_pressure", "type": "pressure"},
+    "Wind Speed": {"db_field": "wind_speed", "type": "wind_speed"},
+    "Heat Index": {"db_field": "heat_index", "type": "temperature"},
+    "Dew Point": {"db_field": "dew_point", "type": "temperature"},
+    "Density Altitude": {"db_field": "density_altitude", "type": "altitude"},
+    "Crosswind": {"db_field": "crosswind", "type": "wind_speed"},
+    "Headwind": {"db_field": "headwind", "type": "wind_speed"},
+    "Compass Magnetic Direction": {"db_field": "compass_magnetic_deg", "type": "degrees"},
+    "Compass True Direction": {"db_field": "compass_true_deg", "type": "degrees"},
+    "Wind Chill": {"db_field": "wind_chill", "type": "temperature"},
+    "Data Type": {"db_field": "data_type", "type": "text"},
+    "Record name": {"db_field": "record_name", "type": "text"},
+    "Start time": {"db_field": "start_time", "type": "text"},
+    "Duration (H:M:S)": {"db_field": "duration", "type": "text"},
+    "Location description": {"db_field": "location_description", "type": "text"},
+    "Location address": {"db_field": "location_address", "type": "text"},
+    "Location coordinates": {"db_field": "location_coordinates", "type": "text"},
+    "Notes": {"db_field": "notes", "type": "text"},
+}
+
+# Unit mapping configurations
+IMPERIAL_UNIT_MAPPINGS = {
+    '°F': "fahrenheit",
+    'ft': "feet",
+    'mph': "mph",
+    'inHg': "inhg",
+    '%': "no_conversion",
+    'Deg': "no_conversion"
+}
+
+METRIC_UNIT_MAPPINGS = {
+    '°C': "celsius",
+    'm': "meters",
+    'm/s': "mps",
+    'hPa': "hpa",
+    '%': "no_conversion",
+    'Deg': "no_conversion"
+}
+
+# CSV structure constants
+CSV_DEVICE_NAME_ROW = 0
+CSV_DEVICE_MODEL_ROW = 1
+CSV_SERIAL_NUMBER_ROW = 2
+CSV_HEADERS_ROW = 3
+CSV_UNITS_ROW = 4
+CSV_DATA_START_ROW = 5
 
 
 def fahrenheit_to_celsius(f_temp):
@@ -87,6 +141,58 @@ def load_kestrel_units_mapping(supabase):
         return {}
 
 
+def _detect_imperial_unit(unit):
+    """Extract imperial unit detection logic"""
+    return IMPERIAL_UNIT_MAPPINGS.get(unit, "unknown")
+
+
+def _detect_metric_unit(unit):
+    """Extract metric unit detection logic"""
+    return METRIC_UNIT_MAPPINGS.get(unit, "unknown")
+
+
+def _parse_kestrel_file_structure(lines):
+    """Parse Kestrel CSV file structure and extract metadata and data"""
+    try:
+        # Parse metadata from first 3 rows using constants
+        device_name = (
+            lines[CSV_DEVICE_NAME_ROW].split(",")[1]
+            if "," in lines[CSV_DEVICE_NAME_ROW] and len(lines[CSV_DEVICE_NAME_ROW].split(",")) > 1
+            else ""
+        )
+        device_model = (
+            lines[CSV_DEVICE_MODEL_ROW].split(",")[1]
+            if "," in lines[CSV_DEVICE_MODEL_ROW] and len(lines[CSV_DEVICE_MODEL_ROW].split(",")) > 1
+            else ""
+        )
+        serial_number = (
+            lines[CSV_SERIAL_NUMBER_ROW].split(",")[1]
+            if "," in lines[CSV_SERIAL_NUMBER_ROW] and len(lines[CSV_SERIAL_NUMBER_ROW].split(",")) > 1
+            else ""
+        )
+
+        # Extract headers and units using constants
+        headers = [h.strip() for h in lines[CSV_HEADERS_ROW].split(",")]
+        units_row = [u.strip() for u in lines[CSV_UNITS_ROW].split(",")]
+
+        # Process data rows starting from CSV_DATA_START_ROW
+        data_rows = []
+        for i in range(CSV_DATA_START_ROW, len(lines)):
+            line = lines[i].strip()
+            if line:  # Skip empty lines
+                row_data = [cell.strip() for cell in line.split(",")]
+
+                # Check if we have data in the first column (timestamp)
+                if len(row_data) > 0 and row_data[0] and row_data[0] != "nan":
+                    data_rows.append(row_data)
+
+        return device_name, device_model, serial_number, headers, units_row, data_rows
+
+    except (IndexError, ValueError) as e:
+        st.error(f"Error parsing CSV structure: {e}")
+        return None
+
+
 def detect_column_units(headers, units_row, supabase):
     """Detect unit type for each column using Kestrel units mapping and actual CSV units"""
     # Load the mapping from Supabase
@@ -107,31 +213,9 @@ def detect_column_units(headers, units_row, supabase):
 
             # Check if the actual unit matches imperial or metric
             if unit == measurement_units['imperial']:
-                if unit in ['°F']:
-                    column_units[i] = "fahrenheit"
-                elif unit in ['ft']:
-                    column_units[i] = "feet"
-                elif unit in ['mph']:
-                    column_units[i] = "mph"
-                elif unit in ['inHg']:
-                    column_units[i] = "inhg"
-                elif unit in ['%', 'Deg']:
-                    column_units[i] = "no_conversion"
-                else:
-                    column_units[i] = "unknown"
+                column_units[i] = _detect_imperial_unit(unit)
             elif unit == measurement_units['metric']:
-                if unit in ['°C']:
-                    column_units[i] = "celsius"
-                elif unit in ['m']:
-                    column_units[i] = "meters"
-                elif unit in ['m/s']:
-                    column_units[i] = "mps"
-                elif unit in ['hPa']:
-                    column_units[i] = "hpa"
-                elif unit in ['%', 'Deg']:
-                    column_units[i] = "no_conversion"
-                else:
-                    column_units[i] = "unknown"
+                column_units[i] = _detect_metric_unit(unit)
             else:
                 column_units[i] = "unknown"
         else:
@@ -387,27 +471,13 @@ def render_file_upload(
                 )
                 return
 
-            # Parse metadata from first 3 rows
-            device_name = (
-                lines[0].split(",")[1]
-                if "," in lines[0] and len(lines[0].split(",")) > 1
-                else ""
-            )
-            device_model = (
-                lines[1].split(",")[1]
-                if "," in lines[1] and len(lines[1].split(",")) > 1
-                else ""
-            )
-            serial_number = (
-                lines[2].split(",")[1]
-                if "," in lines[2] and len(lines[2].split(",")) > 1
-                else ""
-            )
+            # Parse file structure
+            parsed_data = _parse_kestrel_file_structure(lines)
+            if not parsed_data:
+                st.error("❌ Failed to parse file structure.")
+                return
 
-            # Headers are in row 4 (index 3), units in row 5 (index 4), data
-            # starts row 6 (index 5)
-            headers = [h.strip() for h in lines[3].split(",")]
-            units_row = [u.strip() for u in lines[4].split(",")]
+            device_name, device_model, serial_number, headers, units_row, data_rows = parsed_data
 
             # Detect units for each column using the mapping
             column_units = detect_column_units(headers, units_row, supabase)
@@ -416,18 +486,6 @@ def render_file_upload(
                     'unknown', 'timestamp']]
             st.info(
                 f"🔍 Detected units for {len(recognized_units)} columns using Kestrel mapping")
-
-            # Process data rows (starting from index 5)
-            data_rows = []
-            for i in range(5, len(lines)):
-                line = lines[i].strip()
-                if line:  # Skip empty lines
-                    row_data = [cell.strip() for cell in line.split(",")]
-
-                    # Check if we have data in the first column (timestamp)
-                    if len(
-                            row_data) > 0 and row_data[0] and row_data[0] != "nan":
-                        data_rows.append(row_data)
 
             if not data_rows:
                 st.warning("⚠️ No data rows found in weather file.")
@@ -622,23 +680,73 @@ def process_weather_data_background(
         del st.session_state.weather_import_state
 
 
-def process_single_measurement(
-        row_data,
-        headers,
-        column_units,
-        user,
-        source_id,
-        file_name):
-    """Process a single measurement row and return measurement data"""
-    # Helper function to safely convert to float
-    def safe_float(value, default=None):
-        try:
-            if pd.isna(value) or value == "" or value is None:
-                return default
-            return float(value)
-        except (ValueError, TypeError):
+def _safe_float(value, default=None):
+    """Helper function to safely convert to float"""
+    try:
+        if pd.isna(value) or value == "" or value is None:
             return default
+        return float(value)
+    except (ValueError, TypeError):
+        return default
 
+
+def _process_field_by_type(field_config, raw_value, column_unit, base_field):
+    """Process field based on its type and unit"""
+    field_data = {}
+    field_type = field_config["type"]
+
+    if field_type == "temperature":
+        if column_unit == "fahrenheit":
+            field_data[f"{base_field}_f"] = raw_value
+            if raw_value is not None:
+                field_data[f"{base_field}_c"] = fahrenheit_to_celsius(raw_value)
+        elif column_unit == "celsius":
+            field_data[f"{base_field}_c"] = raw_value
+            if raw_value is not None:
+                field_data[f"{base_field}_f"] = celsius_to_fahrenheit(raw_value)
+
+    elif field_type == "pressure":
+        if column_unit == "inhg":
+            field_data[f"{base_field}_inhg"] = raw_value
+            if raw_value is not None:
+                field_data[f"{base_field}_hpa"] = inhg_to_hpa(raw_value)
+        elif column_unit == "hpa":
+            field_data[f"{base_field}_hpa"] = raw_value
+            if raw_value is not None:
+                field_data[f"{base_field}_inhg"] = hpa_to_inhg(raw_value)
+
+    elif field_type == "altitude":
+        if column_unit == "feet":
+            field_data[f"{base_field}_ft"] = raw_value
+            if raw_value is not None:
+                field_data[f"{base_field}_m"] = feet_to_meters(raw_value)
+        elif column_unit == "meters":
+            field_data[f"{base_field}_m"] = raw_value
+            if raw_value is not None:
+                field_data[f"{base_field}_ft"] = meters_to_feet(raw_value)
+
+    elif field_type == "wind_speed":
+        if column_unit == "mph":
+            field_data[f"{base_field}_mph"] = raw_value
+            if raw_value is not None:
+                field_data[f"{base_field}_mps"] = mph_to_mps(raw_value)
+        elif column_unit == "mps":
+            field_data[f"{base_field}_mps"] = raw_value
+            if raw_value is not None:
+                field_data[f"{base_field}_mph"] = mps_to_mph(raw_value)
+
+    elif field_type in ["percentage", "degrees"] or column_unit == "no_conversion":
+        field_data[base_field] = raw_value
+
+    elif field_type == "text":
+        # For text fields, don't convert to float
+        field_data[base_field] = raw_value if raw_value else None
+
+    return field_data
+
+
+def process_single_measurement(row_data, headers, column_units, user, source_id, file_name):
+    """Process a single measurement row and return measurement data"""
     # Parse timestamp (first column)
     timestamp_str = row_data[0]
     if not timestamp_str:
@@ -647,7 +755,7 @@ def process_single_measurement(
     # Parse timestamp
     measurement_timestamp = pd.to_datetime(timestamp_str).isoformat()
 
-    # Create measurement record with all available fields
+    # Create measurement record with base fields
     measurement_data = {
         "user_id": user["id"],
         "weather_source_id": source_id,
@@ -656,115 +764,25 @@ def process_single_measurement(
         "file_path": file_name,
     }
 
-    # Map data columns to database fields
-    field_mapping = {
-        "Temperature": "temperature",
-        "Wet Bulb Temp": "wet_bulb_temp",
-        "Relative Humidity": "relative_humidity_pct",
-        "Barometric Pressure": "barometric_pressure",
-        "Altitude": "altitude",
-        "Station Pressure": "station_pressure",
-        "Wind Speed": "wind_speed",
-        "Heat Index": "heat_index",
-        "Dew Point": "dew_point",
-        "Density Altitude": "density_altitude",
-        "Crosswind": "crosswind",
-        "Headwind": "headwind",
-        "Compass Magnetic Direction": "compass_magnetic_deg",
-        "Compass True Direction": "compass_true_deg",
-        "Wind Chill": "wind_chill",
-        "Data Type": "data_type",
-        "Record name": "record_name",
-        "Start time": "start_time",
-        "Duration (H:M:S)": "duration",
-        "Location description": "location_description",
-        "Location address": "location_address",
-        "Location coordinates": "location_coordinates",
-        "Notes": "notes",
-    }
-
+    # Process each data column using field mappings
     for i, header in enumerate(headers):
-        if i < len(row_data):
+        if i < len(row_data) and header != "FORMATTED DATE_TIME":
             value = row_data[i]
 
-            # Skip the timestamp column (already processed)
-            if header == "FORMATTED DATE_TIME":
-                continue
-
-            if header in field_mapping:
-                base_field = field_mapping[header]
-                raw_value = safe_float(value)
+            if header in FIELD_MAPPINGS:
+                field_config = FIELD_MAPPINGS[header]
+                base_field = field_config["db_field"]
                 column_unit = column_units.get(i, "unknown")
 
-                # Handle temperature fields
-                if header in [
-                    "Temperature",
-                    "Wet Bulb Temp",
-                    "Heat Index",
-                    "Dew Point",
-                        "Wind Chill"]:
-                    if column_unit == "fahrenheit":
-                        measurement_data[f"{base_field}_f"] = raw_value
-                        if raw_value is not None:
-                            measurement_data[f"{base_field}_c"] = fahrenheit_to_celsius(
-                                raw_value)
-                    elif column_unit == "celsius":
-                        measurement_data[f"{base_field}_c"] = raw_value
-                        if raw_value is not None:
-                            measurement_data[f"{base_field}_f"] = celsius_to_fahrenheit(
-                                raw_value)
-
-                # Handle pressure fields
-                elif header in ["Barometric Pressure", "Station Pressure"]:
-                    if column_unit == "inhg":
-                        measurement_data[f"{base_field}_inhg"] = raw_value
-                        if raw_value is not None:
-                            measurement_data[f"{base_field}_hpa"] = inhg_to_hpa(
-                                raw_value)
-                    elif column_unit == "hpa":
-                        measurement_data[f"{base_field}_hpa"] = raw_value
-                        if raw_value is not None:
-                            measurement_data[f"{base_field}_inhg"] = hpa_to_inhg(
-                                raw_value)
-
-                # Handle altitude fields
-                elif header in ["Altitude", "Density Altitude"]:
-                    if column_unit == "feet":
-                        measurement_data[f"{base_field}_ft"] = raw_value
-                        if raw_value is not None:
-                            measurement_data[f"{base_field}_m"] = feet_to_meters(
-                                raw_value)
-                    elif column_unit == "meters":
-                        measurement_data[f"{base_field}_m"] = raw_value
-                        if raw_value is not None:
-                            measurement_data[f"{base_field}_ft"] = meters_to_feet(
-                                raw_value)
-
-                # Handle wind speed fields
-                elif header in ["Wind Speed", "Crosswind", "Headwind"]:
-                    if column_unit == "mph":
-                        measurement_data[f"{base_field}_mph"] = raw_value
-                        if raw_value is not None:
-                            measurement_data[f"{base_field}_mps"] = mph_to_mps(
-                                raw_value)
-                    elif column_unit == "mps":
-                        measurement_data[f"{base_field}_mps"] = raw_value
-                        if raw_value is not None:
-                            measurement_data[f"{base_field}_mph"] = mps_to_mph(
-                                raw_value)
-
-                # Handle fields that don't need conversion (percentages,
-                # degrees)
-                elif header in [
-                    "Relative Humidity",
-                    "Compass Magnetic Direction",
-                    "Compass True Direction",
-                ] or column_unit == "no_conversion":
-                    measurement_data[base_field] = raw_value
-
-                # Handle text fields
+                # Handle text fields differently (don't convert to float)
+                if field_config["type"] == "text":
+                    raw_value = value if value else None
                 else:
-                    measurement_data[base_field] = value if value else None
+                    raw_value = _safe_float(value)
+
+                # Process field based on type
+                field_data = _process_field_by_type(field_config, raw_value, column_unit, base_field)
+                measurement_data.update(field_data)
 
     return measurement_data
 

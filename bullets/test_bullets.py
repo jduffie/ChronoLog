@@ -633,7 +633,6 @@ class TestBulletsPageStructure(unittest.TestCase):
             content = f.read()
 
         self.assertIn("from .service import BulletsService", content)
-        self.assertIn("from .models import BulletModel", content)
 
 
 class TestBulletsIntegration(unittest.TestCase):

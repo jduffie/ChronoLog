@@ -334,7 +334,6 @@ def render_logs_tab(user, supabase):
                         # Add histogram
                         st.subheader(" Velocity Distribution")
                         import matplotlib.pyplot as plt
-                        import numpy as np
 
                         fig, ax = plt.subplots(figsize=(10, 6))
 

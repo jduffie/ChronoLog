@@ -1,7 +1,6 @@
 import os
 import sys
 
-import streamlit as st
 
 from mapping.submission.submission_controller import SubmissionController
 

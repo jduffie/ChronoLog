@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 
 from chronograph.service import ChronographService
 
+from .filters import DopeSessionFilter
 from .models import DopeSessionModel
 
 
@@ -416,448 +417,82 @@ class DopeService:
         self, user_id: str, filters: Dict[str, Any]
     ) -> List[DopeSessionModel]:
         """Filter DOPE sessions based on various criteria"""
-        if not self.supabase or str(
-                type(self.supabase).__name__) == "MagicMock":
-            # Mock implementation
+        if not self.supabase or str(type(self.supabase).__name__) == "MagicMock":
+            # Mock implementation using filter helper
             all_sessions = self._get_mock_sessions(user_id)
-            filtered_sessions = all_sessions
-
-            # Apply status filter
-            if filters.get("status") and filters["status"] != "All":
-                filtered_sessions = [
-                    s for s in filtered_sessions if s.status == filters["status"]]
-
-            # Apply cartridge type filter
-            if filters.get("cartridge_type"):
-                if filters["cartridge_type"] == "Not Defined":
-                    filtered_sessions = [
-                        s
-                        for s in filtered_sessions
-                        if not s.cartridge_type or s.cartridge_type.strip() == ""
-                    ]
-                else:
-                    filtered_sessions = [
-                        s
-                        for s in filtered_sessions
-                        if s.cartridge_type == filters["cartridge_type"]
-                    ]
-
-            # Apply date range filter
-            if filters.get("date_from"):
-                filtered_sessions = [
-                    s
-                    for s in filtered_sessions
-                    if s.datetime_local and s.datetime_local >= filters["date_from"]
-                ]
-            if filters.get("date_to"):
-                filtered_sessions = [
-                    s
-                    for s in filtered_sessions
-                    if s.datetime_local and s.datetime_local <= filters["date_to"]
-                ]
-
-            # Apply rifle filter
-            if filters.get("rifle_name"):
-                if filters["rifle_name"] == "Not Defined":
-                    filtered_sessions = [
-                        s
-                        for s in filtered_sessions
-                        if not s.rifle_name or s.rifle_name.strip() == ""
-                    ]
-                else:
-                    filtered_sessions = [
-                        s
-                        for s in filtered_sessions
-                        if s.rifle_name == filters["rifle_name"]
-                    ]
-
-            # Apply distance range filter
-            if filters.get("distance_range"):
-                min_dist, max_dist = filters["distance_range"]
-                filtered_sessions = [
-                    s
-                    for s in filtered_sessions
-                    if s.distance_m and min_dist <= s.distance_m <= max_dist
-                ]
-
-            # Apply cartridge make filter
-            if filters.get("cartridge_make"):
-                if filters["cartridge_make"] == "Not Defined":
-                    filtered_sessions = [
-                        s
-                        for s in filtered_sessions
-                        if not s.cartridge_make or s.cartridge_make.strip() == ""
-                    ]
-                else:
-                    filtered_sessions = [
-                        s
-                        for s in filtered_sessions
-                        if s.cartridge_make == filters["cartridge_make"]
-                    ]
-
-            # Apply bullet make filter
-            if filters.get("bullet_make"):
-                if filters["bullet_make"] == "Not Defined":
-                    filtered_sessions = [
-                        s
-                        for s in filtered_sessions
-                        if not s.bullet_make or s.bullet_make.strip() == ""
-                    ]
-                else:
-                    filtered_sessions = [
-                        s
-                        for s in filtered_sessions
-                        if s.bullet_make == filters["bullet_make"]
-                    ]
-
-            # Apply range name filter
-            if filters.get("range_name"):
-                if filters["range_name"] == "Not Defined":
-                    filtered_sessions = [
-                        s
-                        for s in filtered_sessions
-                        if not s.range_name or s.range_name.strip() == ""
-                    ]
-                else:
-                    filtered_sessions = [
-                        s
-                        for s in filtered_sessions
-                        if s.range_name == filters["range_name"]
-                    ]
-
-            # Apply bullet weight range filter
-            if filters.get("bullet_weight_range"):
-                min_weight, max_weight = filters["bullet_weight_range"]
-                filtered_sessions = [
-                    s
-                    for s in filtered_sessions
-                    if s.bullet_weight
-                    and min_weight <= float(s.bullet_weight) <= max_weight
-                ]
-
-            # Apply temperature range filter
-            if filters.get("temperature_range"):
-                min_temp, max_temp = filters["temperature_range"]
-                filtered_sessions = [
-                    s
-                    for s in filtered_sessions
-                    if s.temperature_c is not None
-                    and min_temp <= s.temperature_c <= max_temp
-                ]
-
-            # Apply humidity range filter
-            if filters.get("humidity_range"):
-                min_humidity, max_humidity = filters["humidity_range"]
-                filtered_sessions = [
-                    s
-                    for s in filtered_sessions
-                    if s.relative_humidity_pct is not None
-                    and min_humidity <= s.relative_humidity_pct <= max_humidity
-                ]
-
-            # Apply wind speed range filter
-            if filters.get("wind_speed_range"):
-                min_wind, max_wind = filters["wind_speed_range"]
-                filtered_sessions = [
-                    s
-                    for s in filtered_sessions
-                    if s.wind_speed_1_kmh is not None
-                    and min_wind <= s.wind_speed_1_kmh <= max_wind
-                ]
-
-            return filtered_sessions
+            return DopeSessionFilter(all_sessions).apply_all_filters(filters).get_results()
 
         try:
-            # Start with base query
-            query = (
-                self.supabase.table("dope_sessions")
-                .select(
-                    """
-                    *,
-                    cartridges!cartridge_id (
-                        make, model, cartridge_type,
-                        bullets!bullet_id (
-                            manufacturer, model, weight_grains,
-                            bullet_diameter_groove_mm, bore_diameter_land_mm,
-                            bullet_length_mm, ballistic_coefficient_g1,
-                            ballistic_coefficient_g7, sectional_density,
-                            min_req_twist_rate_in_per_rev, pref_twist_rate_in_per_rev,
-                            data_source_name, data_source_url
-                        )
-                    ),
-                    rifles!rifle_id (
-                        name, barrel_length, barrel_twist_ratio,
-                        sight_offset, trigger, scope
-                    ),
-                    ranges_submissions!range_submission_id (
-                        range_name, range_description, distance_m,
-                        start_lat, start_lon, end_lat, end_lon,
-                        start_altitude_m, end_altitude_m,
-                        azimuth_deg, elevation_angle_deg
-                    ),
-                    weather_source!weather_source_id (
-                        name, source_type, make, device_name,
-                        model, serial_number
-                    )
-                """
-                )
-                .eq("user_id", user_id)
-            )
-
-            # Apply filters that can be done at the database level
-            if filters.get("status") and filters["status"] != "All":
-                query = query.eq("status", filters["status"])
-
-            if filters.get("date_from"):
-                query = query.gte(
-                    "created_at", filters["date_from"].isoformat())
-            if filters.get("date_to"):
-                query = query.lte("created_at", filters["date_to"].isoformat())
-
-            # Execute query
-            response = query.order("created_at", desc=True).execute()
-
-            if response.data:
-                sessions = []
-                for record in response.data:
-                    session_data = self._flatten_joined_record(record)
-                    sessions.append(
-                        DopeSessionModel.from_supabase_record(session_data))
-
-                # Apply filters that require post-processing (joined data)
-                filtered_sessions = sessions
-
-                # Apply cartridge type filter on joined data
-                if filters.get(
-                        "cartridge_type") and filters["cartridge_type"] != "All":
-                    if filters["cartridge_type"] == "Not Defined":
-                        filtered_sessions = [
-                            s for s in filtered_sessions
-                            if s.cartridge_type is None
-                        ]
-                    else:
-                        filtered_sessions = [
-                            s
-                            for s in filtered_sessions
-                            if s.cartridge_type == filters["cartridge_type"]
-                        ]
-
-                # Apply rifle filter on joined data
-                if filters.get(
-                        "rifle_name") and filters["rifle_name"] != "All":
-                    if filters["rifle_name"] == "Not Defined":
-                        filtered_sessions = [
-                            s for s in filtered_sessions
-                            if not s.rifle_name or s.rifle_name.strip() == ""
-                        ]
-                    else:
-                        filtered_sessions = [
-                            s
-                            for s in filtered_sessions
-                            if s.rifle_name == filters["rifle_name"]
-                        ]
-
-                # Apply distance range filter
-                if filters.get("distance_range"):
-                    min_dist, max_dist = filters["distance_range"]
-                    filtered_sessions = [
-                        s
-                        for s in filtered_sessions
-                        if s.distance_m and min_dist <= s.distance_m <= max_dist
-                    ]
-
-                # Apply cartridge make filter
-                if filters.get(
-                        "cartridge_make") and filters["cartridge_make"] != "All":
-                    if filters["cartridge_make"] == "Not Defined":
-                        filtered_sessions = [
-                            s for s in filtered_sessions
-                            if s.cartridge_make is None
-                        ]
-                    else:
-                        filtered_sessions = [
-                            s
-                            for s in filtered_sessions
-                            if s.cartridge_make == filters["cartridge_make"]
-                        ]
-
-                # Apply bullet make filter
-                if filters.get(
-                        "bullet_make") and filters["bullet_make"] != "All":
-                    if filters["bullet_make"] == "Not Defined":
-                        filtered_sessions = [
-                            s for s in filtered_sessions
-                            if s.bullet_make is None
-                        ]
-                    else:
-                        filtered_sessions = [
-                            s
-                            for s in filtered_sessions
-                            if s.bullet_make == filters["bullet_make"]
-                        ]
-
-                # Apply range name filter
-                if filters.get(
-                        "range_name") and filters["range_name"] != "All":
-                    if filters["range_name"] == "Not Defined":
-                        filtered_sessions = [
-                            s for s in filtered_sessions
-                            if not s.range_name or s.range_name.strip() == ""
-                        ]
-                    else:
-                        filtered_sessions = [
-                            s
-                            for s in filtered_sessions
-                            if s.range_name == filters["range_name"]
-                        ]
-
-                # Apply bullet weight range filter
-                if filters.get("bullet_weight_range"):
-                    min_weight, max_weight = filters["bullet_weight_range"]
-                    filtered_sessions = [
-                        s
-                        for s in filtered_sessions
-                        if s.bullet_weight
-                        and min_weight <= float(s.bullet_weight) <= max_weight
-                    ]
-
-                # Apply temperature range filter
-                if filters.get("temperature_range"):
-                    min_temp, max_temp = filters["temperature_range"]
-                    filtered_sessions = [
-                        s
-                        for s in filtered_sessions
-                        if s.temperature_c is not None
-                        and min_temp <= s.temperature_c <= max_temp
-                    ]
-
-                # Apply humidity range filter
-                if filters.get("humidity_range"):
-                    min_humidity, max_humidity = filters["humidity_range"]
-                    filtered_sessions = [
-                        s
-                        for s in filtered_sessions
-                        if s.relative_humidity_pct is not None
-                        and min_humidity <= s.relative_humidity_pct <= max_humidity
-                    ]
-
-                # Apply wind speed range filter
-                if filters.get("wind_speed_range"):
-                    min_wind, max_wind = filters["wind_speed_range"]
-                    filtered_sessions = [
-                        s
-                        for s in filtered_sessions
-                        if s.wind_speed_1_kmh is not None
-                        and min_wind <= s.wind_speed_1_kmh <= max_wind
-                    ]
-
-                return filtered_sessions
-            return []
+            # Get all sessions with database-level filtering where possible
+            sessions = self._get_sessions_with_db_filters(user_id, filters)
+            
+            # Apply remaining filters using the filter helper
+            return DopeSessionFilter(sessions).apply_all_filters(filters).get_results()
 
         except Exception as e:
             print(f"Error filtering DOPE sessions: {e}")
             # Fallback to mock implementation
             all_sessions = self._get_mock_sessions(user_id)
-            filtered_sessions = all_sessions
+            return DopeSessionFilter(all_sessions).apply_all_filters(filters).get_results()
 
-            # Apply same filters as mock implementation
-            if filters.get("status") and filters["status"] != "All":
-                filtered_sessions = [
-                    s for s in filtered_sessions if s.status == filters["status"]]
+    def _get_sessions_with_db_filters(self, user_id: str, filters: Dict[str, Any]) -> List[DopeSessionModel]:
+        """Get sessions with database-level filtering applied"""
+        # Start with base query
+        query = (
+            self.supabase.table("dope_sessions")
+            .select(
+                """
+                *,
+                cartridges!cartridge_id (
+                    make, model, cartridge_type,
+                    bullets!bullet_id (
+                        manufacturer, model, weight_grains,
+                        bullet_diameter_groove_mm, bore_diameter_land_mm,
+                        bullet_length_mm, ballistic_coefficient_g1,
+                        ballistic_coefficient_g7, sectional_density,
+                        min_req_twist_rate_in_per_rev, pref_twist_rate_in_per_rev,
+                        data_source_name, data_source_url
+                    )
+                ),
+                rifles!rifle_id (
+                    name, barrel_length, barrel_twist_ratio,
+                    sight_offset, trigger, scope
+                ),
+                ranges_submissions!range_submission_id (
+                    range_name, range_description, distance_m,
+                    start_lat, start_lon, end_lat, end_lon,
+                    start_altitude_m, end_altitude_m,
+                    azimuth_deg, elevation_angle_deg
+                ),
+                weather_source!weather_source_id (
+                    name, source_type, make, device_name,
+                    model, serial_number
+                )
+            """
+            )
+            .eq("user_id", user_id)
+        )
 
-            if filters.get("cartridge_type"):
-                filtered_sessions = [
-                    s
-                    for s in filtered_sessions
-                    if s.cartridge_type == filters["cartridge_type"]
-                ]
+        # Apply database-level filters
+        if filters.get("status") and filters["status"] != "All":
+            query = query.eq("status", filters["status"])
 
-            if filters.get("date_from"):
-                filtered_sessions = [
-                    s
-                    for s in filtered_sessions
-                    if s.datetime_local and s.datetime_local >= filters["date_from"]
-                ]
-            if filters.get("date_to"):
-                filtered_sessions = [
-                    s
-                    for s in filtered_sessions
-                    if s.datetime_local and s.datetime_local <= filters["date_to"]
-                ]
+        if filters.get("date_from"):
+            query = query.gte("created_at", filters["date_from"].isoformat())
+        if filters.get("date_to"):
+            query = query.lte("created_at", filters["date_to"].isoformat())
 
-            if filters.get("rifle_name"):
-                filtered_sessions = [
-                    s
-                    for s in filtered_sessions
-                    if s.rifle_name == filters["rifle_name"]
-                ]
+        # Execute query
+        response = query.order("created_at", desc=True).execute()
 
-            if filters.get("distance_range"):
-                min_dist, max_dist = filters["distance_range"]
-                filtered_sessions = [
-                    s
-                    for s in filtered_sessions
-                    if s.distance_m and min_dist <= s.distance_m <= max_dist
-                ]
-
-            if filters.get("cartridge_make"):
-                filtered_sessions = [
-                    s
-                    for s in filtered_sessions
-                    if s.cartridge_make == filters["cartridge_make"]
-                ]
-
-            if filters.get("bullet_make"):
-                filtered_sessions = [
-                    s
-                    for s in filtered_sessions
-                    if s.bullet_make == filters["bullet_make"]
-                ]
-
-            if filters.get("range_name"):
-                filtered_sessions = [
-                    s
-                    for s in filtered_sessions
-                    if s.range_name == filters["range_name"]
-                ]
-
-            if filters.get("bullet_weight_range"):
-                min_weight, max_weight = filters["bullet_weight_range"]
-                filtered_sessions = [
-                    s
-                    for s in filtered_sessions
-                    if s.bullet_weight
-                    and min_weight <= float(s.bullet_weight) <= max_weight
-                ]
-
-            if filters.get("temperature_range"):
-                min_temp, max_temp = filters["temperature_range"]
-                filtered_sessions = [
-                    s
-                    for s in filtered_sessions
-                    if s.temperature_c is not None
-                    and min_temp <= s.temperature_c <= max_temp
-                ]
-
-            if filters.get("humidity_range"):
-                min_humidity, max_humidity = filters["humidity_range"]
-                filtered_sessions = [
-                    s
-                    for s in filtered_sessions
-                    if s.relative_humidity_pct is not None
-                    and min_humidity <= s.relative_humidity_pct <= max_humidity
-                ]
-
-            if filters.get("wind_speed_range"):
-                min_wind, max_wind = filters["wind_speed_range"]
-                filtered_sessions = [
-                    s
-                    for s in filtered_sessions
-                    if s.wind_speed_1_kmh is not None
-                    and min_wind <= s.wind_speed_1_kmh <= max_wind
-                ]
-
-            return filtered_sessions
+        if response.data:
+            sessions = []
+            for record in response.data:
+                session_data = self._flatten_joined_record(record)
+                sessions.append(DopeSessionModel.from_supabase_record(session_data))
+            return sessions
+        
+        return []
 
     def get_unique_values(self, user_id: str, field_name: str) -> List[str]:
         """Get unique values for a specific field for autocomplete filters"""

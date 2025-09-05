@@ -7,7 +7,7 @@ Tests authentication workflows, Auth0 integration, and session management.
 import os
 import sys
 import unittest
-from unittest.mock import MagicMock, Mock, call, patch
+from unittest.mock import Mock, patch
 from urllib.parse import parse_qs, urlparse
 
 import auth

@@ -1,8 +1,6 @@
 import pandas as pd
 import streamlit as st
 
-from cartridges.models import CartridgeModel
-
 
 def render_edit_cartridges_tab(user, supabase):
     """Render the Create/Edit Cartridges tab"""

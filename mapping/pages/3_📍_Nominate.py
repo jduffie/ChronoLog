@@ -1,7 +1,6 @@
 import os
 import sys
 
-import streamlit as st
 
 from mapping.nominate.nominate_controller import NominateController
 

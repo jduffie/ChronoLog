@@ -1,11 +1,9 @@
 import os
 import sys
-import tempfile
 import unittest
 import uuid
 from datetime import datetime, timezone
-from decimal import Decimal
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock
 
 import pandas as pd
 
@@ -14,7 +12,6 @@ from chronograph.chronograph_session_models import (
     ChronographSession,
 )
 from chronograph.chronograph_source_models import ChronographSource
-from chronograph.import_tab import render_chronograph_import_tab
 from chronograph.service import ChronographService
 
 # Add the root directory to the path so we can import our modules

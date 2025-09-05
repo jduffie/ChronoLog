@@ -62,7 +62,6 @@ class ChronographDeviceAdapter(ABC):
     @abstractmethod
     def get_device_type(self) -> str:
         """Return the device type identifier"""
-        pass
 
     @abstractmethod
     def ingest_data(
@@ -74,7 +73,6 @@ class ChronographDeviceAdapter(ABC):
         data_source: Could be Excel file, CSV file, API response, etc.
         kwargs: Additional context like user info, file metadata, etc.
         """
-        pass
 
 
 class GarminExcelAdapter(ChronographDeviceAdapter):

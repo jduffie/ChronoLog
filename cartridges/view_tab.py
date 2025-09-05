@@ -421,7 +421,7 @@ def render_view_cartridges_tab(user, supabase):
                             use_container_width=True):
                         try:
                             # Delete the cartridge
-                            delete_response = ( supabase.table("cartridges") .delete() .eq(
+                            delete_response = (supabase.table("cartridges") .delete() .eq(
                                 "id", st.session_state.cartridges['deleting_cartridge_id']) .execute())
 
                             if delete_response.data:

@@ -7,8 +7,8 @@ Displays all session data in a sortable table with advanced filtering capabiliti
 
 import os
 import sys
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from datetime import datetime
+from typing import Any, Dict, List
 
 import pandas as pd
 import streamlit as st

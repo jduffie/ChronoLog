@@ -1,7 +1,7 @@
 import os
 import sys
 import unittest
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 from mapping.admin.admin_controller import AdminController
 from mapping.nominate.nominate_controller import NominateController
@@ -301,11 +301,7 @@ class TestMappingIntegration(unittest.TestCase):
     def test_controllers_can_be_imported(self):
         """Test that all controllers can be imported"""
         try:
-            from mapping.admin.admin_controller import AdminController
-            from mapping.nominate.nominate_controller import NominateController
-            from mapping.public_ranges.public_ranges_controller import (
-                PublicRangesController,
-            )
+            pass
 
             # If we get here, imports succeeded
             self.assertTrue(True)

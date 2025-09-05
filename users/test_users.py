@@ -7,12 +7,9 @@ Tests user models, controllers, views, and authentication workflows.
 import os
 import sys
 import unittest
-import uuid
 from datetime import datetime, timedelta
-from typing import Any, Dict
-from unittest.mock import MagicMock, Mock, call, patch
+from unittest.mock import Mock, call, patch
 
-import pytest
 
 from users.user_controller import UserController
 from users.user_model import UserModel

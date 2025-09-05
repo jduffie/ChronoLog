@@ -1,7 +1,6 @@
 import os
 import sys
 import unittest
-from datetime import datetime, timezone
 from unittest.mock import MagicMock, Mock, patch
 
 import pandas as pd

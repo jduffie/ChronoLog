@@ -1,7 +1,6 @@
 import pandas as pd
 import streamlit as st
 
-from .models import BulletModel
 from .service import BulletsService
 
 

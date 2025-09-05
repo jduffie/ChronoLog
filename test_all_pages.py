@@ -1,30 +1,7 @@
 import os
 import sys
 import unittest
-from unittest.mock import MagicMock, Mock, patch
 
-from chronograph.test_chronograph import (
-    TestChronographModels,
-    TestChronographPageStructure,
-    TestChronographService,
-)
-from mapping.test_mapping import (
-    TestMappingModels,
-    TestMappingPageStructure,
-    TestPublicRangesController,
-)
-from rifles.test_rifles import (
-    TestRifleDataValidation,
-    TestRiflesCreateTab,
-    TestRiflesPageStructure,
-    TestRiflesViewTab,
-)
-from weather.test_weather import (
-    TestWeatherImportTab,
-    TestWeatherMeasurement,
-    TestWeatherPageStructure,
-    TestWeatherSource,
-)
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 

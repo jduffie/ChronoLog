@@ -2,7 +2,6 @@
 Chronograph Business Logic Layer
 Contains core domain logic, unit conversions, and data processing rules
 """
-import math
 from typing import Any, Dict, Optional
 
 import pandas as pd
