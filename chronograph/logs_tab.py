@@ -4,6 +4,7 @@ import pandas as pd
 import streamlit as st
 
 from .service import ChronographService
+from utils.ui_formatters import format_speed, format_delta_speed, format_energy, format_power_factor
 
 
 def render_logs_tab(user, supabase):
@@ -127,8 +128,13 @@ def render_logs_tab(user, supabase):
 
         # Create display data with selection column
         table_data = []
+        user_unit_system = user.get("unit_system", "Imperial")
+        speed_units = "fps" if user_unit_system == "Imperial" else "m/s"
+        
         for i, session in enumerate(filtered_sessions):
-            speed_units = session.muzzle_vel_speed_units()
+            # Format average speed using UI formatter
+            avg_speed_display = format_speed(session.avg_speed_mps, user_unit_system) if session.avg_speed_mps else "N/A"
+            
             table_data.append(
                 {
                     # Radio button column (only one can be True)
@@ -136,7 +142,7 @@ def render_logs_tab(user, supabase):
                     "Date": session.datetime_local.strftime("%Y-%m-%d %H:%M"),
                     "Session Name": session.session_name,
                     "Shots": session.shot_count if session.shot_count else 0,
-                    f"Avg Speed ({speed_units})": session.avg_speed_display(),
+                    f"Avg Speed ({speed_units})": avg_speed_display,
                     "Chronograph": source_lookup.get(session.chronograph_source_id, "Unknown Source"),
                     "Session": session.tab_name,
                 }
@@ -216,20 +222,24 @@ def render_logs_tab(user, supabase):
                                 "Date": session.datetime_local.strftime("%Y-%m-%d %H:%M"),
                                 "Session Name": session.session_name,
                                 "Shot #": measurement.shot_number,
-                                "Speed (fps)": measurement.speed_fps,
-                                " AVG (fps)": (
-                                    measurement.delta_avg_fps
-                                    if measurement.delta_avg_fps
+                                f"Speed ({speed_units})": (
+                                    format_speed(measurement.speed_mps, user_unit_system)
+                                    if measurement.speed_mps
                                     else None
                                 ),
-                                "KE (ft-lb)": (
-                                    measurement.ke_ft_lb
-                                    if measurement.ke_ft_lb
+                                f" AVG ({speed_units})": (
+                                    format_delta_speed(measurement.delta_avg_mps, user_unit_system)
+                                    if measurement.delta_avg_mps
+                                    else None
+                                ),
+                                "KE": (
+                                    format_energy(measurement.ke_j, user_unit_system)
+                                    if measurement.ke_j
                                     else None
                                 ),
                                 "Power Factor": (
-                                    measurement.power_factor
-                                    if measurement.power_factor
+                                    format_power_factor(measurement.power_factor_kgms, user_unit_system)
+                                    if measurement.power_factor_kgms
                                     else None
                                 ),
                                 "Time": (
@@ -279,9 +289,9 @@ def render_logs_tab(user, supabase):
 
                     # Extract data for calculations
                     speeds = [
-                        m["Speed (fps)"]
+                        m[f"Speed ({speed_units})"]
                         for m in all_measurements
-                        if m["Speed (fps)"] is not None
+                        if m[f"Speed ({speed_units})"] is not None
                     ]
                     power_factors = [
                         m["Power Factor"]
@@ -313,17 +323,17 @@ def render_logs_tab(user, supabase):
                         # Display in two rows of metrics
                         col1, col2, col3 = st.columns(3)
                         with col1:
-                            st.metric("Min Speed", f"{min_speed:.1f} fps")
+                            st.metric("Min Speed", f"{min_speed:.1f} {speed_units}")
                         with col2:
-                            st.metric("Max Speed", f"{max_speed:.1f} fps")
+                            st.metric("Max Speed", f"{max_speed:.1f} {speed_units}")
                         with col3:
-                            st.metric("Average Speed", f"{avg_speed:.1f} fps")
+                            st.metric("Average Speed", f"{avg_speed:.1f} {speed_units}")
 
                         col4, col5, col6 = st.columns(3)
                         with col4:
-                            st.metric("Std Dev", f"{std_dev:.1f} fps")
+                            st.metric("Std Dev", f"{std_dev:.1f} {speed_units}")
                         with col5:
-                            st.metric("Spread", f"{spread:.1f} fps")
+                            st.metric("Spread", f"{spread:.1f} {speed_units}")
                         with col6:
                             if avg_power_factor is not None:
                                 st.metric(
@@ -354,25 +364,25 @@ def render_logs_tab(user, supabase):
                             color="red",
                             linestyle="--",
                             linewidth=2,
-                            label=f"Average: {avg_speed:.1f} fps",
+                            label=f"Average: {avg_speed:.1f} {speed_units}",
                         )
                         ax.axvline(
                             avg_speed - std_dev,
                             color="orange",
                             linestyle=":",
                             linewidth=2,
-                            label=f"-1 sigma: {avg_speed - std_dev:.1f} fps",
+                            label=f"-1 sigma: {avg_speed - std_dev:.1f} {speed_units}",
                         )
                         ax.axvline(
                             avg_speed + std_dev,
                             color="orange",
                             linestyle=":",
                             linewidth=2,
-                            label=f"+1 sigma: {avg_speed + std_dev:.1f} fps",
+                            label=f"+1 sigma: {avg_speed + std_dev:.1f} {speed_units}",
                         )
 
                         # Formatting
-                        ax.set_xlabel("Velocity (fps)", fontsize=12)
+                        ax.set_xlabel(f"Velocity ({speed_units})", fontsize=12)
                         ax.set_ylabel("Frequency", fontsize=12)
                         ax.set_title(
                             "Shot Velocity Distribution",

@@ -18,10 +18,10 @@ class ChronographSession:
     file_path: Optional[str]
     chronograph_source_id: Optional[str] = None
     shot_count: int = 0
-    avg_speed_fps: Optional[float] = None
-    std_dev_fps: Optional[float] = None
-    min_speed_fps: Optional[float] = None
-    max_speed_fps: Optional[float] = None
+    avg_speed_mps: Optional[float] = None
+    std_dev_mps: Optional[float] = None
+    min_speed_mps: Optional[float] = None
+    max_speed_mps: Optional[float] = None
     created_at: Optional[datetime] = None
 
     @classmethod
@@ -37,10 +37,10 @@ class ChronographSession:
             file_path=record.get("file_path"),
             chronograph_source_id=record.get("chronograph_source_id"),
             shot_count=record.get("shot_count", 0),
-            avg_speed_fps=record.get("avg_speed_fps"),
-            std_dev_fps=record.get("std_dev_fps"),
-            min_speed_fps=record.get("min_speed_fps"),
-            max_speed_fps=record.get("max_speed_fps"),
+            avg_speed_mps=record.get("avg_speed_mps"),
+            std_dev_mps=record.get("std_dev_mps"),
+            min_speed_mps=record.get("min_speed_mps"),
+            max_speed_mps=record.get("max_speed_mps"),
             created_at=(
                 pd.to_datetime(record["created_at"])
                 if record.get("created_at")
@@ -78,27 +78,6 @@ class ChronographSession:
         """Check if this session has any measurements"""
         return self.shot_count > 0
 
-    def muzzle_vel_speed_units(self) -> str:
-        return 'fps'
-
-    def avg_speed_display(self) -> str:
-        """Get formatted average speed for display"""
-        switch = {
-            "fps": self.avg_speed_fps
-        }
-        val = switch.get(self.muzzle_vel_speed_units(), self.avg_speed_fps)
-        return f"{val:.0f}" if val is not None else "N/A"
-
-    def std_dev_display(self) -> str:
-        """Get formatted standard deviation for display"""
-        units = self.muzzle_vel_speed_units()
-        return f"{self.std_dev_fps:.1f} {units}" if self.std_dev_fps else "N/A"
-
-    def velocity_range_display(self) -> str:
-        """Get formatted velocity range for display"""
-        if self.min_speed_fps is not None and self.max_speed_fps is not None:
-            return f"{self.max_speed_fps - self.min_speed_fps:.0f} fps"
-        return "N/A"
 
     def file_name(self) -> str:
         """Get just the filename from the file path"""
@@ -115,14 +94,10 @@ class ChronographMeasurement:
     user_id: str
     chrono_session_id: str
     shot_number: int
-    speed_fps: float
     speed_mps: float
     datetime_local: datetime
-    delta_avg_fps: Optional[float] = None
     delta_avg_mps: Optional[float] = None
-    ke_ft_lb: Optional[float] = None
     ke_j: Optional[float] = None
-    power_factor: Optional[float] = None
     power_factor_kgms: Optional[float] = None
     clean_bore: Optional[bool] = None
     cold_bore: Optional[bool] = None
@@ -136,13 +111,9 @@ class ChronographMeasurement:
             user_id=record["user_id"],
             chrono_session_id=record["chrono_session_id"],
             shot_number=record["shot_number"],
-            speed_fps=record["speed_fps"],
             speed_mps=record.get("speed_mps", 0),
-            delta_avg_fps=record.get("delta_avg_fps"),
             delta_avg_mps=record.get("delta_avg_mps"),
-            ke_ft_lb=record.get("ke_ft_lb"),
             ke_j=record.get("ke_j"),
-            power_factor=record.get("power_factor"),
             power_factor_kgms=record.get("power_factor_kgms"),
             datetime_local=pd.to_datetime(record["datetime_local"]),
             clean_bore=record.get("clean_bore"),

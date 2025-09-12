@@ -4,6 +4,7 @@ import pandas as pd
 import streamlit as st
 
 from .service import WeatherService
+from utils.ui_formatters import format_temperature, format_pressure, format_wind_speed, format_altitude
 
 
 def render_weather_view_tab(user, supabase):
@@ -88,6 +89,8 @@ def render_weather_view_tab(user, supabase):
 
         # Convert measurements to DataFrame for display
         table_data = []
+        user_unit_system = user.get("unit_system", "Imperial")
+        
         for i, measurement in enumerate(filtered_measurements):
             # Find source name
             source_name = "Unknown"
@@ -102,21 +105,21 @@ def render_weather_view_tab(user, supabase):
                     "Source": source_name,
                     "Timestamp": pd.to_datetime(
                         measurement.measurement_timestamp).strftime("%Y-%m-%d %H:%M:%S"),
-                    "Temp (°F)": round(
-                        measurement.temperature_f,
-                        1) if measurement.temperature_f else None,
-                    "Pressure (inHg)": round(
-                        measurement.barometric_pressure_inhg,
-                        2) if measurement.barometric_pressure_inhg else None,
+                    "Temperature": format_temperature(
+                        measurement.temperature_c, user_unit_system
+                    ) if measurement.temperature_c else "N/A",
+                    "Pressure": format_pressure(
+                        measurement.barometric_pressure_hpa, user_unit_system
+                    ) if measurement.barometric_pressure_hpa else "N/A",
                     "Humidity (%)": round(
                         measurement.relative_humidity_pct,
                         1) if measurement.relative_humidity_pct else None,
                     "Wind Dir (°)": round(
                         measurement.compass_true_deg,
                         0) if measurement.compass_true_deg else None,
-                    "Wind Speed (mph)": round(
-                        measurement.wind_speed_mph,
-                        1) if measurement.wind_speed_mph else None,
+                    "Wind Speed": format_wind_speed(
+                        measurement.wind_speed_mps, user_unit_system
+                    ) if measurement.wind_speed_mps else "N/A",
                 })
 
         df = pd.DataFrame(table_data)
@@ -154,64 +157,53 @@ def render_weather_view_tab(user, supabase):
                         f"• **Uploaded:** {pd.to_datetime(selected_measurement.uploaded_at).strftime('%Y-%m-%d %H:%M:%S')}")
 
                 st.write("**Temperature:**")
-                if selected_measurement.temperature_f:
-                    metric_temp = f" ({selected_measurement.temperature_c:.1f}°C)" if selected_measurement.temperature_c else ""
+                if selected_measurement.temperature_c is not None:
                     st.write(
-                        f"• **Temperature:** {selected_measurement.temperature_f:.1f}°F{metric_temp}")
-                if selected_measurement.heat_index_f:
-                    metric_heat = f" ({selected_measurement.heat_index_c:.1f}°C)" if selected_measurement.heat_index_c else ""
+                        f"• **Temperature:** {format_temperature(selected_measurement.temperature_c, user_unit_system)}")
+                if selected_measurement.heat_index_c is not None:
                     st.write(
-                        f"• **Heat Index:** {selected_measurement.heat_index_f:.1f}°F{metric_heat}")
-                if selected_measurement.dew_point_f:
-                    metric_dew = f" ({selected_measurement.dew_point_c:.1f}°C)" if selected_measurement.dew_point_c else ""
+                        f"• **Heat Index:** {format_temperature(selected_measurement.heat_index_c, user_unit_system)}")
+                if selected_measurement.dew_point_c is not None:
                     st.write(
-                        f"• **Dew Point:** {selected_measurement.dew_point_f:.1f}°F{metric_dew}")
-                if selected_measurement.wind_chill_f:
-                    metric_chill = f" ({selected_measurement.wind_chill_c:.1f}°C)" if selected_measurement.wind_chill_c else ""
+                        f"• **Dew Point:** {format_temperature(selected_measurement.dew_point_c, user_unit_system)}")
+                if selected_measurement.wind_chill_c is not None:
                     st.write(
-                        f"• **Wind Chill:** {selected_measurement.wind_chill_f:.1f}°F{metric_chill}")
+                        f"• **Wind Chill:** {format_temperature(selected_measurement.wind_chill_c, user_unit_system)}")
 
             with col2:
                 st.write("**Atmospheric Conditions:**")
-                if selected_measurement.barometric_pressure_inhg:
-                    metric_pressure = f" ({selected_measurement.barometric_pressure_hpa:.1f} hPa)" if selected_measurement.barometric_pressure_hpa else ""
+                if selected_measurement.barometric_pressure_hpa is not None:
                     st.write(
-                        f"• **Barometric Pressure:** {selected_measurement.barometric_pressure_inhg:.2f} inHg{metric_pressure}")
-                if selected_measurement.station_pressure_inhg:
-                    metric_station = f" ({selected_measurement.station_pressure_hpa:.1f} hPa)" if selected_measurement.station_pressure_hpa else ""
+                        f"• **Barometric Pressure:** {format_pressure(selected_measurement.barometric_pressure_hpa, user_unit_system)}")
+                if selected_measurement.station_pressure_hpa is not None:
                     st.write(
-                        f"• **Station Pressure:** {selected_measurement.station_pressure_inhg:.2f} inHg{metric_station}")
+                        f"• **Station Pressure:** {format_pressure(selected_measurement.station_pressure_hpa, user_unit_system)}")
                 if selected_measurement.relative_humidity_pct:
                     st.write(
                         f"• **Humidity:** {selected_measurement.relative_humidity_pct:.1f}%")
-                if selected_measurement.altitude_ft:
-                    metric_alt = f" ({selected_measurement.altitude_m:.0f} m)" if selected_measurement.altitude_m else ""
+                if selected_measurement.altitude_m is not None:
                     st.write(
-                        f"• **Altitude:** {selected_measurement.altitude_ft:.0f} ft{metric_alt}")
-                if selected_measurement.density_altitude_ft:
-                    metric_density = f" ({selected_measurement.density_altitude_m:.0f} m)" if selected_measurement.density_altitude_m else ""
+                        f"• **Altitude:** {format_altitude(selected_measurement.altitude_m, user_unit_system)}")
+                if selected_measurement.density_altitude_m is not None:
                     st.write(
-                        f"• **Density Altitude:** {selected_measurement.density_altitude_ft:.0f} ft{metric_density}")
+                        f"• **Density Altitude:** {format_altitude(selected_measurement.density_altitude_m, user_unit_system)}")
 
                 st.write("**Wind Conditions:**")
-                if selected_measurement.wind_speed_mph:
-                    metric_wind = f" ({selected_measurement.wind_speed_mps:.1f} m/s)" if selected_measurement.wind_speed_mps else ""
+                if selected_measurement.wind_speed_mps is not None:
                     st.write(
-                        f"• **Wind Speed:** {selected_measurement.wind_speed_mph:.1f} mph{metric_wind}")
+                        f"• **Wind Speed:** {format_wind_speed(selected_measurement.wind_speed_mps, user_unit_system)}")
                 if selected_measurement.compass_true_deg:
                     st.write(
                         f"• **True Direction:** {selected_measurement.compass_true_deg:.0f}°")
                 if selected_measurement.compass_magnetic_deg:
                     st.write(
                         f"• **Magnetic Direction:** {selected_measurement.compass_magnetic_deg:.0f}°")
-                if selected_measurement.crosswind_mph:
-                    metric_cross = f" ({selected_measurement.crosswind_mps:.1f} m/s)" if selected_measurement.crosswind_mps else ""
+                if selected_measurement.crosswind_mps is not None:
                     st.write(
-                        f"• **Crosswind:** {selected_measurement.crosswind_mph:.1f} mph{metric_cross}")
-                if selected_measurement.headwind_mph:
-                    metric_head = f" ({selected_measurement.headwind_mps:.1f} m/s)" if selected_measurement.headwind_mps else ""
+                        f"• **Crosswind:** {format_wind_speed(selected_measurement.crosswind_mps, user_unit_system)}")
+                if selected_measurement.headwind_mps is not None:
                     st.write(
-                        f"• **Headwind:** {selected_measurement.headwind_mph:.1f} mph{metric_head}")
+                        f"• **Headwind:** {format_wind_speed(selected_measurement.headwind_mps, user_unit_system)}")
 
             # Additional details if available
             if (selected_measurement.location_description or

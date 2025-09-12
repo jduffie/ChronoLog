@@ -5,6 +5,7 @@ import pandas as pd
 import streamlit as st
 
 from .service import WeatherService
+from utils.ui_formatters import format_temperature, format_pressure, format_wind_speed
 
 
 def render_weather_logs_tab(user, supabase):
@@ -24,6 +25,9 @@ def render_weather_logs_tab(user, supabase):
             )
             return
 
+        # Get user unit system
+        user_unit_system = user.get("unit_system", "Imperial")
+        
         # Get all measurements for the user
         measurements = weather_service.get_all_measurements_for_user(
             user["id"])
@@ -151,10 +155,10 @@ def render_weather_logs_tab(user, supabase):
                                     measurements_dict.append(
                                         {
                                             "measurement_timestamp": m.measurement_timestamp,
-                                            "temperature_f": m.temperature_f,
+                                            "temperature_c": m.temperature_c,
                                             "relative_humidity_pct": m.relative_humidity_pct,
-                                            "barometric_pressure_inhg": m.barometric_pressure_inhg,
-                                            "wind_speed_mph": m.wind_speed_mph,
+                                            "barometric_pressure_hpa": m.barometric_pressure_hpa,
+                                            "wind_speed_mps": m.wind_speed_mps,
                                             "location_description": m.location_description,
                                         })
 
@@ -164,10 +168,10 @@ def render_weather_logs_tab(user, supabase):
                                 # Select and format columns for display
                                 display_columns = [
                                     "measurement_timestamp",
-                                    "temperature_f",
+                                    "temperature_c",
                                     "relative_humidity_pct",
-                                    "barometric_pressure_inhg",
-                                    "wind_speed_mph",
+                                    "barometric_pressure_hpa",
+                                    "wind_speed_mps",
                                 ]
 
                                 # Only include columns that exist and have data
@@ -182,14 +186,14 @@ def render_weather_logs_tab(user, supabase):
                                         available_columns.append(col)
                                         if col == "measurement_timestamp":
                                             column_renames[col] = "Time"
-                                        elif col == "temperature_f":
-                                            column_renames[col] = "Temp (°F)"
+                                        elif col == "temperature_c":
+                                            column_renames[col] = "Temperature"
                                         elif col == "relative_humidity_pct":
                                             column_renames[col] = "Humidity (%)"
-                                        elif col == "barometric_pressure_inhg":
-                                            column_renames[col] = "Pressure (inHg)"
-                                        elif col == "wind_speed_mph":
-                                            column_renames[col] = "Wind (mph)"
+                                        elif col == "barometric_pressure_hpa":
+                                            column_renames[col] = "Pressure"
+                                        elif col == "wind_speed_mps":
+                                            column_renames[col] = "Wind Speed"
 
                                 if available_columns:
                                     display_df = df_date[available_columns].copy(
@@ -203,17 +207,22 @@ def render_weather_logs_tab(user, supabase):
                                             ).dt.strftime("%Y-%m-%d %H:%M:%S")
                                         )
 
-                                    # Round numeric columns
-                                    numeric_columns = [
-                                        "temperature_f",
-                                        "relative_humidity_pct",
-                                        "barometric_pressure_inhg",
-                                        "wind_speed_mph",
-                                    ]
-                                    for col in numeric_columns:
-                                        if col in display_df.columns:
-                                            display_df[col] = display_df[col].round(
-                                                1)
+                                    # Format using UI formatters
+                                    if "temperature_c" in display_df.columns:
+                                        display_df["temperature_c"] = display_df["temperature_c"].apply(
+                                            lambda x: format_temperature(x, user_unit_system) if x is not None else "N/A"
+                                        )
+                                    if "barometric_pressure_hpa" in display_df.columns:
+                                        display_df["barometric_pressure_hpa"] = display_df["barometric_pressure_hpa"].apply(
+                                            lambda x: format_pressure(x, user_unit_system) if x is not None else "N/A"
+                                        )
+                                    if "wind_speed_mps" in display_df.columns:
+                                        display_df["wind_speed_mps"] = display_df["wind_speed_mps"].apply(
+                                            lambda x: format_wind_speed(x, user_unit_system) if x is not None else "N/A"
+                                        )
+                                    # Round humidity percentage
+                                    if "relative_humidity_pct" in display_df.columns:
+                                        display_df["relative_humidity_pct"] = display_df["relative_humidity_pct"].round(1)
 
                                     # Rename columns
                                     display_df = display_df.rename(
@@ -236,13 +245,15 @@ def render_weather_logs_tab(user, supabase):
                                         col1, col2, col3 = st.columns(3)
 
                                         with col1:
-                                            if "temperature_f" in df_date.columns:
+                                            if "temperature_c" in df_date.columns:
                                                 temps = df_date[
-                                                    "temperature_f"
+                                                    "temperature_c"
                                                 ].dropna()
                                                 if not temps.empty:
+                                                    min_temp = format_temperature(temps.min(), user_unit_system)
+                                                    max_temp = format_temperature(temps.max(), user_unit_system)
                                                     st.write(
-                                                        f"• Temp: {temps.min():.1f}°F - {temps.max():.1f}°F"
+                                                        f"• Temp: {min_temp} - {max_temp}"
                                                     )
 
                                         with col2:
@@ -259,13 +270,15 @@ def render_weather_logs_tab(user, supabase):
                                                     )
 
                                         with col3:
-                                            if "wind_speed_mph" in df_date.columns:
+                                            if "wind_speed_mps" in df_date.columns:
                                                 wind = df_date[
-                                                    "wind_speed_mph"
+                                                    "wind_speed_mps"
                                                 ].dropna()
                                                 if not wind.empty:
+                                                    min_wind = format_wind_speed(wind.min(), user_unit_system)
+                                                    max_wind = format_wind_speed(wind.max(), user_unit_system)
                                                     st.write(
-                                                        f"• Wind: {wind.min():.1f} - {wind.max():.1f} mph"
+                                                        f"• Wind: {min_wind} - {max_wind}"
                                                     )
 
                                     # View button for detailed analysis

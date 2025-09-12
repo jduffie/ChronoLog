@@ -49,13 +49,13 @@ class DopeSessionModel:
     bullet_diameter_groove_mm: Optional[str] = None  # text type
     bore_diameter_land_mm: Optional[str] = None  # text type
 
-    # Weather conditions
+    # Weather conditions - Metric units only
     weather_source_name: Optional[str] = None
     temperature_c: Optional[float] = None  # numeric(3,1)
     relative_humidity_pct: Optional[float] = None  # numeric(5,2)
-    barometric_pressure_inhg: Optional[float] = None  # numeric(6,2)
-    wind_speed_1_kmh: Optional[float] = None  # numeric(4,1)
-    wind_speed_2_kmh: Optional[float] = None  # numeric(4,1)
+    barometric_pressure_hpa: Optional[float] = None  # numeric(6,2)
+    wind_speed_1_mps: Optional[float] = None  # numeric(4,1)
+    wind_speed_2_mps: Optional[float] = None  # numeric(4,1)
     wind_direction_deg: Optional[float] = None  # numeric(5,1)
 
     # Range position data
@@ -101,9 +101,9 @@ class DopeSessionModel:
             weather_source_name=record.get("weather_source_name"),
             temperature_c=record.get("temperature_c"),
             relative_humidity_pct=record.get("relative_humidity_pct"),
-            barometric_pressure_inhg=record.get("barometric_pressure_inhg"),
-            wind_speed_1_kmh=record.get("wind_speed_1_kmh"),
-            wind_speed_2_kmh=record.get("wind_speed_2_kmh"),
+            barometric_pressure_hpa=record.get("barometric_pressure_hpa"),
+            wind_speed_1_mps=record.get("wind_speed_1_mps"),
+            wind_speed_2_mps=record.get("wind_speed_2_mps"),
             wind_direction_deg=record.get("wind_direction_deg"),
             start_lat=record.get("start_lat"),
             start_lon=record.get("start_lon"),
@@ -152,9 +152,9 @@ class DopeSessionModel:
             "weather_source_name": self.weather_source_name,
             "temperature_c": self.temperature_c,
             "relative_humidity_pct": self.relative_humidity_pct,
-            "barometric_pressure_inhg": self.barometric_pressure_inhg,
-            "wind_speed_1_kmh": self.wind_speed_1_kmh,
-            "wind_speed_2_kmh": self.wind_speed_2_kmh,
+            "barometric_pressure_hpa": self.barometric_pressure_hpa,
+            "wind_speed_1_mps": self.wind_speed_1_mps,
+            "wind_speed_2_mps": self.wind_speed_2_mps,
             "wind_direction_deg": self.wind_direction_deg,
             "start_lat": self.start_lat,
             "start_lon": self.start_lon,
@@ -202,19 +202,6 @@ class DopeSessionModel:
             parts.append(f"{self.bullet_weight}gr")
         return " ".join(parts) if parts else "Unknown Bullet"
 
-    @property
-    def weather_summary(self) -> str:
-        """Get a summary of weather conditions"""
-        conditions = []
-        if self.temperature_c is not None:
-            conditions.append(f"{self.temperature_c}°C")
-        if self.relative_humidity_pct is not None:
-            conditions.append(f"{self.relative_humidity_pct}% RH")
-        if self.barometric_pressure_inhg is not None:
-            conditions.append(f'{self.barometric_pressure_inhg}" Hg')
-        if self.wind_speed_1_kmh is not None:
-            conditions.append(f"{self.wind_speed_1_kmh} km/h wind")
-        return ", ".join(conditions) if conditions else "No weather data"
 
     def is_complete(self) -> bool:
         """Check if all mandatory fields are filled"""

@@ -97,14 +97,10 @@ class GarminExcelProcessor:
                     user_id=user_id,
                     chrono_session_id=session_id,
                     shot_number=measurement_entity.shot_number,
-                    speed_fps=measurement_entity.speed_fps,
                     speed_mps=measurement_entity.speed_mps,
                     datetime_local=measurement_entity.datetime_local or ingest_result.session.session_timestamp,
-                    delta_avg_fps=measurement_entity.delta_avg_fps,
                     delta_avg_mps=measurement_entity.delta_avg_mps,
-                    ke_ft_lb=measurement_entity.ke_ft_lb,
                     ke_j=measurement_entity.ke_j,
-                    power_factor=measurement_entity.power_factor,
                     power_factor_kgms=measurement_entity.power_factor_kgms,
                     clean_bore=measurement_entity.clean_bore,
                     cold_bore=measurement_entity.cold_bore,
@@ -252,7 +248,7 @@ class GarminExcelProcessor:
                         speed_mps = speed_val
                         speed_fps = self.converter.mps_to_fps(speed_val)
 
-        if speed_fps is None:
+        if speed_mps is None:
             return None
 
         # Process other measurements with conversions
@@ -317,14 +313,10 @@ class GarminExcelProcessor:
 
         return {
             "shot_number": shot_number,
-            "speed_fps": speed_fps,
             "speed_mps": speed_mps,
             "datetime_local": datetime_local,
-            "delta_avg_fps": delta_avg_fps,
             "delta_avg_mps": delta_avg_mps,
-            "ke_ft_lb": ke_ft_lb,
             "ke_j": ke_j,
-            "power_factor": power_factor,
             "power_factor_kgms": power_factor_kgms,
             "clean_bore": (
                 bool(row.get("Clean Bore"))
@@ -468,7 +460,7 @@ class GarminFileMapper:
                         speed_mps = speed_val
                         speed_fps = self.converter.mps_to_fps(speed_val)
 
-        if speed_fps is None:
+        if speed_mps is None:
             return None
 
         # Process other measurements
@@ -533,14 +525,10 @@ class GarminFileMapper:
 
         return {
             "shot_number": shot_number,
-            "speed_fps": speed_fps,
             "speed_mps": speed_mps,
             "datetime_local": datetime_local,
-            "delta_avg_fps": delta_avg_fps,
             "delta_avg_mps": delta_avg_mps,
-            "ke_ft_lb": ke_ft_lb,
             "ke_j": ke_j,
-            "power_factor": power_factor,
             "power_factor_kgms": power_factor_kgms,
             "clean_bore": (
                 bool(row.get("Clean Bore"))

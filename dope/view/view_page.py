@@ -564,9 +564,9 @@ def render_sessions_table(sessions: List[DopeSessionModel]):
                 if session.relative_humidity_pct is not None
                 else None
             ),
-            "Wind Speed (km/h)": (
-                session.wind_speed_1_kmh
-                if session.wind_speed_1_kmh is not None
+            "Wind Speed (m/s)": (
+                session.wind_speed_1_mps
+                if session.wind_speed_1_mps is not None
                 else None
             ),
             "Notes": (
@@ -596,8 +596,8 @@ def render_sessions_table(sessions: List[DopeSessionModel]):
         "Range": st.column_config.TextColumn("Range", width="medium"),
         "Temperature (°C)": st.column_config.NumberColumn("Temp (°C)", width="small"),
         "Humidity (%)": st.column_config.NumberColumn("Humidity (%)", width="small"),
-        "Wind Speed (km/h)": st.column_config.NumberColumn(
-            "Wind (km/h)", width="small"
+        "Wind Speed (m/s)": st.column_config.NumberColumn(
+            "Wind (m/s)", width="small"
         ),
         "Notes": st.column_config.TextColumn("Notes", width="large"),
     }
@@ -833,16 +833,16 @@ def render_weather_info_tab(session: DopeSessionModel):
         st.write(
             "**Pressure:**",
             (
-                f'{session.barometric_pressure_inhg}" Hg'
-                if session.barometric_pressure_inhg is not None
+                f'{session.barometric_pressure_hpa} hPa'
+                if session.barometric_pressure_hpa is not None
                 else "Unknown"
             ),
         )
         st.write(
             "**Wind Speed 1:**",
             (
-                f"{session.wind_speed_1_kmh}km/h"
-                if session.wind_speed_1_kmh is not None
+                f"{session.wind_speed_1_mps}m/s"
+                if session.wind_speed_1_mps is not None
                 else "Unknown"
             ),
         )
@@ -851,8 +851,8 @@ def render_weather_info_tab(session: DopeSessionModel):
         st.write(
             "**Wind Speed 2:**",
             (
-                f"{session.wind_speed_2_kmh}km/h"
-                if session.wind_speed_2_kmh is not None
+                f"{session.wind_speed_2_mps}m/s"
+                if session.wind_speed_2_mps is not None
                 else "Unknown"
             ),
         )
@@ -867,7 +867,8 @@ def render_weather_info_tab(session: DopeSessionModel):
         st.write(
             "**Weather Source:**",
             session.weather_source_name or "Unknown")
-        st.write("**Summary:**", session.weather_summary)
+        # TODO: Add weather_summary property to DopeSessionModel
+        # st.write("**Summary:**", session.weather_summary)
 
 
 def export_sessions_to_csv(sessions: List[DopeSessionModel]):

@@ -157,8 +157,8 @@ class DopeSessionFilter:
             min_wind, max_wind = wind_range
             self.sessions = [
                 s for s in self.sessions 
-                if (s.wind_speed_1_kmh is not None and 
-                    min_wind <= s.wind_speed_1_kmh <= max_wind)
+                if (s.wind_speed_1_mps is not None and 
+                    min_wind <= s.wind_speed_1_mps <= max_wind)
             ]
         return self
     

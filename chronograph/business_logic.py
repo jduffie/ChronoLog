@@ -94,8 +94,8 @@ class SessionStatisticsCalculator:
 
         return {
             "shot_count": len(speeds),
-            "avg_speed_fps": avg_speed,
-            "std_dev_fps": std_dev,
-            "min_speed_fps": min_speed,
-            "max_speed_fps": max_speed,
+            "avg_speed_mps": avg_speed,
+            "std_dev_mps": std_dev,
+            "min_speed_mps": min_speed,
+            "max_speed_mps": max_speed,
         }

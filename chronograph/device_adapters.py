@@ -33,14 +33,10 @@ class ChronographSessionEntity:
 class ChronographMeasurementEntity:
     """Entity representing a single chronograph measurement from any device type"""
     shot_number: int
-    speed_fps: float
     speed_mps: float
     datetime_local: Optional[datetime] = None
-    delta_avg_fps: Optional[float] = None
     delta_avg_mps: Optional[float] = None
-    ke_ft_lb: Optional[float] = None
     ke_j: Optional[float] = None
-    power_factor: Optional[float] = None
     power_factor_kgms: Optional[float] = None
     clean_bore: Optional[bool] = None
     cold_bore: Optional[bool] = None
@@ -166,6 +162,7 @@ class GarminExcelAdapter(ChronographDeviceAdapter):
         if shot_number is None:
             return False, "Missing shot number"
 
+        # Ensure we have at least one speed measurement (will be converted to metric)
         if speed_fps is None and speed_mps is None:
             return False, "Missing speed measurement"
 
@@ -179,8 +176,7 @@ class GarminExcelAdapter(ChronographDeviceAdapter):
         """Create a measurement entity from row data"""
         shot_number = safe_int(row.get("#"))
 
-        # Process speed with unit conversion
-        speed_fps = None
+        # Process speed with conversion to metric only
         speed_mps = None
 
         for col_name in ["Speed (FPS)", "Speed (m/s)"]:
@@ -189,21 +185,16 @@ class GarminExcelAdapter(ChronographDeviceAdapter):
                 if speed_val is not None:
                     unit_type = column_units.get(col_name, 'fps')
                     if unit_type == 'fps':
-                        speed_fps = speed_val
                         speed_mps = self.converter.fps_to_mps(speed_val)
                     elif unit_type == 'mps':
                         speed_mps = speed_val
-                        speed_fps = self.converter.mps_to_fps(speed_val)
 
-        if speed_fps is None:
+        if speed_mps is None:
             return None
 
-        # Process other measurements
-        delta_avg_fps = None
+        # Process other measurements - convert to metric only
         delta_avg_mps = None
-        ke_ft_lb = None
         ke_j = None
-        power_factor = None
         power_factor_kgms = None
 
         # Process delta avg
@@ -213,11 +204,9 @@ class GarminExcelAdapter(ChronographDeviceAdapter):
                 if delta_val is not None:
                     unit_type = column_units.get(col_name, 'fps')
                     if unit_type == 'fps':
-                        delta_avg_fps = delta_val
                         delta_avg_mps = self.converter.fps_to_mps(delta_val)
                     elif unit_type == 'mps':
                         delta_avg_mps = delta_val
-                        delta_avg_fps = self.converter.mps_to_fps(delta_val)
 
         # Process kinetic energy
         for col_name in ["KE (FT-LB)", "KE (J)"]:
@@ -226,11 +215,9 @@ class GarminExcelAdapter(ChronographDeviceAdapter):
                 if ke_val is not None:
                     unit_type = column_units.get(col_name, 'ftlb')
                     if unit_type == 'ftlb':
-                        ke_ft_lb = ke_val
                         ke_j = self.converter.ftlb_to_joules(ke_val)
                     elif unit_type == 'joules':
                         ke_j = ke_val
-                        ke_ft_lb = self.converter.joules_to_ftlb(ke_val)
 
         # Process power factor
         for col_name in ["Power Factor (kgr⋅ft/s)", "Power Factor (kg·m/s)"]:
@@ -239,12 +226,9 @@ class GarminExcelAdapter(ChronographDeviceAdapter):
                 if pf_val is not None:
                     unit_type = column_units.get(col_name, 'kgrft')
                     if unit_type == 'kgrft':
-                        power_factor = pf_val
-                        power_factor_kgms = self.converter.kgrft_to_kgms(
-                            pf_val)
+                        power_factor_kgms = self.converter.kgrft_to_kgms(pf_val)
                     elif unit_type == 'kgms':
                         power_factor_kgms = pf_val
-                        power_factor = self.converter.kgms_to_kgrft(pf_val)
 
         # Create datetime
         datetime_local = None
@@ -260,14 +244,10 @@ class GarminExcelAdapter(ChronographDeviceAdapter):
 
         return ChronographMeasurementEntity(
             shot_number=shot_number,
-            speed_fps=speed_fps,
             speed_mps=speed_mps,
             datetime_local=datetime_local,
-            delta_avg_fps=delta_avg_fps,
             delta_avg_mps=delta_avg_mps,
-            ke_ft_lb=ke_ft_lb,
             ke_j=ke_j,
-            power_factor=power_factor,
             power_factor_kgms=power_factor_kgms,
             clean_bore=bool(
                 row.get("Clean Bore")) if "Clean Bore" in row and not pd.isna(

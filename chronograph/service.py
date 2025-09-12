@@ -203,7 +203,7 @@ class ChronographService:
         try:
             response = (
                 self.supabase.table("chrono_measurements")
-                .select("speed_fps")
+                .select("speed_mps")
                 .eq("user_id", user_id)
                 .eq("chrono_session_id", session_id)
                 .execute()
@@ -213,9 +213,9 @@ class ChronographService:
                 return []
 
             speeds = [
-                record["speed_fps"]
+                record["speed_mps"]
                 for record in response.data
-                if record.get("speed_fps") is not None
+                if record.get("speed_mps") is not None
             ]
             return speeds
 
@@ -236,10 +236,10 @@ class ChronographService:
                 "uploaded_at": session.uploaded_at.isoformat(),
                 "file_path": session.file_path,
                 "shot_count": session.shot_count,
-                "avg_speed_fps": session.avg_speed_fps,
-                "std_dev_fps": session.std_dev_fps,
-                "min_speed_fps": session.min_speed_fps,
-                "max_speed_fps": session.max_speed_fps,
+                "avg_speed_mps": session.avg_speed_mps,
+                "std_dev_mps": session.std_dev_mps,
+                "min_speed_mps": session.min_speed_mps,
+                "max_speed_mps": session.max_speed_mps,
             }
 
             response = self.supabase.table(
@@ -262,13 +262,9 @@ class ChronographService:
                 "user_id": measurement.user_id,
                 "chrono_session_id": measurement.chrono_session_id,
                 "shot_number": measurement.shot_number,
-                "speed_fps": measurement.speed_fps,
                 "speed_mps": measurement.speed_mps,
-                "delta_avg_fps": measurement.delta_avg_fps,
                 "delta_avg_mps": measurement.delta_avg_mps,
-                "ke_ft_lb": measurement.ke_ft_lb,
                 "ke_j": measurement.ke_j,
-                "power_factor": measurement.power_factor,
                 "power_factor_kgms": measurement.power_factor_kgms,
                 "datetime_local": measurement.datetime_local.isoformat() if measurement.datetime_local else None,
                 "clean_bore": measurement.clean_bore,

@@ -106,26 +106,10 @@ class WeatherMeasurement:
     uploaded_at: datetime
     file_path: Optional[str] = None
 
-    # Primary weather measurements - Imperial units
-    temperature_f: Optional[float] = None
-    wet_bulb_temp_f: Optional[float] = None
-    relative_humidity_pct: Optional[float] = None
-    barometric_pressure_inhg: Optional[float] = None
-    altitude_ft: Optional[float] = None
-    station_pressure_inhg: Optional[float] = None
-    wind_speed_mph: Optional[float] = None
-    heat_index_f: Optional[float] = None
-    dew_point_f: Optional[float] = None
-    density_altitude_ft: Optional[float] = None
-    crosswind_mph: Optional[float] = None
-    headwind_mph: Optional[float] = None
-    compass_magnetic_deg: Optional[float] = None
-    compass_true_deg: Optional[float] = None
-    wind_chill_f: Optional[float] = None
-
-    # Metric equivalents
+    # Weather measurements - Metric units only
     temperature_c: Optional[float] = None
     wet_bulb_temp_c: Optional[float] = None
+    relative_humidity_pct: Optional[float] = None
     barometric_pressure_hpa: Optional[float] = None
     altitude_m: Optional[float] = None
     station_pressure_hpa: Optional[float] = None
@@ -135,6 +119,8 @@ class WeatherMeasurement:
     density_altitude_m: Optional[float] = None
     crosswind_mps: Optional[float] = None
     headwind_mps: Optional[float] = None
+    compass_magnetic_deg: Optional[float] = None
+    compass_true_deg: Optional[float] = None
     wind_chill_c: Optional[float] = None
 
     # Additional fields
@@ -158,25 +144,10 @@ class WeatherMeasurement:
                 record["measurement_timestamp"]),
             uploaded_at=pd.to_datetime(record["uploaded_at"]),
             file_path=record.get("file_path"),
-            # Imperial units
-            temperature_f=record.get("temperature_f"),
-            wet_bulb_temp_f=record.get("wet_bulb_temp_f"),
-            relative_humidity_pct=record.get("relative_humidity_pct"),
-            barometric_pressure_inhg=record.get("barometric_pressure_inhg"),
-            altitude_ft=record.get("altitude_ft"),
-            station_pressure_inhg=record.get("station_pressure_inhg"),
-            wind_speed_mph=record.get("wind_speed_mph"),
-            heat_index_f=record.get("heat_index_f"),
-            dew_point_f=record.get("dew_point_f"),
-            density_altitude_ft=record.get("density_altitude_ft"),
-            crosswind_mph=record.get("crosswind_mph"),
-            headwind_mph=record.get("headwind_mph"),
-            compass_magnetic_deg=record.get("compass_magnetic_deg"),
-            compass_true_deg=record.get("compass_true_deg"),
-            wind_chill_f=record.get("wind_chill_f"),
-            # Metric units
+            # Metric units only
             temperature_c=record.get("temperature_c"),
             wet_bulb_temp_c=record.get("wet_bulb_temp_c"),
+            relative_humidity_pct=record.get("relative_humidity_pct"),
             barometric_pressure_hpa=record.get("barometric_pressure_hpa"),
             altitude_m=record.get("altitude_m"),
             station_pressure_hpa=record.get("station_pressure_hpa"),
@@ -186,6 +157,8 @@ class WeatherMeasurement:
             density_altitude_m=record.get("density_altitude_m"),
             crosswind_mps=record.get("crosswind_mps"),
             headwind_mps=record.get("headwind_mps"),
+            compass_magnetic_deg=record.get("compass_magnetic_deg"),
+            compass_true_deg=record.get("compass_true_deg"),
             wind_chill_c=record.get("wind_chill_c"),
             # Additional fields
             data_type=record.get("data_type"),
@@ -204,62 +177,14 @@ class WeatherMeasurement:
         """Create a list of WeatherMeasurement objects from Supabase records"""
         return [cls.from_supabase_record(record) for record in records]
 
-    def temperature_display(self) -> str:
-        """Get formatted temperature"""
-        return (
-            f"{self.temperature_f:.1f}°F" if self.temperature_f is not None else "N/A")
-
-    def humidity_display(self) -> str:
-        """Get formatted humidity"""
-        return (
-            f"{self.relative_humidity_pct:.1f}%"
-            if self.relative_humidity_pct is not None
-            else "N/A"
-        )
-
-    def pressure_display(self) -> str:
-        """Get formatted pressure"""
-        return (
-            f"{self.barometric_pressure_inhg:.2f} inHg"
-            if self.barometric_pressure_inhg is not None
-            else "N/A"
-        )
-
-    def wind_display(self) -> str:
-        """Get formatted wind speed"""
-        return (
-            f"{self.wind_speed_mph:.1f} mph"
-            if self.wind_speed_mph is not None
-            else "N/A"
-        )
-
-    def wind_direction_display(self) -> str:
-        """Get formatted wind direction"""
-        if self.compass_true_deg is not None:
-            return f"{self.compass_true_deg:.0f}°"
-        elif self.compass_magnetic_deg is not None:
-            return f"{self.compass_magnetic_deg:.0f}° (mag)"
-        return "N/A"
-
-    def altitude_display(self) -> str:
-        """Get formatted altitude"""
-        return f"{self.altitude_ft:.0f} ft" if self.altitude_ft is not None else "N/A"
-
-    def density_altitude_display(self) -> str:
-        """Get formatted density altitude"""
-        return (
-            f"{self.density_altitude_ft:.0f} ft"
-            if self.density_altitude_ft is not None
-            else "N/A"
-        )
 
     def has_wind_data(self) -> bool:
         """Check if measurement has wind data"""
         return any(
             [
-                self.wind_speed_mph is not None,
-                self.crosswind_mph is not None,
-                self.headwind_mph is not None,
+                self.wind_speed_mps is not None,
+                self.crosswind_mps is not None,
+                self.headwind_mps is not None,
                 self.compass_magnetic_deg is not None,
                 self.compass_true_deg is not None,
             ]

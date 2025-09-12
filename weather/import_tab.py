@@ -696,43 +696,39 @@ def _process_field_by_type(field_config, raw_value, column_unit, base_field):
 
     if field_type == "temperature":
         if column_unit == "fahrenheit":
-            field_data[f"{base_field}_f"] = raw_value
+            # Convert imperial to metric and store only metric
             if raw_value is not None:
                 field_data[f"{base_field}_c"] = fahrenheit_to_celsius(raw_value)
         elif column_unit == "celsius":
+            # Store metric directly
             field_data[f"{base_field}_c"] = raw_value
-            if raw_value is not None:
-                field_data[f"{base_field}_f"] = celsius_to_fahrenheit(raw_value)
 
     elif field_type == "pressure":
         if column_unit == "inhg":
-            field_data[f"{base_field}_inhg"] = raw_value
+            # Convert imperial to metric and store only metric
             if raw_value is not None:
                 field_data[f"{base_field}_hpa"] = inhg_to_hpa(raw_value)
         elif column_unit == "hpa":
+            # Store metric directly
             field_data[f"{base_field}_hpa"] = raw_value
-            if raw_value is not None:
-                field_data[f"{base_field}_inhg"] = hpa_to_inhg(raw_value)
 
     elif field_type == "altitude":
         if column_unit == "feet":
-            field_data[f"{base_field}_ft"] = raw_value
+            # Convert imperial to metric and store only metric
             if raw_value is not None:
                 field_data[f"{base_field}_m"] = feet_to_meters(raw_value)
         elif column_unit == "meters":
+            # Store metric directly
             field_data[f"{base_field}_m"] = raw_value
-            if raw_value is not None:
-                field_data[f"{base_field}_ft"] = meters_to_feet(raw_value)
 
     elif field_type == "wind_speed":
         if column_unit == "mph":
-            field_data[f"{base_field}_mph"] = raw_value
+            # Convert imperial to metric and store only metric
             if raw_value is not None:
                 field_data[f"{base_field}_mps"] = mph_to_mps(raw_value)
         elif column_unit == "mps":
+            # Store metric directly
             field_data[f"{base_field}_mps"] = raw_value
-            if raw_value is not None:
-                field_data[f"{base_field}_mph"] = mps_to_mph(raw_value)
 
     elif field_type in ["percentage", "degrees"] or column_unit == "no_conversion":
         field_data[base_field] = raw_value

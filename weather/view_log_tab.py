@@ -5,6 +5,7 @@ import pandas as pd
 import streamlit as st
 
 from .service import WeatherService
+from utils.ui_formatters import format_temperature, format_pressure, format_wind_speed, format_altitude
 
 
 def render_weather_view_log_tab(user, supabase):
@@ -116,17 +117,20 @@ def render_weather_view_log_tab(user, supabase):
                 "No measurements found for selected weather source and date.")
             return
 
+        # Get user unit system
+        user_unit_system = user.get("unit_system", "Imperial")
+        
         # Convert to DataFrame for analysis
         measurements_dict = []
         for m in selected_measurements:
             measurements_dict.append(
                 {
                     "measurement_timestamp": m.measurement_timestamp,
-                    "temperature_f": m.temperature_f,
+                    "temperature_c": m.temperature_c,
                     "relative_humidity_pct": m.relative_humidity_pct,
-                    "barometric_pressure_inhg": m.barometric_pressure_inhg,
-                    "wind_speed_mph": m.wind_speed_mph,
-                    "density_altitude_ft": m.density_altitude_ft,
+                    "barometric_pressure_hpa": m.barometric_pressure_hpa,
+                    "wind_speed_mps": m.wind_speed_mps,
+                    "density_altitude_m": m.density_altitude_m,
                     "location_description": m.location_description,
                 }
             )
@@ -157,18 +161,18 @@ def render_weather_view_log_tab(user, supabase):
         st.subheader(" Weather Statistics")
 
         # Temperature stats
-        if "temperature_f" in df.columns and not df["temperature_f"].isna(
+        if "temperature_c" in df.columns and not df["temperature_c"].isna(
         ).all():
-            temps = df["temperature_f"].dropna()
+            temps = df["temperature_c"].dropna()
             col1, col2, col3, col4 = st.columns(4)
             with col1:
-                st.metric("Avg Temperature", f"{temps.mean():.1f}°F")
+                st.metric("Avg Temperature", format_temperature(temps.mean(), user_unit_system))
             with col2:
-                st.metric("Min Temperature", f"{temps.min():.1f}°F")
+                st.metric("Min Temperature", format_temperature(temps.min(), user_unit_system))
             with col3:
-                st.metric("Max Temperature", f"{temps.max():.1f}°F")
+                st.metric("Max Temperature", format_temperature(temps.max(), user_unit_system))
             with col4:
-                st.metric("Temp Range", f"{temps.max() - temps.min():.1f}°F")
+                st.metric("Temp Range", format_temperature(temps.max() - temps.min(), user_unit_system))
 
         # Humidity and pressure stats
         col1, col2, col3, col4 = st.columns(4)
@@ -182,26 +186,26 @@ def render_weather_view_log_tab(user, supabase):
                 st.metric("Avg Humidity", f"{humidity.mean():.1f}%")
 
         if (
-            "barometric_pressure_inhg" in df.columns
-            and not df["barometric_pressure_inhg"].isna().all()
+            "barometric_pressure_hpa" in df.columns
+            and not df["barometric_pressure_hpa"].isna().all()
         ):
-            pressure = df["barometric_pressure_inhg"].dropna()
+            pressure = df["barometric_pressure_hpa"].dropna()
             with col2:
-                st.metric("Avg Pressure", f"{pressure.mean():.2f} inHg")
+                st.metric("Avg Pressure", format_pressure(pressure.mean(), user_unit_system))
 
-        if "wind_speed_mph" in df.columns and not df["wind_speed_mph"].isna(
+        if "wind_speed_mps" in df.columns and not df["wind_speed_mps"].isna(
         ).all():
-            wind = df["wind_speed_mph"].dropna()
+            wind = df["wind_speed_mps"].dropna()
             with col3:
-                st.metric("Avg Wind Speed", f"{wind.mean():.1f} mph")
+                st.metric("Avg Wind Speed", format_wind_speed(wind.mean(), user_unit_system))
 
         if (
-            "density_altitude_ft" in df.columns
-            and not df["density_altitude_ft"].isna().all()
+            "density_altitude_m" in df.columns
+            and not df["density_altitude_m"].isna().all()
         ):
-            density_alt = df["density_altitude_ft"].dropna()
+            density_alt = df["density_altitude_m"].dropna()
             with col4:
-                st.metric("Avg Density Alt", f"{density_alt.mean():.0f} ft")
+                st.metric("Avg Density Alt", format_altitude(density_alt.mean(), user_unit_system))
 
         # Charts
         st.subheader(" Weather Trends")
@@ -216,17 +220,25 @@ def render_weather_view_log_tab(user, supabase):
             fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
 
             # Temperature plot
-            if "temperature_f" in df.columns and not df["temperature_f"].isna(
+            if "temperature_c" in df.columns and not df["temperature_c"].isna(
             ).all():
+                temp_unit = "°F" if user_unit_system == "Imperial" else "°C"
+                if user_unit_system == "Imperial":
+                    # Convert to Fahrenheit for display
+                    from utils.unit_conversions import celsius_to_fahrenheit
+                    temp_data = df["temperature_c"].apply(lambda x: celsius_to_fahrenheit(x) if x is not None else None)
+                else:
+                    temp_data = df["temperature_c"]
+                    
                 ax1.plot(
                     df["timestamp"],
-                    df["temperature_f"],
+                    temp_data,
                     "r-o",
                     linewidth=2,
                     markersize=3,
                     label="Temperature",
                 )
-                ax1.set_ylabel("Temperature (°F)", color="red")
+                ax1.set_ylabel(f"Temperature ({temp_unit})", color="red")
                 ax1.tick_params(axis="y", labelcolor="red")
                 ax1.grid(True, alpha=0.3)
                 ax1.set_title("Temperature Over Time")
@@ -260,34 +272,50 @@ def render_weather_view_log_tab(user, supabase):
 
             # Pressure plot
             if (
-                "barometric_pressure_inhg" in df.columns
-                and not df["barometric_pressure_inhg"].isna().all()
+                "barometric_pressure_hpa" in df.columns
+                and not df["barometric_pressure_hpa"].isna().all()
             ):
+                pressure_unit = "inHg" if user_unit_system == "Imperial" else "hPa"
+                if user_unit_system == "Imperial":
+                    # Convert to inHg for display
+                    from utils.unit_conversions import hpa_to_inhg
+                    pressure_data = df["barometric_pressure_hpa"].apply(lambda x: hpa_to_inhg(x) if x is not None else None)
+                else:
+                    pressure_data = df["barometric_pressure_hpa"]
+                    
                 ax1.plot(
                     df["timestamp"],
-                    df["barometric_pressure_inhg"],
+                    pressure_data,
                     "g-o",
                     linewidth=2,
                     markersize=3,
                     label="Pressure",
                 )
-                ax1.set_ylabel("Pressure (inHg)", color="green")
+                ax1.set_ylabel(f"Pressure ({pressure_unit})", color="green")
                 ax1.tick_params(axis="y", labelcolor="green")
                 ax1.grid(True, alpha=0.3)
                 ax1.set_title("Barometric Pressure Over Time")
 
             # Wind speed plot
-            if "wind_speed_mph" in df.columns and not df["wind_speed_mph"].isna(
+            if "wind_speed_mps" in df.columns and not df["wind_speed_mps"].isna(
             ).all():
+                wind_unit = "mph" if user_unit_system == "Imperial" else "m/s"
+                if user_unit_system == "Imperial":
+                    # Convert to mph for display
+                    from utils.unit_conversions import mps_to_mph
+                    wind_data = df["wind_speed_mps"].apply(lambda x: mps_to_mph(x) if x is not None else None)
+                else:
+                    wind_data = df["wind_speed_mps"]
+                    
                 ax2.plot(
                     df["timestamp"],
-                    df["wind_speed_mph"],
+                    wind_data,
                     "m-o",
                     linewidth=2,
                     markersize=3,
                     label="Wind Speed",
                 )
-                ax2.set_ylabel("Wind Speed (mph)", color="magenta")
+                ax2.set_ylabel(f"Wind Speed ({wind_unit})", color="magenta")
                 ax2.tick_params(axis="y", labelcolor="magenta")
                 ax2.grid(True, alpha=0.3)
                 ax2.set_title("Wind Speed Over Time")
@@ -304,10 +332,10 @@ def render_weather_view_log_tab(user, supabase):
             # Normalize all parameters to 0-1 scale for comparison
             params_to_plot = []
 
-            if "temperature_f" in df.columns and not df["temperature_f"].isna(
+            if "temperature_c" in df.columns and not df["temperature_c"].isna(
             ).all():
-                temp_norm = (df["temperature_f"] - df["temperature_f"].min()) / (
-                    df["temperature_f"].max() - df["temperature_f"].min()
+                temp_norm = (df["temperature_c"] - df["temperature_c"].min()) / (
+                    df["temperature_c"].max() - df["temperature_c"].min()
                 )
                 ax.plot(
                     df["timestamp"],
@@ -335,15 +363,15 @@ def render_weather_view_log_tab(user, supabase):
                 params_to_plot.append("humidity")
 
             if (
-                "barometric_pressure_inhg" in df.columns
-                and not df["barometric_pressure_inhg"].isna().all()
+                "barometric_pressure_hpa" in df.columns
+                and not df["barometric_pressure_hpa"].isna().all()
             ):
                 pressure_norm = (
-                    df["barometric_pressure_inhg"]
-                    - df["barometric_pressure_inhg"].min()
+                    df["barometric_pressure_hpa"]
+                    - df["barometric_pressure_hpa"].min()
                 ) / (
-                    df["barometric_pressure_inhg"].max()
-                    - df["barometric_pressure_inhg"].min()
+                    df["barometric_pressure_hpa"].max()
+                    - df["barometric_pressure_hpa"].min()
                 )
                 ax.plot(
                     df["timestamp"],
@@ -375,11 +403,11 @@ def render_weather_view_log_tab(user, supabase):
         # Select relevant columns
         columns_to_show = [
             "timestamp",
-            "temperature_f",
+            "temperature_c",
             "relative_humidity_pct",
-            "barometric_pressure_inhg",
-            "wind_speed_mph",
-            "density_altitude_ft",
+            "barometric_pressure_hpa",
+            "wind_speed_mps",
+            "density_altitude_m",
         ]
 
         # Only include columns that exist and have data
@@ -397,26 +425,39 @@ def render_weather_view_log_tab(user, supabase):
                     "%H:%M:%S"
                 )
 
-            # Round numeric columns
-            numeric_columns = [
-                "temperature_f",
-                "relative_humidity_pct",
-                "barometric_pressure_inhg",
-                "wind_speed_mph",
-                "density_altitude_ft",
-            ]
-            for col in numeric_columns:
-                if col in display_df.columns:
-                    display_df[col] = display_df[col].round(1)
+            # Format numeric columns using UI formatters
+            if "temperature_c" in display_df.columns:
+                display_df["Temperature"] = display_df["temperature_c"].apply(
+                    lambda x: format_temperature(x, user_unit_system) if x is not None else "N/A"
+                )
+                display_df = display_df.drop(columns=["temperature_c"])
+                
+            if "barometric_pressure_hpa" in display_df.columns:
+                display_df["Pressure"] = display_df["barometric_pressure_hpa"].apply(
+                    lambda x: format_pressure(x, user_unit_system) if x is not None else "N/A"
+                )
+                display_df = display_df.drop(columns=["barometric_pressure_hpa"])
+                
+            if "wind_speed_mps" in display_df.columns:
+                display_df["Wind Speed"] = display_df["wind_speed_mps"].apply(
+                    lambda x: format_wind_speed(x, user_unit_system) if x is not None else "N/A"
+                )
+                display_df = display_df.drop(columns=["wind_speed_mps"])
+                
+            if "density_altitude_m" in display_df.columns:
+                display_df["Density Alt"] = display_df["density_altitude_m"].apply(
+                    lambda x: format_altitude(x, user_unit_system) if x is not None else "N/A"
+                )
+                display_df = display_df.drop(columns=["density_altitude_m"])
+                
+            # Round humidity percentage
+            if "relative_humidity_pct" in display_df.columns:
+                display_df["relative_humidity_pct"] = display_df["relative_humidity_pct"].round(1)
 
-            # Rename columns for better display
+            # Rename remaining columns for better display
             column_rename = {
                 "timestamp": "Time",
-                "temperature_f": "Temp (°F)",
                 "relative_humidity_pct": "Humidity (%)",
-                "barometric_pressure_inhg": "Pressure (inHg)",
-                "wind_speed_mph": "Wind (mph)",
-                "density_altitude_ft": "Density Alt (ft)",
             }
 
             display_df = display_df.rename(columns=column_rename)

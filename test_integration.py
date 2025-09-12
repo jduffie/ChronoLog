@@ -173,18 +173,17 @@ class TestFileUploadIntegration(BaseIntegrationTest):
                     user_id=self.test_user_id,
                     chrono_session_id=session_id,
                     shot_number=int(row["Shot"]),
-                    speed_fps=float(row["Velocity (fps)"]),
-                    speed_mps=float(row["Velocity (fps)"]) *
-                    0.3048,  # Convert to m/s
-                    ke_ft_lb=float(row["Kinetic Energy (ft-lbs)"]),
-                    power_factor=float(row["Power Factor"]),
+                    speed_mps=float(row["Velocity (fps)"]) * 0.3048,  # Convert to m/s
+                    ke_j=float(row["Kinetic Energy (ft-lbs)"]) * 1.35582,  # Convert to Joules
+                    power_factor_kgms=float(row["Power Factor"]) * 0.003108,  # Convert to kg⋅m/s
                     datetime_local=pd.to_datetime(row["Date/Time"]),
                 )
                 measurements.append(measurement)
 
             # Assert we created the expected number of measurements
             self.assertEqual(len(measurements), 5)
-            self.assertEqual(measurements[0].speed_fps, 2850)
+            # Verify metric conversion (2850 fps * 0.3048 = 868.68 m/s)
+            self.assertAlmostEqual(measurements[0].speed_mps, 868.68, places=2)
             self.assertEqual(session.session_name, "9mm FMJ, 124gr")
 
         finally:
@@ -228,21 +227,21 @@ class TestCrossModuleIntegration(BaseIntegrationTest):
             user_id=self.test_user_id,
             chrono_session_id="test-session-123",
             shot_number=1,
-            speed_fps=2850.0,
             speed_mps=2850.0 * 0.3048,  # Convert to m/s
-            ke_ft_lb=1805.0,
-            power_factor=228.0,
+            ke_j=1805.0 * 1.35582,  # Convert to Joules
+            power_factor_kgms=228.0 * 0.003108,  # Convert to kg⋅m/s
             datetime_local=datetime.now(timezone.utc),
         )
 
         # Verify data consistency
         self.assertEqual(session.session_name, "9mm FMJ, 124gr")
-        self.assertEqual(measurement.speed_fps, 2850.0)
+        # Verify metric conversion (2850 fps * 0.3048 = 868.68 m/s)
+        self.assertAlmostEqual(measurement.speed_mps, 868.68, places=2)
 
         # Test that session and measurement data aligns
         # Power factor calculation varies, so just verify it's reasonable
-        self.assertGreater(measurement.power_factor, 200.0)  # Should be > 200
-        self.assertLess(measurement.power_factor, 300.0)  # Should be < 300
+        # Original power factor 228 * 0.003108 = 0.708624 kg⋅m/s
+        self.assertAlmostEqual(measurement.power_factor_kgms, 0.708624, places=5)
 
 
 @pytest.mark.integration

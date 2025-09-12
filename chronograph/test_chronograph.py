@@ -45,11 +45,11 @@ class TestChronographService(unittest.TestCase):
                 "user_id": self.user_id,
                 "chrono_session_id": session_id,
                 "shot_number": 1,
-                "speed_fps": 1200.5,
+                "speed_mps": 1200.5,
                 "datetime_local": "2023-12-01T10:01:00",
-                "delta_avg_fps": 5.2,
-                "ke_ft_lb": 368.5,
-                "power_factor": 138.1,
+                "delta_avg_mps": 5.2,
+                "ke_j": 368.5,
+                "power_factor_kgms": 138.1,
             }
         ]
 
@@ -66,7 +66,7 @@ class TestChronographService(unittest.TestCase):
         self.assertEqual(len(measurements), 1)
         self.assertIsInstance(measurements[0], ChronographMeasurement)
         self.assertEqual(measurements[0].shot_number, 1)
-        self.assertEqual(measurements[0].speed_fps, 1200.5)
+        self.assertEqual(measurements[0].speed_mps, 1200.5)
 
     def test_session_exists_true(self):
         mock_response = Mock()
@@ -125,8 +125,8 @@ class TestChronographService(unittest.TestCase):
                 "uploaded_at": "2023-12-01T10:05:00",
                 "file_path": "/uploads/test.xlsx",
                 "shot_count": 5,
-                "avg_speed_fps": 1150.0,
-                "std_dev_fps": 12.5
+                "avg_speed_mps": 1150.0,
+                "std_dev_mps": 12.5
             }
         ]
 
@@ -227,10 +227,10 @@ class TestChronographModels(unittest.TestCase):
             "file_path": "/uploads/garmin_data.xlsx",
             "chronograph_source_id": "source-789",
             "shot_count": 10,
-            "avg_speed_fps": 1150.5,
-            "std_dev_fps": 15.3,
-            "min_speed_fps": 1120.2,
-            "max_speed_fps": 1175.8,
+            "avg_speed_mps": 1150.5,
+            "std_dev_mps": 15.3,
+            "min_speed_mps": 1120.2,
+            "max_speed_mps": 1175.8,
             "created_at": "2023-12-01T10:05:30"
         }
 
@@ -239,14 +239,10 @@ class TestChronographModels(unittest.TestCase):
             "user_id": "google-oauth2|111273793361054745867",
             "chrono_session_id": "session-1",
             "shot_number": 1,
-            "speed_fps": 1200.5,
             "speed_mps": 365.8,
             "datetime_local": "2023-12-01T10:01:00",
-            "delta_avg_fps": 5.2,
             "delta_avg_mps": 1.6,
-            "ke_ft_lb": 368.5,
             "ke_j": 499.2,
-            "power_factor": 138.1,
             "power_factor_kgms": 62.7,
             "clean_bore": True,
             "cold_bore": False,
@@ -264,8 +260,8 @@ class TestChronographModels(unittest.TestCase):
         self.assertEqual(session.session_name, "9mm Test Session")
         self.assertEqual(session.chronograph_source_id, "source-789")
         self.assertEqual(session.shot_count, 10)
-        self.assertEqual(session.avg_speed_fps, 1150.5)
-        self.assertEqual(session.std_dev_fps, 15.3)
+        self.assertEqual(session.avg_speed_mps, 1150.5)
+        self.assertEqual(session.std_dev_mps, 15.3)
         self.assertIsInstance(session.datetime_local, pd.Timestamp)
         self.assertIsInstance(session.uploaded_at, pd.Timestamp)
 
@@ -295,18 +291,11 @@ class TestChronographModels(unittest.TestCase):
         # Test bullet_display
         self.assertEqual(session.bullet_display(), "9mm Test Session")
 
-        # Test muzzle_vel_speed_units
-        self.assertEqual(session.muzzle_vel_speed_units(), "fps")
-
-        # Test avg_speed_display
-        self.assertEqual(session.avg_speed_display(), "1150")
-
-        # Test std_dev_display
-        self.assertEqual(session.std_dev_display(), "15.3 fps")
-
-        # Test velocity_range_display
-        expected_range = f"{1175.8 - 1120.2:.0f} fps"
-        self.assertEqual(session.velocity_range_display(), expected_range)
+        # Verify session data is properly accessible
+        self.assertEqual(session.avg_speed_mps, 1150.5)
+        self.assertEqual(session.std_dev_mps, 15.3)
+        self.assertEqual(session.min_speed_mps, 1120.2)
+        self.assertEqual(session.max_speed_mps, 1175.8)
 
         # Test file_name
         self.assertEqual(session.file_name(), "garmin_data.xlsx")
@@ -325,21 +314,24 @@ class TestChronographModels(unittest.TestCase):
             "uploaded_at": "2023-12-01T10:05:00",
             "file_path": None,
             "shot_count": 0,
-            "avg_speed_fps": None,
-            "std_dev_fps": None,
-            "min_speed_fps": None,
-            "max_speed_fps": None,
+            "avg_speed_mps": None,
+            "std_dev_mps": None,
+            "min_speed_mps": None,
+            "max_speed_mps": None,
         }
 
         session = ChronographSession.from_supabase_record(minimal_record)
 
         # Test with None/empty values
         self.assertEqual(session.bullet_display(), "Unknown Session")
-        self.assertEqual(session.avg_speed_display(), "N/A")
-        self.assertEqual(session.std_dev_display(), "N/A")
-        self.assertEqual(session.velocity_range_display(), "N/A")
         self.assertEqual(session.file_name(), "N/A")
         self.assertFalse(session.has_measurements())
+        
+        # Verify None values are properly handled
+        self.assertIsNone(session.avg_speed_mps)
+        self.assertIsNone(session.std_dev_mps)
+        self.assertIsNone(session.min_speed_mps)
+        self.assertIsNone(session.max_speed_mps)
 
     def test_chronograph_measurement_from_supabase_record(self):
         """Test creating ChronographMeasurement from Supabase record"""
@@ -348,13 +340,9 @@ class TestChronographModels(unittest.TestCase):
 
         self.assertEqual(measurement.id, "measurement-1")
         self.assertEqual(measurement.shot_number, 1)
-        self.assertAlmostEqual(measurement.speed_fps, 1200.5)
         self.assertAlmostEqual(measurement.speed_mps, 365.8)
-        self.assertAlmostEqual(measurement.delta_avg_fps, 5.2)
         self.assertAlmostEqual(measurement.delta_avg_mps, 1.6)
-        self.assertAlmostEqual(measurement.ke_ft_lb, 368.5)
         self.assertAlmostEqual(measurement.ke_j, 499.2)
-        self.assertAlmostEqual(measurement.power_factor, 138.1)
         self.assertAlmostEqual(measurement.power_factor_kgms, 62.7)
         self.assertTrue(measurement.clean_bore)
         self.assertFalse(measurement.cold_bore)
@@ -366,7 +354,7 @@ class TestChronographModels(unittest.TestCase):
                    {**self.sample_measurement_record,
                     "id": "measurement-2",
                     "shot_number": 2,
-                    "speed_fps": 1195.3}]
+                    "speed_mps": 1195.3}]
 
         measurements = ChronographMeasurement.from_supabase_records(records)
 
@@ -374,7 +362,7 @@ class TestChronographModels(unittest.TestCase):
         self.assertEqual(measurements[0].id, "measurement-1")
         self.assertEqual(measurements[1].id, "measurement-2")
         self.assertEqual(measurements[1].shot_number, 2)
-        self.assertEqual(measurements[1].speed_fps, 1195.3)
+        self.assertEqual(measurements[1].speed_mps, 1195.3)
 
     def test_chronograph_measurement_minimal_data(self):
         """Test ChronographMeasurement with minimal required data"""
@@ -383,7 +371,7 @@ class TestChronographModels(unittest.TestCase):
             "user_id": "user-123",
             "chrono_session_id": "session-123",
             "shot_number": 1,
-            "speed_fps": 1200.0,
+            "speed_mps": 1200.0,
             "datetime_local": "2023-12-01T10:01:00",
         }
 
@@ -391,11 +379,10 @@ class TestChronographModels(unittest.TestCase):
             minimal_record)
 
         self.assertEqual(measurement.id, "measurement-minimal")
-        self.assertEqual(measurement.speed_fps, 1200.0)
-        self.assertEqual(measurement.speed_mps, 0)  # Default value
-        self.assertIsNone(measurement.delta_avg_fps)
-        self.assertIsNone(measurement.ke_ft_lb)
-        self.assertIsNone(measurement.power_factor)
+        self.assertEqual(measurement.speed_mps, 1200.0)
+        self.assertIsNone(measurement.delta_avg_mps)
+        self.assertIsNone(measurement.ke_j)
+        self.assertIsNone(measurement.power_factor_kgms)
         self.assertIsNone(measurement.clean_bore)
         self.assertIsNone(measurement.cold_bore)
         self.assertIsNone(measurement.shot_notes)
@@ -407,16 +394,16 @@ class TestChronographModels(unittest.TestCase):
 
         # Test numeric fields
         self.assertIsInstance(measurement.shot_number, int)
-        self.assertIsInstance(measurement.speed_fps, float)
+        self.assertIsInstance(measurement.speed_mps, float)
         self.assertIsInstance(measurement.speed_mps, (int, float))
 
         # Test optional numeric fields
-        if measurement.delta_avg_fps is not None:
-            self.assertIsInstance(measurement.delta_avg_fps, (int, float))
-        if measurement.ke_ft_lb is not None:
-            self.assertIsInstance(measurement.ke_ft_lb, (int, float))
-        if measurement.power_factor is not None:
-            self.assertIsInstance(measurement.power_factor, (int, float))
+        if measurement.delta_avg_mps is not None:
+            self.assertIsInstance(measurement.delta_avg_mps, (int, float))
+        if measurement.ke_j is not None:
+            self.assertIsInstance(measurement.ke_j, (int, float))
+        if measurement.power_factor_kgms is not None:
+            self.assertIsInstance(measurement.power_factor_kgms, (int, float))
 
         # Test boolean fields
         if measurement.clean_bore is not None:
@@ -585,11 +572,11 @@ class TestChronographIntegration(unittest.TestCase):
 
         # Mock speed data for stats calculation
         speed_data = [
-            {"speed_fps": 1150.0},
-            {"speed_fps": 1155.0},
-            {"speed_fps": 1148.0},
-            {"speed_fps": 1152.0},
-            {"speed_fps": 1149.0}
+            {"speed_mps": 350.5},
+            {"speed_mps": 352.0},
+            {"speed_mps": 349.8},
+            {"speed_mps": 351.2},
+            {"speed_mps": 350.2}
         ]
 
         mock_response = Mock()
@@ -601,7 +588,7 @@ class TestChronographIntegration(unittest.TestCase):
 
         speeds = self.service.get_measurements_for_stats(
             self.user_id, session_id)
-        expected_speeds = [1150.0, 1155.0, 1148.0, 1152.0, 1149.0]
+        expected_speeds = [350.5, 352.0, 349.8, 351.2, 350.2]
 
         self.assertEqual(speeds, expected_speeds)
 
@@ -619,7 +606,7 @@ class TestChronographIntegration(unittest.TestCase):
             "uploaded_at": "2023-12-01T10:05:00",
             "file_path": "/uploads/test.xlsx",
             "shot_count": 3,
-            "avg_speed_fps": 1150.0
+            "avg_speed_mps": 1150.0
         }
 
         # Mock measurement data
@@ -629,7 +616,7 @@ class TestChronographIntegration(unittest.TestCase):
                 "user_id": self.user_id,
                 "chrono_session_id": session_id,
                 "shot_number": 1,
-                "speed_fps": 1145.0,
+                "speed_mps": 1145.0,
                 "datetime_local": "2023-12-01T10:01:00"
             },
             {
@@ -637,7 +624,7 @@ class TestChronographIntegration(unittest.TestCase):
                 "user_id": self.user_id,
                 "chrono_session_id": session_id,
                 "shot_number": 2,
-                "speed_fps": 1150.0,
+                "speed_mps": 1150.0,
                 "datetime_local": "2023-12-01T10:02:00"
             },
             {
@@ -645,7 +632,7 @@ class TestChronographIntegration(unittest.TestCase):
                 "user_id": self.user_id,
                 "chrono_session_id": session_id,
                 "shot_number": 3,
-                "speed_fps": 1155.0,
+                "speed_mps": 1155.0,
                 "datetime_local": "2023-12-01T10:03:00"
             }
         ]
@@ -675,7 +662,7 @@ class TestChronographIntegration(unittest.TestCase):
             self.user_id, session_id)
         self.assertEqual(len(measurements), 3)
         self.assertEqual(measurements[0].shot_number, 1)
-        self.assertEqual(measurements[2].speed_fps, 1155.0)
+        self.assertEqual(measurements[2].speed_mps, 1155.0)
 
     def test_chronograph_source_integration(self):
         """Test chronograph source integration with service"""
@@ -730,7 +717,7 @@ class TestChronographIntegration(unittest.TestCase):
                 "uploaded_at": f"2023-12-0{i+1}T10:05:00",
                 "file_path": f"/uploads/test_{i}.xlsx",
                 "shot_count": (i + 1) * 5,
-                "avg_speed_fps": 1150.0 + (i * 10)
+                "avg_speed_mps": 1150.0 + (i * 10)
             }
             bulk_sessions.append(session_data)
 
@@ -744,7 +731,7 @@ class TestChronographIntegration(unittest.TestCase):
 
         self.assertEqual(len(sessions), 5)
         self.assertEqual(sessions[0].session_name, "Test Session 0")
-        self.assertEqual(sessions[4].avg_speed_fps, 1190.0)
+        self.assertEqual(sessions[4].avg_speed_mps, 1190.0)
         self.assertEqual(sessions[2].shot_count, 15)
 
     def test_filtered_sessions_integration(self):
