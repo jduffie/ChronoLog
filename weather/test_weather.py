@@ -105,14 +105,14 @@ class TestWeatherMeasurement(unittest.TestCase):
             "measurement_timestamp": "2023-12-01T10:00:00",
             "uploaded_at": "2023-12-01T10:01:00",
             "file_path": "test/weather.csv",
-            "temperature_f": 72.5,
+            "temperature_c": 22.5,
             "relative_humidity_pct": 65.0,
-            "barometric_pressure_inhg": 29.92,
-            "wind_speed_mph": 5.2,
+            "barometric_pressure_hpa": 1013.25,
+            "wind_speed_mps": 2.3,
             "compass_true_deg": 270,
-            "density_altitude_ft": 2150,
-            "altitude_ft": 1000,
-            "dew_point_f": 55.0,
+            "density_altitude_m": 655,
+            "altitude_m": 305,
+            "dew_point_c": 12.8,
         }
 
         measurement = WeatherMeasurement.from_supabase_record(record)
@@ -120,37 +120,37 @@ class TestWeatherMeasurement(unittest.TestCase):
         self.assertEqual(measurement.id, "measurement-1")
         self.assertEqual(measurement.user_id, "test@example.com")
         self.assertEqual(measurement.weather_source_id, "source-1")
-        self.assertEqual(measurement.temperature_f, 72.5)
+        self.assertEqual(measurement.temperature_c, 22.5)
         self.assertEqual(measurement.relative_humidity_pct, 65.0)
-        self.assertEqual(measurement.barometric_pressure_inhg, 29.92)
-        self.assertEqual(measurement.wind_speed_mph, 5.2)
+        self.assertEqual(measurement.barometric_pressure_hpa, 1013.25)
+        self.assertEqual(measurement.wind_speed_mps, 2.3)
         self.assertEqual(measurement.compass_true_deg, 270)
-        self.assertEqual(measurement.density_altitude_ft, 2150)
+        self.assertEqual(measurement.density_altitude_m, 655)
 
-    def test_weather_measurement_display_methods(self):
-        """Test WeatherMeasurement display methods"""
+    def test_weather_measurement_metric_fields(self):
+        """Test WeatherMeasurement metric field access"""
         measurement = WeatherMeasurement(
             id="measurement-1",
             user_id="test@example.com",
             weather_source_id="source-1",
             measurement_timestamp=pd.to_datetime("2023-12-01T10:00:00"),
             uploaded_at=pd.to_datetime("2023-12-01T10:01:00"),
-            temperature_f=72.5,
+            temperature_c=22.5,
             relative_humidity_pct=65.0,
-            barometric_pressure_inhg=29.92,
-            wind_speed_mph=5.2,
+            barometric_pressure_hpa=1013.25,
+            wind_speed_mps=2.3,
             compass_true_deg=270,
-            altitude_ft=1000,
-            density_altitude_ft=2150,
+            altitude_m=305,
+            density_altitude_m=655,
         )
 
-        self.assertEqual(measurement.temperature_display(), "72.5°F")
-        self.assertEqual(measurement.humidity_display(), "65.0%")
-        self.assertEqual(measurement.pressure_display(), "29.92 inHg")
-        self.assertEqual(measurement.wind_display(), "5.2 mph")
-        self.assertEqual(measurement.wind_direction_display(), "270°")
-        self.assertEqual(measurement.altitude_display(), "1000 ft")
-        self.assertEqual(measurement.density_altitude_display(), "2150 ft")
+        self.assertEqual(measurement.temperature_c, 22.5)
+        self.assertEqual(measurement.relative_humidity_pct, 65.0)
+        self.assertEqual(measurement.barometric_pressure_hpa, 1013.25)
+        self.assertEqual(measurement.wind_speed_mps, 2.3)
+        self.assertEqual(measurement.compass_true_deg, 270)
+        self.assertEqual(measurement.altitude_m, 305)
+        self.assertEqual(measurement.density_altitude_m, 655)
 
     def test_weather_measurement_has_data_methods(self):
         """Test WeatherMeasurement data detection methods"""
@@ -160,7 +160,7 @@ class TestWeatherMeasurement(unittest.TestCase):
             weather_source_id="source-1",
             measurement_timestamp=pd.to_datetime("2023-12-01T10:00:00"),
             uploaded_at=pd.to_datetime("2023-12-01T10:01:00"),
-            wind_speed_mph=5.2,
+            wind_speed_mps=2.3,
             compass_true_deg=270,
             location_description="Test Location",
         )
@@ -168,8 +168,8 @@ class TestWeatherMeasurement(unittest.TestCase):
         self.assertTrue(measurement.has_wind_data())
         self.assertTrue(measurement.has_location_data())
 
-    def test_weather_measurement_display_na_values(self):
-        """Test WeatherMeasurement display methods with None values"""
+    def test_weather_measurement_none_values(self):
+        """Test WeatherMeasurement with None values"""
         measurement = WeatherMeasurement(
             id="measurement-1",
             user_id="test@example.com",
@@ -178,13 +178,13 @@ class TestWeatherMeasurement(unittest.TestCase):
             uploaded_at=pd.to_datetime("2023-12-01T10:01:00"),
         )
 
-        self.assertEqual(measurement.temperature_display(), "N/A")
-        self.assertEqual(measurement.humidity_display(), "N/A")
-        self.assertEqual(measurement.pressure_display(), "N/A")
-        self.assertEqual(measurement.wind_display(), "N/A")
-        self.assertEqual(measurement.wind_direction_display(), "N/A")
-        self.assertEqual(measurement.altitude_display(), "N/A")
-        self.assertEqual(measurement.density_altitude_display(), "N/A")
+        self.assertIsNone(measurement.temperature_c)
+        self.assertIsNone(measurement.relative_humidity_pct)
+        self.assertIsNone(measurement.barometric_pressure_hpa)
+        self.assertIsNone(measurement.wind_speed_mps)
+        self.assertIsNone(measurement.compass_true_deg)
+        self.assertIsNone(measurement.altitude_m)
+        self.assertIsNone(measurement.density_altitude_m)
 
 
 class TestWeatherImportTab(unittest.TestCase):
@@ -346,10 +346,10 @@ class TestWeatherServiceAdvanced(unittest.TestCase):
             "weather_source_id": self.test_source_id,
             "measurement_timestamp": "2023-12-01T10:00:00Z",
             "uploaded_at": "2023-12-01T10:01:00Z",
-            "temperature_f": 75.2,
+            "temperature_c": 24.0,
             "relative_humidity_pct": 65.0,
-            "barometric_pressure_inhg": 29.92,
-            "wind_speed_mph": 8.5
+            "barometric_pressure_hpa": 1013.25,
+            "wind_speed_mps": 3.8
         }
 
     def test_weather_source_crud_operations(self):
@@ -607,26 +607,24 @@ class TestWeatherModelsAdvanced(unittest.TestCase):
             weather_source_id="source-1",
             measurement_timestamp=pd.to_datetime("2023-12-01T10:00:00"),
             uploaded_at=pd.to_datetime("2023-12-01T10:01:00"),
-            temperature_f=72.5,
+            temperature_c=22.5,
             relative_humidity_pct=65.0,
-            barometric_pressure_inhg=29.92,
-            wind_speed_mph=12.3,
+            barometric_pressure_hpa=1013.25,
+            wind_speed_mps=5.5,
             compass_true_deg=270,
             compass_magnetic_deg=275,
-            altitude_ft=1500,
-            density_altitude_ft=2100
+            altitude_m=457,
+            density_altitude_m=640
         )
 
-        # Test all display methods
-        self.assertEqual(full_measurement.temperature_display(), "72.5°F")
-        self.assertEqual(full_measurement.humidity_display(), "65.0%")
-        self.assertEqual(full_measurement.pressure_display(), "29.92 inHg")
-        self.assertEqual(full_measurement.wind_display(), "12.3 mph")
-        self.assertEqual(full_measurement.wind_direction_display(), "270°")
-        self.assertEqual(full_measurement.altitude_display(), "1500 ft")
-        self.assertEqual(
-            full_measurement.density_altitude_display(),
-            "2100 ft")
+        # Test field access
+        self.assertEqual(full_measurement.temperature_c, 22.5)
+        self.assertEqual(full_measurement.relative_humidity_pct, 65.0)
+        self.assertEqual(full_measurement.barometric_pressure_hpa, 1013.25)
+        self.assertEqual(full_measurement.wind_speed_mps, 5.5)
+        self.assertEqual(full_measurement.compass_true_deg, 270)
+        self.assertEqual(full_measurement.altitude_m, 457)
+        self.assertEqual(full_measurement.density_altitude_m, 640)
 
         # Test wind direction priority (true deg over magnetic)
         measurement_mag_only = WeatherMeasurement(
@@ -637,20 +635,18 @@ class TestWeatherModelsAdvanced(unittest.TestCase):
             uploaded_at=pd.to_datetime("2023-12-01T10:01:00"),
             compass_magnetic_deg=275
         )
-        self.assertEqual(
-            measurement_mag_only.wind_direction_display(),
-            "275° (mag)")
+        self.assertEqual(measurement_mag_only.compass_magnetic_deg, 275)
 
     def test_weather_measurement_data_detection(self):
         """Test WeatherMeasurement data detection methods"""
         # Test wind data detection
         wind_data_combinations = [
-            {"wind_speed_mph": 5.0, "expected": True},
-            {"crosswind_mph": 3.0, "expected": True},
-            {"headwind_mph": -2.0, "expected": True},
+            {"wind_speed_mps": 2.2, "expected": True},
+            {"crosswind_mps": 1.3, "expected": True},
+            {"headwind_mps": -0.9, "expected": True},
             {"compass_magnetic_deg": 180, "expected": True},
             {"compass_true_deg": 270, "expected": True},
-            {"temperature_f": 75.0, "expected": False}  # No wind data
+            {"temperature_c": 23.9, "expected": False}  # No wind data
         ]
 
         for combo in wind_data_combinations:
@@ -669,7 +665,7 @@ class TestWeatherModelsAdvanced(unittest.TestCase):
             {"location_description": "Test Range", "expected": True},
             {"location_address": "123 Main St", "expected": True},
             {"location_coordinates": "40.7128,-74.0060", "expected": True},
-            {"temperature_f": 75.0, "expected": False}  # No location data
+            {"temperature_c": 23.9, "expected": False}  # No location data
         ]
 
         for combo in location_data_combinations:
@@ -712,7 +708,7 @@ class TestWeatherModelsAdvanced(unittest.TestCase):
                 "weather_source_id": "source-1",
                 "measurement_timestamp": "2023-12-01T10:00:00",
                 "uploaded_at": "2023-12-01T10:01:00",
-                "temperature_f": 70.0 + i
+                "temperature_c": 21.0 + i
             }
             for i in range(5)
         ]
@@ -722,7 +718,7 @@ class TestWeatherModelsAdvanced(unittest.TestCase):
         self.assertEqual(len(measurements), 5)
         for i, measurement in enumerate(measurements):
             self.assertEqual(measurement.id, f"measurement-{i}")
-            self.assertEqual(measurement.temperature_f, 70.0 + i)
+            self.assertEqual(measurement.temperature_c, 21.0 + i)
 
 
 class TestWeatherUtilityFunctions(unittest.TestCase):
@@ -804,10 +800,10 @@ class TestWeatherIntegrationAdvanced(unittest.TestCase):
                 "weather_source_id": source_id,
                 "measurement_timestamp": f"2023-12-01T{i:02d}:00:00Z",
                 "uploaded_at": f"2023-12-01T{i:02d}:01:00Z",
-                "temperature_f": 70.0 + (i * 0.5),
+                "temperature_c": 21.1 + (i * 0.3),
                 "relative_humidity_pct": 60.0 + i,
-                "barometric_pressure_inhg": 29.90 + (i * 0.01),
-                "wind_speed_mph": 5.0 + i
+                "barometric_pressure_hpa": 1013.25 + (i * 0.34),
+                "wind_speed_mps": 2.2 + i
             }
             measurements.append(measurement_data)
 
@@ -840,7 +836,7 @@ class TestWeatherIntegrationAdvanced(unittest.TestCase):
         for i, measurement in enumerate(retrieved_measurements):
             self.assertIsInstance(measurement, WeatherMeasurement)
             self.assertEqual(measurement.weather_source_id, source_id)
-            self.assertEqual(measurement.temperature_f, 70.0 + (i * 0.5))
+            self.assertEqual(measurement.temperature_c, 21.1 + (i * 0.3))
 
     def test_weather_source_device_info_integration(self):
         """Test integration of device info detection and source management"""
@@ -959,7 +955,7 @@ class TestWeatherIntegrationAdvanced(unittest.TestCase):
             "user_id": self.test_user_id,
             "weather_source_id": source_id,
             "measurement_timestamp": "2023-12-01T10:00:00Z",
-            "temperature_f": 75.0
+            "temperature_c": 23.9
         }
 
         measurement_response = MagicMock()

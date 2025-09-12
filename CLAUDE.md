@@ -164,3 +164,4 @@ DO NOT use unicode emojis. Use plain text only.
 - run isort before commit
 - use Intellij MCP where possible to accelerate file searching, etc
 - all interior processing and storage is based on the metric system.  Only swap at the edge when importing files that use imperial or in the ui if the user preferences require it
+- if a column has values with units, the units should be presented in the column header and not in the row as part of the column value

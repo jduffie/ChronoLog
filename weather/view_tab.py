@@ -5,6 +5,7 @@ import streamlit as st
 
 from .service import WeatherService
 from utils.ui_formatters import format_temperature, format_pressure, format_wind_speed, format_altitude
+from utils.unit_conversions import celsius_to_fahrenheit, hpa_to_inhg, mps_to_mph
 
 
 def render_weather_view_tab(user, supabase):
@@ -91,6 +92,11 @@ def render_weather_view_tab(user, supabase):
         table_data = []
         user_unit_system = user.get("unit_system", "Imperial")
         
+        # Define column headers with units based on user preference
+        temp_unit = "°F" if user_unit_system == "Imperial" else "°C"
+        pressure_unit = "inHg" if user_unit_system == "Imperial" else "hPa"  
+        wind_speed_unit = "mph" if user_unit_system == "Imperial" else "m/s"
+        
         for i, measurement in enumerate(filtered_measurements):
             # Find source name
             source_name = "Unknown"
@@ -99,27 +105,40 @@ def render_weather_view_tab(user, supabase):
                     source_name = source.display_name()
                     break
 
+            # Convert values without including units in the cell values
+            if measurement.temperature_c is not None:
+                temp_value = celsius_to_fahrenheit(measurement.temperature_c) if user_unit_system == "Imperial" else measurement.temperature_c
+                temp_display = f"{temp_value:.1f}"
+            else:
+                temp_display = "N/A"
+                
+            if measurement.barometric_pressure_hpa is not None:
+                pressure_value = hpa_to_inhg(measurement.barometric_pressure_hpa) if user_unit_system == "Imperial" else measurement.barometric_pressure_hpa
+                pressure_display = f"{pressure_value:.2f}"
+            else:
+                pressure_display = "N/A"
+                
+            if measurement.wind_speed_mps is not None:
+                wind_value = mps_to_mph(measurement.wind_speed_mps) if user_unit_system == "Imperial" else measurement.wind_speed_mps
+                wind_display = f"{wind_value:.1f}"
+            else:
+                wind_display = "N/A"
+
             table_data.append(
                 {
                     "index": i,
                     "Source": source_name,
                     "Timestamp": pd.to_datetime(
                         measurement.measurement_timestamp).strftime("%Y-%m-%d %H:%M:%S"),
-                    "Temperature": format_temperature(
-                        measurement.temperature_c, user_unit_system
-                    ) if measurement.temperature_c else "N/A",
-                    "Pressure": format_pressure(
-                        measurement.barometric_pressure_hpa, user_unit_system
-                    ) if measurement.barometric_pressure_hpa else "N/A",
+                    f"Temperature ({temp_unit})": temp_display,
+                    f"Pressure ({pressure_unit})": pressure_display,
                     "Humidity (%)": round(
                         measurement.relative_humidity_pct,
-                        1) if measurement.relative_humidity_pct else None,
+                        1) if measurement.relative_humidity_pct is not None else None,
                     "Wind Dir (°)": round(
                         measurement.compass_true_deg,
-                        0) if measurement.compass_true_deg else None,
-                    "Wind Speed": format_wind_speed(
-                        measurement.wind_speed_mps, user_unit_system
-                    ) if measurement.wind_speed_mps else "N/A",
+                        0) if measurement.compass_true_deg is not None else None,
+                    f"Wind Speed ({wind_speed_unit})": wind_display,
                 })
 
         df = pd.DataFrame(table_data)
@@ -178,7 +197,7 @@ def render_weather_view_tab(user, supabase):
                 if selected_measurement.station_pressure_hpa is not None:
                     st.write(
                         f"• **Station Pressure:** {format_pressure(selected_measurement.station_pressure_hpa, user_unit_system)}")
-                if selected_measurement.relative_humidity_pct:
+                if selected_measurement.relative_humidity_pct is not None:
                     st.write(
                         f"• **Humidity:** {selected_measurement.relative_humidity_pct:.1f}%")
                 if selected_measurement.altitude_m is not None:
@@ -192,10 +211,10 @@ def render_weather_view_tab(user, supabase):
                 if selected_measurement.wind_speed_mps is not None:
                     st.write(
                         f"• **Wind Speed:** {format_wind_speed(selected_measurement.wind_speed_mps, user_unit_system)}")
-                if selected_measurement.compass_true_deg:
+                if selected_measurement.compass_true_deg is not None:
                     st.write(
                         f"• **True Direction:** {selected_measurement.compass_true_deg:.0f}°")
-                if selected_measurement.compass_magnetic_deg:
+                if selected_measurement.compass_magnetic_deg is not None:
                     st.write(
                         f"• **Magnetic Direction:** {selected_measurement.compass_magnetic_deg:.0f}°")
                 if selected_measurement.crosswind_mps is not None:

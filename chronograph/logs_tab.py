@@ -5,6 +5,7 @@ import streamlit as st
 
 from .service import ChronographService
 from utils.ui_formatters import format_speed, format_delta_speed, format_energy, format_power_factor
+from utils.unit_conversions import mps_to_fps, joules_to_ftlb, kgms_to_grainft
 
 
 def render_logs_tab(user, supabase):
@@ -132,8 +133,15 @@ def render_logs_tab(user, supabase):
         speed_units = "fps" if user_unit_system == "Imperial" else "m/s"
         
         for i, session in enumerate(filtered_sessions):
-            # Format average speed using UI formatter
-            avg_speed_display = format_speed(session.avg_speed_mps, user_unit_system) if session.avg_speed_mps else "N/A"
+            # Convert average speed to correct units without formatting
+            if session.avg_speed_mps is not None:
+                if user_unit_system == "Imperial":
+                    avg_speed_value = mps_to_fps(session.avg_speed_mps)
+                else:
+                    avg_speed_value = session.avg_speed_mps
+                avg_speed_display = f"{avg_speed_value:.1f}"
+            else:
+                avg_speed_display = "N/A"
             
             table_data.append(
                 {
@@ -209,39 +217,59 @@ def render_logs_tab(user, supabase):
         if selected_indices:
             st.subheader(" Shot Data")
 
-            # Get measurement data for all selected sessions
+            # Get measurement data for all selected sessions  
             all_measurements = []
+            raw_measurements = []  # Keep raw data for calculations
+            
+            # Define units for column headers
+            energy_units = "ft-lb" if user_unit_system == "Imperial" else "J"
+            delta_units = speed_units
+            
             for idx in selected_indices:
                 session = filtered_sessions[idx]
                 try:
                     measurements = chrono_service.get_measurements_by_session_id(
                         session.id, user["id"])
                     for measurement in measurements:
+                        # Convert values to display units without string formatting
+                        if measurement.speed_mps is not None:
+                            speed_value = mps_to_fps(measurement.speed_mps) if user_unit_system == "Imperial" else measurement.speed_mps
+                            speed_display = f"{speed_value:.1f}"
+                        else:
+                            speed_value = None
+                            speed_display = "N/A"
+                            
+                        if measurement.delta_avg_mps is not None:
+                            delta_value = mps_to_fps(measurement.delta_avg_mps) if user_unit_system == "Imperial" else measurement.delta_avg_mps
+                            delta_display = f"{delta_value:+.1f}"
+                        else:
+                            delta_value = None
+                            delta_display = "N/A"
+                            
+                        if measurement.ke_j is not None:
+                            ke_value = joules_to_ftlb(measurement.ke_j) if user_unit_system == "Imperial" else measurement.ke_j
+                            ke_display = f"{ke_value:.1f}"
+                        else:
+                            ke_value = None
+                            ke_display = "N/A"
+                            
+                        if measurement.power_factor_kgms is not None:
+                            pf_value = kgms_to_grainft(measurement.power_factor_kgms) if user_unit_system == "Imperial" else measurement.power_factor_kgms
+                            pf_display = f"{pf_value:.1f}"
+                        else:
+                            pf_value = None
+                            pf_display = "N/A"
+                        
+                        # Store display data for table
                         all_measurements.append(
                             {
                                 "Date": session.datetime_local.strftime("%Y-%m-%d %H:%M"),
                                 "Session Name": session.session_name,
                                 "Shot #": measurement.shot_number,
-                                f"Speed ({speed_units})": (
-                                    format_speed(measurement.speed_mps, user_unit_system)
-                                    if measurement.speed_mps
-                                    else None
-                                ),
-                                f" AVG ({speed_units})": (
-                                    format_delta_speed(measurement.delta_avg_mps, user_unit_system)
-                                    if measurement.delta_avg_mps
-                                    else None
-                                ),
-                                "KE": (
-                                    format_energy(measurement.ke_j, user_unit_system)
-                                    if measurement.ke_j
-                                    else None
-                                ),
-                                "Power Factor": (
-                                    format_power_factor(measurement.power_factor_kgms, user_unit_system)
-                                    if measurement.power_factor_kgms
-                                    else None
-                                ),
+                                f"Speed ({speed_units})": speed_display,
+                                f"Δ AVG ({delta_units})": delta_display,
+                                f"KE ({energy_units})": ke_display,
+                                "Power Factor": pf_display,
                                 "Time": (
                                     measurement.datetime_local.strftime("%H:%M:%S")
                                     if measurement.datetime_local
@@ -270,6 +298,12 @@ def render_logs_tab(user, supabase):
                                 ),
                             }
                         )
+                        
+                        # Store raw numeric values for calculations
+                        raw_measurements.append({
+                            "speed": speed_value,
+                            "power_factor": pf_value
+                        })
                 except Exception as e:
                     st.error(
                         f"Error loading measurements for session {session.display_name()}: {str(e)}"
@@ -284,19 +318,19 @@ def render_logs_tab(user, supabase):
                     hide_index=True)
 
                 # Show summary stats
-                if len(all_measurements) > 0:
+                if len(raw_measurements) > 0:
                     st.subheader(" Summary Statistics")
 
-                    # Extract data for calculations
+                    # Extract numeric data for calculations
                     speeds = [
-                        m[f"Speed ({speed_units})"]
-                        for m in all_measurements
-                        if m[f"Speed ({speed_units})"] is not None
+                        m["speed"]
+                        for m in raw_measurements
+                        if m["speed"] is not None
                     ]
                     power_factors = [
-                        m["Power Factor"]
-                        for m in all_measurements
-                        if m["Power Factor"] is not None
+                        m["power_factor"]
+                        for m in raw_measurements
+                        if m["power_factor"] is not None
                     ]
 
                     if speeds:
