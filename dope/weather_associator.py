@@ -168,12 +168,22 @@ class WeatherSessionAssociator:
         if not measurements:
             return {}
 
-        # Extract metric values for core weather parameters
+        # Extract metric values for all available weather parameters
         weather_fields = [
             'temperature_c',
             'relative_humidity_pct',
             'barometric_pressure_hpa',
-            'wind_speed_mps']
+            'wind_speed_mps',
+            'compass_true_deg',
+            'compass_magnetic_deg',
+            'altitude_m',
+            'density_altitude_m',
+            'dew_point_c',
+            'heat_index_c',
+            'wind_chill_c',
+            'crosswind_mps',
+            'headwind_mps'
+        ]
 
         median_values = {}
 

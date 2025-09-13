@@ -533,10 +533,20 @@ def render_sessions_table(sessions: List[DopeSessionModel]):
         row = {
             "ID": session.id,
             "Session Name": session.session_name or "Unnamed Session",
-            "Created": (
-                session.datetime_local.strftime("%Y-%m-%d %H:%M")
-                if session.datetime_local
-                else ""
+            "Start Time": (
+                session.start_time.strftime("%Y-%m-%d %H:%M")
+                if session.start_time
+                else "N/A"
+            ),
+            "End Time": (
+                session.end_time.strftime("%Y-%m-%d %H:%M")
+                if session.end_time
+                else "N/A"
+            ),
+            "Duration": (
+                str(session.end_time - session.start_time)
+                if session.start_time and session.end_time
+                else "N/A"
             ),
             "Status": session.status or "unknown",
             "Rifle": session.rifle_name or "Unknown",
@@ -583,7 +593,9 @@ def render_sessions_table(sessions: List[DopeSessionModel]):
     column_config = {
         "ID": st.column_config.TextColumn("ID", width="small"),
         "Session Name": st.column_config.TextColumn("Session Name", width="medium"),
-        "Created": st.column_config.DatetimeColumn("Created", width="medium"),
+        "Start Time": st.column_config.TextColumn("Start Time", width="medium"),
+        "End Time": st.column_config.TextColumn("End Time", width="medium"),
+        "Duration": st.column_config.TextColumn("Duration", width="medium"),
         "Status": st.column_config.TextColumn("Status", width="small"),
         "Rifle": st.column_config.TextColumn("Rifle", width="medium"),
         "Cartridge": st.column_config.TextColumn("Cartridge", width="medium"),
@@ -688,14 +700,25 @@ def render_session_info_tab(session: DopeSessionModel):
             "**Session Name:**",
             session.session_name or "Unnamed Session")
         st.write("**Status:**", session.status or "Unknown")
-        st.write(
-            "**Created:**",
-            (
-                session.datetime_local.strftime("%Y-%m-%d %H:%M:%S")
-                if session.datetime_local
-                else "Unknown"
-            ),
-        )
+        
+        # Prominently display shooting session times
+        st.write("**🕐 Session Times:**")
+        if session.start_time:
+            st.write(f"  **Start:** {session.start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+        else:
+            st.write("  **Start:** N/A")
+            
+        if session.end_time:
+            st.write(f"  **End:** {session.end_time.strftime('%Y-%m-%d %H:%M:%S')}")
+        else:
+            st.write("  **End:** N/A")
+            
+        if session.start_time and session.end_time:
+            duration = session.end_time - session.start_time
+            st.write(f"  **Duration:** {duration}")
+        else:
+            st.write("  **Duration:** N/A")
+        
         st.write("**Range:**", session.range_name or "Unknown")
         st.write(
             "**Distance:**",

@@ -179,22 +179,23 @@ class DopeCreateBusiness:
             
             weather_update_data = {}
             
-            # Store both metric and imperial values in dope_sessions
+            # Store median values in the new column format
             for weather_field, metric_value in median_weather.items():
                 if weather_field == 'temperature_c':
-                    weather_update_data['temperature_c'] = metric_value
-                    weather_update_data['temperature_f'] = (metric_value * 9.0/5.0) + 32
+                    weather_update_data['temperature_c_median'] = metric_value
                 
                 elif weather_field == 'relative_humidity_pct':
-                    weather_update_data['humidity_pct'] = metric_value
+                    weather_update_data['relative_humidity_pct_median'] = metric_value
                 
                 elif weather_field == 'barometric_pressure_hpa':
-                    weather_update_data['pressure_hpa'] = metric_value
-                    weather_update_data['pressure_inhg'] = metric_value / 33.8639
+                    # Convert hPa to inHg for storage
+                    weather_update_data['barometric_pressure_inhg_median'] = metric_value / 33.8639
                 
                 elif weather_field == 'wind_speed_mps':
-                    weather_update_data['wind_speed_mps'] = metric_value
-                    weather_update_data['wind_speed_mph'] = metric_value * 2.237
+                    weather_update_data['wind_speed_mps_median'] = metric_value
+                
+                elif weather_field == 'compass_true_deg':
+                    weather_update_data['wind_direction_deg_median'] = metric_value
             
             if weather_update_data:
                 # Update the DOPE session with median weather values
@@ -216,16 +217,52 @@ class DopeCreateBusiness:
         time_window
     ):
         """Prepare session data dictionary for database creation"""
+        
+        # Validate required fields
+        if not chrono_session or not chrono_session.id:
+            raise ValueError("Chronograph session is required")
+        
+        if not rifle:
+            raise ValueError("Rifle selection is required")
+        rifle_id = rifle.id if hasattr(rifle, 'id') else rifle.get("id")
+        if not rifle_id:
+            raise ValueError("Rifle ID is required")
+        
+        if not cartridge:
+            raise ValueError("Cartridge selection is required")
+        cartridge_id = cartridge.id if hasattr(cartridge, 'id') else cartridge.get("id")
+        bullet_id = cartridge.bullet_id if hasattr(cartridge, 'bullet_id') else cartridge.get("bullet_id")
+        if not cartridge_id:
+            raise ValueError("Cartridge ID is required")
+        if not bullet_id:
+            raise ValueError("Bullet ID is required")
+        
+        if not time_window or len(time_window) != 2:
+            raise ValueError("Session time window (start_time and end_time) is required")
+        
+        # Generate session name if not provided
+        session_name = session_details.get("session_name")
+        if not session_name or session_name.strip() == "":
+            session_name = f"Session {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+        
         return {
-            "session_name": session_details.get("session_name") or f"Session {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+            "session_name": session_name,
             "chrono_session_id": chrono_session.id,
-            "rifle_id": rifle.id if hasattr(rifle, 'id') else rifle["id"],
-            "cartridge_id": cartridge.id if hasattr(cartridge, 'id') else cartridge["id"],
-            "bullet_id": cartridge.bullet_id if hasattr(cartridge, 'bullet_id') else cartridge["bullet_id"],
+            "rifle_id": rifle_id,
+            "cartridge_id": cartridge_id,
+            "bullet_id": bullet_id,
             "range_submission_id": range_data["id"] if range_data else None,
+            "range_name": range_data["range_name"] if range_data else None,
+            "range_distance_m": range_data["distance_m"] if range_data else None,
+            # Location and geometry fields from range data
+            "lat": range_data.get("start_lat") if range_data else None,
+            "lon": range_data.get("start_lon") if range_data else None,
+            "start_altitude": range_data.get("start_altitude_m") if range_data else None,
+            "azimuth_deg": range_data.get("azimuth_deg") if range_data else None,
+            "elevation_angle_deg": range_data.get("elevation_angle_deg") if range_data else None,
+            "location_hyperlink": f"https://maps.google.com/maps?q={range_data.get('start_lat')},{range_data.get('start_lon')}" if range_data and range_data.get('start_lat') and range_data.get('start_lon') else None,
             "weather_source_id": weather_data.id if weather_data else None,
-            "start_time": time_window[0].isoformat() if time_window else None,
-            "end_time": time_window[1].isoformat() if time_window else None,
+            "start_time": time_window[0].isoformat(),
+            "end_time": time_window[1].isoformat(),
             "notes": session_details.get("notes"),
-            "status": "active",
         }

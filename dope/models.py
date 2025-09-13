@@ -16,16 +16,28 @@ class DopeSessionModel:
 
     # Foreign key relationships
     cartridge_id: Optional[str] = None  # Foreign key to cartridges table
+    bullet_id: Optional[str] = None  # Foreign key to bullets table (required)
     chrono_session_id: Optional[str] = None
     range_submission_id: Optional[str] = None
     weather_source_id: Optional[str] = None
     rifle_id: Optional[str] = None
 
+    # Time fields (required)
+    start_time: Optional[datetime] = None  # NOT NULL - session start time
+    end_time: Optional[datetime] = None  # NOT NULL - session end time
+
     # Range and session data
     range_name: Optional[str] = None
-    distance_m: Optional[float] = None  # real type
+    range_distance_m: Optional[float] = None  # real type
     notes: Optional[str] = None
-    status: Optional[str] = "active"
+    
+    # Location and geometry fields (from range data)
+    lat: Optional[float] = None
+    lon: Optional[float] = None
+    start_altitude: Optional[float] = None
+    azimuth_deg: Optional[float] = None
+    elevation_angle_deg: Optional[float] = None
+    location_hyperlink: Optional[str] = None
 
     # Rifle information (mandatory fields)
     rifle_name: str = ""  # NOT NULL
@@ -49,21 +61,12 @@ class DopeSessionModel:
     bullet_diameter_groove_mm: Optional[str] = None  # text type
     bore_diameter_land_mm: Optional[str] = None  # text type
 
-    # Weather conditions - Metric units only
-    weather_source_name: Optional[str] = None
-    temperature_c: Optional[float] = None  # numeric(3,1)
-    relative_humidity_pct: Optional[float] = None  # numeric(5,2)
-    barometric_pressure_hpa: Optional[float] = None  # numeric(6,2)
-    wind_speed_1_mps: Optional[float] = None  # numeric(4,1)
-    wind_speed_2_mps: Optional[float] = None  # numeric(4,1)
-    wind_direction_deg: Optional[float] = None  # numeric(5,1)
-
-    # Range position data
-    start_lat: Optional[float] = None  # numeric(10,6)
-    start_lon: Optional[float] = None  # numeric(10,6)
-    start_altitude_m: Optional[float] = None  # numeric(8,2)
-    azimuth_deg: Optional[float] = None  # numeric(6,2)
-    elevation_angle_deg: Optional[float] = None  # numeric(6,2)
+    # Median weather fields from weather association
+    temperature_c_median: Optional[float] = None
+    relative_humidity_pct_median: Optional[float] = None
+    barometric_pressure_inhg_median: Optional[float] = None
+    wind_speed_mps_median: Optional[float] = None
+    wind_direction_deg_median: Optional[float] = None
 
     @classmethod
     def from_supabase_record(cls, record: dict) -> "DopeSessionModel":
@@ -74,14 +77,22 @@ class DopeSessionModel:
             session_name=record.get("session_name", ""),
             datetime_local=record.get("datetime_local"),
             cartridge_id=record.get("cartridge_id"),
+            bullet_id=record.get("bullet_id"),
             chrono_session_id=record.get("chrono_session_id"),
             range_submission_id=record.get("range_submission_id"),
             weather_source_id=record.get("weather_source_id"),
             rifle_id=record.get("rifle_id"),
+            start_time=record.get("start_time"),
+            end_time=record.get("end_time"),
             range_name=record.get("range_name"),
-            distance_m=record.get("distance_m"),
+            range_distance_m=record.get("range_distance_m"),
             notes=record.get("notes"),
-            status=record.get("status", "active"),
+            lat=record.get("lat"),
+            lon=record.get("lon"),
+            start_altitude=record.get("start_altitude"),
+            azimuth_deg=record.get("azimuth_deg"),
+            elevation_angle_deg=record.get("elevation_angle_deg"),
+            location_hyperlink=record.get("location_hyperlink"),
             rifle_name=record.get("rifle_name", ""),
             rifle_barrel_length_cm=record.get("rifle_barrel_length_cm"),
             rifle_barrel_twist_in_per_rev=record.get("rifle_barrel_twist_in_per_rev"),
@@ -98,18 +109,11 @@ class DopeSessionModel:
             sectional_density=record.get("sectional_density"),
             bullet_diameter_groove_mm=record.get("bullet_diameter_groove_mm"),
             bore_diameter_land_mm=record.get("bore_diameter_land_mm"),
-            weather_source_name=record.get("weather_source_name"),
-            temperature_c=record.get("temperature_c"),
-            relative_humidity_pct=record.get("relative_humidity_pct"),
-            barometric_pressure_hpa=record.get("barometric_pressure_hpa"),
-            wind_speed_1_mps=record.get("wind_speed_1_mps"),
-            wind_speed_2_mps=record.get("wind_speed_2_mps"),
-            wind_direction_deg=record.get("wind_direction_deg"),
-            start_lat=record.get("start_lat"),
-            start_lon=record.get("start_lon"),
-            start_altitude_m=record.get("start_altitude_m"),
-            azimuth_deg=record.get("azimuth_deg"),
-            elevation_angle_deg=record.get("elevation_angle_deg"),
+            temperature_c_median=record.get("temperature_c_median"),
+            relative_humidity_pct_median=record.get("relative_humidity_pct_median"),
+            barometric_pressure_inhg_median=record.get("barometric_pressure_inhg_median"),
+            wind_speed_mps_median=record.get("wind_speed_mps_median"),
+            wind_direction_deg_median=record.get("wind_direction_deg_median"),
         )
 
     @classmethod
@@ -125,14 +129,22 @@ class DopeSessionModel:
             "session_name": self.session_name,
             "datetime_local": self.datetime_local,
             "cartridge_id": self.cartridge_id,
+            "bullet_id": self.bullet_id,
             "chrono_session_id": self.chrono_session_id,
             "range_submission_id": self.range_submission_id,
             "weather_source_id": self.weather_source_id,
             "rifle_id": self.rifle_id,
+            "start_time": self.start_time,
+            "end_time": self.end_time,
             "range_name": self.range_name,
-            "distance_m": self.distance_m,
+            "range_distance_m": self.range_distance_m,
             "notes": self.notes,
-            "status": self.status,
+            "lat": self.lat,
+            "lon": self.lon,
+            "start_altitude": self.start_altitude,
+            "azimuth_deg": self.azimuth_deg,
+            "elevation_angle_deg": self.elevation_angle_deg,
+            "location_hyperlink": self.location_hyperlink,
             "rifle_name": self.rifle_name,
             "rifle_barrel_length_cm": self.rifle_barrel_length_cm,
             "rifle_barrel_twist_in_per_rev": self.rifle_barrel_twist_in_per_rev,
@@ -149,18 +161,11 @@ class DopeSessionModel:
             "sectional_density": self.sectional_density,
             "bullet_diameter_groove_mm": self.bullet_diameter_groove_mm,
             "bore_diameter_land_mm": self.bore_diameter_land_mm,
-            "weather_source_name": self.weather_source_name,
-            "temperature_c": self.temperature_c,
-            "relative_humidity_pct": self.relative_humidity_pct,
-            "barometric_pressure_hpa": self.barometric_pressure_hpa,
-            "wind_speed_1_mps": self.wind_speed_1_mps,
-            "wind_speed_2_mps": self.wind_speed_2_mps,
-            "wind_direction_deg": self.wind_direction_deg,
-            "start_lat": self.start_lat,
-            "start_lon": self.start_lon,
-            "start_altitude_m": self.start_altitude_m,
-            "azimuth_deg": self.azimuth_deg,
-            "elevation_angle_deg": self.elevation_angle_deg,
+            "temperature_c_median": self.temperature_c_median,
+            "relative_humidity_pct_median": self.relative_humidity_pct_median,
+            "barometric_pressure_inhg_median": self.barometric_pressure_inhg_median,
+            "wind_speed_mps_median": self.wind_speed_mps_median,
+            "wind_direction_deg_median": self.wind_direction_deg_median,
         }
 
     @property
@@ -174,8 +179,8 @@ class DopeSessionModel:
                 parts.append(self.cartridge_type)
             if self.bullet_make and self.bullet_model:
                 parts.append(f"{self.bullet_make} {self.bullet_model}")
-            if self.distance_m:
-                parts.append(f"{self.distance_m}m")
+            if self.range_distance_m:
+                parts.append(f"{self.range_distance_m}m")
             return " - ".join(parts) if parts else "Untitled DOPE Session"
 
     @property

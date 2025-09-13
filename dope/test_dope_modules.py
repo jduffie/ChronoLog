@@ -296,8 +296,8 @@ class TestDopeSessionModel(unittest.TestCase):
             "bullet_make": "Sierra",
             "bullet_model": "MatchKing",
             "bullet_weight": "175",
-            "distance_m": 100.0,
-            "temperature_c": 20.5,
+            "range_distance_m": 100.0,
+            "temperature_c_median": 20.5,
             "notes": "Test notes",
         }
 
@@ -359,7 +359,7 @@ class TestDopeSessionModel(unittest.TestCase):
             "bullet_make": "DB Bullet",
             "bullet_model": "DB Model",
             "bullet_weight": "180",
-            "temperature_c": 22.5,
+            "temperature_c_median": 22.5,
             "wind_speed_1_mps": 10.0,
         }
 
@@ -368,8 +368,8 @@ class TestDopeSessionModel(unittest.TestCase):
         self.assertEqual(session.id, "db_session_001")
         self.assertEqual(session.session_name, "DB Session")
         self.assertEqual(session.cartridge_id, "db_cartridge")
-        self.assertEqual(session.temperature_c, 22.5)
-        self.assertEqual(session.wind_speed_1_mps, 10.0)
+        self.assertEqual(session.temperature_c_median, 22.5)
+        self.assertEqual(session.wind_speed_mps_median, 10.0)
 
     def test_to_dict_conversion(self):
         """Test converting model to dictionary"""

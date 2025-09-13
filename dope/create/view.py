@@ -6,6 +6,7 @@ Handles all Streamlit UI components for DOPE session creation.
 
 import streamlit as st
 from typing import Dict, List, Optional, Any, Tuple
+from utils.ui_formatters import format_speed
 
 
 class DopeCreateView:
@@ -57,10 +58,14 @@ class DopeCreateView:
             
             with col2:
                 st.metric("Shot Count", selected_session.shot_count)
-                st.metric("Avg Velocity", f"{selected_session.avg_speed_fps:.1f} fps")
+                # Use metric field with UI formatter - assuming Imperial unit system for now
+                avg_speed_display = format_speed(selected_session.avg_speed_mps, "Imperial") if selected_session.avg_speed_mps else "N/A"
+                st.metric("Avg Velocity", avg_speed_display)
             
             with col3:
-                st.metric("Std Deviation", f"{selected_session.std_dev_fps:.1f} fps")
+                # Use metric field with UI formatter - assuming Imperial unit system for now  
+                std_dev_display = format_speed(selected_session.std_dev_mps, "Imperial") if selected_session.std_dev_mps else "N/A"
+                st.metric("Std Deviation", std_dev_display)
                 st.metric("Date", selected_session.datetime_local.strftime('%Y-%m-%d'))
         
         return selected_session
@@ -289,12 +294,28 @@ class DopeCreateView:
                     st.write(f"**Name:** {selected_range['range_name']}")
                     st.write(f"**Distance:** {selected_range.get('distance_m', 'Unknown')} meters")
                     st.write(f"**Status:** {selected_range.get('status', 'Unknown')}")
+                    
+                    # Location information
+                    if selected_range.get('start_lat') and selected_range.get('start_lon'):
+                        st.write(f"**Latitude:** {selected_range['start_lat']:.6f}°")
+                        st.write(f"**Longitude:** {selected_range['start_lon']:.6f}°")
+                    
+                    if selected_range.get('start_altitude_m'):
+                        st.write(f"**Altitude:** {selected_range['start_altitude_m']} m")
                 
                 with col2:
                     if selected_range.get('azimuth_deg'):
                         st.write(f"**Azimuth:** {selected_range['azimuth_deg']}°")
                     if selected_range.get('elevation_angle_deg'):
                         st.write(f"**Elevation:** {selected_range['elevation_angle_deg']}°")
+                    
+                    # Google Maps link
+                    if selected_range.get('start_lat') and selected_range.get('start_lon'):
+                        maps_url = f"https://maps.google.com/maps?q={selected_range['start_lat']},{selected_range['start_lon']}"
+                        st.markdown(f"**Location:** [View on Google Maps]({maps_url})")
+                    
+                    if selected_range.get('range_description'):
+                        st.write(f"**Description:** {selected_range['range_description']}")
         
         return selected_range
     
