@@ -4,8 +4,14 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 
+from utils.ui_formatters import (
+    format_altitude,
+    format_pressure,
+    format_temperature,
+    format_wind_speed,
+)
+
 from .service import WeatherService
-from utils.ui_formatters import format_temperature, format_pressure, format_wind_speed, format_altitude
 
 
 def render_weather_view_log_tab(user, supabase):

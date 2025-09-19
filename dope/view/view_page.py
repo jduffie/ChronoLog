@@ -16,6 +16,14 @@ import streamlit as st
 from dope.models import DopeSessionModel
 from dope.service import DopeService
 from supabase import create_client
+from utils.ui_formatters import (
+    format_energy_for_table,
+    format_power_factor_for_table,
+    format_pressure_for_table,
+    format_speed,
+    format_speed_for_table,
+    format_temperature_for_table,
+)
 
 # Add the root directory to the path so we can import our modules
 sys.path.append(
@@ -221,21 +229,8 @@ def render_main_page_filters(service: DopeService, user_id: str):
                     datetime.combine(date_to, datetime.max.time())
                 )
 
-            # Status filter
-            status_options = ["All", "active", "archived"]
-            status = st.selectbox(
-                "Status",
-                options=status_options,
-                index=status_options.index(
-                    st.session_state.dope_view["filters"].get(
-                        "status", "All"
-                    )
-                ),
-            )
-            if status != "All":
-                st.session_state.dope_view["filters"]["status"] = status
-            elif "status" in st.session_state.dope_view["filters"]:
-                del st.session_state.dope_view["filters"]["status"]
+            # Status filter removed from new schema
+            st.info("Status filtering has been removed from the new schema")
 
         with col2:
             st.subheader("Equipment")
@@ -504,7 +499,7 @@ def get_filtered_sessions(
 def render_session_statistics(sessions: List[DopeSessionModel]):
     """Display session statistics"""
     total_sessions = len(sessions)
-    active_sessions = len([s for s in sessions if s.status == "active"])
+    active_sessions = len(sessions)  # No status field in new schema
     archived_sessions = total_sessions - active_sessions
 
     col1, col2, col3, col4 = st.columns(4)
@@ -548,7 +543,7 @@ def render_sessions_table(sessions: List[DopeSessionModel]):
                 if session.start_time and session.end_time
                 else "N/A"
             ),
-            "Status": session.status or "unknown",
+            # Status field removed from new schema
             "Rifle": session.rifle_name or "Unknown",
             "Cartridge": (
                 f"{session.cartridge_make} {session.cartridge_model}"
@@ -564,19 +559,19 @@ def render_sessions_table(sessions: List[DopeSessionModel]):
             "Bullet Weight (gr)": (
                 float(session.bullet_weight) if session.bullet_weight else None
             ),
-            "Distance (m)": session.distance_m if session.distance_m else None,
+            "Distance (m)": session.range_distance_m if session.range_distance_m else None,
             "Range": session.range_name or "Unknown",
             "Temperature (°C)": (
-                session.temperature_c if session.temperature_c is not None else None
+                session.temperature_c_median if session.temperature_c_median is not None else None
             ),
             "Humidity (%)": (
-                session.relative_humidity_pct
-                if session.relative_humidity_pct is not None
+                session.relative_humidity_pct_median
+                if session.relative_humidity_pct_median is not None
                 else None
             ),
             "Wind Speed (m/s)": (
-                session.wind_speed_1_mps
-                if session.wind_speed_1_mps is not None
+                session.wind_speed_mps_median
+                if session.wind_speed_mps_median is not None
                 else None
             ),
             "Notes": (
@@ -657,10 +652,8 @@ def render_session_details(
             st.info("Duplicate functionality coming soon")
 
     with col3:
-        archive_label = "📁 Archive" if session.status == "active" else "📂 Unarchive"
-        if st.button(archive_label):
-            # TODO: Implement archive toggle
-            st.info("Archive functionality coming soon")
+        # Archive functionality removed with status field
+        st.info("Archive functionality is no longer available")
 
     with col4:
         if st.button("🗑️ Delete", type="secondary"):
@@ -688,7 +681,7 @@ def render_session_details(
         render_weather_info_tab(session)
 
     with tab6:
-        render_shots_tab(session)
+        render_shots_tab(session, service)
 
 
 def render_session_info_tab(session: DopeSessionModel):
@@ -699,7 +692,7 @@ def render_session_info_tab(session: DopeSessionModel):
         st.write(
             "**Session Name:**",
             session.session_name or "Unnamed Session")
-        st.write("**Status:**", session.status or "Unknown")
+        # Status field removed from new schema
         
         # Prominently display shooting session times
         st.write("**🕐 Session Times:**")
@@ -722,7 +715,7 @@ def render_session_info_tab(session: DopeSessionModel):
         st.write("**Range:**", session.range_name or "Unknown")
         st.write(
             "**Distance:**",
-            f"{session.distance_m}m" if session.distance_m else "Unknown",
+            f"{session.range_distance_m}m" if session.range_distance_m else "Unknown",
         )
 
     with col2:
@@ -731,10 +724,11 @@ def render_session_info_tab(session: DopeSessionModel):
         st.write("**Chrono Session ID:**",
                  session.chrono_session_id or "Not linked")
 
-        if session.start_lat and session.start_lon:
+        # Location data now stored in lat/lon fields
+        if session.lat and session.lon:
             st.write(
                 "**Position:**",
-                f"{session.start_lat:.6f}, {session.start_lon:.6f}")
+                f"{session.lat:.6f}, {session.lon:.6f}")
         if session.azimuth_deg:
             st.write("**Azimuth:**", f"{session.azimuth_deg}°")
 
@@ -840,56 +834,50 @@ def render_weather_info_tab(session: DopeSessionModel):
         st.write(
             "**Temperature:**",
             (
-                f"{session.temperature_c}°C"
-                if session.temperature_c is not None
+                f"{session.temperature_c_median}°C"
+                if session.temperature_c_median is not None
                 else "Unknown"
             ),
         )
         st.write(
             "**Humidity:**",
             (
-                f"{session.relative_humidity_pct}%"
-                if session.relative_humidity_pct is not None
+                f"{session.relative_humidity_pct_median}%"
+                if session.relative_humidity_pct_median is not None
                 else "Unknown"
             ),
         )
         st.write(
             "**Pressure:**",
             (
-                f'{session.barometric_pressure_hpa} hPa'
-                if session.barometric_pressure_hpa is not None
+                f'{session.barometric_pressure_hpa_median} hPa'
+                if session.barometric_pressure_hpa_median is not None
                 else "Unknown"
             ),
         )
         st.write(
             "**Wind Speed 1:**",
             (
-                f"{session.wind_speed_1_mps}m/s"
-                if session.wind_speed_1_mps is not None
+                f"{session.wind_speed_mps_median}m/s"
+                if session.wind_speed_mps_median is not None
                 else "Unknown"
             ),
         )
 
     with col2:
-        st.write(
-            "**Wind Speed 2:**",
-            (
-                f"{session.wind_speed_2_mps}m/s"
-                if session.wind_speed_2_mps is not None
-                else "Unknown"
-            ),
-        )
+        # Wind Speed 2 field removed in new schema
+        st.write("**Wind Speed 2:**", "Field removed in new schema")
         st.write(
             "**Wind Direction:**",
             (
-                f"{session.wind_direction_deg}°"
-                if session.wind_direction_deg is not None
+                f"{session.wind_direction_deg_median}°"
+                if session.wind_direction_deg_median is not None
                 else "Unknown"
             ),
         )
         st.write(
             "**Weather Source:**",
-            session.weather_source_name or "Unknown")
+            session.weather_source_id or "Unknown")
         # TODO: Add weather_summary property to DopeSessionModel
         # st.write("**Summary:**", session.weather_summary)
 
@@ -927,15 +915,9 @@ def export_sessions_to_csv(sessions: List[DopeSessionModel]):
         st.error(f"Error exporting sessions: {str(e)}")
 
 
-def render_shots_tab(session: DopeSessionModel):
+def render_shots_tab(session: DopeSessionModel, service: DopeService):
     """Render shots/measurements tab"""
     try:
-        # Initialize Supabase client to get measurements
-        url = st.secrets["supabase"]["url"]
-        key = st.secrets["supabase"]["key"]
-        supabase = create_client(url, key)
-        service = DopeService(supabase)
-
         # Get measurements for this DOPE session
         measurements = service.get_measurements_for_dope_session(
             session.id, session.user_id)
@@ -957,23 +939,26 @@ def render_shots_tab(session: DopeSessionModel):
             st.metric("Total Shots", shot_count)
 
         with col2:
-            # Calculate average velocity if available
-            velocities = [m.get('speed_fps')
-                          for m in measurements if m.get('speed_fps')]
-            avg_velocity = sum(velocities) / \
+            # Calculate average velocity if available - use metric data and convert for display
+            velocities = [m.speed_mps
+                          for m in measurements if m.speed_mps]
+            avg_velocity_mps = sum(velocities) / \
                 len(velocities) if velocities else 0
-            st.metric(
-                "Avg Velocity",
-                f"{avg_velocity:.1f} fps" if avg_velocity else "N/A")
+
+            # Get user preferences for unit display
+            user_unit_system = st.session_state.get("user", {}).get("unit_system", "Imperial")
+            avg_velocity_display = format_speed(avg_velocity_mps, user_unit_system) if avg_velocity_mps else "N/A"
+            st.metric("Avg Velocity", avg_velocity_display)
 
         with col3:
             # Calculate standard deviation if we have velocities
             if len(velocities) > 1:
-                mean = avg_velocity
+                mean = avg_velocity_mps
                 variance = sum(
                     (v - mean) ** 2 for v in velocities) / len(velocities)
-                std_dev = variance ** 0.5
-                st.metric("Std Dev", f"{std_dev:.1f} fps")
+                std_dev_mps = variance ** 0.5
+                std_dev_display = format_speed(std_dev_mps, user_unit_system)
+                st.metric("Std Dev", std_dev_display)
             else:
                 st.metric("Std Dev", "N/A")
 
@@ -984,24 +969,38 @@ def render_shots_tab(session: DopeSessionModel):
             else:
                 st.metric("Chrono Session", "❌ None")
 
-        # Create measurements table
+        # Create measurements table using metric data and convert for display
         df_data = []
         for measurement in measurements:
+            # Use metric data and convert for display based on user preferences (table format - no units)
+            velocity_display = format_speed_for_table(measurement.speed_mps, user_unit_system) if measurement.speed_mps else ''
+            energy_display = format_energy_for_table(measurement.ke_j, user_unit_system) if measurement.ke_j else ''
+            power_factor_display = format_power_factor_for_table(measurement.power_factor_kgms, user_unit_system) if measurement.power_factor_kgms else ''
+            temperature_display = format_temperature_for_table(measurement.temperature_c, user_unit_system) if measurement.temperature_c else ''
+            pressure_display = format_pressure_for_table(measurement.pressure_hpa, user_unit_system) if measurement.pressure_hpa else ''
+
+            # Get column headers based on unit system
+            velocity_header = "Velocity (fps)" if user_unit_system == "Imperial" else "Velocity (m/s)"
+            energy_header = "Energy (ft·lb)" if user_unit_system == "Imperial" else "Energy (J)"
+            power_factor_header = "Power Factor" # Always show as text
+            temperature_header = "Temperature (°F)" if user_unit_system == "Imperial" else "Temperature (°C)"
+            pressure_header = "Pressure (inHg)" if user_unit_system == "Imperial" else "Pressure (hPa)"
+
             row = {
-                "Shot #": measurement.get('shot_number', ''),
-                "Time": measurement.get('datetime_shot', ''),
-                "Velocity (fps)": measurement.get('speed_fps', ''),
-                "Energy (ft·lb)": measurement.get('ke_ft_lb', ''),
-                "Power Factor": measurement.get('power_factor', ''),
-                "Distance": measurement.get('distance', ''),
-                "Elevation Adj": measurement.get('elevation_adjustment', ''),
-                "Windage Adj": measurement.get('windage_adjustment', ''),
-                "Temperature (°F)": measurement.get('temperature_f', ''),
-                "Pressure (inHg)": measurement.get('pressure_inhg', ''),
-                "Humidity (%)": measurement.get('humidity_pct', ''),
-                "Clean Bore": measurement.get('clean_bore', ''),
-                "Cold Bore": measurement.get('cold_bore', ''),
-                "Notes": measurement.get('shot_notes', '')
+                "Shot #": measurement.shot_number or '',
+                "Time": measurement.datetime_shot or '',
+                velocity_header: velocity_display,
+                energy_header: energy_display,
+                power_factor_header: power_factor_display,
+                "Distance (m)": measurement.distance_m or '',
+                "Elevation Adjustment": measurement.elevation_adjustment or '',
+                "Windage Adjustment": measurement.windage_adjustment or '',
+                temperature_header: temperature_display,
+                pressure_header: pressure_display,
+                "Humidity (%)": measurement.humidity_pct or '',
+                "Clean Bore": measurement.clean_bore or '',
+                "Cold Bore": measurement.cold_bore or '',
+                "Notes": measurement.shot_notes or ''
             }
             df_data.append(row)
 
@@ -1019,18 +1018,23 @@ def render_shots_tab(session: DopeSessionModel):
         # Replace empty/None values with empty strings for better display
         df = df.fillna('')
 
-        # Configure column display
+        # Configure column display dynamically based on user preferences
+        velocity_header = "Velocity (fps)" if user_unit_system == "Imperial" else "Velocity (m/s)"
+        energy_header = "Energy (ft·lb)" if user_unit_system == "Imperial" else "Energy (J)"
+        temperature_header = "Temperature (°F)" if user_unit_system == "Imperial" else "Temperature (°C)"
+        pressure_header = "Pressure (inHg)" if user_unit_system == "Imperial" else "Pressure (hPa)"
+
         column_config = {
             "Shot #": st.column_config.NumberColumn("Shot #", width="small"),
             "Time": st.column_config.TextColumn("Time", width="small"),
-            "Velocity (fps)": st.column_config.NumberColumn("Velocity (fps)", width="medium"),
-            "Energy (ft·lb)": st.column_config.NumberColumn("Energy (ft·lb)", width="medium"),
-            "Power Factor": st.column_config.NumberColumn("Power Factor", width="medium"),
-            "Distance": st.column_config.TextColumn("Distance", width="small"),
-            "Elevation Adj": st.column_config.TextColumn("Elevation Adj", width="small"),
-            "Windage Adj": st.column_config.TextColumn("Windage Adj", width="small"),
-            "Temperature (°F)": st.column_config.NumberColumn("Temp (°F)", width="small"),
-            "Pressure (inHg)": st.column_config.NumberColumn("Press (inHg)", width="small"),
+            velocity_header: st.column_config.TextColumn(velocity_header, width="medium"),
+            energy_header: st.column_config.TextColumn(energy_header, width="medium"),
+            "Power Factor": st.column_config.TextColumn("Power Factor", width="medium"),
+            "Distance (m)": st.column_config.TextColumn("Distance (m)", width="small"),
+            "Elevation Adjustment": st.column_config.TextColumn("Elevation Adjustment", width="small"),
+            "Windage Adjustment": st.column_config.TextColumn("Windage Adjustment", width="small"),
+            temperature_header: st.column_config.TextColumn(temperature_header, width="small"),
+            pressure_header: st.column_config.TextColumn(pressure_header, width="small"),
             "Humidity (%)": st.column_config.NumberColumn("Humidity (%)", width="small"),
             "Clean Bore": st.column_config.TextColumn("Clean Bore", width="small"),
             "Cold Bore": st.column_config.TextColumn("Cold Bore", width="small"),

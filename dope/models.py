@@ -23,8 +23,8 @@ class DopeSessionModel:
     rifle_id: Optional[str] = None
 
     # Time fields (required)
-    start_time: Optional[datetime] = None  # NOT NULL - session start time
-    end_time: Optional[datetime] = None  # NOT NULL - session end time
+    start_time: datetime = None  # NOT NULL - session start time
+    end_time: datetime = None  # NOT NULL - session end time
 
     # Range and session data
     range_name: Optional[str] = None
@@ -61,29 +61,54 @@ class DopeSessionModel:
     bullet_diameter_groove_mm: Optional[str] = None  # text type
     bore_diameter_land_mm: Optional[str] = None  # text type
 
-    # Median weather fields from weather association
+    # Median weather fields from weather association (all metric)
     temperature_c_median: Optional[float] = None
     relative_humidity_pct_median: Optional[float] = None
-    barometric_pressure_inhg_median: Optional[float] = None
+    barometric_pressure_hpa_median: Optional[float] = None  # Metric barometric pressure in hectopascals
     wind_speed_mps_median: Optional[float] = None
     wind_direction_deg_median: Optional[float] = None
 
     @classmethod
     def from_supabase_record(cls, record: dict) -> "DopeSessionModel":
         """Create a DopeSessionModel from a Supabase record"""
+        def parse_datetime(dt_str):
+            """Parse datetime string from various Supabase formats"""
+            if not dt_str:
+                return None
+            try:
+                # Handle different datetime formats from Supabase
+                if dt_str.endswith('Z'):
+                    # ISO format with Z suffix: "2025-08-10T14:00:46Z"
+                    return datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
+                elif dt_str.endswith('+00'):
+                    # Postgres format with +00 suffix: "2025-08-10 14:00:46+00"
+                    return datetime.fromisoformat(dt_str + ':00')
+                elif '+00:00' in dt_str:
+                    # ISO format with +00:00 suffix: "2025-08-10T14:00:46+00:00"
+                    return datetime.fromisoformat(dt_str)
+                else:
+                    # Try direct parsing as fallback
+                    return datetime.fromisoformat(dt_str)
+            except ValueError as e:
+                print(f"Warning: Could not parse datetime '{dt_str}': {e}")
+                return None
+
+        start_time_dt = parse_datetime(record.get("start_time"))
+        end_time_dt = parse_datetime(record.get("end_time"))
+        datetime_local_dt = parse_datetime(record.get("datetime_local"))
         return cls(
             id=record.get("id"),
             user_id=record.get("user_id"),
             session_name=record.get("session_name", ""),
-            datetime_local=record.get("datetime_local"),
+            datetime_local=datetime_local_dt,
             cartridge_id=record.get("cartridge_id"),
             bullet_id=record.get("bullet_id"),
             chrono_session_id=record.get("chrono_session_id"),
             range_submission_id=record.get("range_submission_id"),
             weather_source_id=record.get("weather_source_id"),
             rifle_id=record.get("rifle_id"),
-            start_time=record.get("start_time"),
-            end_time=record.get("end_time"),
+            start_time=start_time_dt,
+            end_time=end_time_dt,
             range_name=record.get("range_name"),
             range_distance_m=record.get("range_distance_m"),
             notes=record.get("notes"),
@@ -111,7 +136,7 @@ class DopeSessionModel:
             bore_diameter_land_mm=record.get("bore_diameter_land_mm"),
             temperature_c_median=record.get("temperature_c_median"),
             relative_humidity_pct_median=record.get("relative_humidity_pct_median"),
-            barometric_pressure_inhg_median=record.get("barometric_pressure_inhg_median"),
+            barometric_pressure_hpa_median=record.get("barometric_pressure_hpa_median"),
             wind_speed_mps_median=record.get("wind_speed_mps_median"),
             wind_direction_deg_median=record.get("wind_direction_deg_median"),
         )
@@ -163,7 +188,7 @@ class DopeSessionModel:
             "bore_diameter_land_mm": self.bore_diameter_land_mm,
             "temperature_c_median": self.temperature_c_median,
             "relative_humidity_pct_median": self.relative_humidity_pct_median,
-            "barometric_pressure_inhg_median": self.barometric_pressure_inhg_median,
+            "barometric_pressure_hpa_median": self.barometric_pressure_hpa_median,
             "wind_speed_mps_median": self.wind_speed_mps_median,
             "wind_direction_deg_median": self.wind_direction_deg_median,
         }
@@ -244,3 +269,224 @@ class DopeSessionModel:
                 missing.append(field_name.replace("_", " ").title())
 
         return missing
+
+
+@dataclass
+class DopeMeasurementModel:
+    """Entity representing a DOPE measurement (individual shot data)"""
+
+    # Core identification fields
+    id: Optional[str] = None
+    dope_session_id: str = ""  # NOT NULL - foreign key to dope_sessions
+    user_id: str = ""  # NOT NULL - for user isolation
+
+    # Shot data
+    shot_number: Optional[int] = None
+    datetime_shot: Optional[datetime] = None
+
+    # Ballistic data (metric only)
+    speed_mps: Optional[float] = None  # Projectile velocity in meters per second
+    ke_j: Optional[float] = None  # Kinetic energy in Joules
+    power_factor_kgms: Optional[float] = None  # Power factor in kg⋅m/s
+
+    # Targeting data
+    azimuth_deg: Optional[float] = None
+    elevation_angle_deg: Optional[float] = None
+
+    # Environmental conditions (metric only)
+    temperature_c: Optional[float] = None  # Air temperature in Celsius
+    pressure_hpa: Optional[float] = None  # Barometric pressure in hectopascals
+    humidity_pct: Optional[float] = None  # Relative humidity as percentage
+
+    # Bore conditions (text fields)
+    clean_bore: Optional[str] = None  # "yes"/"no" or descriptive text
+    cold_bore: Optional[str] = None   # "yes"/"no" or descriptive text
+
+    # Adjustments (metric fields for precise ballistic tracking)
+    distance_m: Optional[float] = None  # Target distance in meters
+    elevation_adjustment: Optional[float] = None  # Elevation scope adjustment in milliradians
+    windage_adjustment: Optional[float] = None  # Windage scope adjustment in milliradians
+
+    # Notes
+    shot_notes: Optional[str] = None
+
+    # Timestamps
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    @classmethod
+    def from_supabase_record(cls, record: dict) -> "DopeMeasurementModel":
+        """Create a DopeMeasurementModel from a Supabase record"""
+        def parse_datetime(dt_str):
+            """Parse datetime string from various Supabase formats"""
+            if not dt_str:
+                return None
+            try:
+                # Handle different datetime formats from Supabase
+                if dt_str.endswith('Z'):
+                    # ISO format with Z suffix: "2025-08-10T14:00:46Z"
+                    return datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
+                elif dt_str.endswith('+00'):
+                    # Postgres format with +00 suffix: "2025-08-10 14:00:46+00"
+                    return datetime.fromisoformat(dt_str + ':00')
+                elif '+00:00' in dt_str:
+                    # ISO format with +00:00 suffix: "2025-08-10T14:00:46+00:00"
+                    return datetime.fromisoformat(dt_str)
+                else:
+                    # Try direct parsing as fallback
+                    return datetime.fromisoformat(dt_str)
+            except ValueError as e:
+                print(f"Warning: Could not parse datetime '{dt_str}': {e}")
+                return None
+
+        datetime_shot_dt = parse_datetime(record.get("datetime_shot"))
+        created_at_dt = parse_datetime(record.get("created_at"))
+        updated_at_dt = parse_datetime(record.get("updated_at"))
+
+        return cls(
+            id=record.get("id"),
+            dope_session_id=record.get("dope_session_id", ""),
+            user_id=record.get("user_id", ""),
+            shot_number=record.get("shot_number"),
+            datetime_shot=datetime_shot_dt,
+            speed_mps=record.get("speed_mps"),
+            ke_j=record.get("ke_j"),
+            power_factor_kgms=record.get("power_factor_kgms"),
+            azimuth_deg=record.get("azimuth_deg"),
+            elevation_angle_deg=record.get("elevation_angle_deg"),
+            temperature_c=record.get("temperature_c"),
+            pressure_hpa=record.get("pressure_hpa"),
+            humidity_pct=record.get("humidity_pct"),
+            clean_bore=record.get("clean_bore"),
+            cold_bore=record.get("cold_bore"),
+            distance_m=record.get("distance_m"),
+            elevation_adjustment=record.get("elevation_adjustment"),
+            windage_adjustment=record.get("windage_adjustment"),
+            shot_notes=record.get("shot_notes"),
+            created_at=created_at_dt,
+            updated_at=updated_at_dt,
+        )
+
+    @classmethod
+    def from_supabase_records(cls, records: List[dict]) -> List["DopeMeasurementModel"]:
+        """Create a list of DopeMeasurementModel from Supabase records"""
+        return [cls.from_supabase_record(record) for record in records]
+
+    def to_dict(self) -> dict:
+        """Convert DopeMeasurementModel to dictionary for database operations"""
+        return {
+            "dope_session_id": self.dope_session_id,
+            "user_id": self.user_id,
+            "shot_number": self.shot_number,
+            "datetime_shot": self.datetime_shot.isoformat() if self.datetime_shot else None,
+            "speed_mps": self.speed_mps,
+            "ke_j": self.ke_j,
+            "power_factor_kgms": self.power_factor_kgms,
+            "azimuth_deg": self.azimuth_deg,
+            "elevation_angle_deg": self.elevation_angle_deg,
+            "temperature_c": self.temperature_c,
+            "pressure_hpa": self.pressure_hpa,
+            "humidity_pct": self.humidity_pct,
+            "clean_bore": self.clean_bore,
+            "cold_bore": self.cold_bore,
+            "distance_m": self.distance_m,
+            "elevation_adjustment": self.elevation_adjustment,
+            "windage_adjustment": self.windage_adjustment,
+            "shot_notes": self.shot_notes,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+    @property
+    def display_name(self) -> str:
+        """Get a friendly display name for the measurement"""
+        parts = []
+        if self.shot_number is not None:
+            parts.append(f"Shot #{self.shot_number}")
+        if self.speed_mps:
+            parts.append(f"{self.speed_mps:.1f} m/s")
+        return " - ".join(parts) if parts else "Measurement"
+
+    @property
+    def bore_conditions_display(self) -> str:
+        """Get a display string for bore conditions"""
+        conditions = []
+        if self.clean_bore:
+            conditions.append(f"Clean: {self.clean_bore}")
+        if self.cold_bore:
+            conditions.append(f"Cold: {self.cold_bore}")
+        return ", ".join(conditions) if conditions else "Not specified"
+
+    @property
+    def environmental_display(self) -> str:
+        """Get a display string for environmental conditions"""
+        conditions = []
+        if self.temperature_c is not None:
+            conditions.append(f"Temp: {self.temperature_c:.1f}°C")
+        
+        if self.humidity_pct is not None:
+            conditions.append(f"Humidity: {self.humidity_pct:.0f}%")
+        
+        if self.pressure_hpa is not None:
+            conditions.append(f"Pressure: {self.pressure_hpa:.1f} hPa")
+        
+        return ", ".join(conditions) if conditions else "Not recorded"
+
+    @property
+    def adjustments_display(self) -> str:
+        """Get a display string for scope adjustments"""
+        adjustments = []
+        if self.distance_m is not None:
+            adjustments.append(f"Distance: {self.distance_m:.0f}m")
+        if self.elevation_adjustment is not None:
+            adjustments.append(f"Elevation: {self.elevation_adjustment:.2f} mrad")
+        if self.windage_adjustment is not None:
+            adjustments.append(f"Windage: {self.windage_adjustment:.2f} mrad")
+        return ", ".join(adjustments) if adjustments else "No adjustments recorded"
+
+    def has_ballistic_data(self) -> bool:
+        """Check if measurement has any ballistic data"""
+        return any([
+            self.speed_mps,
+            self.ke_j,
+            self.power_factor_kgms
+        ])
+
+    def has_environmental_data(self) -> bool:
+        """Check if measurement has environmental data"""
+        return any([
+            self.temperature_c,
+            self.pressure_hpa,
+            self.humidity_pct
+        ])
+
+    def has_targeting_data(self) -> bool:
+        """Check if measurement has targeting data"""
+        return any([self.azimuth_deg, self.elevation_angle_deg])
+
+    def get_speed_display(self, user_unit_system: str = "Metric") -> str:
+        """Get speed display in user's preferred units using edge conversion"""
+        if self.speed_mps is None:
+            return "No speed data"
+
+        # Import here to avoid circular imports
+        from utils.ui_formatters import format_speed
+        return format_speed(self.speed_mps, user_unit_system)
+
+    def get_energy_display(self, user_unit_system: str = "Metric") -> str:
+        """Get kinetic energy display in user's preferred units using edge conversion"""
+        if self.ke_j is None:
+            return "No energy data"
+
+        # Import here to avoid circular imports
+        from utils.ui_formatters import format_energy
+        return format_energy(self.ke_j, user_unit_system)
+
+    def get_power_factor_display(self, user_unit_system: str = "Metric") -> str:
+        """Get power factor display in user's preferred units using edge conversion"""
+        if self.power_factor_kgms is None:
+            return "No power factor data"
+
+        # Import here to avoid circular imports
+        from utils.ui_formatters import format_power_factor
+        return format_power_factor(self.power_factor_kgms, user_unit_system)

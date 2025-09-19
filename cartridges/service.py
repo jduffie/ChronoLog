@@ -5,7 +5,8 @@ Service layer for cartridge-related database operations.
 """
 
 from typing import List, Optional
-from .models import CartridgeModel
+
+from .models import CartridgeModel, CartridgeTypeModel
 
 
 class CartridgeService:
@@ -135,7 +136,7 @@ class CartridgeService:
         except Exception as e:
             raise Exception(f"Error fetching cartridge: {str(e)}")
 
-    def get_cartridge_types(self) -> List[str]:
+    def get_cartridge_types(self) -> List[CartridgeTypeModel]:
         """Get all available cartridge types
         
         Returns:

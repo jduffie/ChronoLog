@@ -3,9 +3,15 @@ from datetime import datetime
 import pandas as pd
 import streamlit as st
 
-from .service import WeatherService
-from utils.ui_formatters import format_temperature, format_pressure, format_wind_speed, format_altitude
+from utils.ui_formatters import (
+    format_altitude,
+    format_pressure,
+    format_temperature,
+    format_wind_speed,
+)
 from utils.unit_conversions import celsius_to_fahrenheit, hpa_to_inhg, mps_to_mph
+
+from .service import WeatherService
 
 
 def render_weather_view_tab(user, supabase):

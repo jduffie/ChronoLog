@@ -14,9 +14,8 @@ class DopeSessionFilter:
         self.sessions = sessions
     
     def apply_status_filter(self, status: str) -> 'DopeSessionFilter':
-        """Apply status filter"""
-        if status and status != "All":
-            self.sessions = [s for s in self.sessions if s.status == status]
+        """Apply status filter (deprecated - status field removed)"""
+        # Status field no longer exists in schema
         return self
     
     def apply_cartridge_type_filter(self, cartridge_type: str) -> 'DopeSessionFilter':
@@ -69,7 +68,7 @@ class DopeSessionFilter:
             min_dist, max_dist = distance_range
             self.sessions = [
                 s for s in self.sessions 
-                if s.distance_m and min_dist <= s.distance_m <= max_dist
+                if s.range_distance_m and min_dist <= s.range_distance_m <= max_dist
             ]
         return self
     
@@ -135,8 +134,8 @@ class DopeSessionFilter:
             min_temp, max_temp = temp_range
             self.sessions = [
                 s for s in self.sessions 
-                if (s.temperature_c is not None and 
-                    min_temp <= s.temperature_c <= max_temp)
+                if (s.temperature_c_median is not None and 
+                    min_temp <= s.temperature_c_median <= max_temp)
             ]
         return self
     
@@ -157,15 +156,15 @@ class DopeSessionFilter:
             min_wind, max_wind = wind_range
             self.sessions = [
                 s for s in self.sessions 
-                if (s.wind_speed_1_mps is not None and 
-                    min_wind <= s.wind_speed_1_mps <= max_wind)
+                if (s.wind_speed_mps_median is not None and 
+                    min_wind <= s.wind_speed_mps_median <= max_wind)
             ]
         return self
     
     def apply_all_filters(self, filters: Dict[str, Any]) -> 'DopeSessionFilter':
         """Apply all filters using method chaining"""
         return (self
-                .apply_status_filter(filters.get("status"))
+                .apply_status_filter(filters.get("status"))  # Deprecated
                 .apply_cartridge_type_filter(filters.get("cartridge_type"))
                 .apply_date_filter(filters.get("date_from"), filters.get("date_to"))
                 .apply_rifle_filter(filters.get("rifle_name"))

@@ -13,6 +13,13 @@ geopy==2.4.1
 matplotlib
 plotly
 
+# API framework and dependencies
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+python-jose[cryptography]==3.3.0
+python-multipart==0.0.6
+
 # Development and testing
 pytest==8.4.1
 pytest-mock==3.14.1
@@ -20,6 +27,7 @@ pytest-cov==6.0.0
 pytest-html==4.1.1
 black==25.1.0
 isort==6.0.1
+httpx==0.25.2  # For testing FastAPI endpoints
 
 # Security constraint - compatible with LibreSSL
 urllib3>=1.26.0,<2.0

@@ -78,28 +78,6 @@ Before committing any code changes:
    - **sessions** table: metadata (bullet type, grain, timestamps, file paths)
    - **measurements** table: individual shot data (speed, energy, power factor, etc.)
 
-### Database Schema
-The application uses a comprehensive Supabase database with the following tables and views:
-
-#### Core Tables
-- **users**: User profiles and authentication data
-- **chrono_sessions**: Chronograph session metadata
-- **chrono_measurements**: Individual shot measurements from chronograph
-- **dope_sessions**: DOPE (Data On Previous Engagement) session data
-- **dope_measurements**: Individual DOPE measurements with ballistic adjustments
-- **weather_source**: Weather measurement device configurations
-- **weather_measurements**: Environmental conditions data
-- **rifles**: User rifle configurations and specifications
-- **bullets**: Bullet specifications and ballistic data
-- **ranges**: Approved public shooting ranges (admin-managed)
-- **ranges_submissions**: User-submitted range data pending approval
-
-### External Dependencies
-- **Streamlit**: Web framework for the application interface
-- **Supabase**: Backend-as-a-Service for database and file storage
-- **Auth0**: Authentication service for Google OAuth
-- **pandas/openpyxl**: Excel file processing
-- **requests**: HTTP client for Auth0 API calls
 
 ## Key Development Patterns
 
@@ -120,6 +98,17 @@ class FeatureModel:
     def from_supabase_record(cls, record: dict):
         # Convert Supabase record to model instance
 ```
+
+###  Cross Module APIs
+Each of the following modules should export an access API.  The API should utilize the entity models
+in the signature.
+ 
+ * chronograph
+ * mapping
+ * bullets
+ * weather
+ * rifles
+ * cartridges
 
 ### Streamlit Classes
 Isolate user interface code and especially streamlit code in separate classes.  I may elect to re-use the 
@@ -165,3 +154,4 @@ DO NOT use unicode emojis. Use plain text only.
 - use Intellij MCP where possible to accelerate file searching, etc
 - all interior processing and storage is based on the metric system.  Only swap at the edge when importing files that use imperial or in the ui if the user preferences require it
 - if a column has values with units, the units should be presented in the column header and not in the row as part of the column value
+- models are always metric.  Do not use imperial.

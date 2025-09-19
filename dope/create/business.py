@@ -5,14 +5,21 @@ Handles the business logic and data processing for DOPE session creation.
 """
 
 from datetime import datetime
-from typing import List, Optional, Tuple
-from chronograph.service import ChronographService
+from typing import List
+
+from cartridges.models import CartridgeModel, CartridgeTypeModel
 from cartridges.service import CartridgeService
+from chronograph.chronograph_session_models import (
+    ChronographSession,
+)
+from chronograph.service import ChronographService
 from dope.models import DopeSessionModel
 from dope.service import DopeService
 from dope.weather_associator import WeatherSessionAssociator
 from mapping.submission.submission_model import SubmissionModel
+from rifles.models import Rifle
 from rifles.service import RifleService
+from weather.models import WeatherSource
 from weather.service import WeatherService
 
 
@@ -29,7 +36,7 @@ class DopeCreateBusiness:
         self.weather_associator = WeatherSessionAssociator(supabase)
         self.submission_model = SubmissionModel()
     
-    def get_unused_chrono_sessions(self, user_id: str):
+    def get_unused_chrono_sessions(self, user_id: str)-> List[ChronographSession]:
         """Get chronograph sessions not yet used in any DOPE session"""
         try:
             # Get all chrono sessions for user
@@ -52,21 +59,21 @@ class DopeCreateBusiness:
         except Exception as e:
             raise Exception(f"Error loading chronograph sessions: {str(e)}")
     
-    def get_rifles_for_user(self, user_id: str):
+    def get_rifles_for_user(self, user_id: str)-> List[Rifle]:
         """Get rifles for user"""
         try:
             return self.rifle_service.get_rifles_for_user(user_id)
         except Exception as e:
             raise Exception(f"Error loading rifles: {str(e)}")
     
-    def get_cartridges_for_user(self, user_id: str):
+    def get_cartridges_for_user(self, user_id: str)-> List[CartridgeModel]:
         """Get cartridges for user"""
         try:
             return self.cartridge_service.get_cartridges_for_user(user_id)
         except Exception as e:
             raise Exception(f"Error loading cartridges: {str(e)}")
     
-    def get_cartridge_types(self):
+    def get_cartridge_types(self)-> List[CartridgeTypeModel]:
         """Get available cartridge types"""
         try:
             return self.cartridge_service.get_cartridge_types()
@@ -76,11 +83,12 @@ class DopeCreateBusiness:
     def get_ranges_for_user(self, user_id: str):
         """Get ranges for user"""
         try:
+            # TODO - return type is not a model but a dict
             return self.submission_model.get_user_ranges(user_id, self.supabase)
         except Exception as e:
             raise Exception(f"Error loading ranges: {str(e)}")
     
-    def get_weather_sources_for_user(self, user_id: str):
+    def get_weather_sources_for_user(self, user_id: str)-> List[WeatherSource]:
         """Get weather sources for user"""
         try:
             return self.weather_service.get_sources_for_user(user_id)
@@ -96,7 +104,7 @@ class DopeCreateBusiness:
         except Exception as e:
             raise Exception(f"Error getting time window: {str(e)}")
     
-    def filter_cartridges_by_rifle_type(self, cartridges, rifle_cartridge_type: str):
+    def filter_cartridges_by_rifle_type(self, cartridges, rifle_cartridge_type: str)->List[CartridgeModel]:
         """Filter cartridges to match rifle cartridge type"""
         if not rifle_cartridge_type:
             return cartridges
@@ -125,7 +133,7 @@ class DopeCreateBusiness:
         cartridge_type_filter,
         cartridge_make_filter,
         bullet_grain_filter
-    ):
+    )-> List[CartridgeModel]:
         """Filter CartridgeModel objects based on selected filters"""
         filtered = cartridges
         
@@ -188,8 +196,8 @@ class DopeCreateBusiness:
                     weather_update_data['relative_humidity_pct_median'] = metric_value
                 
                 elif weather_field == 'barometric_pressure_hpa':
-                    # Convert hPa to inHg for storage
-                    weather_update_data['barometric_pressure_inhg_median'] = metric_value / 33.8639
+                    # Store in metric (hPa) - convert only at display edge
+                    weather_update_data['barometric_pressure_hpa_median'] = metric_value
                 
                 elif weather_field == 'wind_speed_mps':
                     weather_update_data['wind_speed_mps_median'] = metric_value
@@ -215,7 +223,7 @@ class DopeCreateBusiness:
         weather_data,
         session_details,
         time_window
-    ):
+    ) -> DopeSessionModel:
         """Prepare session data dictionary for database creation"""
         
         # Validate required fields

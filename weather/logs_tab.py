@@ -4,8 +4,9 @@ from typing import Any, Dict, cast
 import pandas as pd
 import streamlit as st
 
+from utils.ui_formatters import format_pressure, format_temperature, format_wind_speed
+
 from .service import WeatherService
-from utils.ui_formatters import format_temperature, format_pressure, format_wind_speed
 
 
 def render_weather_logs_tab(user, supabase):

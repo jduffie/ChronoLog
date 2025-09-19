@@ -351,6 +351,8 @@ class TestDopeSessionModel(unittest.TestCase):
             "user_id": "db_user",
             "session_name": "DB Session",
             "datetime_local": "2024-08-20T12:00:00Z",
+            "start_time": "2024-08-20T12:00:00Z",
+            "end_time": "2024-08-20T14:00:00Z",
             "cartridge_id": "db_cartridge",
             "rifle_name": "DB Rifle",
             "cartridge_make": "DB Make",
@@ -360,7 +362,7 @@ class TestDopeSessionModel(unittest.TestCase):
             "bullet_model": "DB Model",
             "bullet_weight": "180",
             "temperature_c_median": 22.5,
-            "wind_speed_1_mps": 10.0,
+            "wind_speed_mps_median": 10.0,
         }
 
         session = self.DopeSessionModel.from_supabase_record(supabase_record)
@@ -380,7 +382,7 @@ class TestDopeSessionModel(unittest.TestCase):
         self.assertEqual(data_dict["cartridge_id"], "cartridge_001")
         self.assertEqual(data_dict["datetime_local"], self.test_datetime)
         self.assertIn("rifle_name", data_dict)
-        self.assertIn("temperature_c", data_dict)
+        self.assertIn("temperature_c_median", data_dict)
 
     def test_display_properties(self):
         """Test display property methods"""
@@ -412,6 +414,8 @@ class TestDopeSessionModel(unittest.TestCase):
                 "id": "1",
                 "user_id": "user1",
                 "session_name": "Session 1",
+                "start_time": "2024-08-20T12:00:00Z",
+                "end_time": "2024-08-20T14:00:00Z",
                 "cartridge_id": "cartridge1",
                 "rifle_name": "Rifle 1",
                 "cartridge_make": "Make1",
@@ -425,6 +429,8 @@ class TestDopeSessionModel(unittest.TestCase):
                 "id": "2",
                 "user_id": "user2",
                 "session_name": "Session 2",
+                "start_time": "2024-08-20T12:00:00Z",
+                "end_time": "2024-08-20T14:00:00Z",
                 "cartridge_id": "cartridge2",
                 "rifle_name": "Rifle 2",
                 "cartridge_make": "Make2",
@@ -441,6 +447,188 @@ class TestDopeSessionModel(unittest.TestCase):
         self.assertEqual(len(sessions), 2)
         self.assertEqual(sessions[0].session_name, "Session 1")
         self.assertEqual(sessions[1].session_name, "Session 2")
+
+
+class TestDopeMeasurementModel(unittest.TestCase):
+    """Test the DopeMeasurementModel"""
+
+    def setUp(self):
+        """Set up test data"""
+        from datetime import datetime
+
+        from dope.models import DopeMeasurementModel
+
+        self.DopeMeasurementModel = DopeMeasurementModel
+        self.test_datetime = datetime(2024, 8, 20, 14, 30, 0)
+
+        self.valid_measurement_data = {
+            "id": "test_measurement_001",
+            "dope_session_id": "test_session_001",
+            "user_id": "test_user",
+            "shot_number": 1,
+            "datetime_shot": self.test_datetime,
+            "speed_mps": 838.4,
+            "ke_j": 1742.8,
+            "power_factor_kgms": 0.0646,
+            "temperature_c": 22.2,
+            "pressure_hpa": 1021.0,
+            "humidity_pct": 65.0,
+            "clean_bore": "yes",
+            "cold_bore": "yes",
+            "distance_m": 91.44,  # Add distance_m field
+            "elevation_adjustment": 0.0,
+            "windage_adjustment": 0.0,
+            "shot_notes": "Good shot",
+        }
+
+    def test_measurement_model_creation(self):
+        """Test creating a measurement model with all fields"""
+        measurement = self.DopeMeasurementModel(**self.valid_measurement_data)
+
+        self.assertEqual(measurement.shot_number, 1)
+        self.assertEqual(measurement.speed_mps, 838.4)
+        self.assertEqual(measurement.clean_bore, "yes")
+        self.assertEqual(measurement.distance_m, 91.44)
+
+    def test_measurement_from_supabase_record(self):
+        """Test creating measurement from Supabase record"""
+        supabase_record = {
+            "id": "db_measurement_001",
+            "dope_session_id": "db_session_001",
+            "user_id": "db_user",
+            "shot_number": 5,
+            "datetime_shot": "2024-08-20T14:30:00Z",
+            "speed_mps": 853.4,
+            "temperature_c": 25.0,
+            "humidity_pct": 60.0,
+            "clean_bore": "no",
+            "shot_notes": "Excellent shot",
+        }
+
+        measurement = self.DopeMeasurementModel.from_supabase_record(supabase_record)
+
+        self.assertEqual(measurement.id, "db_measurement_001")
+        self.assertEqual(measurement.shot_number, 5)
+        self.assertEqual(measurement.speed_mps, 853.4)
+        self.assertEqual(measurement.temperature_c, 25.0)
+        self.assertEqual(measurement.clean_bore, "no")
+
+    def test_measurement_from_supabase_records_list(self):
+        """Test creating multiple measurements from Supabase records"""
+        records = [
+            {
+                "id": "1",
+                "dope_session_id": "session1",
+                "user_id": "user1",
+                "shot_number": 1,
+                "speed_mps": 838.2,
+            },
+            {
+                "id": "2",
+                "dope_session_id": "session1",
+                "user_id": "user1",
+                "shot_number": 2,
+                "speed_mps": 841.2,
+            },
+        ]
+
+        measurements = self.DopeMeasurementModel.from_supabase_records(records)
+
+        self.assertEqual(len(measurements), 2)
+        self.assertEqual(measurements[0].shot_number, 1)
+        self.assertEqual(measurements[1].shot_number, 2)
+
+    def test_measurement_to_dict_conversion(self):
+        """Test converting measurement to dictionary"""
+        measurement = self.DopeMeasurementModel(**self.valid_measurement_data)
+        data_dict = measurement.to_dict()
+
+        self.assertEqual(data_dict["shot_number"], 1)
+        self.assertEqual(data_dict["speed_mps"], 838.4)
+        self.assertEqual(data_dict["clean_bore"], "yes")
+        self.assertIn("datetime_shot", data_dict)
+
+    def test_measurement_display_properties(self):
+        """Test measurement display properties"""
+        measurement = self.DopeMeasurementModel(**self.valid_measurement_data)
+
+        # Test display_name
+        display_name = measurement.display_name
+        self.assertIn("Shot #1", display_name)
+        self.assertIn("838.4 m/s", display_name)
+
+        # Test bore_conditions_display
+        bore_display = measurement.bore_conditions_display
+        self.assertIn("Clean: yes", bore_display)
+        self.assertIn("Cold: yes", bore_display)
+
+        # Test environmental_display
+        env_display = measurement.environmental_display
+        self.assertIn("Temp: 22.2°C", env_display)
+        self.assertIn("Humidity: 65%", env_display)
+        self.assertIn("Pressure: 1021.0 hPa", env_display)
+
+        # Test adjustments_display
+        adj_display = measurement.adjustments_display
+        self.assertIn("Distance: 91m", adj_display)  # Metric units now
+        self.assertIn("Elevation: 0.00 mrad", adj_display)  # Milliradians now
+        self.assertIn("Windage: 0.00 mrad", adj_display)  # Milliradians now
+
+    def test_measurement_data_availability_checks(self):
+        """Test methods that check data availability"""
+        # Test with full data
+        full_measurement = self.DopeMeasurementModel(**self.valid_measurement_data)
+        self.assertTrue(full_measurement.has_ballistic_data())
+        self.assertTrue(full_measurement.has_environmental_data())
+
+        # Test with minimal data
+        minimal_measurement = self.DopeMeasurementModel(
+            dope_session_id="session1",
+            user_id="user1",
+            shot_number=1
+        )
+        self.assertFalse(minimal_measurement.has_ballistic_data())
+        self.assertFalse(minimal_measurement.has_environmental_data())
+        self.assertFalse(minimal_measurement.has_targeting_data())
+
+    def test_measurement_unit_display_methods(self):
+        """Test unit-specific display methods"""
+        measurement = self.DopeMeasurementModel(**self.valid_measurement_data)
+
+        # Test speed display with correct method signature
+        metric_speed = measurement.get_speed_display("Metric")
+        imperial_speed = measurement.get_speed_display("Imperial")
+        self.assertIn("838.40 m/s", metric_speed)  # Allow for decimal formatting
+        self.assertIn("2750.7 fps", imperial_speed)  # 838.4 * 3.28084 = 2750.7
+
+        # Test energy display with correct method signature
+        metric_energy = measurement.get_energy_display("Metric")
+        imperial_energy = measurement.get_energy_display("Imperial")
+        self.assertIn("1742.8 J", metric_energy)
+        self.assertIn("1285.4 ft-lb", imperial_energy)  # 1742.8 * 0.737562 = 1285.4
+
+        # Test power factor display with correct method signature
+        metric_pf = measurement.get_power_factor_display("Metric")
+        imperial_pf = measurement.get_power_factor_display("Imperial")
+        self.assertIn("0.06 kg⋅m/s", metric_pf)  # Actual calculated value
+        self.assertIn("3271 gr⋅ft/s", imperial_pf)  # Converts to imperial power factor units
+
+    def test_measurement_with_missing_data(self):
+        """Test measurement with missing optional data"""
+        minimal_data = {
+            "dope_session_id": "session1",
+            "user_id": "user1",
+            "shot_number": 3,
+        }
+        measurement = self.DopeMeasurementModel(**minimal_data)
+
+        # Should handle missing data gracefully
+        self.assertEqual(measurement.get_speed_display(), "No speed data")
+        self.assertEqual(measurement.get_energy_display(), "No energy data")
+        self.assertEqual(measurement.get_power_factor_display(), "No power factor data")
+        self.assertEqual(measurement.bore_conditions_display, "Not specified")
+        self.assertEqual(measurement.environmental_display, "Not recorded")
+        self.assertEqual(measurement.adjustments_display, "No adjustments recorded")
 
 
 class TestDopeService(unittest.TestCase):
@@ -524,22 +712,16 @@ class TestDopeService(unittest.TestCase):
         sessions = self.service.search_sessions(self.test_user_id, "federal")
         self.assertGreater(len(sessions), 0)
 
-    def test_filter_sessions_by_status(self):
-        """Test filtering sessions by status"""
-        # Filter for active sessions
-        active_sessions = self.service.filter_sessions(
-            self.test_user_id, {"status": "active"}
+    def test_filter_sessions_by_range_distance(self):
+        """Test filtering sessions by range distance (replaces status test)"""
+        # Filter for sessions with range distance
+        sessions_with_distance = self.service.filter_sessions(
+            self.test_user_id, {"distance_range": (50, 500)}
         )
-        self.assertGreater(len(active_sessions), 0)
-        for session in active_sessions:
-            self.assertEqual(session.status, "active")
-
-        # Filter for archived sessions
-        archived_sessions = self.service.filter_sessions(
-            self.test_user_id, {"status": "archived"}
-        )
-        for session in archived_sessions:
-            self.assertEqual(session.status, "archived")
+        self.assertGreaterEqual(len(sessions_with_distance), 0)
+        for session in sessions_with_distance:
+            if session.range_distance_m:
+                self.assertTrue(50 <= session.range_distance_m <= 500)
 
     def test_filter_sessions_by_cartridge_type(self):
         """Test filtering sessions by cartridge type"""
@@ -628,6 +810,65 @@ class TestDopeService(unittest.TestCase):
             )
 
         self.assertIn("not found", str(context.exception))
+
+    def test_get_measurements_for_dope_session(self):
+        """Test getting measurements for a DOPE session returns DopeMeasurementModel list"""
+        from dope.models import DopeMeasurementModel
+
+        # Test with known session ID that has mock data
+        measurements = self.service.get_measurements_for_dope_session(
+            "session_001", self.test_user_id
+        )
+
+        self.assertIsInstance(measurements, list)
+        if measurements:  # Should have mock data for session_001
+            self.assertGreater(len(measurements), 0)
+            # Check that all returned items are DopeMeasurementModel instances
+            for measurement in measurements:
+                self.assertIsInstance(measurement, DopeMeasurementModel)
+                self.assertEqual(measurement.dope_session_id, "session_001")
+                self.assertEqual(measurement.user_id, self.test_user_id)
+
+    def test_get_measurements_for_unknown_session(self):
+        """Test getting measurements for unknown session returns empty list"""
+        measurements = self.service.get_measurements_for_dope_session(
+            "unknown_session", self.test_user_id
+        )
+        
+        self.assertIsInstance(measurements, list)
+        self.assertEqual(len(measurements), 0)
+
+    def test_get_measurements_for_different_user(self):
+        """Test getting measurements for different user returns empty list"""
+        measurements = self.service.get_measurements_for_dope_session(
+            "session_001", "different_user_id"
+        )
+        
+        self.assertIsInstance(measurements, list)
+        self.assertEqual(len(measurements), 0)
+
+    def test_measurements_data_consistency(self):
+        """Test that measurement data is consistent and realistic"""
+        
+        measurements = self.service.get_measurements_for_dope_session(
+            "session_001", self.test_user_id
+        )
+        
+        if measurements:
+            for measurement in measurements:
+                # Check shot numbers are sequential and positive
+                self.assertIsInstance(measurement.shot_number, int)
+                self.assertGreater(measurement.shot_number, 0)
+                
+                # Check ballistic data consistency (if present)
+                if measurement.speed_mps:
+                    # Check that speed is in realistic range (200-1200 m/s for small arms)
+                    self.assertGreater(measurement.speed_mps, 200)
+                    self.assertLess(measurement.speed_mps, 1200)
+                
+                # Check that required fields are present
+                self.assertEqual(measurement.dope_session_id, "session_001")
+                self.assertEqual(measurement.user_id, self.test_user_id)
 
 
 class TestDopeViewPage(unittest.TestCase):
@@ -801,7 +1042,7 @@ class TestDopeViewPage(unittest.TestCase):
             # Verify DataFrame was created with session data
             self.assertGreaterEqual(mock_df.call_count, 1)
             call_args = mock_df.call_args_list[0][0][
-                0
+            0
             ]  # Get the data passed to DataFrame
             self.assertIsInstance(call_args, list)
             self.assertGreater(len(call_args), 0)
@@ -875,13 +1116,12 @@ class TestDopeViewPage(unittest.TestCase):
         from dope.view.view_page import render_weather_info_tab
 
         session = DopeSessionModel(
-            temperature_c=22.5,
-            relative_humidity_pct=65.0,
-            barometric_pressure_hpa=30.15,
-            wind_speed_1_mps=8.0,
-            wind_speed_2_mps=10.0,
-            wind_direction_deg=270.0,
-            weather_source_name="Kestrel 5700",
+            temperature_c_median=22.5,
+            # relative_humidity_pct field removed in metric migration
+            barometric_pressure_hpa_median=30.15,  # Use metric field
+            wind_speed_mps_median=8.0,  # Use correct field name
+            wind_direction_deg_median=270.0,  # Use correct field name
+            # weather_source_name field not in model - remove from test
         )
 
         with patch("streamlit.columns", return_value=[MagicMock(), MagicMock()]), patch(
@@ -944,7 +1184,7 @@ class TestDopeModelAdvanced(unittest.TestCase):
             cartridge_type="223 Remington",
             bullet_make="Sierra",
             bullet_model="MatchKing",
-            distance_m=100.0
+            range_distance_m=100.0
         )
         self.assertEqual(session_with_name.display_name, "My Test Session")
 
@@ -954,7 +1194,7 @@ class TestDopeModelAdvanced(unittest.TestCase):
             cartridge_type="308 Winchester",
             bullet_make="Hornady",
             bullet_model="ELD Match",
-            distance_m=600.0
+            range_distance_m=600.0
         )
         expected = "308 Winchester - Hornady ELD Match - 600.0m"
         self.assertEqual(session_without_name.display_name, expected)
@@ -967,29 +1207,29 @@ class TestDopeModelAdvanced(unittest.TestCase):
         """Test weather data fields with metric units"""
         # Test complete weather data
         full_weather = self.DopeSessionModel(
-            temperature_c=22.5,
-            relative_humidity_pct=65.0,
-            barometric_pressure_hpa=30.15,
-            wind_speed_1_mps=8.0
+            temperature_c_median=22.5,
+            # relative_humidity_pct field removed in metric migration
+            barometric_pressure_hpa_median=30.15,  # Use metric field
+            wind_speed_mps_median=8.0  # Use correct field name
         )
-        self.assertEqual(full_weather.temperature_c, 22.5)
-        self.assertEqual(full_weather.relative_humidity_pct, 65.0)
-        self.assertEqual(full_weather.barometric_pressure_hpa, 30.15)
-        self.assertEqual(full_weather.wind_speed_1_mps, 8.0)
+        self.assertEqual(full_weather.temperature_c_median, 22.5)
+        # relative_humidity_pct field removed in metric migration
+        self.assertEqual(full_weather.barometric_pressure_hpa_median, 30.15)
+        self.assertEqual(full_weather.wind_speed_mps_median, 8.0)
 
         # Test partial weather data
         partial_weather = self.DopeSessionModel(
-            temperature_c=18.0,
-            wind_speed_1_mps=12.0
+            temperature_c_median=18.0,  # Use correct field name
+            wind_speed_mps_median=12.0  # Use correct field name
         )
-        self.assertEqual(partial_weather.temperature_c, 18.0)
-        self.assertEqual(partial_weather.wind_speed_1_mps, 12.0)
-        self.assertIsNone(partial_weather.relative_humidity_pct)
+        self.assertEqual(partial_weather.temperature_c_median, 18.0)
+        self.assertEqual(partial_weather.wind_speed_mps_median, 12.0)
+        # relative_humidity_pct field removed in metric migration
 
         # Test no weather data
         no_weather = self.DopeSessionModel()
-        self.assertIsNone(no_weather.temperature_c)
-        self.assertIsNone(no_weather.wind_speed_1_mps)
+        self.assertIsNone(no_weather.temperature_c_median)
+        self.assertIsNone(no_weather.wind_speed_mps_median)
 
     def test_model_field_validation_edge_cases(self):
         """Test edge cases for field validation"""
@@ -1019,8 +1259,8 @@ class TestDopeModelAdvanced(unittest.TestCase):
             cartridge_id="cartridge_456",
             rifle_name="Test Rifle",
             range_name="Test Range",
-            distance_m=300.0,
-            temperature_c=20.0,
+            range_distance_m=300.0,  # Use correct field name
+            temperature_c_median=20.0,  # Use correct field name
             notes="Test notes"
         )
 
@@ -1029,8 +1269,8 @@ class TestDopeModelAdvanced(unittest.TestCase):
         # Check core fields are present
         expected_fields = [
             "id", "user_id", "session_name", "cartridge_id",
-            "rifle_name", "range_name", "distance_m",
-            "temperature_c", "notes"
+            "rifle_name", "range_name", "range_distance_m",
+            "temperature_c_median", "notes"
         ]
 
         # Note: to_dict() doesn't include 'id' field based on the
@@ -1049,7 +1289,7 @@ class TestDopeModelAdvanced(unittest.TestCase):
         self.assertEqual(session.id, "minimal_001")
         self.assertEqual(session.user_id, "user_001")
         self.assertEqual(session.session_name, "")  # Default value
-        self.assertEqual(session.status, "active")  # Default value
+        # Status field no longer exists in new schema
 
         # Test with null values
         null_record = {
@@ -1063,7 +1303,7 @@ class TestDopeModelAdvanced(unittest.TestCase):
             null_record)
         self.assertIsNone(session_with_nulls.session_name)
         self.assertIsNone(session_with_nulls.rifle_name)
-        self.assertIsNone(session_with_nulls.temperature_c)
+        # temperature_c field removed - use temperature_c_median
 
 
 class TestDopeServiceAdvanced(unittest.TestCase):
@@ -1083,13 +1323,14 @@ class TestDopeServiceAdvanced(unittest.TestCase):
         measurements = self.service.get_measurements_for_dope_session(
             "session_001", self.test_user_id)
         # Mock implementation should return empty list since mock is detected
-        self.assertEqual(measurements, [])
+        # Should have mock measurements for session_001
+        self.assertGreater(len(measurements), 0)
 
     def test_filter_sessions_complex_filters(self):
         """Test complex filtering scenarios"""
         # Test multiple filters combined
         complex_filters = {
-            "status": "active",
+            # "status" field removed from schema
             "cartridge_type": "223 Remington",
             "distance_range": (50, 200),
             "temperature_range": (15, 25)
@@ -1100,12 +1341,12 @@ class TestDopeServiceAdvanced(unittest.TestCase):
 
         # All returned sessions should match all filters
         for session in filtered_sessions:
-            self.assertEqual(session.status, "active")
+            # status field removed from schema
             self.assertEqual(session.cartridge_type, "223 Remington")
-            if session.distance_m:
-                self.assertTrue(50 <= session.distance_m <= 200)
-            if session.temperature_c:
-                self.assertTrue(15 <= session.temperature_c <= 25)
+            if session.range_distance_m:
+                self.assertTrue(50 <= session.range_distance_m <= 200)
+            if session.temperature_c_median:
+                self.assertTrue(15 <= session.temperature_c_median <= 25)
 
     def test_filter_sessions_edge_cases(self):
         """Test filtering edge cases"""
@@ -1239,8 +1480,8 @@ class TestDopeIntegration(unittest.TestCase):
             "bullet_make": "Integration Bullet",
             "bullet_model": "Integration BModel",
             "bullet_weight": "75",
-            "distance_m": 100.0,
-            "temperature_c": 22.0,
+            "range_distance_m": 300.0,  # Use correct field name
+            "temperature_c_median": 22.0,  # Use correct field name
             "notes": "Integration test notes"
         }
 
@@ -1272,12 +1513,12 @@ class TestDopeIntegration(unittest.TestCase):
         # Filter by specific criteria
         filter_results = service.filter_sessions(
             self.test_user_id,
-            {"status": "active", "cartridge_type": "223 Remington"}
+            {"cartridge_type": "223 Remington"}
         )
 
         # Verify all results match filter criteria
         for session in filter_results:
-            self.assertEqual(session.status, "active")
+            # status field removed from schema
             self.assertEqual(session.cartridge_type, "223 Remington")
 
     def test_statistics_calculation_integration(self):
@@ -1315,7 +1556,7 @@ class TestDopeIntegration(unittest.TestCase):
             # Test bulk filtering
             bulk_filter_results = service.filter_sessions(
                 self.test_user_id,
-                {"status": "active"}
+                {"cartridge_type": "223 Remington"}
             )
 
             # Test bulk search

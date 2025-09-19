@@ -4,8 +4,10 @@ DOPE Create UI View
 Handles all Streamlit UI components for DOPE session creation.
 """
 
+from typing import Any, Dict, List, Optional
+
 import streamlit as st
-from typing import Dict, List, Optional, Any, Tuple
+
 from utils.ui_formatters import format_speed
 
 
@@ -58,13 +60,14 @@ class DopeCreateView:
             
             with col2:
                 st.metric("Shot Count", selected_session.shot_count)
-                # Use metric field with UI formatter - assuming Imperial unit system for now
-                avg_speed_display = format_speed(selected_session.avg_speed_mps, "Imperial") if selected_session.avg_speed_mps else "N/A"
+                # Use metric field with UI formatter based on user preferences
+                user_unit_system = st.session_state.get("user", {}).get("unit_system", "Imperial")
+                avg_speed_display = format_speed(selected_session.avg_speed_mps, user_unit_system) if selected_session.avg_speed_mps else "N/A"
                 st.metric("Avg Velocity", avg_speed_display)
             
             with col3:
-                # Use metric field with UI formatter - assuming Imperial unit system for now  
-                std_dev_display = format_speed(selected_session.std_dev_mps, "Imperial") if selected_session.std_dev_mps else "N/A"
+                # Use metric field with UI formatter based on user preferences
+                std_dev_display = format_speed(selected_session.std_dev_mps, user_unit_system) if selected_session.std_dev_mps else "N/A"
                 st.metric("Std Deviation", std_dev_display)
                 st.metric("Date", selected_session.datetime_local.strftime('%Y-%m-%d'))
         

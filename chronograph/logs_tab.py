@@ -3,9 +3,9 @@ from datetime import datetime
 import pandas as pd
 import streamlit as st
 
+from utils.unit_conversions import joules_to_ftlb, kgms_to_grainft, mps_to_fps
+
 from .service import ChronographService
-from utils.ui_formatters import format_speed, format_delta_speed, format_energy, format_power_factor
-from utils.unit_conversions import mps_to_fps, joules_to_ftlb, kgms_to_grainft
 
 
 def render_logs_tab(user, supabase):
