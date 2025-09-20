@@ -144,9 +144,9 @@ class DopeSessionFilter:
         if humidity_range:
             min_humidity, max_humidity = humidity_range
             self.sessions = [
-                s for s in self.sessions 
-                if (s.relative_humidity_pct is not None and 
-                    min_humidity <= s.relative_humidity_pct <= max_humidity)
+                s for s in self.sessions
+                if (s.relative_humidity_pct_median is not None and
+                    min_humidity <= s.relative_humidity_pct_median <= max_humidity)
             ]
         return self
     

@@ -43,3 +43,43 @@ def kgms_to_grainft(pf_kgms: Optional[float]) -> Optional[float]:
         return None
     # 1 kg = 15432.36 grains, 1 m = 3.28084 ft
     return pf_kgms * 15432.36 * 3.28084
+
+
+# Reverse conversions (Imperial to Metric) for editing functionality
+
+def fps_to_mps(speed_fps: Optional[float]) -> Optional[float]:
+    """Convert feet per second to meters per second"""
+    return speed_fps * 0.3048 if speed_fps is not None else None
+
+
+def fahrenheit_to_celsius(temp_f: Optional[float]) -> Optional[float]:
+    """Convert Fahrenheit to Celsius"""
+    return (temp_f - 32) * 5.0/9.0 if temp_f is not None else None
+
+
+def inhg_to_hpa(pressure_inhg: Optional[float]) -> Optional[float]:
+    """Convert inches of mercury to hectopascals"""
+    return pressure_inhg * 33.8639 if pressure_inhg is not None else None
+
+
+def mph_to_mps(wind_mph: Optional[float]) -> Optional[float]:
+    """Convert miles per hour to meters per second"""
+    return wind_mph / 2.237 if wind_mph is not None else None
+
+
+def feet_to_meters(distance_ft: Optional[float]) -> Optional[float]:
+    """Convert feet to meters"""
+    return distance_ft * 0.3048 if distance_ft is not None else None
+
+
+def ftlb_to_joules(energy_ftlb: Optional[float]) -> Optional[float]:
+    """Convert foot-pounds to joules"""
+    return energy_ftlb * 1.35582 if energy_ftlb is not None else None
+
+
+def grainft_to_kgms(pf_grainft: Optional[float]) -> Optional[float]:
+    """Convert grain⋅ft/s to kg⋅m/s"""
+    if pf_grainft is None:
+        return None
+    # 1 kg = 15432.36 grains, 1 m = 3.28084 ft
+    return pf_grainft / (15432.36 * 3.28084)

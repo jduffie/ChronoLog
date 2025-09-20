@@ -27,7 +27,6 @@ pytest-cov==6.0.0
 pytest-html==4.1.1
 black==25.1.0
 isort==6.0.1
-httpx==0.25.2  # For testing FastAPI endpoints
 
 # Security constraint - compatible with LibreSSL
 urllib3>=1.26.0,<2.0

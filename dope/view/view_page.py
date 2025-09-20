@@ -24,6 +24,20 @@ from utils.ui_formatters import (
     format_speed_for_table,
     format_temperature_for_table,
 )
+from utils.unit_conversions import (
+    celsius_to_fahrenheit,
+    fahrenheit_to_celsius,
+    fps_to_mps,
+    ftlb_to_joules,
+    grainft_to_kgms,
+    hpa_to_inhg,
+    inhg_to_hpa,
+    joules_to_ftlb,
+    kgms_to_grainft,
+    mps_to_fps,
+    mps_to_mph,
+    mph_to_mps,
+)
 
 # Add the root directory to the path so we can import our modules
 sys.path.append(
@@ -418,30 +432,60 @@ def render_main_page_filters(service: DopeService, user_id: str):
         st.divider()
         st.subheader("Weather Conditions")
 
+        # Get user preferences for unit display
+        user_unit_system = st.session_state.get("user", {}).get("unit_system", "Imperial")
+
         weather_col1, weather_col2, weather_col3 = st.columns(3)
 
         with weather_col1:
-            temp_range = st.slider(
-                "Temperature (°C)",
-                min_value=-20.0,
-                max_value=50.0,
-                value=st.session_state.dope_view["filters"].get(
-                    "temperature_range", (-20.0, 50.0)
-                ),
-                step=1.0,
+            # Temperature slider with unit conversion
+            if user_unit_system == "Imperial":
+                # Convert metric defaults to Fahrenheit for display
+                temp_label = "Temperature (°F)"
+                temp_min_display = celsius_to_fahrenheit(-20.0)  # -4°F
+                temp_max_display = celsius_to_fahrenheit(50.0)   # 122°F
+                temp_default_display = (temp_min_display, temp_max_display)
+                temp_step = 2.0  # Larger step for Fahrenheit
+
+                # Get current filter value and convert to display units
+                current_temp_metric = st.session_state.dope_view["filters"].get("temperature_range", (-20.0, 50.0))
+                current_temp_display = (
+                    celsius_to_fahrenheit(current_temp_metric[0]),
+                    celsius_to_fahrenheit(current_temp_metric[1])
+                )
+            else:
+                temp_label = "Temperature (°C)"
+                temp_min_display = -20.0
+                temp_max_display = 50.0
+                temp_default_display = (temp_min_display, temp_max_display)
+                temp_step = 1.0
+                current_temp_display = st.session_state.dope_view["filters"].get("temperature_range", (-20.0, 50.0))
+
+            temp_range_display = st.slider(
+                temp_label,
+                min_value=temp_min_display,
+                max_value=temp_max_display,
+                value=current_temp_display,
+                step=temp_step,
             )
-            if temp_range != (-20.0, 50.0):
-                st.session_state.dope_view["filters"][
-                    "temperature_range"
-                ] = temp_range
-            elif (
-                "temperature_range" in st.session_state.dope_view["filters"]
-            ):
-                del st.session_state.dope_view["filters"][
-                    "temperature_range"
-                ]
+
+            # Convert back to metric for storage
+            if user_unit_system == "Imperial":
+                temp_range_metric = (
+                    fahrenheit_to_celsius(temp_range_display[0]),
+                    fahrenheit_to_celsius(temp_range_display[1])
+                )
+            else:
+                temp_range_metric = temp_range_display
+
+            # Store in metric units
+            if temp_range_metric != (-20.0, 50.0):
+                st.session_state.dope_view["filters"]["temperature_range"] = temp_range_metric
+            elif "temperature_range" in st.session_state.dope_view["filters"]:
+                del st.session_state.dope_view["filters"]["temperature_range"]
 
         with weather_col2:
+            # Humidity is always in percentage - no conversion needed
             humidity_range = st.slider(
                 "Humidity (%)",
                 min_value=0.0,
@@ -452,26 +496,54 @@ def render_main_page_filters(service: DopeService, user_id: str):
                 step=5.0,
             )
             if humidity_range != (0.0, 100.0):
-                st.session_state.dope_view["filters"][
-                    "humidity_range"
-                ] = humidity_range
+                st.session_state.dope_view["filters"]["humidity_range"] = humidity_range
             elif "humidity_range" in st.session_state.dope_view["filters"]:
                 del st.session_state.dope_view["filters"]["humidity_range"]
 
         with weather_col3:
-            wind_range = st.slider(
-                "Wind Speed (km/h)",
-                min_value=0.0,
-                max_value=50.0,
-                value=st.session_state.dope_view["filters"].get(
-                    "wind_speed_range", (0.0, 50.0)
-                ),
-                step=1.0,
+            # Wind speed with unit conversion
+            if user_unit_system == "Imperial":
+                # Convert m/s to mph for display
+                wind_label = "Wind Speed (mph)"
+                wind_min_display = 0.0
+                wind_max_display = mps_to_mph(50.0)  # ~112 mph
+                wind_default_display = (wind_min_display, wind_max_display)
+                wind_step = 2.0
+
+                # Get current filter value and convert to display units
+                current_wind_metric = st.session_state.dope_view["filters"].get("wind_speed_range", (0.0, 50.0))
+                current_wind_display = (
+                    mps_to_mph(current_wind_metric[0]) if current_wind_metric[0] else 0.0,
+                    mps_to_mph(current_wind_metric[1]) if current_wind_metric[1] else wind_max_display
+                )
+            else:
+                wind_label = "Wind Speed (m/s)"
+                wind_min_display = 0.0
+                wind_max_display = 50.0
+                wind_default_display = (wind_min_display, wind_max_display)
+                wind_step = 1.0
+                current_wind_display = st.session_state.dope_view["filters"].get("wind_speed_range", (0.0, 50.0))
+
+            wind_range_display = st.slider(
+                wind_label,
+                min_value=wind_min_display,
+                max_value=wind_max_display,
+                value=current_wind_display,
+                step=wind_step,
             )
-            if wind_range != (0.0, 50.0):
-                st.session_state.dope_view["filters"][
-                    "wind_speed_range"
-                ] = wind_range
+
+            # Convert back to metric for storage
+            if user_unit_system == "Imperial":
+                wind_range_metric = (
+                    mph_to_mps(wind_range_display[0]),
+                    mph_to_mps(wind_range_display[1])
+                )
+            else:
+                wind_range_metric = wind_range_display
+
+            # Store in metric units
+            if wind_range_metric != (0.0, 50.0):
+                st.session_state.dope_view["filters"]["wind_speed_range"] = wind_range_metric
             elif "wind_speed_range" in st.session_state.dope_view["filters"]:
                 del st.session_state.dope_view["filters"]["wind_speed_range"]
 
@@ -1025,30 +1097,41 @@ def render_shots_tab(session: DopeSessionModel, service: DopeService):
         pressure_header = "Pressure (inHg)" if user_unit_system == "Imperial" else "Pressure (hPa)"
 
         column_config = {
-            "Shot #": st.column_config.NumberColumn("Shot #", width="small"),
-            "Time": st.column_config.TextColumn("Time", width="small"),
-            velocity_header: st.column_config.TextColumn(velocity_header, width="medium"),
-            energy_header: st.column_config.TextColumn(energy_header, width="medium"),
-            "Power Factor": st.column_config.TextColumn("Power Factor", width="medium"),
-            "Distance (m)": st.column_config.TextColumn("Distance (m)", width="small"),
-            "Elevation Adjustment": st.column_config.TextColumn("Elevation Adjustment", width="small"),
-            "Windage Adjustment": st.column_config.TextColumn("Windage Adjustment", width="small"),
-            temperature_header: st.column_config.TextColumn(temperature_header, width="small"),
-            pressure_header: st.column_config.TextColumn(pressure_header, width="small"),
-            "Humidity (%)": st.column_config.NumberColumn("Humidity (%)", width="small"),
-            "Clean Bore": st.column_config.TextColumn("Clean Bore", width="small"),
-            "Cold Bore": st.column_config.TextColumn("Cold Bore", width="small"),
+            "Shot #": st.column_config.NumberColumn("Shot #", width="small", disabled=True),  # Don't allow editing shot numbers
+            "Time": st.column_config.TextColumn("Time", width="small", disabled=True),  # Don't allow editing timestamps
+            velocity_header: st.column_config.NumberColumn(velocity_header, width="medium", format="%.1f"),
+            energy_header: st.column_config.NumberColumn(energy_header, width="medium", format="%.1f"),
+            "Power Factor": st.column_config.NumberColumn("Power Factor", width="medium", format="%.1f"),
+            "Distance (m)": st.column_config.NumberColumn("Distance (m)", width="small", format="%.1f"),
+            "Elevation Adjustment": st.column_config.NumberColumn("Elevation Adjustment", width="small", format="%.2f"),
+            "Windage Adjustment": st.column_config.NumberColumn("Windage Adjustment", width="small", format="%.2f"),
+            temperature_header: st.column_config.NumberColumn(temperature_header, width="small", format="%.1f"),
+            pressure_header: st.column_config.NumberColumn(pressure_header, width="small", format="%.1f"),
+            "Humidity (%)": st.column_config.NumberColumn("Humidity (%)", width="small", format="%.1f"),
+            "Clean Bore": st.column_config.SelectboxColumn("Clean Bore", width="small", options=["yes", "no", ""]),
+            "Cold Bore": st.column_config.SelectboxColumn("Cold Bore", width="small", options=["yes", "no", ""]),
             "Notes": st.column_config.TextColumn("Notes", width="large")
         }
 
         # Display the measurements table
         st.subheader("📊 Shot Measurements")
-        st.dataframe(
+
+        # Add editing instructions
+        st.info("💡 **Editable Table:** Click on any cell to edit values. Changes are automatically saved when you move to another cell or press Enter.")
+
+        # Create editable table
+        edited_df = st.data_editor(
             df,
             column_config=column_config,
             use_container_width=True,
-            hide_index=True
+            hide_index=True,
+            num_rows="fixed",  # Prevent adding/deleting rows
+            key=f"shots_editor_{session.id}"  # Unique key per session
         )
+
+        # Check for changes and save them
+        if not df.equals(edited_df):
+            _save_measurement_changes(df, edited_df, measurements, service, user_unit_system)
 
         # Export functionality for shots data
         if st.button("📥 Export Shots to CSV"):
@@ -1064,3 +1147,208 @@ def render_shots_tab(session: DopeSessionModel, service: DopeService):
         st.error(f"Error loading shot measurements: {str(e)}")
         st.info(
             "Unable to load shot data. This may be due to database connectivity issues.")
+
+
+def _save_measurement_changes(original_df, edited_df, measurements, service: DopeService, user_unit_system: str):
+    """
+    Save changes made to measurement data back to the database.
+
+    Args:
+        original_df: Original DataFrame before edits
+        edited_df: Modified DataFrame with user edits
+        measurements: List of DopeMeasurementModel objects
+        service: DopeService instance for database operations
+        user_unit_system: "Imperial" or "Metric" for unit conversions
+    """
+    try:
+        # Find which rows have changed
+        changes_made = []
+
+        for index, (orig_row, edited_row) in enumerate(zip(original_df.itertuples(), edited_df.itertuples())):
+            # Compare each row to find changes
+            if orig_row != edited_row:
+                # Get the corresponding measurement
+                if index < len(measurements):
+                    measurement = measurements[index]
+
+                    # Convert edited values back to metric units for storage
+                    update_data = _convert_edited_row_to_metric(
+                        edited_row, original_df.columns, user_unit_system
+                    )
+
+                    # Only include fields that actually changed
+                    changed_fields = {}
+                    for col_name, new_value in update_data.items():
+                        # Get original value for comparison
+                        orig_value = getattr(measurement, col_name, None)
+
+                        # Compare values (handle None, empty strings, and type differences)
+                        if _values_different(orig_value, new_value):
+                            changed_fields[col_name] = new_value
+
+                    if changed_fields:
+                        # Save changes to database
+                        try:
+                            service.update_measurement(
+                                measurement.id, changed_fields, measurement.user_id
+                            )
+                            changes_made.append(f"Shot #{measurement.shot_number}")
+                        except Exception as e:
+                            st.error(f"Failed to save changes for Shot #{measurement.shot_number}: {str(e)}")
+
+        if changes_made:
+            st.success(f"✅ Saved changes for: {', '.join(changes_made)}")
+            # Refresh the page to show updated data
+            st.rerun()
+
+    except Exception as e:
+        st.error(f"Error saving measurement changes: {str(e)}")
+
+
+def _convert_edited_row_to_metric(edited_row, column_names, user_unit_system: str) -> dict:
+    """
+    Convert edited row values from display units back to metric units for database storage.
+
+    Args:
+        edited_row: Edited row data from pandas DataFrame
+        column_names: List of column names
+        user_unit_system: "Imperial" or "Metric"
+
+    Returns:
+        Dict of field names to metric values
+    """
+    update_data = {}
+
+    # Create a mapping from column names to values
+    row_data = {}
+    for i, col_name in enumerate(column_names):
+        if i + 1 < len(edited_row):  # +1 because itertuples includes index
+            row_data[col_name] = edited_row[i + 1]
+
+    # Convert velocity
+    velocity_col = "Velocity (fps)" if user_unit_system == "Imperial" else "Velocity (m/s)"
+    if velocity_col in row_data and row_data[velocity_col]:
+        try:
+            velocity_val = float(row_data[velocity_col])
+            if user_unit_system == "Imperial":
+                update_data["speed_mps"] = fps_to_mps(velocity_val)
+            else:
+                update_data["speed_mps"] = velocity_val
+        except (ValueError, TypeError):
+            pass
+
+    # Convert energy
+    energy_col = "Energy (ft·lb)" if user_unit_system == "Imperial" else "Energy (J)"
+    if energy_col in row_data and row_data[energy_col]:
+        try:
+            energy_val = float(row_data[energy_col])
+            if user_unit_system == "Imperial":
+                update_data["ke_j"] = ftlb_to_joules(energy_val)
+            else:
+                update_data["ke_j"] = energy_val
+        except (ValueError, TypeError):
+            pass
+
+    # Convert power factor
+    if "Power Factor" in row_data and row_data["Power Factor"]:
+        try:
+            pf_val = float(row_data["Power Factor"])
+            if user_unit_system == "Imperial":
+                # Power factor in display is grain*ft/s, convert to kg*m/s
+                update_data["power_factor_kgms"] = grainft_to_kgms(pf_val)
+            else:
+                update_data["power_factor_kgms"] = pf_val
+        except (ValueError, TypeError):
+            pass
+
+    # Convert temperature
+    temp_col = "Temperature (°F)" if user_unit_system == "Imperial" else "Temperature (°C)"
+    if temp_col in row_data and row_data[temp_col]:
+        try:
+            temp_val = float(row_data[temp_col])
+            if user_unit_system == "Imperial":
+                update_data["temperature_c"] = fahrenheit_to_celsius(temp_val)
+            else:
+                update_data["temperature_c"] = temp_val
+        except (ValueError, TypeError):
+            pass
+
+    # Convert pressure
+    pressure_col = "Pressure (inHg)" if user_unit_system == "Imperial" else "Pressure (hPa)"
+    if pressure_col in row_data and row_data[pressure_col]:
+        try:
+            pressure_val = float(row_data[pressure_col])
+            if user_unit_system == "Imperial":
+                update_data["pressure_hpa"] = inhg_to_hpa(pressure_val)
+            else:
+                update_data["pressure_hpa"] = pressure_val
+        except (ValueError, TypeError):
+            pass
+
+    # Handle fields that don't need unit conversion
+    direct_fields = {
+        "Shot #": "shot_number",
+        "Distance (m)": "distance_m",
+        "Elevation Adjustment": "elevation_adjustment",
+        "Windage Adjustment": "windage_adjustment",
+        "Humidity (%)": "humidity_pct",
+        "Clean Bore": "clean_bore",
+        "Cold Bore": "cold_bore",
+        "Notes": "shot_notes"
+    }
+
+    for display_name, field_name in direct_fields.items():
+        if display_name in row_data and row_data[display_name] != '':
+            value = row_data[display_name]
+            # Convert numeric fields to appropriate types
+            if field_name in ["shot_number", "distance_m", "elevation_adjustment", "windage_adjustment", "humidity_pct"]:
+                try:
+                    update_data[field_name] = float(value) if value else None
+                except (ValueError, TypeError):
+                    update_data[field_name] = None
+            else:
+                update_data[field_name] = value
+
+    return update_data
+
+
+def _values_different(orig_value, new_value) -> bool:
+    """
+    Compare two values to determine if they're different, handling None, empty strings, and type differences.
+
+    Args:
+        orig_value: Original value from model
+        new_value: New value from edited table
+
+    Returns:
+        True if values are different and should be updated
+    """
+    # Handle None values
+    if orig_value is None and (new_value is None or new_value == '' or new_value == 0):
+        return False
+
+    if new_value is None and (orig_value is None or orig_value == '' or orig_value == 0):
+        return False
+
+    # Handle empty strings
+    if orig_value == '' and (new_value == '' or new_value is None):
+        return False
+
+    # Handle numeric comparisons with tolerance for floating point
+    if isinstance(orig_value, (int, float)) and isinstance(new_value, (int, float)):
+        return abs(orig_value - new_value) > 1e-6
+
+    # Try to convert to same types for comparison
+    try:
+        if isinstance(orig_value, (int, float)) and isinstance(new_value, str):
+            new_value = float(new_value)
+            return abs(orig_value - new_value) > 1e-6
+
+        if isinstance(new_value, (int, float)) and isinstance(orig_value, str):
+            orig_value = float(orig_value)
+            return abs(orig_value - new_value) > 1e-6
+    except (ValueError, TypeError):
+        pass
+
+    # String comparison
+    return str(orig_value) != str(new_value)
