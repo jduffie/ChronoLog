@@ -34,9 +34,9 @@ from utils.unit_conversions import (
     inhg_to_hpa,
     joules_to_ftlb,
     kgms_to_grainft,
+    mph_to_mps,
     mps_to_fps,
     mps_to_mph,
-    mph_to_mps,
 )
 
 # Add the root directory to the path so we can import our modules
