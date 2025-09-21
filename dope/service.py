@@ -59,6 +59,9 @@ class DopeService:
                     ),
                     weather_source!weather_source_id (
                         name
+                    ),
+                    chrono_sessions!chrono_session_id (
+                        session_name
                     )
                 """
                 )
@@ -130,6 +133,9 @@ class DopeService:
                     ),
                     weather_source!weather_source_id (
                         name
+                    ),
+                    chrono_sessions!chrono_session_id (
+                        session_name
                     )
                 """
                 )
@@ -714,6 +720,7 @@ class DopeService:
                 relative_humidity_pct_median=65.0,
                 barometric_pressure_hpa_median=1020.1,  # Store in metric (hPa)
                 wind_speed_mps_median=2.2,
+                wind_speed_2_mps_median=2.4,
                 wind_direction_deg_median=270.0,
                 notes="Excellent conditions, consistent groups",
             ),
@@ -743,6 +750,7 @@ class DopeService:
                 relative_humidity_pct_median=45.0,
                 barometric_pressure_hpa_median=1013.2,  # Store in metric (hPa)
                 wind_speed_mps_median=3.3,
+                wind_speed_2_mps_median=3.8,
                 wind_direction_deg_median=135.0,
                 notes="Windy conditions, good for practice",
             ),
@@ -881,6 +889,12 @@ class DopeService:
             weather_source = record["weather_source"]
             flattened["weather_source_name"] = weather_source.get("name")
             del flattened["weather_source"]
+
+        # Extract chronograph session data
+        if "chrono_sessions" in record and record["chrono_sessions"]:
+            chrono_session = record["chrono_sessions"]
+            flattened["chrono_session_name"] = chrono_session.get("session_name")
+            del flattened["chrono_sessions"]
 
         return flattened
 

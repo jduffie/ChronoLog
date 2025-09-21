@@ -66,7 +66,14 @@ class DopeSessionModel:
     relative_humidity_pct_median: Optional[float] = None
     barometric_pressure_hpa_median: Optional[float] = None  # Metric barometric pressure in hectopascals
     wind_speed_mps_median: Optional[float] = None
+    wind_speed_2_mps_median: Optional[float] = None  # Second wind speed measurement
     wind_direction_deg_median: Optional[float] = None
+    
+    # Weather source name (from joined data)
+    weather_source_name: Optional[str] = None
+    
+    # Chronograph session name (from joined data)
+    chrono_session_name: Optional[str] = None
 
     @classmethod
     def from_supabase_record(cls, record: dict) -> "DopeSessionModel":
@@ -138,7 +145,10 @@ class DopeSessionModel:
             relative_humidity_pct_median=record.get("relative_humidity_pct_median"),
             barometric_pressure_hpa_median=record.get("barometric_pressure_hpa_median"),
             wind_speed_mps_median=record.get("wind_speed_mps_median"),
+            wind_speed_2_mps_median=record.get("wind_speed_2_mps_median"),
             wind_direction_deg_median=record.get("wind_direction_deg_median"),
+            weather_source_name=record.get("weather_source_name"),
+            chrono_session_name=record.get("chrono_session_name"),
         )
 
     @classmethod
@@ -190,7 +200,9 @@ class DopeSessionModel:
             "relative_humidity_pct_median": self.relative_humidity_pct_median,
             "barometric_pressure_hpa_median": self.barometric_pressure_hpa_median,
             "wind_speed_mps_median": self.wind_speed_mps_median,
+            "wind_speed_2_mps_median": self.wind_speed_2_mps_median,
             "wind_direction_deg_median": self.wind_direction_deg_median,
+            "weather_source_name": self.weather_source_name,
         }
 
     @property

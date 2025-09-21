@@ -17,12 +17,16 @@ from dope.models import DopeSessionModel
 from dope.service import DopeService
 from supabase import create_client
 from utils.ui_formatters import (
+    format_energy,
     format_energy_for_table,
+    format_power_factor,
     format_power_factor_for_table,
     format_pressure_for_table,
     format_speed,
     format_speed_for_table,
+    format_temperature,
     format_temperature_for_table,
+    format_wind_speed,
 )
 from utils.unit_conversions import (
     celsius_to_fahrenheit,
@@ -163,8 +167,9 @@ def render_main_page_filters(service: DopeService, user_id: str):
         "🔍 All Filters",
         expanded=st.session_state.dope_view["show_advanced_filters"],
     ):
-        # Store expander state
-        st.session_state.dope_view["show_advanced_filters"] = True
+        # The expander state is controlled by Streamlit's expanded parameter
+        # We don't force it to True here to avoid auto-opening on row selection
+        pass
 
         # Quick actions row
         col1, col2, col3 = st.columns([2, 1, 1])
@@ -213,7 +218,7 @@ def render_main_page_filters(service: DopeService, user_id: str):
         col1, col2, col3 = st.columns(3)
 
         with col1:
-            st.subheader("Time & Status")
+            st.subheader("Time Range")
 
             # Date range filter
             date_col1, date_col2 = st.columns(2)
@@ -243,8 +248,7 @@ def render_main_page_filters(service: DopeService, user_id: str):
                     datetime.combine(date_to, datetime.max.time())
                 )
 
-            # Status filter removed from new schema
-            st.info("Status filtering has been removed from the new schema")
+            # Additional time-based filters can be added here as needed
 
         with col2:
             st.subheader("Equipment")
@@ -571,34 +575,46 @@ def get_filtered_sessions(
 def render_session_statistics(sessions: List[DopeSessionModel]):
     """Display session statistics"""
     total_sessions = len(sessions)
-    active_sessions = len(sessions)  # No status field in new schema
-    archived_sessions = total_sessions - active_sessions
+    
+    # Calculate useful statistics for DOPE session analysis
+    unique_cartridges = len(set(s.cartridge_type for s in sessions if s.cartridge_type))
+    unique_rifles = len(set(s.rifle_name for s in sessions if s.rifle_name))
+    unique_ranges = len(set(s.range_name for s in sessions if s.range_name))
 
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
         st.metric("Total Sessions", total_sessions)
     with col2:
-        st.metric("Active", active_sessions)
-    with col3:
-        st.metric("Archived", archived_sessions)
-    with col4:
-        unique_cartridges = len(
-            set(s.cartridge_type for s in sessions if s.cartridge_type)
-        )
         st.metric("Cartridge Types", unique_cartridges)
+    with col3:
+        st.metric("Rifles Used", unique_rifles)
+    with col4:
+        st.metric("Ranges Visited", unique_ranges)
 
 
 def render_sessions_table(sessions: List[DopeSessionModel]):
-    """Render the main sessions data table"""
+    """Render the main sessions data table with sorting, column visibility, and pagination"""
     if not sessions:
         return
+
+    # Initialize table state in session state
+    if "table_settings" not in st.session_state.dope_view:
+        st.session_state.dope_view["table_settings"] = {
+            "sort_column": "Start Time",
+            "sort_ascending": False,  # Default: newest first
+            "visible_columns": _get_default_visible_columns(),
+            "page_size": 50,
+            "current_page": 0
+        }
+
+    # Render table controls
+    _render_table_controls(len(sessions))
 
     # Convert sessions to DataFrame for display
     df_data = []
     for session in sessions:
         row = {
-            "ID": session.id,
             "Session Name": session.session_name or "Unnamed Session",
             "Start Time": (
                 session.start_time.strftime("%Y-%m-%d %H:%M")
@@ -615,7 +631,7 @@ def render_sessions_table(sessions: List[DopeSessionModel]):
                 if session.start_time and session.end_time
                 else "N/A"
             ),
-            # Status field removed from new schema
+    
             "Rifle": session.rifle_name or "Unknown",
             "Cartridge": (
                 f"{session.cartridge_make} {session.cartridge_model}"
@@ -656,14 +672,16 @@ def render_sessions_table(sessions: List[DopeSessionModel]):
 
     df = pd.DataFrame(df_data)
 
+    # Apply sorting and pagination
+    df_display = _apply_table_sorting_and_pagination(df)
+
     # Configure column display
     column_config = {
-        "ID": st.column_config.TextColumn("ID", width="small"),
         "Session Name": st.column_config.TextColumn("Session Name", width="medium"),
         "Start Time": st.column_config.TextColumn("Start Time", width="medium"),
         "End Time": st.column_config.TextColumn("End Time", width="medium"),
         "Duration": st.column_config.TextColumn("Duration", width="medium"),
-        "Status": st.column_config.TextColumn("Status", width="small"),
+
         "Rifle": st.column_config.TextColumn("Rifle", width="medium"),
         "Cartridge": st.column_config.TextColumn("Cartridge", width="medium"),
         "Cartridge Type": st.column_config.TextColumn("Type", width="medium"),
@@ -681,23 +699,32 @@ def render_sessions_table(sessions: List[DopeSessionModel]):
         "Notes": st.column_config.TextColumn("Notes", width="large"),
     }
 
-    # Display table with selection
+    # Only show column config for visible columns
+    visible_config = {k: v for k, v in column_config.items() if k in df_display.columns}
+
+    # Display table with selection - use multi-row to get selector column
     selected_rows = st.dataframe(
-        df,
-        column_config=column_config,
+        df_display,
+        column_config=visible_config,
         use_container_width=True,
         hide_index=True,
         on_select="rerun",
-        selection_mode="single-row",
+        selection_mode="multi-row",
     )
 
-    # Handle row selection
+    # Handle row selection (adjust for pagination) - use first selected row for details
     if selected_rows.selection.rows:
-        selected_idx = selected_rows.selection.rows[0]
-        selected_session_id = df.iloc[selected_idx]["ID"]
-        st.session_state.dope_view["selected_session_id"] = (
-            selected_session_id
-        )
+        selected_idx = selected_rows.selection.rows[0]  # Use first selected row for details
+        # Get session ID from original sessions list using the displayed row index
+        actual_session_idx = st.session_state.dope_view["table_settings"]["current_page"] * st.session_state.dope_view["table_settings"]["page_size"] + selected_idx
+        if actual_session_idx < len(sessions):
+            selected_session_id = sessions[actual_session_idx].id
+            st.session_state.dope_view["selected_session_id"] = selected_session_id
+        else:
+            st.session_state.dope_view["selected_session_id"] = None
+    else:
+        # Clear selection if no rows selected
+        st.session_state.dope_view["selected_session_id"] = None
 
     # Export functionality
     if st.button("📥 Export to CSV"):
@@ -711,7 +738,7 @@ def render_session_details(
     st.subheader(f"📋 Session Details: {session.display_name}")
 
     # Action buttons
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3 = st.columns(3)
 
     with col1:
         if st.button("✏️ Edit"):
@@ -719,40 +746,39 @@ def render_session_details(
             st.info("Edit functionality coming soon")
 
     with col2:
-        if st.button("📋 Duplicate"):
-            # TODO: Implement duplicate functionality
-            st.info("Duplicate functionality coming soon")
+        if st.button("📊 Analytics"):
+            # TODO: Implement session analytics functionality
+            st.info("Session analytics coming soon")
 
     with col3:
-        # Archive functionality removed with status field
-        st.info("Archive functionality is no longer available")
-
-    with col4:
         if st.button("🗑️ Delete", type="secondary"):
             # TODO: Implement delete with confirmation
             st.info("Delete functionality coming soon")
 
     # Detailed information in tabs
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
-        ["Session Info", "Rifle", "Cartridge", "Bullet", "Weather", "Shots"]
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
+        ["Session Info", "Range", "Rifle", "Cartridge", "Bullet", "Weather", "Shots"]
     )
 
     with tab1:
         render_session_info_tab(session)
 
     with tab2:
-        render_rifle_info_tab(session)
+        render_range_info_tab(session)
 
     with tab3:
-        render_cartridge_info_tab(session)
+        render_rifle_info_tab(session)
 
     with tab4:
-        render_bullet_info_tab(session)
+        render_cartridge_info_tab(session)
 
     with tab5:
-        render_weather_info_tab(session)
+        render_bullet_info_tab(session)
 
     with tab6:
+        render_weather_info_tab(session)
+
+    with tab7:
         render_shots_tab(session, service)
 
 
@@ -761,58 +787,85 @@ def render_session_info_tab(session: DopeSessionModel):
     col1, col2 = st.columns(2)
 
     with col1:
+        # Required: Session name, start time, end time
         st.write(
             "**Session Name:**",
             session.session_name or "Unnamed Session")
-        # Status field removed from new schema
-        
+
         # Prominently display shooting session times
-        st.write("**🕐 Session Times:**")
         if session.start_time:
-            st.write(f"  **Start:** {session.start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+            st.write(f"**Start Time:** {session.start_time.strftime('%Y-%m-%d %H:%M:%S')}")
         else:
-            st.write("  **Start:** N/A")
+            st.write("**Start Time:** N/A")
             
         if session.end_time:
-            st.write(f"  **End:** {session.end_time.strftime('%Y-%m-%d %H:%M:%S')}")
+            st.write(f"**End Time:** {session.end_time.strftime('%Y-%m-%d %H:%M:%S')}")
         else:
-            st.write("  **End:** N/A")
-            
-        if session.start_time and session.end_time:
-            duration = session.end_time - session.start_time
-            st.write(f"  **Duration:** {duration}")
-        else:
-            st.write("  **Duration:** N/A")
-        
-        st.write("**Range:**", session.range_name or "Unknown")
-        st.write(
-            "**Distance:**",
-            f"{session.range_distance_m}m" if session.range_distance_m else "Unknown",
-        )
+            st.write("**End Time:** N/A")
 
     with col2:
-        st.write("**Session ID:**", session.id or "Unknown")
-        st.write("**Cartridge ID:**", session.cartridge_id or "Unknown")
-        st.write("**Chrono Session ID:**",
-                 session.chrono_session_id or "Not linked")
+        # Required: Single reference to all data sources
+        st.write("**Data Sources:**")
+        
+        # Chronograph name - show actual session name if available
+        chrono_name = session.chrono_session_name if session.chrono_session_name else ("Linked" if session.chrono_session_id else "Not-linked")
+        st.write(f"    **Chronograph:** {chrono_name}")
+        
+        # Weather name or "not-linked"
+        weather_name = session.weather_source_name if session.weather_source_name else "Not-linked"
+        st.write(f"    **Weather:** {weather_name}")
+        
+        # Range name
+        range_name = session.range_name if session.range_name else "Unknown"
+        st.write(f"    **Range:** {range_name}")
+        
+        # Bullet display name
+        bullet_display = session.bullet_display if hasattr(session, 'bullet_display') and session.bullet_display else f"{session.bullet_make} {session.bullet_model}" if session.bullet_make else "Unknown"
+        st.write(f"    **Bullet:** {bullet_display}")
+        
+        # Cartridge display name
+        cartridge_display = session.cartridge_display if hasattr(session, 'cartridge_display') and session.cartridge_display else f"{session.cartridge_make} {session.cartridge_model}" if session.cartridge_make else "Unknown"
+        st.write(f"    **Cartridge:** {cartridge_display}")
+        
+        # Rifle name
+        rifle_name = session.rifle_name if session.rifle_name else "Unknown"
+        st.write(f"    **Rifle:** {rifle_name}")
 
-        # Location data now stored in lat/lon fields
+
+def render_range_info_tab(session: DopeSessionModel):
+    """Render range information tab"""
+    col1, col2 = st.columns(2)
+
+    with col1:
+        # Lat/Lon with hyperlink to Google Maps
         if session.lat and session.lon:
-            st.write(
-                "**Position:**",
-                f"{session.lat:.6f}, {session.lon:.6f}")
-        if session.azimuth_deg:
-            st.write("**Azimuth:**", f"{session.azimuth_deg}°")
+            st.write("**Location:**")
+            st.write(f"  **Latitude:** {session.lat:.6f}")
+            st.write(f"  **Longitude:** {session.lon:.6f}")
+            
+            # Create Google Maps hyperlink
+            maps_url = f"https://www.google.com/maps?q={session.lat},{session.lon}"
+            st.markdown(f"  [📍 **View on Google Maps**]({maps_url})")
+        else:
+            st.write("**Location:** Not available")
+            
+        # Altitude
+        if session.start_altitude:
+            st.write(f"**Altitude:** {session.start_altitude:.1f}m")
+        else:
+            st.write("**Altitude:** Not available")
 
-    if session.notes:
-        st.write("**Notes:**")
-        st.text_area(
-            label="notes",
-            value=session.notes,
-            height=100,
-            disabled=True,
-            key="notes_display",
-        )
+    with col2:
+        # Azimuth and Elevation angles
+        if session.azimuth_deg is not None:
+            st.write(f"**Azimuth Angle:** {session.azimuth_deg:.2f}°")
+        else:
+            st.write("**Azimuth Angle:** Not available")
+            
+        if session.elevation_angle_deg is not None:
+            st.write(f"**Elevation Angle:** {session.elevation_angle_deg:.2f}°")
+        else:
+            st.write("**Elevation Angle:** Not available")
 
 
 def render_rifle_info_tab(session: DopeSessionModel):
@@ -839,7 +892,8 @@ def render_rifle_info_tab(session: DopeSessionModel):
         )
 
     with col2:
-        st.write("**Rifle ID:**", session.rifle_id or "Not specified")
+        # Remove UUID display - rifle information is already shown in col1
+        pass
 
 
 def render_cartridge_info_tab(session: DopeSessionModel):
@@ -869,89 +923,118 @@ def render_bullet_info_tab(session: DopeSessionModel):
             "**Weight:**",
             f"{session.bullet_weight}gr" if session.bullet_weight else "Unknown",
         )
-        st.write(
-            "**Length:**",
-            f"{session.bullet_length_mm}mm" if session.bullet_length_mm else "Unknown",
-        )
-        st.write("**BC G1:**", session.ballistic_coefficient_g1 or "Unknown")
-
-    with col2:
-        st.write("**BC G7:**", session.ballistic_coefficient_g7 or "Unknown")
         st.write("**Sectional Density:**",
                  session.sectional_density or "Unknown")
+        st.write("**Display:**", session.bullet_display)
+        
+        # Group: Physical Measurements
+        st.write("**Physical Measurements:**")
         st.write(
-            "**Diameter (Groove):**",
-            (
-                f"{session.bullet_diameter_groove_mm}mm"
-                if session.bullet_diameter_groove_mm
-                else "Unknown"
-            ),
+            "  **Length:**",
+            f"{session.bullet_length_mm}mm" if session.bullet_length_mm else "Unknown",
         )
         st.write(
-            "**Diameter (Land):**",
+            "  **Diameter (Land):**",
             (
                 f"{session.bore_diameter_land_mm}mm"
                 if session.bore_diameter_land_mm
                 else "Unknown"
             ),
         )
-        st.write("**Display:**", session.bullet_display)
-
-
-def render_weather_info_tab(session: DopeSessionModel):
-    """Render weather information tab"""
-    col1, col2 = st.columns(2)
-
-    with col1:
         st.write(
-            "**Temperature:**",
+            "  **Diameter (Groove):**",
             (
-                f"{session.temperature_c_median}°C"
-                if session.temperature_c_median is not None
-                else "Unknown"
-            ),
-        )
-        st.write(
-            "**Humidity:**",
-            (
-                f"{session.relative_humidity_pct_median}%"
-                if session.relative_humidity_pct_median is not None
-                else "Unknown"
-            ),
-        )
-        st.write(
-            "**Pressure:**",
-            (
-                f'{session.barometric_pressure_hpa_median} hPa'
-                if session.barometric_pressure_hpa_median is not None
-                else "Unknown"
-            ),
-        )
-        st.write(
-            "**Wind Speed 1:**",
-            (
-                f"{session.wind_speed_mps_median}m/s"
-                if session.wind_speed_mps_median is not None
+                f"{session.bullet_diameter_groove_mm}mm"
+                if session.bullet_diameter_groove_mm
                 else "Unknown"
             ),
         )
 
     with col2:
-        # Wind Speed 2 field removed in new schema
-        st.write("**Wind Speed 2:**", "Field removed in new schema")
+        # Group: Ballistic Coefficients
+        st.write("**Ballistic Coefficients:**")
+        st.write("  **BC G1:**", session.ballistic_coefficient_g1 or "Unknown")
+        st.write("  **BC G7:**", session.ballistic_coefficient_g7 or "Unknown")
+
+
+def render_weather_info_tab(session: DopeSessionModel):
+    """Render weather information tab"""
+    # Get user preferences for unit display
+    user_unit_system = st.session_state.get("user", {}).get("unit_system", "Imperial")
+    
+    col1, col2 = st.columns(2)
+
+    with col1:
+        # Temperature with user preferences
+        if session.temperature_c_median is not None:
+            if user_unit_system == "Imperial":
+                temp_f = celsius_to_fahrenheit(session.temperature_c_median)
+                st.write(f"**Temperature:** {temp_f:.1f}°F")
+            else:
+                st.write(f"**Temperature:** {session.temperature_c_median:.1f}°C")
+        else:
+            st.write("**Temperature:** Unknown")
+            
+        # Humidity (always in percentage)
         st.write(
-            "**Wind Direction:**",
+            "**Humidity:**",
             (
-                f"{session.wind_direction_deg_median}°"
+                f"{session.relative_humidity_pct_median:.1f}%"
+                if session.relative_humidity_pct_median is not None
+                else "Unknown"
+            ),
+        )
+        
+        # Pressure with user preferences
+        if session.barometric_pressure_hpa_median is not None:
+            if user_unit_system == "Imperial":
+                pressure_inhg = hpa_to_inhg(session.barometric_pressure_hpa_median)
+                st.write(f"**Pressure:** {pressure_inhg:.2f} inHg")
+            else:
+                st.write(f"**Pressure:** {session.barometric_pressure_hpa_median:.1f} hPa")
+        else:
+            st.write("**Pressure:** Unknown")
+            
+        # Weather source
+        weather_source_name = getattr(session, 'weather_source_name', None)
+        if weather_source_name:
+            st.write("**Weather Source:**", weather_source_name)
+        else:
+            st.write("**Weather Source:**", "Unknown")
+
+    with col2:
+        # Group Wind measurements together on the right side
+        st.write("**Wind Measurements:**")
+        
+        # Wind Speed 1 with user preferences
+        if session.wind_speed_mps_median is not None:
+            if user_unit_system == "Imperial":
+                wind_speed_mph = mps_to_mph(session.wind_speed_mps_median)
+                st.write(f"    **Wind Speed 1:** {wind_speed_mph:.1f} mph")
+            else:
+                st.write(f"    **Wind Speed 1:** {session.wind_speed_mps_median:.1f} m/s")
+        else:
+            st.write("    **Wind Speed 1:** Unknown")
+            
+        # Wind Speed 2 with user preferences
+        if session.wind_speed_2_mps_median is not None:
+            if user_unit_system == "Imperial":
+                wind_speed_2_mph = mps_to_mph(session.wind_speed_2_mps_median)
+                st.write(f"    **Wind Speed 2:** {wind_speed_2_mph:.1f} mph")
+            else:
+                st.write(f"    **Wind Speed 2:** {session.wind_speed_2_mps_median:.1f} m/s")
+        else:
+            st.write("    **Wind Speed 2:** Unknown")
+            
+        # Wind Direction (always in degrees)
+        st.write(
+            "    **Wind Direction:**",
+            (
+                f"{session.wind_direction_deg_median:.0f}°"
                 if session.wind_direction_deg_median is not None
                 else "Unknown"
             ),
         )
-        st.write(
-            "**Weather Source:**",
-            session.weather_source_id or "Unknown")
-        # TODO: Add weather_summary property to DopeSessionModel
-        # st.write("**Summary:**", session.weather_summary)
 
 
 def export_sessions_to_csv(sessions: List[DopeSessionModel]):
@@ -1057,21 +1140,33 @@ def render_shots_tab(session: DopeSessionModel, service: DopeService):
             power_factor_header = "Power Factor" # Always show as text
             temperature_header = "Temperature (°F)" if user_unit_system == "Imperial" else "Temperature (°C)"
             pressure_header = "Pressure (inHg)" if user_unit_system == "Imperial" else "Pressure (hPa)"
+            wind_speed_header = "Wind Speed (mph)" if user_unit_system == "Imperial" else "Wind Speed (m/s)"
+
+            # Handle wind data - check if fields exist in measurement object
+            wind_speed_display = ''
+            wind_direction_display = ''
+            
+            if hasattr(measurement, 'wind_speed_mps') and measurement.wind_speed_mps is not None:
+                if user_unit_system == "Imperial":
+                    wind_speed_display = f"{mps_to_mph(measurement.wind_speed_mps):.1f}"
+                else:
+                    wind_speed_display = f"{measurement.wind_speed_mps:.1f}"
+            
+            if hasattr(measurement, 'wind_direction_deg') and measurement.wind_direction_deg is not None:
+                wind_direction_display = f"{measurement.wind_direction_deg:.0f}"
 
             row = {
                 "Shot #": measurement.shot_number or '',
                 "Time": measurement.datetime_shot or '',
                 velocity_header: velocity_display,
-                energy_header: energy_display,
-                power_factor_header: power_factor_display,
                 "Distance (m)": measurement.distance_m or '',
-                "Elevation Adjustment": measurement.elevation_adjustment or '',
-                "Windage Adjustment": measurement.windage_adjustment or '',
+                "Elevation Offset": measurement.elevation_adjustment or '',
+                "Windage Offset": measurement.windage_adjustment or '',
+                wind_speed_header: wind_speed_display,
+                "Wind Direction (°)": wind_direction_display,
                 temperature_header: temperature_display,
                 pressure_header: pressure_display,
                 "Humidity (%)": measurement.humidity_pct or '',
-                "Clean Bore": measurement.clean_bore or '',
-                "Cold Bore": measurement.cold_bore or '',
                 "Notes": measurement.shot_notes or ''
             }
             df_data.append(row)
@@ -1095,21 +1190,20 @@ def render_shots_tab(session: DopeSessionModel, service: DopeService):
         energy_header = "Energy (ft·lb)" if user_unit_system == "Imperial" else "Energy (J)"
         temperature_header = "Temperature (°F)" if user_unit_system == "Imperial" else "Temperature (°C)"
         pressure_header = "Pressure (inHg)" if user_unit_system == "Imperial" else "Pressure (hPa)"
+        wind_speed_header = "Wind Speed (mph)" if user_unit_system == "Imperial" else "Wind Speed (m/s)"
 
         column_config = {
             "Shot #": st.column_config.NumberColumn("Shot #", width="small", disabled=True),  # Don't allow editing shot numbers
             "Time": st.column_config.TextColumn("Time", width="small", disabled=True),  # Don't allow editing timestamps
             velocity_header: st.column_config.NumberColumn(velocity_header, width="medium", format="%.1f"),
-            energy_header: st.column_config.NumberColumn(energy_header, width="medium", format="%.1f"),
-            "Power Factor": st.column_config.NumberColumn("Power Factor", width="medium", format="%.1f"),
             "Distance (m)": st.column_config.NumberColumn("Distance (m)", width="small", format="%.1f"),
-            "Elevation Adjustment": st.column_config.NumberColumn("Elevation Adjustment", width="small", format="%.2f"),
-            "Windage Adjustment": st.column_config.NumberColumn("Windage Adjustment", width="small", format="%.2f"),
+            "Elevation Offset": st.column_config.NumberColumn("Elevation Offset", width="small", format="%.2f"),
+            "Windage Offset": st.column_config.NumberColumn("Windage Offset", width="small", format="%.2f"),
+            wind_speed_header: st.column_config.NumberColumn(wind_speed_header, width="small", format="%.1f"),
+            "Wind Direction (°)": st.column_config.NumberColumn("Wind Direction (°)", width="small", format="%.0f"),
             temperature_header: st.column_config.NumberColumn(temperature_header, width="small", format="%.1f"),
             pressure_header: st.column_config.NumberColumn(pressure_header, width="small", format="%.1f"),
             "Humidity (%)": st.column_config.NumberColumn("Humidity (%)", width="small", format="%.1f"),
-            "Clean Bore": st.column_config.SelectboxColumn("Clean Bore", width="small", options=["yes", "no", ""]),
-            "Cold Bore": st.column_config.SelectboxColumn("Cold Bore", width="small", options=["yes", "no", ""]),
             "Notes": st.column_config.TextColumn("Notes", width="large")
         }
 
@@ -1119,19 +1213,95 @@ def render_shots_tab(session: DopeSessionModel, service: DopeService):
         # Add editing instructions
         st.info("💡 **Editable Table:** Click on any cell to edit values. Changes are automatically saved when you move to another cell or press Enter.")
 
-        # Create editable table
-        edited_df = st.data_editor(
-            df,
-            column_config=column_config,
-            use_container_width=True,
-            hide_index=True,
-            num_rows="fixed",  # Prevent adding/deleting rows
-            key=f"shots_editor_{session.id}"  # Unique key per session
-        )
+        # Create tabs for different interaction modes
+        edit_tab, select_tab = st.tabs(["📝 Edit Mode", "🎯 Select Mode"])
 
-        # Check for changes and save them
-        if not df.equals(edited_df):
-            _save_measurement_changes(df, edited_df, measurements, service, user_unit_system)
+        with edit_tab:
+            # Create editable table
+            edited_df = st.data_editor(
+                df,
+                column_config=column_config,
+                use_container_width=True,
+                hide_index=True,
+                num_rows="fixed",  # Prevent adding/deleting rows
+                key=f"shots_editor_{session.id}"  # Unique key per session
+            )
+
+            # Check for changes and save them
+            if not df.equals(edited_df):
+                _save_measurement_changes(df, edited_df, measurements, service, user_unit_system)
+
+        with select_tab:
+            # Create selectable table
+            selected_data = st.dataframe(
+                df,
+                column_config=column_config,
+                use_container_width=True,
+                hide_index=True,
+                selection_mode="single-row",
+                key=f"shots_selector_{session.id}",
+                on_select="rerun"
+            )
+
+            # Display selected row details
+            if selected_data.selection.rows:
+                selected_row_idx = selected_data.selection.rows[0]
+                selected_measurement = measurements[selected_row_idx]
+
+                st.subheader("🎯 Selected Shot Details")
+
+                # Create columns for organized display
+                detail_col1, detail_col2, detail_col3 = st.columns(3)
+
+                with detail_col1:
+                    st.write("**Basic Info**")
+                    st.write(f"Shot Number: {selected_measurement.shot_number or 'N/A'}")
+                    st.write(f"Time: {selected_measurement.datetime_shot or 'N/A'}")
+                    st.write(f"Distance: {selected_measurement.distance_m or 'N/A'} m")
+
+                with detail_col2:
+                    st.write("**Ballistic Data**")
+                    if selected_measurement.speed_mps:
+                        velocity_display = format_speed(selected_measurement.speed_mps, user_unit_system)
+                        st.write(f"Velocity: {velocity_display}")
+                    else:
+                        st.write("Velocity: N/A")
+
+                    if selected_measurement.ke_j:
+                        energy_display = format_energy(selected_measurement.ke_j, user_unit_system)
+                        st.write(f"Kinetic Energy: {energy_display}")
+                    else:
+                        st.write("Kinetic Energy: N/A")
+
+                    if selected_measurement.power_factor_kgms:
+                        pf_display = format_power_factor(selected_measurement.power_factor_kgms, user_unit_system)
+                        st.write(f"Power Factor: {pf_display}")
+                    else:
+                        st.write("Power Factor: N/A")
+
+                with detail_col3:
+                    st.write("**Adjustments & Environment**")
+                    st.write(f"Elevation Adj: {selected_measurement.elevation_adjustment or 'N/A'}")
+                    st.write(f"Windage Adj: {selected_measurement.windage_adjustment or 'N/A'}")
+
+                    if hasattr(selected_measurement, 'temperature_c') and selected_measurement.temperature_c is not None:
+                        temp_display = format_temperature(selected_measurement.temperature_c, user_unit_system)
+                        st.write(f"Temperature: {temp_display}")
+                    else:
+                        st.write("Temperature: N/A")
+
+                    if hasattr(selected_measurement, 'wind_speed_mps') and selected_measurement.wind_speed_mps is not None:
+                        wind_display = format_wind_speed(selected_measurement.wind_speed_mps, user_unit_system)
+                        st.write(f"Wind Speed: {wind_display}")
+                    else:
+                        st.write("Wind Speed: N/A")
+
+                # Notes section (full width)
+                if selected_measurement.shot_notes:
+                    st.write("**Notes**")
+                    st.write(selected_measurement.shot_notes)
+            else:
+                st.info("👆 Select a row from the table above to view detailed shot information.")
 
         # Export functionality for shots data
         if st.button("📥 Export Shots to CSV"):
@@ -1352,3 +1522,166 @@ def _values_different(orig_value, new_value) -> bool:
 
     # String comparison
     return str(orig_value) != str(new_value)
+
+
+def _get_default_visible_columns() -> List[str]:
+    """Get default visible columns for the table per requirements: Selector, Start Time, Session Name, Range Name, Rifle, Cartridge Type, Bullet, Bullet Weight"""
+    return [
+        "Start Time", "Session Name", "Range", "Rifle", "Cartridge Type",
+        "Bullet", "Bullet Weight (gr)"
+    ]
+
+
+def _get_all_available_columns() -> List[str]:
+    """Get all available columns for visibility toggle"""
+    return [
+        "Session Name", "Start Time", "End Time", "Duration",
+        "Rifle", "Cartridge", "Cartridge Type", "Bullet", "Bullet Weight (gr)",
+        "Distance (m)", "Range", "Temperature (°C)", "Humidity (%)",
+        "Wind Speed (m/s)", "Notes"
+    ]
+
+
+def _render_table_controls(total_sessions: int):
+    """Render table sorting, column visibility, and pagination controls"""
+    settings = st.session_state.dope_view["table_settings"]
+
+    # Table controls in columns
+    control_col1, control_col2, control_col3, control_col4 = st.columns([2, 2, 2, 1])
+
+    with control_col1:
+        # Sorting controls
+        st.write("**Sort By:**")
+        sort_col1, sort_col2 = st.columns([3, 1])
+
+        with sort_col1:
+            sort_column = st.selectbox(
+                "Column",
+                options=_get_all_available_columns(),
+                index=_get_all_available_columns().index(settings["sort_column"])
+                    if settings["sort_column"] in _get_all_available_columns() else 0,
+                key="sort_column_select",
+                label_visibility="collapsed"
+            )
+            settings["sort_column"] = sort_column
+
+        with sort_col2:
+            sort_ascending = st.selectbox(
+                "Order",
+                options=["Asc", "Desc"],
+                index=0 if settings["sort_ascending"] else 1,
+                key="sort_order_select",
+                label_visibility="collapsed"
+            )
+            settings["sort_ascending"] = (sort_ascending == "Asc")
+
+    with control_col2:
+        # Column visibility toggle
+        st.write("**Visible Columns:**")
+        with st.popover("🔧 Configure Columns"):
+            st.write("**Select columns to display:**")
+
+            # High priority columns (always visible)
+            st.write("*Essential Columns:*")
+            high_priority = ["Session Name", "Start Time", "Cartridge Type", "Bullet Weight (gr)"]
+            for col in high_priority:
+                st.checkbox(col, value=True, disabled=True, key=f"col_high_{col}")
+
+            st.divider()
+            st.write("*Optional Columns:*")
+
+            # Other columns (toggleable)
+            all_columns = _get_all_available_columns()
+            optional_columns = [col for col in all_columns if col not in high_priority]
+
+            visible_columns = settings["visible_columns"]
+            new_visible = high_priority.copy()  # Always include high priority
+
+            for col in optional_columns:
+                if st.checkbox(col, value=(col in visible_columns), key=f"col_opt_{col}"):
+                    new_visible.append(col)
+
+            settings["visible_columns"] = new_visible
+
+    with control_col3:
+        # Pagination controls
+        st.write("**Pagination:**")
+        page_col1, page_col2 = st.columns([1, 2])
+
+        with page_col1:
+            page_size = st.selectbox(
+                "Per page",
+                options=[25, 50, 100, 200],
+                index=[25, 50, 100, 200].index(settings["page_size"]),
+                key="page_size_select",
+                label_visibility="collapsed"
+            )
+            settings["page_size"] = page_size
+
+        with page_col2:
+            # Calculate pagination
+            total_pages = max(1, (total_sessions + page_size - 1) // page_size)
+            current_page = min(settings["current_page"], total_pages - 1)
+
+            if total_pages > 1:
+                new_page = st.number_input(
+                    f"Page (1-{total_pages})",
+                    min_value=1,
+                    max_value=total_pages,
+                    value=current_page + 1,
+                    key="page_number_input",
+                    label_visibility="collapsed"
+                ) - 1
+                settings["current_page"] = new_page
+            else:
+                settings["current_page"] = 0
+                st.write("Page 1 of 1")
+
+    with control_col4:
+        # Pagination navigation buttons
+        if total_sessions > settings["page_size"]:
+            st.write("**Navigate:**")
+            nav_col1, nav_col2 = st.columns(2)
+
+            with nav_col1:
+                if st.button("◀️", disabled=(current_page == 0), key="prev_page"):
+                    settings["current_page"] = max(0, current_page - 1)
+                    st.rerun()
+
+            with nav_col2:
+                if st.button("▶️", disabled=(current_page >= total_pages - 1), key="next_page"):
+                    settings["current_page"] = min(total_pages - 1, current_page + 1)
+                    st.rerun()
+
+    # Show pagination info
+    start_idx = settings["current_page"] * settings["page_size"]
+    end_idx = min(start_idx + settings["page_size"], total_sessions)
+    if total_sessions > settings["page_size"]:
+        st.caption(f"Showing {start_idx + 1}-{end_idx} of {total_sessions} sessions")
+
+
+def _apply_table_sorting_and_pagination(df: pd.DataFrame) -> pd.DataFrame:
+    """Apply sorting and pagination to the DataFrame"""
+    settings = st.session_state.dope_view["table_settings"]
+
+    # Apply sorting
+    if settings["sort_column"] in df.columns:
+        df = df.sort_values(
+            by=settings["sort_column"],
+            ascending=settings["sort_ascending"]
+        ).reset_index(drop=True)
+
+    # Apply column visibility
+    visible_columns = settings["visible_columns"]
+    columns_to_show = visible_columns
+
+    # Filter to only existing columns
+    columns_to_show = [col for col in columns_to_show if col in df.columns]
+    df = df[columns_to_show]
+
+    # Apply pagination
+    start_idx = settings["current_page"] * settings["page_size"]
+    end_idx = start_idx + settings["page_size"]
+    df_page = df.iloc[start_idx:end_idx].copy()
+
+    return df_page

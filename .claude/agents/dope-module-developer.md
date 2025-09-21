@@ -69,4 +69,6 @@ Follow the guidance in the table schema files that are defined here.   They must
 - dope/dope_sessions_table_schema.md
 - dope/dope_measurements_table_schema.md
 
+When prompted, address the issues listed in dope/view/issues.md.  When an issue is resolved, mark as such in the issues.md file
+
 
