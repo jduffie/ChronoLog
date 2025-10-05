@@ -964,13 +964,22 @@ class DopeService:
         if "ranges_submissions" in record and record["ranges_submissions"]:
             range_data = record["ranges_submissions"]
             flattened["range_name"] = range_data.get("range_name")
-            flattened["start_lat"] = range_data.get("start_lat")
-            flattened["start_lon"] = range_data.get("start_lon")
-            flattened["start_altitude_m"] = range_data.get("start_altitude_m")
-            flattened["distance_m"] = range_data.get("distance_m")
+            # Map start coordinates to lat/lon for model compatibility
+            flattened["lat"] = range_data.get("start_lat")
+            flattened["lon"] = range_data.get("start_lon")
+            flattened["start_altitude"] = range_data.get("start_altitude_m")
+            flattened["range_distance_m"] = range_data.get("distance_m")
             flattened["azimuth_deg"] = range_data.get("azimuth_deg")
-            flattened["elevation_angle_deg"] = range_data.get(
-                "elevation_angle_deg")
+            flattened["elevation_angle_deg"] = range_data.get("elevation_angle_deg")
+
+            # Generate location hyperlink from coordinates if available
+            start_lat = range_data.get("start_lat")
+            start_lon = range_data.get("start_lon")
+            if start_lat and start_lon:
+                flattened["location_hyperlink"] = f"https://maps.google.com/?q={start_lat},{start_lon}"
+            else:
+                flattened["location_hyperlink"] = None
+
             del flattened["ranges_submissions"]
 
         # Extract weather source data

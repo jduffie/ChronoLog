@@ -1005,6 +1005,11 @@ class TestDopeViewPage(unittest.TestCase):
 
         from dope.models import DopeSessionModel
         from dope.view.view_page import render_sessions_table
+        import streamlit as st
+
+        # Initialize session state for DOPE view
+        if "dope_view" not in st.session_state:
+            st.session_state.dope_view = {}
 
         # Create test session
         session = DopeSessionModel(
@@ -1025,7 +1030,12 @@ class TestDopeViewPage(unittest.TestCase):
 
         with patch("streamlit.dataframe") as mock_dataframe, patch(
             "streamlit.button"
-        ), patch("pandas.DataFrame") as mock_df:
+        ), patch("pandas.DataFrame") as mock_df, patch(
+            "streamlit.session_state"
+        ) as mock_session_state:
+
+            # Mock session state
+            mock_session_state.dope_view = {}
 
             # Mock DataFrame creation
             mock_df_instance = MagicMock()
