@@ -5,9 +5,19 @@
 ~~When I select one of the rows in the session table, the Filter section opens up as if I had selected the dropdown for it to appear.~~ - Fixed auto-opening issue by removing forced expander state
 
 
-# Session table - ✅ RESOLVED
+# Session table 
 ~~should not include a column for UUID~~
 - UUID column removed from sessions table display
+- bug - 'Chronograph: Linked' under Session Info should be: 'Chronograph name: [name of chronograph]' - the value is referenced via chronograph session/chronograph source
+- Desired behavior for Session Details 
+  - User can select one of these tabs: Session Info, Range, Rifle, Cartridge, Bullet, Weather, Shots
+  - If Session Info, Range, Rifle, Cartridge, Bullet, Weather, then render the all details in the section below but readonly.  Use
+     markdown sections for column headers where appropriate
+  - If user selects Shot
+    - render the shot table - read only
+    - each row in the shot table should include a selection box. 
+    - Only one row can be selected at a time
+    - If user selects the row, then following section renders the values but all are editable
 
 # Session Details - ✅ RESOLVED
 
@@ -73,9 +83,59 @@
 
  * ~~does not show Wind Speed 2 b/c its missing in the schema~~ - Wind Speed 2 field added to model, table, and UI
 
-## Shots tab - ✅ RESOLVED
+## Shots tab - 
  * ~~missing row selector - should let user select a single row and then render all values for that row beneath the table~~ - Added Select Mode tab with single-row selection and detailed shot information display beneath table
  * ~~is missing a selector to let user pick what columns to show~~ - Column chooser added
+ * Failed to save changes: Failed to update measurement 0c9b6806-3eee-418f-9aca-7645d4df5b96: {'message': "Could not find the 'wind_direction_deg' column of 'dope_measurements' in the schema cache", 'code': 'PGRST204', 'hint': None, 'details': None}
+
+# Phase 1 CRUD Operations - ✅ RESOLVED
+
+All critical CRUD functionality has been implemented for DOPE sessions:
+
+## Service Layer - ✅ RESOLVED
+* ✅ Implemented `update_session()` method with proper Supabase integration and user isolation
+* ✅ Implemented `delete_session()` method with cascade handling for measurements
+* ✅ Implemented `delete_sessions_bulk()` method for bulk operations
+* ✅ All methods include proper error handling and data validation
+
+## Session Edit Functionality - ✅ RESOLVED
+* ✅ Added edit modal/form with validation for session metadata (name, notes)
+* ✅ Edit mode accessible via "✏️ Edit" button in session details
+* ✅ Form validation ensures session name is required
+* ✅ Success/error feedback with automatic refresh after updates
+* ✅ Cancel functionality to abort edits
+
+## Session Delete Functionality - ✅ RESOLVED
+* ✅ Added confirmation dialog for individual session deletion
+* ✅ Warning message clearly explains what will be deleted (session data + measurements)
+* ✅ Shows session details for confirmation (name, date, rifle, cartridge, range)
+* ✅ Displays count of shot measurements that will be deleted
+* ✅ Proper UI state updates after deletion (clears selection, refreshes data)
+* ✅ Cancel functionality to abort deletion
+
+## Bulk Operations - ✅ RESOLVED
+* ✅ Multi-row selection enabled in sessions table
+* ✅ Bulk delete confirmation modal for multiple selected sessions
+* ✅ Bulk export functionality for selected sessions
+* ✅ Export buttons show count of selected sessions
+* ✅ Success/error feedback for bulk operations
+* ✅ Proper error handling for individual failures within bulk operations
+
+## Export Functionality - ✅ RESOLVED
+* ✅ Individual session export to CSV with session data and measurements
+* ✅ Bulk export for multiple selected sessions
+* ✅ "Export All" functionality for entire filtered dataset
+* ✅ CSV files include headers, metadata, and timestamp
+* ✅ Proper filename generation with session names and timestamps
+* ✅ Comprehensive data export including all session fields and shot measurements
+
+## User Experience Enhancements - ✅ RESOLVED
+* ✅ Clear action buttons with intuitive icons (✏️ Edit, 🗑️ Delete, 📥 Export)
+* ✅ Proper loading states and user feedback
+* ✅ Confirmation dialogs prevent accidental deletions
+* ✅ Success messages confirm completed operations
+* ✅ Error handling with user-friendly messages
+* ✅ State management preserves user selections appropriately
 
 
 

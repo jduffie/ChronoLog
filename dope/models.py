@@ -68,12 +68,16 @@ class DopeSessionModel:
     wind_speed_mps_median: Optional[float] = None
     wind_speed_2_mps_median: Optional[float] = None  # Second wind speed measurement
     wind_direction_deg_median: Optional[float] = None
-    
+
     # Weather source name (from joined data)
     weather_source_name: Optional[str] = None
-    
+
     # Chronograph session name (from joined data)
     chrono_session_name: Optional[str] = None
+
+    # Timestamps
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
     @classmethod
     def from_supabase_record(cls, record: dict) -> "DopeSessionModel":
@@ -103,6 +107,8 @@ class DopeSessionModel:
         start_time_dt = parse_datetime(record.get("start_time"))
         end_time_dt = parse_datetime(record.get("end_time"))
         datetime_local_dt = parse_datetime(record.get("datetime_local"))
+        created_at_dt = parse_datetime(record.get("created_at"))
+        updated_at_dt = parse_datetime(record.get("updated_at"))
         return cls(
             id=record.get("id"),
             user_id=record.get("user_id"),
@@ -149,6 +155,8 @@ class DopeSessionModel:
             wind_direction_deg_median=record.get("wind_direction_deg_median"),
             weather_source_name=record.get("weather_source_name"),
             chrono_session_name=record.get("chrono_session_name"),
+            created_at=created_at_dt,
+            updated_at=updated_at_dt,
         )
 
     @classmethod
@@ -203,6 +211,8 @@ class DopeSessionModel:
             "wind_speed_2_mps_median": self.wind_speed_2_mps_median,
             "wind_direction_deg_median": self.wind_direction_deg_median,
             "weather_source_name": self.weather_source_name,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
 
     @property
@@ -316,8 +326,8 @@ class DopeMeasurementModel:
 
     # Adjustments (metric fields for precise ballistic tracking)
     distance_m: Optional[float] = None  # Target distance in meters
-    elevation_adjustment: Optional[float] = None  # Elevation scope adjustment in milliradians
-    windage_adjustment: Optional[float] = None  # Windage scope adjustment in milliradians
+    elevation_adjustment: Optional[str] = None  # Elevation scope adjustment (stored as text in database)
+    windage_adjustment: Optional[str] = None  # Windage scope adjustment (stored as text in database)
 
     # Notes
     shot_notes: Optional[str] = None
@@ -451,9 +461,17 @@ class DopeMeasurementModel:
         if self.distance_m is not None:
             adjustments.append(f"Distance: {self.distance_m:.0f}m")
         if self.elevation_adjustment is not None:
-            adjustments.append(f"Elevation: {self.elevation_adjustment:.2f} mrad")
+            try:
+                elev_val = float(self.elevation_adjustment)
+                adjustments.append(f"Elevation: {elev_val:.2f} mrad")
+            except (ValueError, TypeError):
+                adjustments.append(f"Elevation: {self.elevation_adjustment}")
         if self.windage_adjustment is not None:
-            adjustments.append(f"Windage: {self.windage_adjustment:.2f} mrad")
+            try:
+                wind_val = float(self.windage_adjustment)
+                adjustments.append(f"Windage: {wind_val:.2f} mrad")
+            except (ValueError, TypeError):
+                adjustments.append(f"Windage: {self.windage_adjustment}")
         return ", ".join(adjustments) if adjustments else "No adjustments recorded"
 
     def has_ballistic_data(self) -> bool:

@@ -50,36 +50,36 @@ CREATE INDEX idx_dope_sessions_created_at ON dope_sessions(created_at DESC);
 
 ## Table Description
 
-| Column Name                         | Data Type                | Nullable | Default           | Description                                                  |
-|-------------------------------------|--------------------------|----------|-------------------|--------------------------------------------------------------|
-| **id**                              | uuid                     | NO       | gen_random_uuid() | Primary key, auto-generated unique identifier                |
-| **session_name**                    | text                     | NO       | -                 | Descriptive name for the DOPE session                        |
-| **created_at**                      | timestamp with time zone | NO       | now()             | Record creation timestamp                                    |
-| **updated_at**                      | timestamp with time zone | NO       | now()             | Last modification timestamp                                  |
-| **chrono_session_id**               | uuid                     | YES      | -                 | Foreign key to chrono_sessions table                         |
-| **range_submission_id**             | uuid                     | YES      | -                 | Foreign key to ranges_submissions table                      |
-| **weather_source_id**               | uuid                     | YES      | -                 | Foreign key to weather_source table                          |
-| **range_name**                      | text                     | YES      | -                 | Name of the shooting range                                   |
-| **range_distance_m**                | real                     | YES      | -                 | Target distance in meters                                    |
-| **notes**                           | text                     | YES      | -                 | Session notes and observations                               |
-| **rifle_id**                        | uuid                     | NO       | -                 | Foreign key to rifles table                                  |
-| **cartridge_lot_number**            | text                     | YES      | -                 | Cartridge lot identifier                                     |
-| **user_id**                         | text                     | NO       | -                 | Auth0 user identifier for data isolation                     |
-| **cartridge_id**                    | uuid                     | NO       | -                 | Foreign key to cartridges table                              |
-| **bullet_id**                       | uuid                     | NO       | -                 | Foreign key to bullets table (required)                      |
-| **start_time**                      | timestamp with time zone | NO       | -                 | Session start time from chronograph time window              |
-| **end_time**                        | timestamp with time zone | NO       | -                 | Session end time from chronograph time window                |
-| **lat**                             | real                     | YES      | -                 | Latitude from range data                                     |
-| **lon**                             | real                     | YES      | -                 | Longitude from range data                                    |
-| **start_altitude**                  | real                     | YES      | -                 | Starting altitude from range data                            |
-| **azimuth_deg**                     | real                     | YES      | -                 | Azimuth angle in degrees from range data                     |
-| **elevation_angle_deg**             | real                     | YES      | -                 | Elevation angle in degrees from range data                   |
-| **location_hyperlink**              | text                     | YES      | -                 | Google Maps hyperlink for range location                     |
-| **temperature_c_median**            | real                     | YES      | -                 | Median temperature in Celsius from weather association       |
-| **relative_humidity_pct_median**    | real                     | YES      | -                 | Median relative humidity percentage from weather association |
-| **barometric_pressure_inhg_median** | real                     | YES      | -                 | Median barometric pressure in inHg from weather association  |
-| **wind_speed_mps_median**           | real                     | YES      | -                 | Median wind speed in m/s from weather association            |
-| **wind_direction_deg_median**       | real                     | YES      | -                 | Median wind direction in degrees from weather association    |
+| Column Name                         | Description                                                  | Lineage                                    | Data Type                | Nullable | Default           |
+|-------------------------------------|--------------------------------------------------------------|--------------------------------------------|--------------------------|----------|-------------------|
+| **id**                              | Primary key, auto-generated unique identifier                | Database auto-generated                    | uuid                     | NO       | gen_random_uuid() |
+| **session_name**                    | Descriptive name for the DOPE session                        | User input via UI                          | text                     | NO       | -                 |
+| **created_at**                      | Record creation timestamp                                    | Database auto-generated                    | timestamp with time zone | NO       | now()             |
+| **updated_at**                      | Last modification timestamp                                  | Database auto-generated on updates         | timestamp with time zone | NO       | now()             |
+| **chrono_session_id**               | Foreign key to chrono_sessions table                         | User selection from chronograph sessions   | uuid                     | YES      | -                 |
+| **range_submission_id**             | Foreign key to ranges_submissions table                      | User selection from range submissions      | uuid                     | YES      | -                 |
+| **weather_source_id**               | Foreign key to weather_source table                          | User selection from weather sources        | uuid                     | YES      | -                 |
+| **range_name**                      | Name of the shooting range                                   | User input or copied from range_submission | text                     | YES      | -                 |
+| **range_distance_m**                | Target distance in meters                                    | User input or copied from range_submission | real                     | YES      | -                 |
+| **notes**                           | Session notes and observations                               | User input via UI                          | text                     | YES      | -                 |
+| **rifle_id**                        | Foreign key to rifles table                                  | User selection from rifles                 | uuid                     | NO       | -                 |
+| **cartridge_lot_number**            | Cartridge lot identifier                                     | User input via UI                          | text                     | YES      | -                 |
+| **user_id**                         | Auth0 user identifier for data isolation                     | Auth0 authentication system                | text                     | NO       | -                 |
+| **cartridge_id**                    | Foreign key to cartridges table                              | User selection from cartridges             | uuid                     | NO       | -                 |
+| **bullet_id**                       | Foreign key to bullets table (required)                      | User selection from bullets                | uuid                     | NO       | -                 |
+| **start_time**                      | Session start time from chronograph time window              | Chronograph session data (required)        | timestamp with time zone | NO       | -                 |
+| **end_time**                        | Session end time from chronograph time window                | Chronograph session data (required)        | timestamp with time zone | NO       | -                 |
+| **lat**                             | Latitude from range data                                     | Range submission or user input             | real                     | YES      | -                 |
+| **lon**                             | Longitude from range data                                    | Range submission or user input             | real                     | YES      | -                 |
+| **start_altitude**                  | Starting altitude from range data                            | Range submission or user input             | real                     | YES      | -                 |
+| **azimuth_deg**                     | Azimuth angle in degrees from range data                     | Range submission or user input             | real                     | YES      | -                 |
+| **elevation_angle_deg**             | Elevation angle in degrees from range data                   | Range submission or user input             | real                     | YES      | -                 |
+| **location_hyperlink**              | Google Maps hyperlink for range location                     | Range submission or generated from lat/lon | text                     | YES      | -                 |
+| **temperature_c_median**            | Median temperature in Celsius from weather association       | Weather source aggregation or user input   | real                     | YES      | -                 |
+| **relative_humidity_pct_median**    | Median relative humidity percentage from weather association | Weather source aggregation or user input   | real                     | YES      | -                 |
+| **barometric_pressure_inhg_median** | Median barometric pressure in inHg from weather association  | Weather source aggregation or user input   | real                     | YES      | -                 |
+| **wind_speed_mps_median**           | Median wind speed in m/s from weather association            | Weather source aggregation or user input   | real                     | YES      | -                 |
+| **wind_direction_deg_median**       | Median wind direction in degrees from weather association    | Weather source aggregation or user input   | real                     | YES      | -                 |
 
 ## Foreign Key Relationships
 

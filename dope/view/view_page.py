@@ -9,6 +9,7 @@ import os
 import sys
 from datetime import datetime
 from typing import Any, Dict, List
+import time
 
 import pandas as pd
 import streamlit as st
@@ -713,22 +714,46 @@ def render_sessions_table(sessions: List[DopeSessionModel]):
     )
 
     # Handle row selection (adjust for pagination) - use first selected row for details
+    selected_session_ids = []
     if selected_rows.selection.rows:
-        selected_idx = selected_rows.selection.rows[0]  # Use first selected row for details
-        # Get session ID from original sessions list using the displayed row index
-        actual_session_idx = st.session_state.dope_view["table_settings"]["current_page"] * st.session_state.dope_view["table_settings"]["page_size"] + selected_idx
-        if actual_session_idx < len(sessions):
-            selected_session_id = sessions[actual_session_idx].id
-            st.session_state.dope_view["selected_session_id"] = selected_session_id
+        # Get all selected session IDs
+        for selected_idx in selected_rows.selection.rows:
+            actual_session_idx = st.session_state.dope_view["table_settings"]["current_page"] * st.session_state.dope_view["table_settings"]["page_size"] + selected_idx
+            if actual_session_idx < len(sessions):
+                selected_session_ids.append(sessions[actual_session_idx].id)
+
+        # Use first selected row for details view
+        if selected_session_ids:
+            st.session_state.dope_view["selected_session_id"] = selected_session_ids[0]
         else:
             st.session_state.dope_view["selected_session_id"] = None
     else:
         # Clear selection if no rows selected
         st.session_state.dope_view["selected_session_id"] = None
 
-    # Export functionality
-    if st.button("📥 Export to CSV"):
-        export_sessions_to_csv(sessions)
+    # Bulk actions and export functionality
+    col1, col2, col3 = st.columns([2, 1, 1])
+
+    with col1:
+        if st.button("📥 Export All to CSV"):
+            export_sessions_to_csv(sessions)
+
+    # Show bulk actions if multiple sessions are selected
+    if len(selected_session_ids) > 1:
+        with col2:
+            if st.button(f"📥 Export Selected ({len(selected_session_ids)})"):
+                selected_sessions = [s for s in sessions if s.id in selected_session_ids]
+                export_sessions_to_csv(selected_sessions)
+
+        with col3:
+            if st.button(f"🗑️ Delete Selected ({len(selected_session_ids)})", type="secondary"):
+                # Store selected IDs for bulk delete confirmation
+                st.session_state.dope_view["bulk_delete_ids"] = selected_session_ids
+                st.rerun()
+
+    # Handle bulk delete confirmation
+    if st.session_state.dope_view.get("bulk_delete_ids"):
+        render_bulk_delete_confirmation_modal(sessions, st.session_state.dope_view["bulk_delete_ids"])
 
 
 def render_session_details(
@@ -737,13 +762,24 @@ def render_session_details(
     """Render detailed view of selected session"""
     st.subheader(f"📋 Session Details: {session.display_name}")
 
+    # Handle delete confirmation modal
+    if st.session_state.dope_view.get("delete_confirm") == session.id:
+        render_delete_confirmation_modal(session, service, user_id)
+        return
+
+    # Handle edit mode
+    if st.session_state.dope_view.get("edit_session") == session.id:
+        render_edit_session_modal(session, service, user_id)
+        return
+
     # Action buttons
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
 
     with col1:
         if st.button("✏️ Edit"):
-            # TODO: Implement edit functionality
-            st.info("Edit functionality coming soon")
+            # Toggle edit mode for this session
+            st.session_state.dope_view["edit_session"] = session.id
+            st.rerun()
 
     with col2:
         if st.button("📊 Analytics"):
@@ -752,8 +788,14 @@ def render_session_details(
 
     with col3:
         if st.button("🗑️ Delete", type="secondary"):
-            # TODO: Implement delete with confirmation
-            st.info("Delete functionality coming soon")
+            # Show delete confirmation for this session
+            st.session_state.dope_view["delete_confirm"] = session.id
+            st.rerun()
+
+    with col4:
+        if st.button("📥 Export"):
+            # Export this session to CSV
+            export_single_session_to_csv(session, service)
 
     # Detailed information in tabs
     tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
@@ -780,6 +822,264 @@ def render_session_details(
 
     with tab7:
         render_shots_tab(session, service)
+
+
+def render_edit_session_modal(session: DopeSessionModel, service: DopeService, user_id: str):
+    """Render session edit modal with form validation"""
+    st.subheader(f"✏️ Edit Session: {session.display_name}")
+
+    # Cancel button at the top
+    if st.button("❌ Cancel Edit"):
+        st.session_state.dope_view["edit_session"] = None
+        st.rerun()
+
+    # Edit form
+    with st.form(key=f"edit_session_{session.id}"):
+        st.write("**Session Information**")
+
+        # Editable session fields
+        new_session_name = st.text_input(
+            "Session Name",
+            value=session.session_name or "",
+            help="Enter a descriptive name for this session"
+        )
+
+        new_notes = st.text_area(
+            "Notes",
+            value=session.notes or "",
+            height=100,
+            help="Add any notes about this session"
+        )
+
+        # Submit buttons
+        col1, col2 = st.columns(2)
+
+        with col1:
+            if st.form_submit_button("💾 Save Changes", type="primary"):
+                # Validate input
+                if not new_session_name.strip():
+                    st.error("Session name is required")
+                    return
+
+                try:
+                    # Prepare update data
+                    update_data = {
+                        "session_name": new_session_name.strip(),
+                        "notes": new_notes.strip() if new_notes.strip() else None
+                    }
+
+                    # Update session
+                    updated_session = service.update_session(session.id, update_data, user_id)
+
+                    st.success(f"✅ Session '{updated_session.session_name}' updated successfully!")
+
+                    # Clear edit mode and refresh
+                    st.session_state.dope_view["edit_session"] = None
+                    time.sleep(1)  # Brief pause to show success message
+                    st.rerun()
+
+                except Exception as e:
+                    st.error(f"Failed to update session: {str(e)}")
+
+        with col2:
+            if st.form_submit_button("❌ Cancel"):
+                st.session_state.dope_view["edit_session"] = None
+                st.rerun()
+
+
+def render_delete_confirmation_modal(session: DopeSessionModel, service: DopeService, user_id: str):
+    """Render delete confirmation modal with proper warnings"""
+    st.subheader(f"🗑️ Delete Session: {session.display_name}")
+
+    # Warning message
+    st.error(
+        "⚠️ **Warning: This action cannot be undone!**\n\n"
+        "Deleting this session will permanently remove:\n"
+        "• All session information and metadata\n"
+        "• All associated shot measurements\n"
+        "• All linked data and notes"
+    )
+
+    # Display session info for confirmation
+    st.write("**Session to be deleted:**")
+    st.write(f"• **Name:** {session.session_name or 'Unnamed Session'}")
+    st.write(f"• **Date:** {session.start_time.strftime('%Y-%m-%d %H:%M') if session.start_time else 'N/A'}")
+    st.write(f"• **Rifle:** {session.rifle_name or 'Unknown'}")
+    st.write(f"• **Cartridge:** {session.cartridge_type or 'Unknown'}")
+    st.write(f"• **Range:** {session.range_name or 'Unknown'}")
+
+    # Get measurement count for warning
+    try:
+        measurements = service.get_measurements_for_dope_session(session.id, user_id)
+        measurement_count = len(measurements)
+        st.write(f"• **Shot Measurements:** {measurement_count} shots will be deleted")
+    except Exception:
+        st.write("• **Shot Measurements:** Unknown number of shots will be deleted")
+
+    st.divider()
+
+    # Confirmation buttons
+    col1, col2, col3 = st.columns([1, 1, 1])
+
+    with col1:
+        if st.button("❌ Cancel", type="secondary", use_container_width=True):
+            st.session_state.dope_view["delete_confirm"] = None
+            st.rerun()
+
+    with col2:
+        # Empty column for spacing
+        pass
+
+    with col3:
+        if st.button("🗑️ DELETE SESSION", type="primary", use_container_width=True):
+            try:
+                # Perform the deletion
+                success = service.delete_session(session.id, user_id)
+
+                if success:
+                    st.success(f"✅ Session '{session.session_name or 'Unnamed'}' deleted successfully!")
+
+                    # Clear states and refresh
+                    st.session_state.dope_view["delete_confirm"] = None
+                    st.session_state.dope_view["selected_session_id"] = None
+
+                    # Brief pause to show success message
+                    time.sleep(1)
+                    st.rerun()
+                else:
+                    st.error("Failed to delete session. Please try again.")
+
+            except Exception as e:
+                st.error(f"Error deleting session: {str(e)}")
+
+
+def render_bulk_delete_confirmation_modal(sessions: List[DopeSessionModel], selected_session_ids: List[str]):
+    """Render bulk delete confirmation modal with proper warnings"""
+    selected_sessions = [s for s in sessions if s.id in selected_session_ids]
+
+    st.subheader(f"🗑️ Delete {len(selected_sessions)} Sessions")
+
+    # Warning message
+    st.error(
+        f"⚠️ **Warning: This action cannot be undone!**\n\n"
+        f"Deleting these {len(selected_sessions)} sessions will permanently remove:\n"
+        "• All session information and metadata\n"
+        "• All associated shot measurements\n"
+        "• All linked data and notes"
+    )
+
+    # Display sessions to be deleted
+    st.write("**Sessions to be deleted:**")
+    for session in selected_sessions:
+        st.write(f"• **{session.session_name or 'Unnamed Session'}** - {session.start_time.strftime('%Y-%m-%d %H:%M') if session.start_time else 'N/A'}")
+
+    st.divider()
+
+    # Confirmation buttons
+    col1, col2, col3 = st.columns([1, 1, 1])
+
+    with col1:
+        if st.button("❌ Cancel", type="secondary", use_container_width=True):
+            st.session_state.dope_view["bulk_delete_ids"] = None
+            st.rerun()
+
+    with col2:
+        # Empty column for spacing
+        pass
+
+    with col3:
+        if st.button(f"🗑️ DELETE {len(selected_sessions)} SESSIONS", type="primary", use_container_width=True):
+            try:
+                # Get service from context
+                url = st.secrets["supabase"]["url"]
+                key = st.secrets["supabase"]["key"]
+                supabase = create_client(url, key)
+                service = DopeService(supabase)
+                user_id = st.session_state.user.get("id")
+
+                # Perform bulk deletion
+                success_count = 0
+                failed_sessions = []
+
+                for session in selected_sessions:
+                    try:
+                        success = service.delete_session(session.id, user_id)
+                        if success:
+                            success_count += 1
+                        else:
+                            failed_sessions.append(session.session_name or "Unnamed")
+                    except Exception as e:
+                        failed_sessions.append(f"{session.session_name or 'Unnamed'} (Error: {str(e)})")
+
+                # Show results
+                if success_count > 0:
+                    st.success(f"✅ Successfully deleted {success_count} sessions!")
+
+                if failed_sessions:
+                    st.error(f"Failed to delete {len(failed_sessions)} sessions: {', '.join(failed_sessions)}")
+
+                # Clear states and refresh
+                st.session_state.dope_view["bulk_delete_ids"] = None
+                st.session_state.dope_view["selected_session_id"] = None
+
+                # Brief pause to show results
+                time.sleep(2)
+                st.rerun()
+
+            except Exception as e:
+                st.error(f"Error during bulk delete: {str(e)}")
+
+
+def export_single_session_to_csv(session: DopeSessionModel, service: DopeService):
+    """Export a single session to CSV format"""
+    try:
+        # Get measurements for this session
+        measurements = service.get_measurements_for_dope_session(session.id, session.user_id)
+
+        # Create session data dictionary
+        session_data = session.to_dict()
+
+        # Create measurements data if available
+        measurements_data = []
+        if measurements:
+            for measurement in measurements:
+                measurements_data.append(measurement.to_dict())
+
+        # Create two DataFrames
+        session_df = pd.DataFrame([session_data])
+        measurements_df = pd.DataFrame(measurements_data) if measurements_data else pd.DataFrame()
+
+        # Combine both datasets into a single CSV with clear sections
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"dope_session_{session.session_name}_{timestamp}.csv"
+
+        # Create combined CSV content
+        csv_content = "# DOPE Session Export\n"
+        csv_content += f"# Session: {session.session_name or 'Unnamed'}\n"
+        csv_content += f"# Exported: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+
+        csv_content += "# SESSION INFORMATION\n"
+        csv_content += session_df.to_csv(index=False)
+
+        if not measurements_df.empty:
+            csv_content += "\n# SHOT MEASUREMENTS\n"
+            csv_content += measurements_df.to_csv(index=False)
+        else:
+            csv_content += "\n# No shot measurements found for this session\n"
+
+        # Offer download
+        st.download_button(
+            label="📥 Download Session CSV",
+            data=csv_content,
+            file_name=filename,
+            mime="text/csv",
+            help="Download session data and measurements as CSV file",
+        )
+
+        st.success(f"✅ Session export prepared: {len(measurements) if measurements else 0} shots included")
+
+    except Exception as e:
+        st.error(f"Error exporting session: {str(e)}")
 
 
 def render_session_info_tab(session: DopeSessionModel):
@@ -1209,99 +1509,229 @@ def render_shots_tab(session: DopeSessionModel, service: DopeService):
 
         # Display the measurements table
         st.subheader("📊 Shot Measurements")
+        st.info("💡 **Shot Selection:** Click on a row in the table below to select and edit shot details.")
 
-        # Add editing instructions
-        st.info("💡 **Editable Table:** Click on any cell to edit values. Changes are automatically saved when you move to another cell or press Enter.")
+        # Create selectable table (read-only display)
+        selected_data = st.dataframe(
+            df,
+            column_config=column_config,
+            use_container_width=True,
+            hide_index=True,
+            selection_mode="single-row",
+            key=f"shots_selector_{session.id}",
+            on_select="rerun"
+        )
 
-        # Create tabs for different interaction modes
-        edit_tab, select_tab = st.tabs(["📝 Edit Mode", "🎯 Select Mode"])
+        # Display editable form for selected row
+        if selected_data.selection.rows:
+            selected_row_idx = selected_data.selection.rows[0]
+            selected_measurement = measurements[selected_row_idx]
 
-        with edit_tab:
-            # Create editable table
-            edited_df = st.data_editor(
-                df,
-                column_config=column_config,
-                use_container_width=True,
-                hide_index=True,
-                num_rows="fixed",  # Prevent adding/deleting rows
-                key=f"shots_editor_{session.id}"  # Unique key per session
-            )
+            st.subheader("✏️ Edit Selected Shot")
 
-            # Check for changes and save them
-            if not df.equals(edited_df):
-                _save_measurement_changes(df, edited_df, measurements, service, user_unit_system)
+            # Create editable form
+            with st.form(key=f"edit_shot_{selected_measurement.id}"):
+                col1, col2, col3 = st.columns(3)
 
-        with select_tab:
-            # Create selectable table
-            selected_data = st.dataframe(
-                df,
-                column_config=column_config,
-                use_container_width=True,
-                hide_index=True,
-                selection_mode="single-row",
-                key=f"shots_selector_{session.id}",
-                on_select="rerun"
-            )
-
-            # Display selected row details
-            if selected_data.selection.rows:
-                selected_row_idx = selected_data.selection.rows[0]
-                selected_measurement = measurements[selected_row_idx]
-
-                st.subheader("🎯 Selected Shot Details")
-
-                # Create columns for organized display
-                detail_col1, detail_col2, detail_col3 = st.columns(3)
-
-                with detail_col1:
+                with col1:
                     st.write("**Basic Info**")
-                    st.write(f"Shot Number: {selected_measurement.shot_number or 'N/A'}")
-                    st.write(f"Time: {selected_measurement.datetime_shot or 'N/A'}")
-                    st.write(f"Distance: {selected_measurement.distance_m or 'N/A'} m")
+                    # Read-only fields
+                    st.text_input("Shot Number", value=str(selected_measurement.shot_number or ''), disabled=True)
+                    st.text_input("Time", value=str(selected_measurement.datetime_shot or ''), disabled=True)
 
-                with detail_col2:
+                    # Editable distance
+                    distance_val = selected_measurement.distance_m or 0.0
+                    if user_unit_system == "Imperial":
+                        distance_display = distance_val * 3.28084  # Convert m to ft
+                        distance_label = "Distance (ft)"
+                    else:
+                        distance_display = distance_val
+                        distance_label = "Distance (m)"
+                    new_distance = st.number_input(distance_label, value=float(distance_display), step=1.0)
+
+                with col2:
                     st.write("**Ballistic Data**")
-                    if selected_measurement.speed_mps:
-                        velocity_display = format_speed(selected_measurement.speed_mps, user_unit_system)
-                        st.write(f"Velocity: {velocity_display}")
-                    else:
-                        st.write("Velocity: N/A")
 
-                    if selected_measurement.ke_j:
-                        energy_display = format_energy(selected_measurement.ke_j, user_unit_system)
-                        st.write(f"Kinetic Energy: {energy_display}")
+                    # Velocity
+                    velocity_val = selected_measurement.speed_mps or 0.0
+                    if user_unit_system == "Imperial":
+                        velocity_display = velocity_val * 3.28084  # Convert m/s to fps
+                        velocity_label = "Velocity (fps)"
                     else:
-                        st.write("Kinetic Energy: N/A")
+                        velocity_display = velocity_val
+                        velocity_label = "Velocity (m/s)"
+                    new_velocity = st.number_input(velocity_label, value=float(velocity_display), step=0.1)
 
-                    if selected_measurement.power_factor_kgms:
-                        pf_display = format_power_factor(selected_measurement.power_factor_kgms, user_unit_system)
-                        st.write(f"Power Factor: {pf_display}")
+                    # Energy (optional)
+                    energy_val = selected_measurement.ke_j or 0.0
+                    if user_unit_system == "Imperial":
+                        energy_display = energy_val * 0.737562  # Convert J to ft·lb
+                        energy_label = "Energy (ft·lb)"
                     else:
-                        st.write("Power Factor: N/A")
+                        energy_display = energy_val
+                        energy_label = "Energy (J)"
+                    new_energy = st.number_input(energy_label, value=float(energy_display), step=0.1)
 
-                with detail_col3:
+                    # Power Factor (optional)
+                    pf_val = selected_measurement.power_factor_kgms or 0.0
+                    if user_unit_system == "Imperial":
+                        pf_display = pf_val * 15432.4  # Convert kg⋅m/s to grain⋅ft/s
+                        pf_label = "Power Factor (grain⋅ft/s)"
+                    else:
+                        pf_display = pf_val
+                        pf_label = "Power Factor (kg⋅m/s)"
+                    new_power_factor = st.number_input(pf_label, value=float(pf_display), step=0.1)
+
+                with col3:
                     st.write("**Adjustments & Environment**")
-                    st.write(f"Elevation Adj: {selected_measurement.elevation_adjustment or 'N/A'}")
-                    st.write(f"Windage Adj: {selected_measurement.windage_adjustment or 'N/A'}")
 
-                    if hasattr(selected_measurement, 'temperature_c') and selected_measurement.temperature_c is not None:
-                        temp_display = format_temperature(selected_measurement.temperature_c, user_unit_system)
-                        st.write(f"Temperature: {temp_display}")
+                    # Adjustments
+                    elevation_val = 0.0
+                    try:
+                        if selected_measurement.elevation_adjustment:
+                            elevation_val = float(selected_measurement.elevation_adjustment)
+                    except (ValueError, TypeError):
+                        elevation_val = 0.0
+
+                    windage_val = 0.0
+                    try:
+                        if selected_measurement.windage_adjustment:
+                            windage_val = float(selected_measurement.windage_adjustment)
+                    except (ValueError, TypeError):
+                        windage_val = 0.0
+
+                    new_elevation_adj = st.number_input("Elevation Adjustment",
+                                                       value=elevation_val,
+                                                       step=0.01, format="%.3f")
+                    new_windage_adj = st.number_input("Windage Adjustment",
+                                                     value=windage_val,
+                                                     step=0.01, format="%.3f")
+
+                    # Temperature
+                    temp_val = selected_measurement.temperature_c or 0.0
+                    if user_unit_system == "Imperial":
+                        temp_display = (temp_val * 9/5) + 32  # Convert C to F
+                        temp_label = "Temperature (°F)"
                     else:
-                        st.write("Temperature: N/A")
+                        temp_display = temp_val
+                        temp_label = "Temperature (°C)"
+                    new_temperature = st.number_input(temp_label, value=float(temp_display), step=0.1)
 
-                    if hasattr(selected_measurement, 'wind_speed_mps') and selected_measurement.wind_speed_mps is not None:
-                        wind_display = format_wind_speed(selected_measurement.wind_speed_mps, user_unit_system)
-                        st.write(f"Wind Speed: {wind_display}")
+                    # Wind Speed
+                    wind_speed_val = getattr(selected_measurement, 'wind_speed_mps', None) or 0.0
+                    if user_unit_system == "Imperial":
+                        wind_display = wind_speed_val * 2.237  # Convert m/s to mph
+                        wind_label = "Wind Speed (mph)"
                     else:
-                        st.write("Wind Speed: N/A")
+                        wind_display = wind_speed_val
+                        wind_label = "Wind Speed (m/s)"
+                    new_wind_speed = st.number_input(wind_label, value=float(wind_display), step=0.1)
 
-                # Notes section (full width)
-                if selected_measurement.shot_notes:
-                    st.write("**Notes**")
-                    st.write(selected_measurement.shot_notes)
-            else:
-                st.info("👆 Select a row from the table above to view detailed shot information.")
+                    # Wind Direction
+                    new_wind_direction = st.number_input("Wind Direction (°)",
+                                                        value=float(getattr(selected_measurement, 'wind_direction_deg', None) or 0.0),
+                                                        step=1.0, min_value=0.0, max_value=360.0)
+
+                    # Pressure
+                    pressure_val = getattr(selected_measurement, 'pressure_hpa', None) or 0.0
+                    if user_unit_system == "Imperial":
+                        pressure_display = pressure_val * 0.02953  # Convert hPa to inHg
+                        pressure_label = "Pressure (inHg)"
+                    else:
+                        pressure_display = pressure_val
+                        pressure_label = "Pressure (hPa)"
+                    new_pressure = st.number_input(pressure_label, value=float(pressure_display), step=0.1)
+
+                    # Humidity
+                    new_humidity = st.number_input("Humidity (%)",
+                                                  value=float(getattr(selected_measurement, 'humidity_pct', None) or 0.0),
+                                                  step=0.1, min_value=0.0, max_value=100.0)
+
+                # Full width for notes and flags
+                st.write("**Additional Info**")
+                col_notes, col_flags = st.columns([2, 1])
+
+                with col_notes:
+                    new_notes = st.text_area("Notes", value=selected_measurement.shot_notes or "", height=100)
+
+                with col_flags:
+                    # Boolean flags
+                    current_clean_bore = getattr(selected_measurement, 'clean_bore', None)
+                    clean_bore_options = ["yes", "no", "fouled"]
+                    clean_bore_index = clean_bore_options.index(current_clean_bore) if current_clean_bore in clean_bore_options else 1
+                    new_clean_bore = st.selectbox("Clean Bore", options=clean_bore_options, index=clean_bore_index)
+
+                    current_cold_bore = getattr(selected_measurement, 'cold_bore', None)
+                    cold_bore_options = ["yes", "no"]
+                    cold_bore_index = cold_bore_options.index(current_cold_bore) if current_cold_bore in cold_bore_options else 1
+                    new_cold_bore = st.selectbox("Cold Bore", options=cold_bore_options, index=cold_bore_index)
+
+                # Save button
+                if st.form_submit_button("💾 Save Changes", type="primary"):
+                    try:
+                        # Convert values back to metric for database storage
+                        update_data = {}
+
+                        # Distance
+                        if user_unit_system == "Imperial":
+                            update_data["distance_m"] = new_distance / 3.28084  # ft to m
+                        else:
+                            update_data["distance_m"] = new_distance
+
+                        # Velocity
+                        if user_unit_system == "Imperial":
+                            update_data["speed_mps"] = new_velocity / 3.28084  # fps to m/s
+                        else:
+                            update_data["speed_mps"] = new_velocity
+
+                        # Energy
+                        if user_unit_system == "Imperial":
+                            update_data["ke_j"] = new_energy / 0.737562  # ft·lb to J
+                        else:
+                            update_data["ke_j"] = new_energy
+
+                        # Power Factor
+                        if user_unit_system == "Imperial":
+                            update_data["power_factor_kgms"] = new_power_factor / 15432.4  # grain⋅ft/s to kg⋅m/s
+                        else:
+                            update_data["power_factor_kgms"] = new_power_factor
+
+                        # Temperature
+                        if user_unit_system == "Imperial":
+                            update_data["temperature_c"] = (new_temperature - 32) * 5/9  # F to C
+                        else:
+                            update_data["temperature_c"] = new_temperature
+
+                        # Wind Speed
+                        if user_unit_system == "Imperial":
+                            update_data["wind_speed_mps"] = new_wind_speed / 2.237  # mph to m/s
+                        else:
+                            update_data["wind_speed_mps"] = new_wind_speed
+
+                        # Pressure
+                        if user_unit_system == "Imperial":
+                            update_data["pressure_hpa"] = new_pressure / 0.02953  # inHg to hPa
+                        else:
+                            update_data["pressure_hpa"] = new_pressure
+
+                        # Direct metric values (convert to string for database storage)
+                        update_data["elevation_adjustment"] = str(new_elevation_adj)
+                        update_data["windage_adjustment"] = str(new_windage_adj)
+                        update_data["wind_direction_deg"] = new_wind_direction
+                        update_data["humidity_pct"] = new_humidity
+                        update_data["shot_notes"] = new_notes
+                        update_data["clean_bore"] = new_clean_bore
+                        update_data["cold_bore"] = new_cold_bore
+
+                        # Save to database
+                        service.update_measurement(selected_measurement.id, update_data, selected_measurement.user_id)
+                        st.success(f"✅ Shot #{selected_measurement.shot_number} updated successfully!")
+                        st.rerun()
+
+                    except Exception as e:
+                        st.error(f"❌ Failed to save changes: {str(e)}")
+        else:
+            st.info("👆 Select a row from the table above to edit shot details.")
 
         # Export functionality for shots data
         if st.button("📥 Export Shots to CSV"):
