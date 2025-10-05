@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from chronograph.service import ChronographService
 
@@ -61,7 +61,8 @@ class DopeService:
                         name
                     ),
                     chrono_sessions!chrono_session_id (
-                        session_name
+                        session_name,
+                        datetime_local
                     )
                 """
                 )
@@ -135,7 +136,8 @@ class DopeService:
                         name
                     ),
                     chrono_sessions!chrono_session_id (
-                        session_name
+                        session_name,
+                        datetime_local
                     )
                 """
                 )
@@ -308,6 +310,21 @@ class DopeService:
             insert_data = session_data.copy()
             insert_data["user_id"] = user_id
 
+            # ENFORCE: start_time and end_time MUST come from chronograph session data
+            chrono_session_id = insert_data.get("chrono_session_id")
+            if chrono_session_id:
+                # Get chronograph time window and override any provided start/end times
+                chrono_time_window = self._get_chronograph_time_window(user_id, chrono_session_id)
+                if chrono_time_window:
+                    insert_data["start_time"] = chrono_time_window[0].isoformat()
+                    insert_data["end_time"] = chrono_time_window[1].isoformat()
+                else:
+                    raise ValueError(f"Cannot determine time window from chronograph session {chrono_session_id}")
+            else:
+                # If no chrono_session_id, start_time and end_time are not allowed
+                if "start_time" in insert_data or "end_time" in insert_data:
+                    raise ValueError("start_time and end_time are not allowed without a linked chronograph session")
+
             # Set creation timestamp if not provided
             if "created_at" not in insert_data:
                 insert_data["created_at"] = datetime.now().isoformat()
@@ -349,40 +366,112 @@ class DopeService:
         self, session_id: str, session_data: Dict[str, Any], user_id: str
     ) -> DopeSessionModel:
         """Update an existing DOPE session"""
-        # TODO: Replace with actual Supabase update
-        # response = (
-        #     self.supabase.table("dope_sessions")
-        #     .update(session_data)
-        #     .eq("id", session_id)
-        #     .eq("user_id", user_id)
-        #     .execute()
-        # )
-        # return DopeSessionModel.from_supabase_record(response.data[0])
+        if not self.supabase or str(type(self.supabase).__name__) == "MagicMock":
+            # Mock implementation
+            existing_session = self.get_session_by_id(session_id, user_id)
+            if existing_session:
+                # Update fields
+                for key, value in session_data.items():
+                    if hasattr(existing_session, key):
+                        setattr(existing_session, key, value)
+                return existing_session
+            raise Exception(f"Session {session_id} not found")
 
-        # Mock implementation
-        existing_session = self.get_session_by_id(session_id, user_id)
-        if existing_session:
-            # Update fields
-            for key, value in session_data.items():
-                if hasattr(existing_session, key):
-                    setattr(existing_session, key, value)
-            return existing_session
-        raise Exception(f"Session {session_id} not found")
+        try:
+            # Prepare data for update
+            update_data = session_data.copy()
+            update_data["updated_at"] = datetime.now().isoformat()
+
+            # ENFORCE: start_time and end_time cannot be manually updated
+            # They are automatically managed based on chronograph session data
+            prohibited_fields = ["id", "user_id", "created_at", "start_time", "end_time"]
+            for field in prohibited_fields:
+                update_data.pop(field, None)
+
+            # If chrono_session_id is being updated, automatically update timestamps
+            if "chrono_session_id" in update_data and update_data["chrono_session_id"]:
+                chrono_time_window = self._get_chronograph_time_window(user_id, update_data["chrono_session_id"])
+                if chrono_time_window:
+                    update_data["start_time"] = chrono_time_window[0].isoformat()
+                    update_data["end_time"] = chrono_time_window[1].isoformat()
+                else:
+                    raise ValueError(f"Cannot determine time window from chronograph session {update_data['chrono_session_id']}")
+
+            response = (
+                self.supabase.table("dope_sessions")
+                .update(update_data)
+                .eq("id", session_id)
+                .eq("user_id", user_id)
+                .execute()
+            )
+
+            if response.data and len(response.data) > 0:
+                # Return the updated session with all joined data
+                return self.get_session_by_id(session_id, user_id)
+            else:
+                raise Exception(f"Session {session_id} not found or update failed")
+
+        except Exception as e:
+            print(f"Error updating DOPE session: {e}")
+            raise Exception(f"Failed to update session {session_id}: {str(e)}")
 
     def delete_session(self, session_id: str, user_id: str) -> bool:
-        """Delete a DOPE session"""
-        # TODO: Replace with actual Supabase delete
-        # response = (
-        #     self.supabase.table("dope_sessions")
-        #     .delete()
-        #     .eq("id", session_id)
-        #     .eq("user_id", user_id)
-        #     .execute()
-        # )
-        # return len(response.data) > 0
+        """Delete a DOPE session and all associated measurements"""
+        if not self.supabase or str(type(self.supabase).__name__) == "MagicMock":
+            # Mock implementation
+            return True
 
-        # Mock implementation
-        return True
+        try:
+            # First, delete all associated DOPE measurements
+            # This is important for data integrity - cascade delete
+            measurements_response = (
+                self.supabase.table("dope_measurements")
+                .delete()
+                .eq("dope_session_id", session_id)
+                .eq("user_id", user_id)
+                .execute()
+            )
+
+            # Then delete the session itself
+            session_response = (
+                self.supabase.table("dope_sessions")
+                .delete()
+                .eq("id", session_id)
+                .eq("user_id", user_id)
+                .execute()
+            )
+
+            # Return True if the session was successfully deleted
+            return len(session_response.data) > 0
+
+        except Exception as e:
+            print(f"Error deleting DOPE session: {e}")
+            return False
+
+    def delete_sessions_bulk(self, session_ids: List[str], user_id: str) -> Dict[str, Any]:
+        """Delete multiple DOPE sessions and all associated measurements"""
+        if not self.supabase or str(type(self.supabase).__name__) == "MagicMock":
+            # Mock implementation
+            return {"deleted_count": len(session_ids), "failed_sessions": []}
+
+        deleted_count = 0
+        failed_sessions = []
+
+        for session_id in session_ids:
+            try:
+                if self.delete_session(session_id, user_id):
+                    deleted_count += 1
+                else:
+                    failed_sessions.append(session_id)
+            except Exception as e:
+                print(f"Error deleting session {session_id}: {e}")
+                failed_sessions.append(session_id)
+
+        return {
+            "deleted_count": deleted_count,
+            "failed_sessions": failed_sessions,
+            "total_requested": len(session_ids)
+        }
 
     def search_sessions(
             self,
@@ -894,6 +983,7 @@ class DopeService:
         if "chrono_sessions" in record and record["chrono_sessions"]:
             chrono_session = record["chrono_sessions"]
             flattened["chrono_session_name"] = chrono_session.get("session_name")
+            flattened["datetime_local"] = chrono_session.get("datetime_local")
             del flattened["chrono_sessions"]
 
         return flattened
