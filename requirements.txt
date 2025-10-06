@@ -18,7 +18,7 @@ fastapi==0.104.1
 uvicorn[standard]==0.24.0
 pydantic==2.5.0
 python-jose[cryptography]==3.3.0
-python-multipart==0.0.6
+python-multipart==0.0.18
 
 # Development and testing
 pytest==8.4.1
@@ -29,6 +29,6 @@ black==25.1.0
 isort==6.0.1
 
 # Security constraint - compatible with LibreSSL
-urllib3>=1.26.0,<2.0
+urllib3>=1.26.0,<3.0
 
 pandas-stubs
