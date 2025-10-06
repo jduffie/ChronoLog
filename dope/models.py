@@ -26,14 +26,18 @@ class DopeSessionModel:
     start_time: datetime = None  # NOT NULL - session start time
     end_time: datetime = None  # NOT NULL - session end time
 
-    # Range and session data
+    # Range and session data (populated via JOIN with ranges_submissions)
     range_name: Optional[str] = None
+    range_description: Optional[str] = None
+    range_display_name: Optional[str] = None
     range_distance_m: Optional[float] = None  # real type
     notes: Optional[str] = None
-    
+
     # Location and geometry fields (from range data)
     lat: Optional[float] = None
     lon: Optional[float] = None
+    end_lat: Optional[float] = None
+    end_lon: Optional[float] = None
     start_altitude: Optional[float] = None
     azimuth_deg: Optional[float] = None
     elevation_angle_deg: Optional[float] = None
@@ -123,10 +127,14 @@ class DopeSessionModel:
             start_time=start_time_dt,
             end_time=end_time_dt,
             range_name=record.get("range_name"),
+            range_description=record.get("range_description"),
+            range_display_name=record.get("range_display_name"),
             range_distance_m=record.get("range_distance_m"),
             notes=record.get("notes"),
             lat=record.get("lat"),
             lon=record.get("lon"),
+            end_lat=record.get("end_lat"),
+            end_lon=record.get("end_lon"),
             start_altitude=record.get("start_altitude"),
             azimuth_deg=record.get("azimuth_deg"),
             elevation_angle_deg=record.get("elevation_angle_deg"),

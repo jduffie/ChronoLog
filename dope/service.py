@@ -50,8 +50,12 @@ class DopeService:
                     ),
                     ranges_submissions!range_submission_id (
                         range_name,
+                        range_description,
+                        display_name,
                         start_lat,
                         start_lon,
+                        end_lat,
+                        end_lon,
                         start_altitude_m,
                         distance_m,
                         azimuth_deg,
@@ -125,8 +129,12 @@ class DopeService:
                     ),
                     ranges_submissions!range_submission_id (
                         range_name,
+                        range_description,
+                        display_name,
                         start_lat,
                         start_lon,
+                        end_lat,
+                        end_lon,
                         start_altitude_m,
                         distance_m,
                         azimuth_deg,
@@ -314,7 +322,8 @@ class DopeService:
             chrono_session_id = insert_data.get("chrono_session_id")
             if chrono_session_id:
                 # Get chronograph time window and override any provided start/end times
-                chrono_time_window = self._get_chronograph_time_window(user_id, chrono_session_id)
+                chrono_service = ChronographService(self.supabase)
+                chrono_time_window = chrono_service.get_time_window(user_id, chrono_session_id)
                 if chrono_time_window:
                     insert_data["start_time"] = chrono_time_window[0].isoformat()
                     insert_data["end_time"] = chrono_time_window[1].isoformat()
@@ -390,12 +399,26 @@ class DopeService:
 
             # If chrono_session_id is being updated, automatically update timestamps
             if "chrono_session_id" in update_data and update_data["chrono_session_id"]:
-                chrono_time_window = self._get_chronograph_time_window(user_id, update_data["chrono_session_id"])
-                if chrono_time_window:
+                chrono_service = ChronographService(self.supabase)
+                chrono_time_window = chrono_service.get_time_window(user_id, update_data["chrono_session_id"])
+                if chrono_time_window is not None:
                     update_data["start_time"] = chrono_time_window[0].isoformat()
                     update_data["end_time"] = chrono_time_window[1].isoformat()
                 else:
                     raise ValueError(f"Cannot determine time window from chronograph session {update_data['chrono_session_id']}")
+
+            # If weather_source_id is being changed, clear all median weather values
+            if "weather_source_id" in update_data:
+                # Get current session to check if weather_source_id is actually changing
+                current_session = self.get_session_by_id(session_id, user_id)
+                if current_session and current_session.weather_source_id != update_data["weather_source_id"]:
+                    # Clear all median weather values when weather source changes
+                    update_data["temperature_c_median"] = None
+                    update_data["relative_humidity_pct_median"] = None
+                    update_data["barometric_pressure_hpa_median"] = None
+                    update_data["wind_speed_mps_median"] = None
+                    update_data["wind_speed_2_mps_median"] = None
+                    update_data["wind_direction_deg_median"] = None
 
             response = (
                 self.supabase.table("dope_sessions")
@@ -526,7 +549,7 @@ class DopeService:
                         sight_offset, trigger, scope
                     ),
                     ranges_submissions!range_submission_id (
-                        range_name, range_description, distance_m,
+                        range_name, range_description, display_name, distance_m,
                         start_lat, start_lon, end_lat, end_lon,
                         start_altitude_m, end_altitude_m,
                         azimuth_deg, elevation_angle_deg
@@ -660,7 +683,7 @@ class DopeService:
                     sight_offset, trigger, scope
                 ),
                 ranges_submissions!range_submission_id (
-                    range_name, range_description, distance_m,
+                    range_name, range_description, display_name, distance_m,
                     start_lat, start_lon, end_lat, end_lon,
                     start_altitude_m, end_altitude_m,
                     azimuth_deg, elevation_angle_deg
@@ -766,6 +789,56 @@ class DopeService:
                 1),
             "distance_range": (
                 f"{min(distances)}-{max(distances)}m" if distances else "No data"),
+        }
+
+    def get_edit_dropdown_options(self, user_id: str) -> Dict[str, List[Dict[str, Any]]]:
+        """Get all dropdown options needed for editing a DOPE session"""
+        from cartridges.service import CartridgeService
+        from chronograph.service import ChronographService
+        from mapping.submission.submission_model import SubmissionModel
+        from rifles.service import RifleService
+        from weather.service import WeatherService
+
+        # Initialize services
+        chrono_service = ChronographService(self.supabase)
+        rifle_service = RifleService(self.supabase)
+        cartridge_service = CartridgeService(self.supabase)
+        weather_service = WeatherService(self.supabase)
+        submission_model = SubmissionModel()
+
+        # Fetch all options
+        chrono_sessions = chrono_service.get_sessions_for_user(user_id)
+        rifles = rifle_service.get_rifles_for_user(user_id)
+        cartridges = cartridge_service.get_cartridges_for_user(user_id)
+        weather_sources = weather_service.get_sources_for_user(user_id)
+        ranges = submission_model.get_user_ranges(user_id, self.supabase)
+
+        return {
+            "chrono_sessions": [
+                {"id": s.id, "name": s.display_name() if hasattr(s.display_name, '__call__') else (s.display_name or s.session_name or f"Session {s.id[:8]}")}
+                for s in chrono_sessions
+            ],
+            "rifles": [
+                {"id": r.id, "name": r.name}
+                for r in rifles
+            ],
+            "cartridges": [
+                {"id": c.id, "name": f"{c.make} {c.model} - {c.cartridge_type}"}
+                for c in cartridges
+            ],
+            "weather_sources": [
+                {"id": w.id, "name": w.name or f"Source {w.id[:8]}"}
+                for w in weather_sources
+            ],
+            "ranges": [
+                {
+                    "id": r["id"],
+                    "name": f"{r.get('range_name', 'Unknown')} - {r.get('display_name', 'Unknown')}"
+                    if r.get('range_name') and r.get('display_name')
+                    else (r.get('range_name') or r.get('display_name') or f"Range {r['id'][:8]}")
+                }
+                for r in ranges
+            ]
         }
 
     def _get_mock_sessions(self, user_id: str) -> List[DopeSessionModel]:
@@ -964,18 +1037,24 @@ class DopeService:
         if "ranges_submissions" in record and record["ranges_submissions"]:
             range_data = record["ranges_submissions"]
             flattened["range_name"] = range_data.get("range_name")
+            flattened["range_description"] = range_data.get("range_description")
+            flattened["range_display_name"] = range_data.get("display_name")
             # Map start coordinates to lat/lon for model compatibility
             flattened["lat"] = range_data.get("start_lat")
             flattened["lon"] = range_data.get("start_lon")
+            flattened["end_lat"] = range_data.get("end_lat")
+            flattened["end_lon"] = range_data.get("end_lon")
             flattened["start_altitude"] = range_data.get("start_altitude_m")
             flattened["range_distance_m"] = range_data.get("distance_m")
             flattened["azimuth_deg"] = range_data.get("azimuth_deg")
             flattened["elevation_angle_deg"] = range_data.get("elevation_angle_deg")
 
-            # Generate location hyperlink from coordinates if available
+            # Generate location hyperlink with single pushpin at lat/lon
             start_lat = range_data.get("start_lat")
             start_lon = range_data.get("start_lon")
+
             if start_lat and start_lon:
+                # Google Maps URL with single marker at the location
                 flattened["location_hyperlink"] = f"https://maps.google.com/?q={start_lat},{start_lon}"
             else:
                 flattened["location_hyperlink"] = None

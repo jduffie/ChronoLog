@@ -7,9 +7,9 @@ Displays all session data in a sortable table with advanced filtering capabiliti
 
 import os
 import sys
+import time
 from datetime import datetime
 from typing import Any, Dict, List
-import time
 
 import pandas as pd
 import streamlit as st
@@ -103,7 +103,7 @@ def render_view_page():
         # Remove sidebar filters - all filters now on main page
 
         # Main content area
-        col1, col2, col3 = st.columns([3, 1, 1])
+        col1, col2 = st.columns([3, 1])
 
         with col1:
             st.header("Sessions")
@@ -113,9 +113,7 @@ def render_view_page():
                 st.cache_data.clear()
                 st.rerun()
 
-        with col3:
-            if st.button("➕ Create New", help="Create a new DOPE session"):
-                st.switch_page("pages/2b_DOPE_Create.py")
+
 
         # Advanced Filters Section (on main page)
         render_main_page_filters(service, user_id)
@@ -135,7 +133,7 @@ def render_view_page():
             return
 
         # Display session statistics
-        render_session_statistics(sessions)
+        # render_session_statistics(sessions)
 
         # Render main data table
         render_sessions_table(sessions)
@@ -165,7 +163,7 @@ def render_main_page_filters(service: DopeService, user_id: str):
     """Render advanced filters section on the main page with expandable controls"""
     # Advanced Filters Section with expander
     with st.expander(
-        "🔍 All Filters",
+        "🔍 Filters",
         expanded=st.session_state.dope_view["show_advanced_filters"],
     ):
         # The expander state is controlled by Streamlit's expanded parameter
@@ -606,11 +604,16 @@ def render_sessions_table(sessions: List[DopeSessionModel]):
             "sort_ascending": False,  # Default: newest first
             "visible_columns": _get_default_visible_columns(),
             "page_size": 50,
-            "current_page": 0
+            "current_page": 0,
+            "show_view_options": False
         }
 
-    # Render table controls
-    _render_table_controls(len(sessions))
+    # Render table controls in expander
+    with st.expander(
+        "⚙️ View Options",
+        expanded=st.session_state.dope_view["table_settings"]["show_view_options"]
+    ):
+        _render_table_controls(len(sessions))
 
     # Convert sessions to DataFrame for display
     df_data = []
@@ -773,7 +776,7 @@ def render_session_details(
         return
 
     # Action buttons
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col3 = st.columns(2)
 
     with col1:
         if st.button("✏️ Edit"):
@@ -781,21 +784,11 @@ def render_session_details(
             st.session_state.dope_view["edit_session"] = session.id
             st.rerun()
 
-    with col2:
-        if st.button("📊 Analytics"):
-            # TODO: Implement session analytics functionality
-            st.info("Session analytics coming soon")
-
     with col3:
         if st.button("🗑️ Delete", type="secondary"):
             # Show delete confirmation for this session
             st.session_state.dope_view["delete_confirm"] = session.id
             st.rerun()
-
-    with col4:
-        if st.button("📥 Export"):
-            # Export this session to CSV
-            export_single_session_to_csv(session, service)
 
     # Detailed information in tabs
     tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
@@ -825,7 +818,7 @@ def render_session_details(
 
 
 def render_edit_session_modal(session: DopeSessionModel, service: DopeService, user_id: str):
-    """Render session edit modal with form validation"""
+    """Render session edit modal with comprehensive editing capabilities"""
     st.subheader(f"✏️ Edit Session: {session.display_name}")
 
     # Cancel button at the top
@@ -833,17 +826,25 @@ def render_edit_session_modal(session: DopeSessionModel, service: DopeService, u
         st.session_state.dope_view["edit_session"] = None
         st.rerun()
 
+    # Fetch dropdown options
+    try:
+        dropdown_options = service.get_edit_dropdown_options(user_id)
+    except Exception as e:
+        st.error(f"Failed to load dropdown options: {str(e)}")
+        return
+
     # Edit form
     with st.form(key=f"edit_session_{session.id}"):
-        st.write("**Session Information**")
+        st.write("**Basic Information**")
 
-        # Editable session fields
+        # Session Name
         new_session_name = st.text_input(
             "Session Name",
             value=session.session_name or "",
             help="Enter a descriptive name for this session"
         )
 
+        # Notes
         new_notes = st.text_area(
             "Notes",
             value=session.notes or "",
@@ -851,7 +852,128 @@ def render_edit_session_modal(session: DopeSessionModel, service: DopeService, u
             help="Add any notes about this session"
         )
 
+        st.divider()
+        st.write("**Related Data**")
+
+        # Chrono Session dropdown
+        chrono_options = dropdown_options.get("chrono_sessions", [])
+        chrono_names = ["(None)"] + [str(opt.get("name", "Unknown")) for opt in chrono_options]
+        chrono_ids = [None] + [opt["id"] for opt in chrono_options]
+
+        current_chrono_index = 0
+        if session.chrono_session_id:
+            try:
+                current_chrono_index = chrono_ids.index(session.chrono_session_id)
+            except ValueError:
+                current_chrono_index = 0
+
+        # Ensure index is within bounds
+        current_chrono_index = max(0, min(current_chrono_index, len(chrono_names) - 1))
+
+        new_chrono_index = st.selectbox(
+            "Chronograph Session",
+            range(len(chrono_names)),
+            index=current_chrono_index,
+            format_func=lambda i: chrono_names[i],
+            help="Select the chronograph session containing velocity data"
+        )
+
+        new_chrono_session_id = chrono_ids[new_chrono_index]
+
+        # Range dropdown
+        range_options = dropdown_options.get("ranges", [])
+        range_names = ["(None)"] + [str(opt.get("name", "Unknown")) for opt in range_options]
+        range_ids = [None] + [opt["id"] for opt in range_options]
+
+        current_range_index = 0
+        if session.range_submission_id:
+            try:
+                current_range_index = range_ids.index(session.range_submission_id)
+            except ValueError:
+                current_range_index = 0
+
+        current_range_index = int(max(0, min(current_range_index, len(range_names) - 1)))
+
+        new_range_index = st.selectbox(
+            "Range",
+            range(len(range_names)),
+            index=current_range_index,
+            format_func=lambda i: range_names[i],
+            help="Select the range where this session took place"
+        )
+        new_range_id = range_ids[new_range_index]
+
+        # Rifle dropdown
+        rifle_options = dropdown_options.get("rifles", [])
+        rifle_names = ["(None)"] + [str(opt.get("name", "Unknown")) for opt in rifle_options]
+        rifle_ids = [None] + [opt["id"] for opt in rifle_options]
+
+        current_rifle_index = 0
+        if session.rifle_id:
+            try:
+                current_rifle_index = rifle_ids.index(session.rifle_id)
+            except ValueError:
+                current_rifle_index = 0
+
+        current_rifle_index = int(max(0, min(current_rifle_index, len(rifle_names) - 1)))
+
+        new_rifle_index = st.selectbox(
+            "Rifle",
+            range(len(rifle_names)),
+            index=current_rifle_index,
+            format_func=lambda i: rifle_names[i],
+            help="Select the rifle used in this session"
+        )
+        new_rifle_id = rifle_ids[new_rifle_index]
+
+        # Weather Source dropdown
+        weather_options = dropdown_options.get("weather_sources", [])
+        weather_names = ["(None)"] + [str(opt.get("name", "Unknown")) for opt in weather_options]
+        weather_ids = [None] + [opt["id"] for opt in weather_options]
+
+        current_weather_index = 0
+        if session.weather_source_id:
+            try:
+                current_weather_index = weather_ids.index(session.weather_source_id)
+            except ValueError:
+                current_weather_index = 0
+
+        current_weather_index = int(max(0, min(current_weather_index, len(weather_names) - 1)))
+
+        new_weather_index = st.selectbox(
+            "Weather Source",
+            range(len(weather_names)),
+            index=current_weather_index,
+            format_func=lambda i: weather_names[i],
+            help="Select the weather source for environmental data"
+        )
+        new_weather_id = weather_ids[new_weather_index]
+
+        # Cartridge dropdown
+        cartridge_options = dropdown_options.get("cartridges", [])
+        cartridge_names = ["(None)"] + [str(opt.get("name", "Unknown")) for opt in cartridge_options]
+        cartridge_ids = [None] + [opt["id"] for opt in cartridge_options]
+
+        current_cartridge_index = 0
+        if session.cartridge_id:
+            try:
+                current_cartridge_index = cartridge_ids.index(session.cartridge_id)
+            except ValueError:
+                current_cartridge_index = 0
+
+        current_cartridge_index = int(max(0, min(current_cartridge_index, len(cartridge_names) - 1)))
+
+        new_cartridge_index = st.selectbox(
+            "Cartridge",
+            range(len(cartridge_names)),
+            index=current_cartridge_index,
+            format_func=lambda i: cartridge_names[i],
+            help="Select the cartridge used in this session"
+        )
+        new_cartridge_id = cartridge_ids[new_cartridge_index]
+
         # Submit buttons
+        st.divider()
         col1, col2 = st.columns(2)
 
         with col1:
@@ -865,7 +987,12 @@ def render_edit_session_modal(session: DopeSessionModel, service: DopeService, u
                     # Prepare update data
                     update_data = {
                         "session_name": new_session_name.strip(),
-                        "notes": new_notes.strip() if new_notes.strip() else None
+                        "notes": new_notes.strip() if new_notes.strip() else None,
+                        "chrono_session_id": new_chrono_session_id,
+                        "range_submission_id": new_range_id,
+                        "rifle_id": new_rifle_id,
+                        "weather_source_id": new_weather_id,
+                        "cartridge_id": new_cartridge_id
                     }
 
                     # Update session
@@ -875,7 +1002,7 @@ def render_edit_session_modal(session: DopeSessionModel, service: DopeService, u
 
                     # Clear edit mode and refresh
                     st.session_state.dope_view["edit_session"] = None
-                    time.sleep(1)  # Brief pause to show success message
+                    time.sleep(1)
                     st.rerun()
 
                 except Exception as e:
@@ -1137,31 +1264,59 @@ def render_range_info_tab(session: DopeSessionModel):
     col1, col2 = st.columns(2)
 
     with col1:
-        # Lat/Lon with hyperlink to Google Maps
-        if session.lat and session.lon:
-            st.write("**Location:**")
-            st.write(f"  **Latitude:** {session.lat:.6f}")
-            st.write(f"  **Longitude:** {session.lon:.6f}")
-            
-            # Create Google Maps hyperlink
-            maps_url = f"https://www.google.com/maps?q={session.lat},{session.lon}"
-            st.markdown(f"  [📍 **View on Google Maps**]({maps_url})")
+        # NAME - range_name from ranges_submissions table
+        if session.range_name:
+            st.write("**NAME:**")
+            st.write(f"  {session.range_name}")
         else:
-            st.write("**Location:** Not available")
-            
+            st.write("**NAME:** Not available")
+
+        # DESCRIPTION - range_description from ranges_submissions table
+        if session.range_description:
+            st.write("**DESCRIPTION:**")
+            st.write(f"  {session.range_description}")
+        else:
+            st.write("**DESCRIPTION:** Not available")
+
+        # LOCATION - display_name from ranges_submissions table
+        if session.range_display_name:
+            st.write("**LOCATION:**")
+            st.write(f"  {session.range_display_name}")
+        else:
+            st.write("**LOCATION:** Not available")
+
+        # Enhanced Google Maps hyperlink with pushpins and arrow
+        if session.location_hyperlink:
+            st.markdown(f"  [🗺️ **View Range on Google Maps**]({session.location_hyperlink})")
+        else:
+            st.write("  Map link not available")
+
+    with col2:
+        # Latitude
+        if session.lat is not None:
+            st.write(f"**Latitude:** {session.lat:.6f}°")
+        else:
+            st.write("**Latitude:** Not available")
+
+        # Longitude
+        if session.lon is not None:
+            st.write(f"**Longitude:** {session.lon:.6f}°")
+        else:
+            st.write("**Longitude:** Not available")
+
         # Altitude
-        if session.start_altitude:
+        if session.start_altitude is not None:
             st.write(f"**Altitude:** {session.start_altitude:.1f}m")
         else:
             st.write("**Altitude:** Not available")
 
-    with col2:
-        # Azimuth and Elevation angles
+        # Azimuth Angle
         if session.azimuth_deg is not None:
             st.write(f"**Azimuth Angle:** {session.azimuth_deg:.2f}°")
         else:
             st.write("**Azimuth Angle:** Not available")
-            
+
+        # Elevation Angle
         if session.elevation_angle_deg is not None:
             st.write(f"**Elevation Angle:** {session.elevation_angle_deg:.2f}°")
         else:
@@ -1186,7 +1341,7 @@ def render_rifle_info_tab(session: DopeSessionModel):
             "**Barrel Twist:**",
             (
                 f'1:{session.rifle_barrel_twist_in_per_rev}"'
-                if session.rifle_barrel_twist_in_per_rev
+                if session.rifle_barrel_twist_in_per_rev is not None
                 else "Unknown"
             ),
         )

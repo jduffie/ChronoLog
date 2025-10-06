@@ -1,5 +1,5 @@
-from datetime import datetime
-from typing import List, Optional
+from datetime import datetime, timedelta
+from typing import List, Optional, Tuple
 
 from .business_logic import SessionStatisticsCalculator
 from .chronograph_session_models import ChronographMeasurement, ChronographSession
@@ -290,6 +290,54 @@ class ChronographService:
         if speeds:
             stats = SessionStatisticsCalculator.calculate_session_stats(speeds)
             self.update_session_stats(session_id, stats)
+
+    def get_time_window(
+        self, user_id: str, session_id: str, buffer_minutes: int = 30
+    ) -> Optional[Tuple[datetime, datetime]]:
+        """
+        Get the time window for a chronograph session based on shot measurements
+
+        Args:
+            user_id: User identifier
+            session_id: Chronograph session ID
+            buffer_minutes: Buffer time in minutes to add before/after
+
+        Returns:
+            Tuple of (start_time, end_time) or None if no measurements found
+        """
+        try:
+            # Get all measurements for the chrono session
+            response = (
+                self.supabase.table("chrono_measurements")
+                .select("datetime_local")
+                .eq("user_id", user_id)
+                .eq("chrono_session_id", session_id)
+                .order("datetime_local")
+                .execute()
+            )
+
+            if not response.data:
+                return None
+
+            # Extract timestamps
+            timestamps = [
+                datetime.fromisoformat(record["datetime_local"].replace('Z', '+00:00'))
+                for record in response.data
+                if record.get("datetime_local")
+            ]
+
+            if not timestamps:
+                return None
+
+            # Calculate time window with buffer
+            start_time = min(timestamps) - timedelta(minutes=buffer_minutes)
+            end_time = max(timestamps) + timedelta(minutes=buffer_minutes)
+
+            return (start_time, end_time)
+
+        except Exception as e:
+            print(f"Error getting chronograph time window: {e}")
+            return None
 
     def get_sources_for_user(self, user_id: str) -> List[ChronographSource]:
         """Get all chronograph sources for a user"""
