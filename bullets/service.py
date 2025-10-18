@@ -44,6 +44,9 @@ class BulletsService:
             return BulletModel.from_supabase_record(response.data)
 
         except Exception as e:
+            # If no rows found, return None (this is the expected behavior)
+            if "PGRST116" in str(e) or "0 rows" in str(e):
+                return None
             raise Exception(f"Error fetching bullet: {str(e)}")
 
     def create_bullet(self, bullet_data: dict) -> BulletModel:

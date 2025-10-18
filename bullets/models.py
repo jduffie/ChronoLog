@@ -70,4 +70,4 @@ class BulletModel:
     @property
     def display_name(self) -> str:
         """Get a friendly display name for the bullet"""
-        return f"{self.manufacturer} {self.model} - {self.weight_grains}gr - {self.bullet_diameter_groove_mm}mm"
+        return f"{self.manufacturer} {self.model} - {self.weight_grains}gr - {self.bore_diameter_land_mm}mm"
