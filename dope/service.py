@@ -93,13 +93,6 @@ class DopeService:
         self, session_id: str, user_id: str
     ) -> Optional[DopeSessionModel]:
         """Get a specific DOPE session by ID with joined data"""
-        if not self.supabase or str(
-                type(self.supabase).__name__) == "MagicMock":
-            mock_sessions = self._get_mock_sessions(user_id)
-            return next(
-                (session for session in mock_sessions if session.id == session_id),
-                None)
-
         try:
             response = (
                 self.supabase.table("dope_sessions")
@@ -302,17 +295,6 @@ class DopeService:
         self, session_data: Dict[str, Any], user_id: str
     ) -> DopeSessionModel:
         """Create a new DOPE session"""
-        if not self.supabase or str(
-                type(self.supabase).__name__) == "MagicMock":
-            # Mock implementation
-            new_session = DopeSessionModel(
-                id=str(uuid.uuid4()),
-                user_id=user_id,
-                datetime_local=datetime.now(),
-                **session_data,
-            )
-            return new_session
-
         try:
             # Prepare data for insertion
             insert_data = session_data.copy()
@@ -329,6 +311,18 @@ class DopeService:
                     insert_data["end_time"] = chrono_time_window[1].isoformat()
                 else:
                     raise ValueError(f"Cannot determine time window from chronograph session {chrono_session_id}")
+
+                # Calculate velocity statistics from chronograph measurements
+                from chronograph.business_logic import SessionStatisticsCalculator
+                speeds = chrono_service.get_measurements_for_stats(user_id, chrono_session_id)
+                if speeds:
+                    stats = SessionStatisticsCalculator.calculate_session_stats(speeds)
+                    insert_data["speed_mps_min"] = stats.get("min_speed_mps")
+                    insert_data["speed_mps_max"] = stats.get("max_speed_mps")
+                    insert_data["speed_mps_avg"] = stats.get("avg_speed_mps")
+                    insert_data["speed_mps_std_dev"] = stats.get("std_dev_mps")
+                else:
+                    raise ValueError(f"No measurements found for chronograph session {chrono_session_id}")
             else:
                 # If no chrono_session_id, start_time and end_time are not allowed
                 if "start_time" in insert_data or "end_time" in insert_data:

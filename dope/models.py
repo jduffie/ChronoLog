@@ -79,6 +79,12 @@ class DopeSessionModel:
     # Chronograph session name (from joined data)
     chrono_session_name: Optional[str] = None
 
+    # Velocity statistics from chronograph session (NOT NULL in table)
+    speed_mps_min: Optional[float] = None
+    speed_mps_max: Optional[float] = None
+    speed_mps_avg: Optional[float] = None
+    speed_mps_std_dev: Optional[float] = None
+
     # Timestamps
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -163,6 +169,10 @@ class DopeSessionModel:
             wind_direction_deg_median=record.get("wind_direction_deg_median"),
             weather_source_name=record.get("weather_source_name"),
             chrono_session_name=record.get("chrono_session_name"),
+            speed_mps_min=record.get("speed_mps_min"),
+            speed_mps_max=record.get("speed_mps_max"),
+            speed_mps_avg=record.get("speed_mps_avg"),
+            speed_mps_std_dev=record.get("speed_mps_std_dev"),
             created_at=created_at_dt,
             updated_at=updated_at_dt,
         )
@@ -219,6 +229,10 @@ class DopeSessionModel:
             "wind_speed_2_mps_median": self.wind_speed_2_mps_median,
             "wind_direction_deg_median": self.wind_direction_deg_median,
             "weather_source_name": self.weather_source_name,
+            "speed_mps_min": self.speed_mps_min,
+            "speed_mps_max": self.speed_mps_max,
+            "speed_mps_avg": self.speed_mps_avg,
+            "speed_mps_std_dev": self.speed_mps_std_dev,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
