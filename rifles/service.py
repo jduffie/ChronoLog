@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from .models import Rifle
+from .models import RifleModel
 
 
 class RifleService:
@@ -10,7 +10,7 @@ class RifleService:
     def __init__(self, supabase_client):
         self.supabase = supabase_client
 
-    def get_rifles_for_user(self, user_id: str) -> List[Rifle]:
+    def get_rifles_for_user(self, user_id: str) -> List[RifleModel]:
         """Get all rifles for a user, ordered by creation date descending"""
         try:
             response = (
@@ -24,12 +24,12 @@ class RifleService:
             if not response.data:
                 return []
 
-            return Rifle.from_supabase_records(response.data)
+            return RifleModel.from_supabase_records(response.data)
 
         except Exception as e:
             raise Exception(f"Error fetching rifles: {str(e)}")
 
-    def get_rifle_by_id(self, rifle_id: str, user_id: str) -> Optional[Rifle]:
+    def get_rifle_by_id(self, rifle_id: str, user_id: str) -> Optional[RifleModel]:
         """Get a specific rifle by ID"""
         try:
             response = (
@@ -44,12 +44,15 @@ class RifleService:
             if not response.data:
                 return None
 
-            return Rifle.from_supabase_record(response.data)
+            return RifleModel.from_supabase_record(response.data)
 
         except Exception as e:
+            # If no rows found, return None (this is the expected behavior)
+            if "PGRST116" in str(e) or "0 rows" in str(e):
+                return None
             raise Exception(f"Error fetching rifle: {str(e)}")
 
-    def get_rifle_by_name(self, user_id: str, name: str) -> Optional[Rifle]:
+    def get_rifle_by_name(self, user_id: str, name: str) -> Optional[RifleModel]:
         """Get a rifle by name"""
         try:
             response = (
@@ -64,17 +67,20 @@ class RifleService:
             if not response.data:
                 return None
 
-            return Rifle.from_supabase_record(response.data)
+            return RifleModel.from_supabase_record(response.data)
 
         except Exception as e:
-            return None
+            # If no rows found, return None (this is the expected behavior)
+            if "PGRST116" in str(e) or "0 rows" in str(e):
+                return None
+            raise Exception(f"Error fetching rifle by name: {str(e)}")
 
     def get_rifles_filtered(
         self,
         user_id: str,
         cartridge_type: Optional[str] = None,
         twist_ratio: Optional[str] = None,
-    ) -> List[Rifle]:
+    ) -> List[RifleModel]:
         """Get filtered rifles"""
         try:
             query = (
@@ -94,7 +100,7 @@ class RifleService:
             if not response.data:
                 return []
 
-            return Rifle.from_supabase_records(response.data)
+            return RifleModel.from_supabase_records(response.data)
 
         except Exception as e:
             raise Exception(f"Error fetching filtered rifles: {str(e)}")
@@ -188,22 +194,10 @@ class RifleService:
         except Exception as e:
             raise Exception(f"Error deleting rifle: {str(e)}")
 
-    def save_rifle(self, rifle: Rifle) -> str:
-        """Save a Rifle entity to Supabase"""
+    def save_rifle(self, rifle: RifleModel) -> str:
+        """Save a RifleModel entity to Supabase"""
         try:
-            rifle_data = {
-                "id": rifle.id,
-                "user_id": rifle.user_id,
-                "name": rifle.name,
-                "cartridge_type": rifle.cartridge_type,
-                "barrel_twist_ratio": rifle.barrel_twist_ratio,
-                "barrel_length": rifle.barrel_length,
-                "sight_offset": rifle.sight_offset,
-                "trigger": rifle.trigger,
-                "scope": rifle.scope,
-                "created_at": rifle.created_at.isoformat() if rifle.created_at else None,
-                "updated_at": rifle.updated_at.isoformat() if rifle.updated_at else None,
-            }
+            rifle_data = rifle.to_dict()
 
             response = self.supabase.table(
                 "rifles").insert(rifle_data).execute()
