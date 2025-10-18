@@ -132,8 +132,11 @@ class CartridgeService:
                 record["pref_twist_rate_in_per_rev"] = bullet_data.get("pref_twist_rate_in_per_rev")
             
             return CartridgeModel.from_supabase_record(record)
-            
+
         except Exception as e:
+            # If no rows found, return None (this is the expected behavior)
+            if "PGRST116" in str(e) or "0 rows" in str(e):
+                return None
             raise Exception(f"Error fetching cartridge: {str(e)}")
 
     def get_cartridge_types(self) -> List[CartridgeTypeModel]:
