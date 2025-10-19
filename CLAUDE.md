@@ -20,14 +20,12 @@ pip install -r requirements.txt
 
 ### Testing Supabase Configuration
 
-
-
 If using 1Password CLI (as documented in README):
 ```bash
 # op account add --address https://my.1password.com --email johnduffie91@gmail.com
 
-eval $(op signin)
-export SUPABASE_SERVICE_ROLE_KEY=$(op item get "Supabase - ChronoLog" --vault "Private" --field "service_role secret")
+# Retrieve Supabase service role key from 1Password
+export SUPABASE_SERVICE_ROLE_KEY=$(op item get "Supabase - ChronoLog" --vault "Private" --fields "service role secret")
 
 source venv/bin/activate
 python verify_supabase.py
@@ -51,6 +49,26 @@ python run_all_tests.py
 python run_integration_tests.py
 
 # Both test suites must pass before any commit
+```
+
+#### Running Individual Module Integration Tests
+
+To run integration tests for specific modules against real Supabase:
+
+```bash
+# Set up Supabase credentials (required for integration tests)
+export SUPABASE_SERVICE_ROLE_KEY=$(op item get "Supabase - ChronoLog" --vault "Private" --fields "service role secret")
+source venv/bin/activate
+
+# Run specific module integration tests
+python -m pytest bullets/test_bullets_integration.py -v -m integration
+python -m pytest cartridges/test_cartridges_integration.py -v -m integration
+python -m pytest rifles/test_rifles_integration.py -v -m integration
+python -m pytest weather/test_weather_integration.py -v -m integration
+python -m pytest chronograph/test_chronograph.py -v -m integration
+
+# Run without Supabase credentials (mock mode)
+python -m pytest <module>/test_*_integration.py -v -m integration
 ```
 
 ### Commit Requirements
