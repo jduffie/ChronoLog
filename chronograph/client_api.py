@@ -147,6 +147,39 @@ class ChronographAPI:
         except Exception as e:
             raise Exception(f"Error deleting chronograph source: {str(e)}")
 
+    def create_or_get_source_from_device_info(
+        self,
+        user_id: str,
+        device_name: str,
+        device_model: str,
+        serial_number: str,
+    ) -> str:
+        """
+        Create or retrieve existing chronograph source from device information.
+
+        This method intelligently handles device identification:
+        1. Searches for existing source by serial number
+        2. If not found, searches by generated name
+        3. If still not found, creates new source
+
+        Args:
+            user_id: User identifier
+            device_name: Device name from import
+            device_model: Device model from import
+            serial_number: Device serial number from import
+
+        Returns:
+            Source ID (existing or newly created)
+        """
+        try:
+            return self._service.create_or_get_source_from_device_info(
+                user_id, device_name, device_model, serial_number
+            )
+        except Exception as e:
+            raise Exception(
+                f"Error creating/getting source from device info: {str(e)}"
+            )
+
     # ==================== Session Operations ====================
 
     def get_all_sessions(self, user_id: str) -> List[ChronographSession]:
@@ -187,12 +220,17 @@ class ChronographAPI:
     ) -> ChronographSession:
         """Create a new chronograph session with auto-generated ID and timestamps."""
         try:
+            # Convert datetime_local from string to datetime if needed
+            datetime_local = session_data["datetime_local"]
+            if isinstance(datetime_local, str):
+                datetime_local = datetime.fromisoformat(datetime_local)
+
             session = ChronographSession(
                 id=str(uuid.uuid4()),
                 user_id=user_id,
                 tab_name=session_data["tab_name"],
                 session_name=session_data.get("session_name", ""),
-                datetime_local=session_data["datetime_local"],
+                datetime_local=datetime_local,
                 uploaded_at=datetime.now(),
                 file_path=session_data.get("file_path"),
                 chronograph_source_id=session_data.get("chronograph_source_id"),

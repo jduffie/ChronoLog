@@ -225,6 +225,7 @@ class ChronographService:
     def save_chronograph_session(self, session: ChronographSession) -> str:
         """Save a ChronographSession entity to Supabase"""
         try:
+            # Only save core fields that exist in database
             session_data = {
                 "id": session.id,
                 "user_id": session.user_id,
@@ -234,13 +235,13 @@ class ChronographService:
                 "bullet_grain": 0.0,
                 "datetime_local": session.datetime_local.isoformat(),
                 "uploaded_at": session.uploaded_at.isoformat(),
-                "file_path": session.file_path,
-                "shot_count": session.shot_count,
-                "avg_speed_mps": session.avg_speed_mps,
-                "std_dev_mps": session.std_dev_mps,
-                "min_speed_mps": session.min_speed_mps,
-                "max_speed_mps": session.max_speed_mps,
             }
+
+            # Add optional fields if they have values
+            if session.file_path:
+                session_data["file_path"] = session.file_path
+            if hasattr(session, 'chronograph_source_id') and session.chronograph_source_id:
+                session_data["chronograph_source_id"] = session.chronograph_source_id
 
             response = self.supabase.table(
                 "chrono_sessions").insert(session_data).execute()
@@ -463,3 +464,62 @@ class ChronographService:
         except Exception as e:
             raise Exception(
                 f"Error updating chronograph source with device info: {str(e)}")
+
+    def create_or_get_source_from_device_info(
+            self,
+            user_id: str,
+            device_name: str,
+            device_model: str,
+            serial_number: str) -> str:
+        """Create or get existing chronograph source from device information"""
+        try:
+            # First try to find existing source by serial number
+            if serial_number:
+                response = (
+                    self.supabase.table("chronograph_sources")
+                    .select("*")
+                    .eq("user_id", user_id)
+                    .eq("serial_number", serial_number)
+                    .execute()
+                )
+                if response.data:
+                    return response.data[0]["id"]
+
+            # Generate a name from device info
+            source_name = f"{device_name}" if device_name else f"{device_model}"
+            if serial_number:
+                # Last 4 digits of serial
+                source_name += f" ({serial_number[-4:]})"
+
+            # Check if source with this name already exists
+            existing = self.get_source_by_name(user_id, source_name)
+            if existing:
+                return existing.id
+
+            # Create new source
+            import uuid
+            source_data = {
+                "id": str(uuid.uuid4()),
+                "user_id": user_id,
+                "name": source_name,
+                "device_name": device_name if device_name else None,
+                "model": device_model if device_model else None,
+                "serial_number": serial_number if serial_number else None,
+                "created_at": datetime.now().isoformat(),
+                "updated_at": datetime.now().isoformat()
+            }
+
+            response = (
+                self.supabase.table("chronograph_sources")
+                .insert(source_data)
+                .execute()
+            )
+
+            if not response.data:
+                raise Exception("Failed to create chronograph source")
+
+            return response.data[0]["id"]
+
+        except Exception as e:
+            raise Exception(
+                f"Error creating/getting source from device info: {str(e)}")
