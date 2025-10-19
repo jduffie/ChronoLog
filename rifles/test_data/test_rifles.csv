@@ -1,0 +1,4 @@
+name,cartridge_type,barrel_twist_ratio,barrel_length,scope,trigger
+TEST_Remington_700,6.5mm Creedmoor,1:8,24 inches,TEST Vortex Viper PST 5-25x50,TEST Timney 2-stage 2.5lb
+TEST_Bergara_HMR,6.5mm Creedmoor,1:8,26 inches,TEST Nightforce ATACR 7-35x56,TEST TriggerTech Diamond 1.5lb
+TEST_Custom_Build,308 Winchester,1:10,20 inches,TEST Leopold Mark 5HD 5-25x56,TEST Geissele SSA 3.5lb
