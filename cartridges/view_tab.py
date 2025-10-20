@@ -3,6 +3,8 @@ from datetime import datetime
 import pandas as pd
 import streamlit as st
 
+from .api import CartridgesAPI
+
 
 def render_view_cartridges_tab(user, supabase):
 
@@ -10,85 +12,60 @@ def render_view_cartridges_tab(user, supabase):
     if 'cartridges' in st.session_state:
         del st.session_state.cartridges
 
+    # Initialize API
+    cartridges_api = CartridgesAPI(supabase)
+
     try:
         # Get cartridges: both user-owned and global ones
-        # Query the cartridges table directly with JOIN to bullets
-        response = (
-            supabase.table("cartridges")
-            .select(
-                """
-                *,
-                bullets:bullet_id (
-                    id,
-                    manufacturer,
-                    model,
-                    weight_grains,
-                    bullet_diameter_groove_mm,
-                    bore_diameter_land_mm,
-                    bullet_length_mm,
-                    ballistic_coefficient_g1,
-                    ballistic_coefficient_g7,
-                    sectional_density,
-                    min_req_twist_rate_in_per_rev,
-                    pref_twist_rate_in_per_rev
-                )
-            """
-            )
-            .or_(f"owner_id.eq.{user['id']},owner_id.is.null")
-            .execute()
-        )
+        cartridges = cartridges_api.get_all_cartridges_for_user(user['id'])
 
-        if not response.data:
+        if not cartridges:
             st.info(
                 "No cartridge entries found. Create factory cartridges or custom cartridges to see them here."
             )
             return
 
-        # Process the response data to flatten the bullet information
+        # Process the cartridge models to flatten the bullet information
         processed_data = []
-        for cartridge in response.data:
-            # Flatten the nested bullet data
-            bullet_info = cartridge.get("bullets", {}) or {}
-
+        for cartridge in cartridges:
             # Ensure consistent data types for Arrow compatibility
             processed_record = {
-                "id": cartridge.get("id", ""),
-                "owner_id": cartridge.get("owner_id", ""),
-                "make": cartridge.get("make", ""),
-                "model": cartridge.get("model", ""),
-                "cartridge_type": cartridge.get("cartridge_type", ""),
-                "bullet_id": cartridge.get("bullet_id", ""),
-                "data_source_name": cartridge.get("data_source_name", ""),
-                "data_source_link": cartridge.get("data_source_link", ""),
-                "created_at": cartridge.get("created_at", ""),
-                "updated_at": cartridge.get("updated_at", ""),
-                "source": "Public" if cartridge.get("owner_id") is None else "User",
-                "manufacturer": cartridge.get("make", ""),
-                "bullet_manufacturer": bullet_info.get("manufacturer") or "",
-                "bullet_model": bullet_info.get("model") or "",
-                "bullet_weight_grains": str(bullet_info.get("weight_grains") or ""),
+                "id": cartridge.id,
+                "owner_id": cartridge.owner_id or "",
+                "make": cartridge.make,
+                "model": cartridge.model,
+                "cartridge_type": cartridge.cartridge_type,
+                "bullet_id": cartridge.bullet_id,
+                "data_source_name": cartridge.data_source_name or "",
+                "data_source_link": cartridge.data_source_link or "",
+                "created_at": cartridge.created_at or "",
+                "updated_at": cartridge.updated_at or "",
+                "source": "Public" if cartridge.owner_id is None else "User",
+                "manufacturer": cartridge.make,
+                "bullet_manufacturer": cartridge.bullet.manufacturer if cartridge.bullet else "",
+                "bullet_model": cartridge.bullet.model if cartridge.bullet else "",
+                "bullet_weight_grains": str(cartridge.bullet.weight_grains if cartridge.bullet else ""),
                 "bullet_diameter_groove_mm": str(
-                    bullet_info.get("bullet_diameter_groove_mm") or ""
+                    cartridge.bullet.bullet_diameter_groove_mm if cartridge.bullet else ""
                 ),
                 "bore_diameter_land_mm": str(
-                    bullet_info.get("bore_diameter_land_mm") or ""
+                    cartridge.bullet.bore_diameter_land_mm if cartridge.bullet else ""
                 ),
-                "bullet_length_mm": str(bullet_info.get("bullet_length_mm") or ""),
+                "bullet_length_mm": str(cartridge.bullet.bullet_length_mm if cartridge.bullet and cartridge.bullet.bullet_length_mm else ""),
                 "ballistic_coefficient_g1": str(
-                    bullet_info.get("ballistic_coefficient_g1") or ""
+                    cartridge.bullet.ballistic_coefficient_g1 if cartridge.bullet and cartridge.bullet.ballistic_coefficient_g1 else ""
                 ),
                 "ballistic_coefficient_g7": str(
-                    bullet_info.get("ballistic_coefficient_g7") or ""
+                    cartridge.bullet.ballistic_coefficient_g7 if cartridge.bullet and cartridge.bullet.ballistic_coefficient_g7 else ""
                 ),
-                "sectional_density": str(bullet_info.get("sectional_density") or ""),
+                "sectional_density": str(cartridge.bullet.sectional_density if cartridge.bullet and cartridge.bullet.sectional_density else ""),
                 "min_req_twist_rate_in_per_rev": str(
-                    bullet_info.get("min_req_twist_rate_in_per_rev") or ""
+                    cartridge.bullet.min_req_twist_rate_in_per_rev if cartridge.bullet and cartridge.bullet.min_req_twist_rate_in_per_rev else ""
                 ),
                 "pref_twist_rate_in_per_rev": str(
-                    bullet_info.get("pref_twist_rate_in_per_rev") or ""
+                    cartridge.bullet.pref_twist_rate_in_per_rev if cartridge.bullet and cartridge.bullet.pref_twist_rate_in_per_rev else ""
                 ),
-                "bullet_name": f"{bullet_info.get('manufacturer') or ''} {bullet_info.get('model') or ''} {bullet_info.get('weight_grains') or ''}gr".strip()
-                or "Unknown",
+                "bullet_name": cartridge.bullet.display_name if cartridge.bullet else "Unknown",
             }
             processed_data.append(processed_record)
 
@@ -420,17 +397,14 @@ def render_view_cartridges_tab(user, supabase):
                         type="primary",
                             use_container_width=True):
                         try:
-                            # Delete the cartridge
-                            delete_response = (supabase.table("cartridges") .delete() .eq(
-                                "id", st.session_state.cartridges['deleting_cartridge_id']) .execute())
+                            # Delete the cartridge using API
+                            cartridges_api.delete_cartridge(
+                                st.session_state.cartridges['deleting_cartridge_id'])
 
-                            if delete_response.data:
-                                st.success(
-                                    f"Deleted: {cartridge_to_delete['make']} {cartridge_to_delete['model']}")
-                                del st.session_state.cartridges['deleting_cartridge_id']
-                                st.rerun()
-                            else:
-                                st.error("Failed to delete cartridge.")
+                            st.success(
+                                f"Deleted: {cartridge_to_delete['make']} {cartridge_to_delete['model']}")
+                            del st.session_state.cartridges['deleting_cartridge_id']
+                            st.rerun()
                         except Exception as e:
                             st.error(f"Error deleting cartridge: {str(e)}")
 
