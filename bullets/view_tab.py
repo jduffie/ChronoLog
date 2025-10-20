@@ -1,7 +1,7 @@
 import pandas as pd
 import streamlit as st
 
-from .service import BulletsService
+from .api import BulletsAPI
 
 
 def render_view_bullets_tab(user, supabase):
@@ -10,12 +10,12 @@ def render_view_bullets_tab(user, supabase):
     if 'bullets' in st.session_state:
         del st.session_state.bullets
 
-    # Initialize service
-    bullets_service = BulletsService(supabase)
+    # Initialize API
+    bullets_api = BulletsAPI(supabase)
 
     try:
         # Get all bullets entries (globally available, admin-maintained)
-        bullets = bullets_service.get_all_bullets()
+        bullets = bullets_api.get_all_bullets()
 
         if not bullets:
             st.info(
@@ -50,7 +50,7 @@ def render_view_bullets_tab(user, supabase):
                     sorted(df["weight_grains"].unique().tolist())
                 selected_weight = st.selectbox("Filter by Weight:", weights)
 
-        # Apply filters using service
+        # Apply filters using API
         if (
             selected_manufacturer == "All"
             and selected_bore_diameter_mm == "All"
@@ -58,7 +58,7 @@ def render_view_bullets_tab(user, supabase):
         ):
             filtered_bullets = bullets
         else:
-            filtered_bullets = bullets_service.filter_bullets(
+            filtered_bullets = bullets_api.filter_bullets(
                 manufacturer=(
                     selected_manufacturer if selected_manufacturer != "All" else None
                 ),
@@ -316,14 +316,14 @@ def render_view_bullets_tab(user, supabase):
 
                         min_req_twist_rate_in_per_rev = st.number_input(
                             "Min Required Twist Rate (in/rev)",
-                            min_value=0,
-                            max_value=30,
-                            step=1,
-                            format="%d",
+                            min_value=0.0,
+                            max_value=30.0,
+                            step=1.0,
+                            format="%.1f",
                             value=(
                                 selected_bullet_data.min_req_twist_rate_in_per_rev
                                 if selected_bullet_data.min_req_twist_rate_in_per_rev is not None
-                                else 0
+                                else 0.0
                             ),
                             help="Minimum required twist rate in inches per revolution (optional)",
                         )
@@ -333,14 +333,14 @@ def render_view_bullets_tab(user, supabase):
                     with col3:
                         pref_twist_rate_in_per_rev = st.number_input(
                             "Preferred Twist Rate (in/rev)",
-                            min_value=0,
-                            max_value=30,
-                            step=1,
-                            format="%d",
+                            min_value=0.0,
+                            max_value=30.0,
+                            step=1.0,
+                            format="%.1f",
                             value=(
                                 selected_bullet_data.pref_twist_rate_in_per_rev
                                 if selected_bullet_data.pref_twist_rate_in_per_rev is not None
-                                else 0
+                                else 0.0
                             ),
                             help="Preferred twist rate in inches per revolution (optional)",
                         )
@@ -430,7 +430,7 @@ def render_view_bullets_tab(user, supabase):
                                     "data_source_url": data_source_url_value,
                                 }
 
-                                updated_bullet = bullets_service.update_bullet(
+                                updated_bullet = bullets_api.update_bullet(
                                     selected_bullet_data.id, update_data
                                 )
                                 st.success(

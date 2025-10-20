@@ -1,6 +1,6 @@
 import streamlit as st
 
-from .service import BulletsService
+from .api import BulletsAPI
 
 
 def render_create_bullets_tab(user, supabase):
@@ -21,8 +21,8 @@ def render_create_bullets_tab(user, supabase):
         )
         return
 
-    # Initialize service (only for admin users)
-    bullets_service = BulletsService(supabase)
+    # Initialize API (only for admin users)
+    bullets_api = BulletsAPI(supabase)
 
     # Create form for bullets entry
     with st.form("create_bullets_form"):
@@ -226,8 +226,8 @@ def render_create_bullets_tab(user, supabase):
                     "data_source_url": data_source_url_value,
                 }
 
-                # Create bullet through service
-                bullet = bullets_service.create_bullet(bullets_data)
+                # Create bullet through API
+                bullet = bullets_api.create_bullet(bullets_data)
 
                 st.success(f"✅ Bullet entry created successfully!")
                 st.info(f"📋 **{bullet.display_name}**")
