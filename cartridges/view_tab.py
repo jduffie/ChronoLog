@@ -25,9 +25,19 @@ def render_view_cartridges_tab(user, supabase):
             )
             return
 
-        # Process the cartridge models to flatten the bullet information
+        # Process the cartridge models - bullet fields are already flattened in CartridgeModel
         processed_data = []
         for cartridge in cartridges:
+            # Build bullet display name from flattened fields
+            bullet_name = "Unknown"
+            if cartridge.bullet_manufacturer and cartridge.bullet_model and cartridge.bullet_weight_grains:
+                # Format similar to BulletModel.display_name
+                weight = cartridge.bullet_weight_grains
+                weight_str = f"{weight:.0f}" if weight == int(weight) else f"{weight}"
+                bore = cartridge.bore_diameter_land_mm or ""
+                groove = cartridge.bullet_diameter_groove_mm or ""
+                bullet_name = f"{cartridge.bullet_manufacturer} {cartridge.bullet_model} {weight_str}gr {bore}mm/{groove}mm"
+
             # Ensure consistent data types for Arrow compatibility
             processed_record = {
                 "id": cartridge.id,
@@ -35,37 +45,25 @@ def render_view_cartridges_tab(user, supabase):
                 "make": cartridge.make,
                 "model": cartridge.model,
                 "cartridge_type": cartridge.cartridge_type,
-                "bullet_id": cartridge.bullet_id,
+                "bullet_id": cartridge.bullet_id or "",
                 "data_source_name": cartridge.data_source_name or "",
                 "data_source_link": cartridge.data_source_link or "",
-                "created_at": cartridge.created_at or "",
-                "updated_at": cartridge.updated_at or "",
+                "created_at": str(cartridge.created_at) if cartridge.created_at else "",
+                "updated_at": str(cartridge.updated_at) if cartridge.updated_at else "",
                 "source": "Public" if cartridge.owner_id is None else "User",
                 "manufacturer": cartridge.make,
-                "bullet_manufacturer": cartridge.bullet.manufacturer if cartridge.bullet else "",
-                "bullet_model": cartridge.bullet.model if cartridge.bullet else "",
-                "bullet_weight_grains": str(cartridge.bullet.weight_grains if cartridge.bullet else ""),
-                "bullet_diameter_groove_mm": str(
-                    cartridge.bullet.bullet_diameter_groove_mm if cartridge.bullet else ""
-                ),
-                "bore_diameter_land_mm": str(
-                    cartridge.bullet.bore_diameter_land_mm if cartridge.bullet else ""
-                ),
-                "bullet_length_mm": str(cartridge.bullet.bullet_length_mm if cartridge.bullet and cartridge.bullet.bullet_length_mm else ""),
-                "ballistic_coefficient_g1": str(
-                    cartridge.bullet.ballistic_coefficient_g1 if cartridge.bullet and cartridge.bullet.ballistic_coefficient_g1 else ""
-                ),
-                "ballistic_coefficient_g7": str(
-                    cartridge.bullet.ballistic_coefficient_g7 if cartridge.bullet and cartridge.bullet.ballistic_coefficient_g7 else ""
-                ),
-                "sectional_density": str(cartridge.bullet.sectional_density if cartridge.bullet and cartridge.bullet.sectional_density else ""),
-                "min_req_twist_rate_in_per_rev": str(
-                    cartridge.bullet.min_req_twist_rate_in_per_rev if cartridge.bullet and cartridge.bullet.min_req_twist_rate_in_per_rev else ""
-                ),
-                "pref_twist_rate_in_per_rev": str(
-                    cartridge.bullet.pref_twist_rate_in_per_rev if cartridge.bullet and cartridge.bullet.pref_twist_rate_in_per_rev else ""
-                ),
-                "bullet_name": cartridge.bullet.display_name if cartridge.bullet else "Unknown",
+                "bullet_manufacturer": cartridge.bullet_manufacturer or "",
+                "bullet_model": cartridge.bullet_model or "",
+                "bullet_weight_grains": str(cartridge.bullet_weight_grains or ""),
+                "bullet_diameter_groove_mm": str(cartridge.bullet_diameter_groove_mm or ""),
+                "bore_diameter_land_mm": str(cartridge.bore_diameter_land_mm or ""),
+                "bullet_length_mm": str(cartridge.bullet_length_mm or ""),
+                "ballistic_coefficient_g1": str(cartridge.ballistic_coefficient_g1 or ""),
+                "ballistic_coefficient_g7": str(cartridge.ballistic_coefficient_g7 or ""),
+                "sectional_density": str(cartridge.sectional_density or ""),
+                "min_req_twist_rate_in_per_rev": str(cartridge.min_req_twist_rate_in_per_rev or ""),
+                "pref_twist_rate_in_per_rev": str(cartridge.pref_twist_rate_in_per_rev or ""),
+                "bullet_name": bullet_name,
             }
             processed_data.append(processed_record)
 

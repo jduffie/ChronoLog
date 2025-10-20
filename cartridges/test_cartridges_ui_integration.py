@@ -196,6 +196,39 @@ class TestCartridgesUIIntegration(unittest.TestCase):
         except AttributeError as e:
             self.fail(f"BulletModel missing display_name property: {e}")
 
+    def test_cartridge_model_has_flattened_bullet_fields(self):
+        """Test that CartridgeModel has flattened bullet fields (not a bullet property)"""
+        # CartridgeModel should have bullet_manufacturer, bullet_model, etc. NOT cartridge.bullet
+        # This is used in view_tab.py and edit_tab.py
+        from cartridges.models import CartridgeModel
+
+        cartridge = CartridgeModel(
+            id="cart-123",
+            owner_id="user-123",
+            make="Federal",
+            model="Gold Medal",
+            cartridge_type=".308 Winchester",
+            bullet_id="bullet-123",
+            bullet_manufacturer="Sierra",
+            bullet_model="MatchKing",
+            bullet_weight_grains=168.0,
+            bullet_diameter_groove_mm=7.82,
+            bore_diameter_land_mm=7.62,
+        )
+
+        try:
+            # Should have flattened fields
+            self.assertEqual(cartridge.bullet_manufacturer, "Sierra")
+            self.assertEqual(cartridge.bullet_model, "MatchKing")
+            self.assertEqual(cartridge.bullet_weight_grains, 168.0)
+
+            # Should NOT have a bullet property
+            self.assertFalse(hasattr(cartridge, "bullet"),
+                           "CartridgeModel should NOT have a 'bullet' property - fields are flattened")
+
+        except AttributeError as e:
+            self.fail(f"CartridgeModel missing flattened bullet fields: {e}")
+
 
 if __name__ == "__main__":
     unittest.main()

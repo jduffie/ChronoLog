@@ -199,14 +199,23 @@ def render_edit_cartridges_tab(user, supabase):
             # Process and display user cartridges
             user_cartridges = []
             for cartridge in user_cartridges_models:
+                # Build bullet display name from flattened fields
+                bullet_name = "Unknown"
+                if cartridge.bullet_manufacturer and cartridge.bullet_model and cartridge.bullet_weight_grains:
+                    weight = cartridge.bullet_weight_grains
+                    weight_str = f"{weight:.0f}" if weight == int(weight) else f"{weight}"
+                    bore = cartridge.bore_diameter_land_mm or ""
+                    groove = cartridge.bullet_diameter_groove_mm or ""
+                    bullet_name = f"{cartridge.bullet_manufacturer} {cartridge.bullet_model} {weight_str}gr {bore}mm/{groove}mm"
+
                 user_cartridges.append(
                     {
                         "Manufacturer": cartridge.make,
                         "Model": cartridge.model,
                         "Cartridge Type": cartridge.cartridge_type,
-                        "Bullet": cartridge.bullet.display_name if cartridge.bullet else "Unknown",
+                        "Bullet": bullet_name,
                         "Created": (
-                            cartridge.created_at[:10]
+                            str(cartridge.created_at)[:10]
                             if cartridge.created_at
                             else ""
                         ),
