@@ -175,7 +175,7 @@ def render_edit_cartridges_tab(user, supabase):
                     }
 
                     # Create the cartridge using API
-                    cartridges_api.create_cartridge(cartridge_data)
+                    cartridges_api.create_user_cartridge(cartridge_data, user["id"])
 
                     st.success("✅ Cartridge created successfully!")
                     st.info(
@@ -191,7 +191,9 @@ def render_edit_cartridges_tab(user, supabase):
 
         # Show existing user cartridges
         st.subheader(" Your Cartridges")
-        user_cartridges_models = cartridges_api.get_user_cartridges(user["id"])
+        all_cartridges = cartridges_api.get_all_cartridges(user["id"])
+        # Filter for user-owned cartridges only
+        user_cartridges_models = [c for c in all_cartridges if c.owner_id == user["id"]]
 
         if user_cartridges_models:
             # Process and display user cartridges

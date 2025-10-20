@@ -17,7 +17,7 @@ def render_view_cartridges_tab(user, supabase):
 
     try:
         # Get cartridges: both user-owned and global ones
-        cartridges = cartridges_api.get_all_cartridges_for_user(user['id'])
+        cartridges = cartridges_api.get_all_cartridges(user['id'])
 
         if not cartridges:
             st.info(
@@ -398,8 +398,9 @@ def render_view_cartridges_tab(user, supabase):
                             use_container_width=True):
                         try:
                             # Delete the cartridge using API
-                            cartridges_api.delete_cartridge(
-                                st.session_state.cartridges['deleting_cartridge_id'])
+                            cartridges_api.delete_user_cartridge(
+                                st.session_state.cartridges['deleting_cartridge_id'],
+                                user['id'])
 
                             st.success(
                                 f"Deleted: {cartridge_to_delete['make']} {cartridge_to_delete['model']}")
