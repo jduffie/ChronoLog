@@ -7,20 +7,20 @@ Handles the business logic and data processing for DOPE session creation.
 from datetime import datetime
 from typing import List
 
+from cartridges.api import CartridgesAPI
 from cartridges.models import CartridgeModel, CartridgeTypeModel
-from cartridges.service import CartridgeService
 from chronograph.chronograph_session_models import (
     ChronographSession,
 )
-from chronograph.service import ChronographService
+from chronograph.client_api import ChronographAPI
+from dope.api import DopeAPI
 from dope.models import DopeSessionModel
-from dope.service import DopeService
 from dope.weather_associator import WeatherSessionAssociator
 from mapping.submission.submission_model import SubmissionModel
+from rifles.api import RiflesAPI
 from rifles.models import RifleModel
-from rifles.service import RifleService
+from weather.api import WeatherAPI
 from weather.models import WeatherSource
-from weather.service import WeatherService
 
 
 class DopeCreateBusiness:
@@ -28,11 +28,11 @@ class DopeCreateBusiness:
 
     def __init__(self, supabase):
         self.supabase = supabase
-        self.chrono_service = ChronographService(supabase)
-        self.dope_service = DopeService(supabase)
-        self.cartridge_service = CartridgeService(supabase)
-        self.rifle_service = RifleService(supabase)
-        self.weather_service = WeatherService(supabase)
+        self.chrono_api = ChronographAPI(supabase)
+        self.dope_api = DopeAPI(supabase)
+        self.cartridge_api = CartridgesAPI(supabase)
+        self.rifle_api = RiflesAPI(supabase)
+        self.weather_api = WeatherAPI(supabase)
         self.weather_associator = WeatherSessionAssociator(supabase)
         self.submission_model = SubmissionModel()
 
@@ -40,10 +40,10 @@ class DopeCreateBusiness:
         """Get chronograph sessions not yet used in any DOPE session"""
         try:
             # Get all chrono sessions for user
-            all_chrono_sessions = self.chrono_service.get_sessions_for_user(user_id)
+            all_chrono_sessions = self.chrono_api.get_sessions_for_user(user_id)
 
             # Get all DOPE sessions to find used chrono session IDs
-            all_dope_sessions = self.dope_service.get_sessions_for_user(user_id)
+            all_dope_sessions = self.dope_api.get_sessions_for_user(user_id)
             used_chrono_ids = {
                 session.chrono_session_id
                 for session in all_dope_sessions
@@ -64,21 +64,21 @@ class DopeCreateBusiness:
     def get_rifles_for_user(self, user_id: str) -> List[RifleModel]:
         """Get rifles for user"""
         try:
-            return self.rifle_service.get_rifles_for_user(user_id)
+            return self.rifle_api.get_all_rifles(user_id)
         except Exception as e:
             raise Exception(f"Error loading rifles: {str(e)}")
 
     def get_cartridges_for_user(self, user_id: str) -> List[CartridgeModel]:
         """Get cartridges for user"""
         try:
-            return self.cartridge_service.get_cartridges_for_user(user_id)
+            return self.cartridge_api.get_all_cartridges(user_id)
         except Exception as e:
             raise Exception(f"Error loading cartridges: {str(e)}")
 
     def get_cartridge_types(self) -> List[CartridgeTypeModel]:
         """Get available cartridge types"""
         try:
-            return self.cartridge_service.get_cartridge_types()
+            return self.cartridge_api.get_cartridge_types()
         except Exception as e:
             raise Exception(f"Error loading cartridge types: {str(e)}")
 
@@ -93,7 +93,7 @@ class DopeCreateBusiness:
     def get_weather_sources_for_user(self, user_id: str) -> List[WeatherSource]:
         """Get weather sources for user"""
         try:
-            return self.weather_service.get_sources_for_user(user_id)
+            return self.weather_api.get_all_sources(user_id)
         except Exception as e:
             raise Exception(f"Error loading weather sources: {str(e)}")
 
@@ -162,7 +162,7 @@ class DopeCreateBusiness:
     def create_dope_session(self, session_data: dict, user_id: str):
         """Create a new DOPE session"""
         try:
-            return self.dope_service.create_session(session_data, user_id)
+            return self.dope_api.create_session(session_data, user_id)
         except Exception as e:
             raise Exception(f"Error creating DOPE session: {str(e)}")
 

@@ -14,8 +14,8 @@ from typing import Any, Dict, List
 import pandas as pd
 import streamlit as st
 
+from dope.api import DopeAPI
 from dope.models import DopeSessionModel
-from dope.service import DopeService
 from supabase import create_client
 from utils.ui_formatters import (
     format_energy,
@@ -46,18 +46,15 @@ from utils.unit_conversions import (
 
 # Add the root directory to the path so we can import our modules
 sys.path.append(
-    os.path.dirname(
-        os.path.dirname(
-            os.path.dirname(
-                os.path.abspath(__file__)))))
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
 
 
 def render_view_page():
     """Render the comprehensive DOPE view page with filtering and session management"""
     # Check authentication - with fallback for testing
     if "user" not in st.session_state or not st.session_state.user:
-        st.warning(
-            "No user authentication found - using test user for development")
+        st.warning("No user authentication found - using test user for development")
         # Create a mock user for testing
         st.session_state.user = {
             "id": "google-oauth2|111273793361054745867",
@@ -85,11 +82,11 @@ def render_view_page():
         url = st.secrets["supabase"]["url"]
         key = st.secrets["supabase"]["key"]
         supabase = create_client(url, key)
-        service = DopeService(supabase)
+        service = DopeAPI(supabase)
     except Exception as e:
         st.error(f"Error connecting to database: {str(e)}")
         st.info("Using mock data for development")
-        service = DopeService(None)
+        service = DopeAPI(None)
 
     try:
         # Initialize private session state for DOPE view page
@@ -113,10 +110,8 @@ def render_view_page():
                 st.cache_data.clear()
                 st.rerun()
 
-
-
         # Advanced Filters Section (on main page)
-        render_main_page_filters(service, user_id)
+        render_main_page_filters(dope_api, user_id)
 
         # Get filtered sessions
         sessions = get_filtered_sessions(
@@ -144,8 +139,7 @@ def render_view_page():
                 (
                     s
                     for s in sessions
-                    if s.id
-                    == st.session_state.dope_view["selected_session_id"]
+                    if s.id == st.session_state.dope_view["selected_session_id"]
                 ),
                 None,
             )
@@ -159,7 +153,7 @@ def render_view_page():
         )
 
 
-def render_main_page_filters(service: DopeService, user_id: str):
+def render_main_page_filters(dope_api: DopeAPI, user_id: str):
     """Render advanced filters section on the main page with expandable controls"""
     # Advanced Filters Section with expander
     with st.expander(
@@ -177,9 +171,7 @@ def render_main_page_filters(service: DopeService, user_id: str):
             # Global search
             search_term = st.text_input(
                 "🔍 Search Sessions",
-                value=st.session_state.dope_view["filters"].get(
-                    "search", ""
-                ),
+                value=st.session_state.dope_view["filters"].get("search", ""),
                 placeholder="Search names, cartridges, bullets, ranges...",
                 help="Search across all text fields",
             )
@@ -201,13 +193,11 @@ def render_main_page_filters(service: DopeService, user_id: str):
 
         # Get unique values for filters
         try:
-            rifle_names = service.get_unique_values(user_id, "rifle_name")
-            cartridge_types = service.get_unique_values(
-                user_id, "cartridge_type")
-            cartridge_makes = service.get_unique_values(
-                user_id, "cartridge_make")
-            bullet_makes = service.get_unique_values(user_id, "bullet_make")
-            range_names = service.get_unique_values(user_id, "range_name")
+            rifle_names = dope_api.get_unique_values(user_id, "rifle_name")
+            cartridge_types = dope_api.get_unique_values(user_id, "cartridge_type")
+            cartridge_makes = dope_api.get_unique_values(user_id, "cartridge_make")
+            bullet_makes = dope_api.get_unique_values(user_id, "bullet_make")
+            range_names = dope_api.get_unique_values(user_id, "range_name")
         except Exception:
             rifle_names = cartridge_types = cartridge_makes = bullet_makes = (
                 range_names
@@ -224,27 +214,23 @@ def render_main_page_filters(service: DopeService, user_id: str):
             with date_col1:
                 date_from = st.date_input(
                     "From Date",
-                    value=st.session_state.dope_view["filters"].get(
-                        "date_from"
-                    ),
+                    value=st.session_state.dope_view["filters"].get("date_from"),
                     key="date_from_filter",
                 )
             with date_col2:
                 date_to = st.date_input(
                     "To Date",
-                    value=st.session_state.dope_view["filters"].get(
-                        "date_to"
-                    ),
+                    value=st.session_state.dope_view["filters"].get("date_to"),
                     key="date_to_filter",
                 )
 
             if date_from:
-                st.session_state.dope_view["filters"]["date_from"] = (
-                    datetime.combine(date_from, datetime.min.time())
+                st.session_state.dope_view["filters"]["date_from"] = datetime.combine(
+                    date_from, datetime.min.time()
                 )
             if date_to:
-                st.session_state.dope_view["filters"]["date_to"] = (
-                    datetime.combine(date_to, datetime.max.time())
+                st.session_state.dope_view["filters"]["date_to"] = datetime.combine(
+                    date_to, datetime.max.time()
                 )
 
             # Additional time-based filters can be added here as needed
@@ -256,9 +242,9 @@ def render_main_page_filters(service: DopeService, user_id: str):
             if rifle_names:
                 # Initialize widget with current filter value only on first run
                 if "rifle_name_selectbox" not in st.session_state:
-                    current_value = st.session_state.dope_view[
-                        "filters"
-                    ].get("rifle_name", "All")
+                    current_value = st.session_state.dope_view["filters"].get(
+                        "rifle_name", "All"
+                    )
                     if current_value in rifle_names:
                         st.session_state.rifle_name_selectbox = current_value
                     else:
@@ -272,9 +258,7 @@ def render_main_page_filters(service: DopeService, user_id: str):
 
                 # Update private state based on widget value
                 if rifle_name != "All":
-                    st.session_state.dope_view["filters"][
-                        "rifle_name"
-                    ] = rifle_name
+                    st.session_state.dope_view["filters"]["rifle_name"] = rifle_name
                 elif "rifle_name" in st.session_state.dope_view["filters"]:
                     del st.session_state.dope_view["filters"]["rifle_name"]
 
@@ -282,9 +266,9 @@ def render_main_page_filters(service: DopeService, user_id: str):
             if range_names:
                 # Initialize widget with current filter value only on first run
                 if "range_name_selectbox" not in st.session_state:
-                    current_value = st.session_state.dope_view[
-                        "filters"
-                    ].get("range_name", "All")
+                    current_value = st.session_state.dope_view["filters"].get(
+                        "range_name", "All"
+                    )
                     if current_value in range_names:
                         st.session_state.range_name_selectbox = current_value
                     else:
@@ -298,9 +282,7 @@ def render_main_page_filters(service: DopeService, user_id: str):
 
                 # Update private state based on widget value
                 if range_name != "All":
-                    st.session_state.dope_view["filters"][
-                        "range_name"
-                    ] = range_name
+                    st.session_state.dope_view["filters"]["range_name"] = range_name
                 elif "range_name" in st.session_state.dope_view["filters"]:
                     del st.session_state.dope_view["filters"]["range_name"]
 
@@ -315,9 +297,7 @@ def render_main_page_filters(service: DopeService, user_id: str):
                 step=25,
             )
             if distance_range != (0, 1000):
-                st.session_state.dope_view["filters"][
-                    "distance_range"
-                ] = distance_range
+                st.session_state.dope_view["filters"]["distance_range"] = distance_range
             elif "distance_range" in st.session_state.dope_view["filters"]:
                 del st.session_state.dope_view["filters"]["distance_range"]
 
@@ -328,9 +308,9 @@ def render_main_page_filters(service: DopeService, user_id: str):
             if cartridge_makes:
                 # Initialize widget with current filter value only on first run
                 if "cartridge_make_selectbox" not in st.session_state:
-                    current_value = st.session_state.dope_view[
-                        "filters"
-                    ].get("cartridge_make", "All")
+                    current_value = st.session_state.dope_view["filters"].get(
+                        "cartridge_make", "All"
+                    )
                     if current_value in cartridge_makes:
                         st.session_state.cartridge_make_selectbox = current_value
                     else:
@@ -347,19 +327,15 @@ def render_main_page_filters(service: DopeService, user_id: str):
                     st.session_state.dope_view["filters"][
                         "cartridge_make"
                     ] = cartridge_make
-                elif (
-                    "cartridge_make" in st.session_state.dope_view["filters"]
-                ):
-                    del st.session_state.dope_view["filters"][
-                        "cartridge_make"
-                    ]
+                elif "cartridge_make" in st.session_state.dope_view["filters"]:
+                    del st.session_state.dope_view["filters"]["cartridge_make"]
 
             if cartridge_types:
                 # Initialize widget with current filter value only on first run
                 if "cartridge_type_selectbox" not in st.session_state:
-                    current_value = st.session_state.dope_view[
-                        "filters"
-                    ].get("cartridge_type", "All")
+                    current_value = st.session_state.dope_view["filters"].get(
+                        "cartridge_type", "All"
+                    )
                     if current_value in cartridge_types:
                         st.session_state.cartridge_type_selectbox = current_value
                     else:
@@ -376,20 +352,16 @@ def render_main_page_filters(service: DopeService, user_id: str):
                     st.session_state.dope_view["filters"][
                         "cartridge_type"
                     ] = cartridge_type
-                elif (
-                    "cartridge_type" in st.session_state.dope_view["filters"]
-                ):
-                    del st.session_state.dope_view["filters"][
-                        "cartridge_type"
-                    ]
+                elif "cartridge_type" in st.session_state.dope_view["filters"]:
+                    del st.session_state.dope_view["filters"]["cartridge_type"]
 
             # Bullet filters
             if bullet_makes:
                 # Initialize widget with current filter value only on first run
                 if "bullet_make_selectbox" not in st.session_state:
-                    current_value = st.session_state.dope_view[
-                        "filters"
-                    ].get("bullet_make", "All")
+                    current_value = st.session_state.dope_view["filters"].get(
+                        "bullet_make", "All"
+                    )
                     if current_value in bullet_makes:
                         st.session_state.bullet_make_selectbox = current_value
                     else:
@@ -403,9 +375,7 @@ def render_main_page_filters(service: DopeService, user_id: str):
 
                 # Update private state based on widget value
                 if bullet_make != "All":
-                    st.session_state.dope_view["filters"][
-                        "bullet_make"
-                    ] = bullet_make
+                    st.session_state.dope_view["filters"]["bullet_make"] = bullet_make
                 elif "bullet_make" in st.session_state.dope_view["filters"]:
                     del st.session_state.dope_view["filters"]["bullet_make"]
 
@@ -423,20 +393,17 @@ def render_main_page_filters(service: DopeService, user_id: str):
                 st.session_state.dope_view["filters"][
                     "bullet_weight_range"
                 ] = weight_range
-            elif (
-                "bullet_weight_range"
-                in st.session_state.dope_view["filters"]
-            ):
-                del st.session_state.dope_view["filters"][
-                    "bullet_weight_range"
-                ]
+            elif "bullet_weight_range" in st.session_state.dope_view["filters"]:
+                del st.session_state.dope_view["filters"]["bullet_weight_range"]
 
         # Weather filters in a separate row
         st.divider()
         st.subheader("Weather Conditions")
 
         # Get user preferences for unit display
-        user_unit_system = st.session_state.get("user", {}).get("unit_system", "Imperial")
+        user_unit_system = st.session_state.get("user", {}).get(
+            "unit_system", "Imperial"
+        )
 
         weather_col1, weather_col2, weather_col3 = st.columns(3)
 
@@ -446,15 +413,17 @@ def render_main_page_filters(service: DopeService, user_id: str):
                 # Convert metric defaults to Fahrenheit for display
                 temp_label = "Temperature (°F)"
                 temp_min_display = celsius_to_fahrenheit(-20.0)  # -4°F
-                temp_max_display = celsius_to_fahrenheit(50.0)   # 122°F
+                temp_max_display = celsius_to_fahrenheit(50.0)  # 122°F
                 temp_default_display = (temp_min_display, temp_max_display)
                 temp_step = 2.0  # Larger step for Fahrenheit
 
                 # Get current filter value and convert to display units
-                current_temp_metric = st.session_state.dope_view["filters"].get("temperature_range", (-20.0, 50.0))
+                current_temp_metric = st.session_state.dope_view["filters"].get(
+                    "temperature_range", (-20.0, 50.0)
+                )
                 current_temp_display = (
                     celsius_to_fahrenheit(current_temp_metric[0]),
-                    celsius_to_fahrenheit(current_temp_metric[1])
+                    celsius_to_fahrenheit(current_temp_metric[1]),
                 )
             else:
                 temp_label = "Temperature (°C)"
@@ -462,7 +431,9 @@ def render_main_page_filters(service: DopeService, user_id: str):
                 temp_max_display = 50.0
                 temp_default_display = (temp_min_display, temp_max_display)
                 temp_step = 1.0
-                current_temp_display = st.session_state.dope_view["filters"].get("temperature_range", (-20.0, 50.0))
+                current_temp_display = st.session_state.dope_view["filters"].get(
+                    "temperature_range", (-20.0, 50.0)
+                )
 
             temp_range_display = st.slider(
                 temp_label,
@@ -476,14 +447,16 @@ def render_main_page_filters(service: DopeService, user_id: str):
             if user_unit_system == "Imperial":
                 temp_range_metric = (
                     fahrenheit_to_celsius(temp_range_display[0]),
-                    fahrenheit_to_celsius(temp_range_display[1])
+                    fahrenheit_to_celsius(temp_range_display[1]),
                 )
             else:
                 temp_range_metric = temp_range_display
 
             # Store in metric units
             if temp_range_metric != (-20.0, 50.0):
-                st.session_state.dope_view["filters"]["temperature_range"] = temp_range_metric
+                st.session_state.dope_view["filters"][
+                    "temperature_range"
+                ] = temp_range_metric
             elif "temperature_range" in st.session_state.dope_view["filters"]:
                 del st.session_state.dope_view["filters"]["temperature_range"]
 
@@ -514,10 +487,20 @@ def render_main_page_filters(service: DopeService, user_id: str):
                 wind_step = 2.0
 
                 # Get current filter value and convert to display units
-                current_wind_metric = st.session_state.dope_view["filters"].get("wind_speed_range", (0.0, 50.0))
+                current_wind_metric = st.session_state.dope_view["filters"].get(
+                    "wind_speed_range", (0.0, 50.0)
+                )
                 current_wind_display = (
-                    mps_to_mph(current_wind_metric[0]) if current_wind_metric[0] else 0.0,
-                    mps_to_mph(current_wind_metric[1]) if current_wind_metric[1] else wind_max_display
+                    (
+                        mps_to_mph(current_wind_metric[0])
+                        if current_wind_metric[0]
+                        else 0.0
+                    ),
+                    (
+                        mps_to_mph(current_wind_metric[1])
+                        if current_wind_metric[1]
+                        else wind_max_display
+                    ),
                 )
             else:
                 wind_label = "Wind Speed (m/s)"
@@ -525,7 +508,9 @@ def render_main_page_filters(service: DopeService, user_id: str):
                 wind_max_display = 50.0
                 wind_default_display = (wind_min_display, wind_max_display)
                 wind_step = 1.0
-                current_wind_display = st.session_state.dope_view["filters"].get("wind_speed_range", (0.0, 50.0))
+                current_wind_display = st.session_state.dope_view["filters"].get(
+                    "wind_speed_range", (0.0, 50.0)
+                )
 
             wind_range_display = st.slider(
                 wind_label,
@@ -539,31 +524,33 @@ def render_main_page_filters(service: DopeService, user_id: str):
             if user_unit_system == "Imperial":
                 wind_range_metric = (
                     mph_to_mps(wind_range_display[0]),
-                    mph_to_mps(wind_range_display[1])
+                    mph_to_mps(wind_range_display[1]),
                 )
             else:
                 wind_range_metric = wind_range_display
 
             # Store in metric units
             if wind_range_metric != (0.0, 50.0):
-                st.session_state.dope_view["filters"]["wind_speed_range"] = wind_range_metric
+                st.session_state.dope_view["filters"][
+                    "wind_speed_range"
+                ] = wind_range_metric
             elif "wind_speed_range" in st.session_state.dope_view["filters"]:
                 del st.session_state.dope_view["filters"]["wind_speed_range"]
 
 
 def get_filtered_sessions(
-    service: DopeService, user_id: str, filters: Dict[str, Any]
+    dope_api: DopeAPI, user_id: str, filters: Dict[str, Any]
 ) -> List[DopeSessionModel]:
     """Get sessions with applied filters"""
     try:
         # Start with all sessions
         if filters.get("search"):
-            sessions = service.search_sessions(user_id, filters["search"])
+            sessions = dope_api.search_sessions(user_id, filters["search"])
         else:
-            sessions = service.get_sessions_for_user(user_id)
+            sessions = dope_api.get_sessions_for_user(user_id)
 
         # Apply filters
-        sessions = service.filter_sessions(user_id, filters)
+        sessions = dope_api.filter_sessions(user_id, filters)
 
         return sessions
     except Exception as e:
@@ -574,7 +561,7 @@ def get_filtered_sessions(
 def render_session_statistics(sessions: List[DopeSessionModel]):
     """Display session statistics"""
     total_sessions = len(sessions)
-    
+
     # Calculate useful statistics for DOPE session analysis
     unique_cartridges = len(set(s.cartridge_type for s in sessions if s.cartridge_type))
     unique_rifles = len(set(s.rifle_name for s in sessions if s.rifle_name))
@@ -605,13 +592,13 @@ def render_sessions_table(sessions: List[DopeSessionModel]):
             "visible_columns": _get_default_visible_columns(),
             "page_size": 50,
             "current_page": 0,
-            "show_view_options": False
+            "show_view_options": False,
         }
 
     # Render table controls in expander
     with st.expander(
         "⚙️ View Options",
-        expanded=st.session_state.dope_view["table_settings"]["show_view_options"]
+        expanded=st.session_state.dope_view["table_settings"]["show_view_options"],
     ):
         _render_table_controls(len(sessions))
 
@@ -635,7 +622,6 @@ def render_sessions_table(sessions: List[DopeSessionModel]):
                 if session.start_time and session.end_time
                 else "N/A"
             ),
-    
             "Rifle": session.rifle_name or "Unknown",
             "Cartridge": (
                 f"{session.cartridge_make} {session.cartridge_model}"
@@ -651,10 +637,14 @@ def render_sessions_table(sessions: List[DopeSessionModel]):
             "Bullet Weight (gr)": (
                 float(session.bullet_weight) if session.bullet_weight else None
             ),
-            "Distance (m)": session.range_distance_m if session.range_distance_m else None,
+            "Distance (m)": (
+                session.range_distance_m if session.range_distance_m else None
+            ),
             "Range": session.range_name or "Unknown",
             "Temperature (°C)": (
-                session.temperature_c_median if session.temperature_c_median is not None else None
+                session.temperature_c_median
+                if session.temperature_c_median is not None
+                else None
             ),
             "Humidity (%)": (
                 session.relative_humidity_pct_median
@@ -685,7 +675,6 @@ def render_sessions_table(sessions: List[DopeSessionModel]):
         "Start Time": st.column_config.TextColumn("Start Time", width="medium"),
         "End Time": st.column_config.TextColumn("End Time", width="medium"),
         "Duration": st.column_config.TextColumn("Duration", width="medium"),
-
         "Rifle": st.column_config.TextColumn("Rifle", width="medium"),
         "Cartridge": st.column_config.TextColumn("Cartridge", width="medium"),
         "Cartridge Type": st.column_config.TextColumn("Type", width="medium"),
@@ -697,9 +686,7 @@ def render_sessions_table(sessions: List[DopeSessionModel]):
         "Range": st.column_config.TextColumn("Range", width="medium"),
         "Temperature (°C)": st.column_config.NumberColumn("Temp (°C)", width="small"),
         "Humidity (%)": st.column_config.NumberColumn("Humidity (%)", width="small"),
-        "Wind Speed (m/s)": st.column_config.NumberColumn(
-            "Wind (m/s)", width="small"
-        ),
+        "Wind Speed (m/s)": st.column_config.NumberColumn("Wind (m/s)", width="small"),
         "Notes": st.column_config.TextColumn("Notes", width="large"),
     }
 
@@ -721,7 +708,11 @@ def render_sessions_table(sessions: List[DopeSessionModel]):
     if selected_rows.selection.rows:
         # Get all selected session IDs
         for selected_idx in selected_rows.selection.rows:
-            actual_session_idx = st.session_state.dope_view["table_settings"]["current_page"] * st.session_state.dope_view["table_settings"]["page_size"] + selected_idx
+            actual_session_idx = (
+                st.session_state.dope_view["table_settings"]["current_page"]
+                * st.session_state.dope_view["table_settings"]["page_size"]
+                + selected_idx
+            )
             if actual_session_idx < len(sessions):
                 selected_session_ids.append(sessions[actual_session_idx].id)
 
@@ -745,23 +736,27 @@ def render_sessions_table(sessions: List[DopeSessionModel]):
     if len(selected_session_ids) > 1:
         with col2:
             if st.button(f"📥 Export Selected ({len(selected_session_ids)})"):
-                selected_sessions = [s for s in sessions if s.id in selected_session_ids]
+                selected_sessions = [
+                    s for s in sessions if s.id in selected_session_ids
+                ]
                 export_sessions_to_csv(selected_sessions)
 
         with col3:
-            if st.button(f"🗑️ Delete Selected ({len(selected_session_ids)})", type="secondary"):
+            if st.button(
+                f"🗑️ Delete Selected ({len(selected_session_ids)})", type="secondary"
+            ):
                 # Store selected IDs for bulk delete confirmation
                 st.session_state.dope_view["bulk_delete_ids"] = selected_session_ids
                 st.rerun()
 
     # Handle bulk delete confirmation
     if st.session_state.dope_view.get("bulk_delete_ids"):
-        render_bulk_delete_confirmation_modal(sessions, st.session_state.dope_view["bulk_delete_ids"])
+        render_bulk_delete_confirmation_modal(
+            sessions, st.session_state.dope_view["bulk_delete_ids"]
+        )
 
 
-def render_session_details(
-    session: DopeSessionModel, service: DopeService, user_id: str
-):
+def render_session_details(session: DopeSessionModel, dope_api: DopeAPI, user_id: str):
     """Render detailed view of selected session"""
     st.subheader(f"📋 Session Details: {session.display_name}")
 
@@ -817,7 +812,9 @@ def render_session_details(
         render_shots_tab(session, service)
 
 
-def render_edit_session_modal(session: DopeSessionModel, service: DopeService, user_id: str):
+def render_edit_session_modal(
+    session: DopeSessionModel, dope_api: DopeAPI, user_id: str
+):
     """Render session edit modal with comprehensive editing capabilities"""
     st.subheader(f"✏️ Edit Session: {session.display_name}")
 
@@ -828,7 +825,7 @@ def render_edit_session_modal(session: DopeSessionModel, service: DopeService, u
 
     # Fetch dropdown options
     try:
-        dropdown_options = service.get_edit_dropdown_options(user_id)
+        dropdown_options = dope_api.get_edit_dropdown_options(user_id)
     except Exception as e:
         st.error(f"Failed to load dropdown options: {str(e)}")
         return
@@ -841,7 +838,7 @@ def render_edit_session_modal(session: DopeSessionModel, service: DopeService, u
         new_session_name = st.text_input(
             "Session Name",
             value=session.session_name or "",
-            help="Enter a descriptive name for this session"
+            help="Enter a descriptive name for this session",
         )
 
         # Notes
@@ -849,7 +846,7 @@ def render_edit_session_modal(session: DopeSessionModel, service: DopeService, u
             "Notes",
             value=session.notes or "",
             height=100,
-            help="Add any notes about this session"
+            help="Add any notes about this session",
         )
 
         st.divider()
@@ -857,7 +854,9 @@ def render_edit_session_modal(session: DopeSessionModel, service: DopeService, u
 
         # Chrono Session dropdown
         chrono_options = dropdown_options.get("chrono_sessions", [])
-        chrono_names = ["(None)"] + [str(opt.get("name", "Unknown")) for opt in chrono_options]
+        chrono_names = ["(None)"] + [
+            str(opt.get("name", "Unknown")) for opt in chrono_options
+        ]
         chrono_ids = [None] + [opt["id"] for opt in chrono_options]
 
         current_chrono_index = 0
@@ -875,14 +874,16 @@ def render_edit_session_modal(session: DopeSessionModel, service: DopeService, u
             range(len(chrono_names)),
             index=current_chrono_index,
             format_func=lambda i: chrono_names[i],
-            help="Select the chronograph session containing velocity data"
+            help="Select the chronograph session containing velocity data",
         )
 
         new_chrono_session_id = chrono_ids[new_chrono_index]
 
         # Range dropdown
         range_options = dropdown_options.get("ranges", [])
-        range_names = ["(None)"] + [str(opt.get("name", "Unknown")) for opt in range_options]
+        range_names = ["(None)"] + [
+            str(opt.get("name", "Unknown")) for opt in range_options
+        ]
         range_ids = [None] + [opt["id"] for opt in range_options]
 
         current_range_index = 0
@@ -892,20 +893,24 @@ def render_edit_session_modal(session: DopeSessionModel, service: DopeService, u
             except ValueError:
                 current_range_index = 0
 
-        current_range_index = int(max(0, min(current_range_index, len(range_names) - 1)))
+        current_range_index = int(
+            max(0, min(current_range_index, len(range_names) - 1))
+        )
 
         new_range_index = st.selectbox(
             "Range",
             range(len(range_names)),
             index=current_range_index,
             format_func=lambda i: range_names[i],
-            help="Select the range where this session took place"
+            help="Select the range where this session took place",
         )
         new_range_id = range_ids[new_range_index]
 
         # Rifle dropdown
         rifle_options = dropdown_options.get("rifles", [])
-        rifle_names = ["(None)"] + [str(opt.get("name", "Unknown")) for opt in rifle_options]
+        rifle_names = ["(None)"] + [
+            str(opt.get("name", "Unknown")) for opt in rifle_options
+        ]
         rifle_ids = [None] + [opt["id"] for opt in rifle_options]
 
         current_rifle_index = 0
@@ -915,20 +920,24 @@ def render_edit_session_modal(session: DopeSessionModel, service: DopeService, u
             except ValueError:
                 current_rifle_index = 0
 
-        current_rifle_index = int(max(0, min(current_rifle_index, len(rifle_names) - 1)))
+        current_rifle_index = int(
+            max(0, min(current_rifle_index, len(rifle_names) - 1))
+        )
 
         new_rifle_index = st.selectbox(
             "Rifle",
             range(len(rifle_names)),
             index=current_rifle_index,
             format_func=lambda i: rifle_names[i],
-            help="Select the rifle used in this session"
+            help="Select the rifle used in this session",
         )
         new_rifle_id = rifle_ids[new_rifle_index]
 
         # Weather Source dropdown
         weather_options = dropdown_options.get("weather_sources", [])
-        weather_names = ["(None)"] + [str(opt.get("name", "Unknown")) for opt in weather_options]
+        weather_names = ["(None)"] + [
+            str(opt.get("name", "Unknown")) for opt in weather_options
+        ]
         weather_ids = [None] + [opt["id"] for opt in weather_options]
 
         current_weather_index = 0
@@ -938,20 +947,24 @@ def render_edit_session_modal(session: DopeSessionModel, service: DopeService, u
             except ValueError:
                 current_weather_index = 0
 
-        current_weather_index = int(max(0, min(current_weather_index, len(weather_names) - 1)))
+        current_weather_index = int(
+            max(0, min(current_weather_index, len(weather_names) - 1))
+        )
 
         new_weather_index = st.selectbox(
             "Weather Source",
             range(len(weather_names)),
             index=current_weather_index,
             format_func=lambda i: weather_names[i],
-            help="Select the weather source for environmental data"
+            help="Select the weather source for environmental data",
         )
         new_weather_id = weather_ids[new_weather_index]
 
         # Cartridge dropdown
         cartridge_options = dropdown_options.get("cartridges", [])
-        cartridge_names = ["(None)"] + [str(opt.get("name", "Unknown")) for opt in cartridge_options]
+        cartridge_names = ["(None)"] + [
+            str(opt.get("name", "Unknown")) for opt in cartridge_options
+        ]
         cartridge_ids = [None] + [opt["id"] for opt in cartridge_options]
 
         current_cartridge_index = 0
@@ -961,14 +974,16 @@ def render_edit_session_modal(session: DopeSessionModel, service: DopeService, u
             except ValueError:
                 current_cartridge_index = 0
 
-        current_cartridge_index = int(max(0, min(current_cartridge_index, len(cartridge_names) - 1)))
+        current_cartridge_index = int(
+            max(0, min(current_cartridge_index, len(cartridge_names) - 1))
+        )
 
         new_cartridge_index = st.selectbox(
             "Cartridge",
             range(len(cartridge_names)),
             index=current_cartridge_index,
             format_func=lambda i: cartridge_names[i],
-            help="Select the cartridge used in this session"
+            help="Select the cartridge used in this session",
         )
         new_cartridge_id = cartridge_ids[new_cartridge_index]
 
@@ -992,13 +1007,17 @@ def render_edit_session_modal(session: DopeSessionModel, service: DopeService, u
                         "range_submission_id": new_range_id,
                         "rifle_id": new_rifle_id,
                         "weather_source_id": new_weather_id,
-                        "cartridge_id": new_cartridge_id
+                        "cartridge_id": new_cartridge_id,
                     }
 
                     # Update session
-                    updated_session = service.update_session(session.id, update_data, user_id)
+                    updated_session = dope_api.update_session(
+                        session.id, update_data, user_id
+                    )
 
-                    st.success(f"✅ Session '{updated_session.session_name}' updated successfully!")
+                    st.success(
+                        f"✅ Session '{updated_session.session_name}' updated successfully!"
+                    )
 
                     # Clear edit mode and refresh
                     st.session_state.dope_view["edit_session"] = None
@@ -1014,7 +1033,9 @@ def render_edit_session_modal(session: DopeSessionModel, service: DopeService, u
                 st.rerun()
 
 
-def render_delete_confirmation_modal(session: DopeSessionModel, service: DopeService, user_id: str):
+def render_delete_confirmation_modal(
+    session: DopeSessionModel, dope_api: DopeAPI, user_id: str
+):
     """Render delete confirmation modal with proper warnings"""
     st.subheader(f"🗑️ Delete Session: {session.display_name}")
 
@@ -1030,14 +1051,16 @@ def render_delete_confirmation_modal(session: DopeSessionModel, service: DopeSer
     # Display session info for confirmation
     st.write("**Session to be deleted:**")
     st.write(f"• **Name:** {session.session_name or 'Unnamed Session'}")
-    st.write(f"• **Date:** {session.start_time.strftime('%Y-%m-%d %H:%M') if session.start_time else 'N/A'}")
+    st.write(
+        f"• **Date:** {session.start_time.strftime('%Y-%m-%d %H:%M') if session.start_time else 'N/A'}"
+    )
     st.write(f"• **Rifle:** {session.rifle_name or 'Unknown'}")
     st.write(f"• **Cartridge:** {session.cartridge_type or 'Unknown'}")
     st.write(f"• **Range:** {session.range_name or 'Unknown'}")
 
     # Get measurement count for warning
     try:
-        measurements = service.get_measurements_for_dope_session(session.id, user_id)
+        measurements = dope_api.get_measurements_for_dope_session(session.id, user_id)
         measurement_count = len(measurements)
         st.write(f"• **Shot Measurements:** {measurement_count} shots will be deleted")
     except Exception:
@@ -1061,10 +1084,12 @@ def render_delete_confirmation_modal(session: DopeSessionModel, service: DopeSer
         if st.button("🗑️ DELETE SESSION", type="primary", use_container_width=True):
             try:
                 # Perform the deletion
-                success = service.delete_session(session.id, user_id)
+                success = dope_api.delete_session(session.id, user_id)
 
                 if success:
-                    st.success(f"✅ Session '{session.session_name or 'Unnamed'}' deleted successfully!")
+                    st.success(
+                        f"✅ Session '{session.session_name or 'Unnamed'}' deleted successfully!"
+                    )
 
                     # Clear states and refresh
                     st.session_state.dope_view["delete_confirm"] = None
@@ -1080,7 +1105,9 @@ def render_delete_confirmation_modal(session: DopeSessionModel, service: DopeSer
                 st.error(f"Error deleting session: {str(e)}")
 
 
-def render_bulk_delete_confirmation_modal(sessions: List[DopeSessionModel], selected_session_ids: List[str]):
+def render_bulk_delete_confirmation_modal(
+    sessions: List[DopeSessionModel], selected_session_ids: List[str]
+):
     """Render bulk delete confirmation modal with proper warnings"""
     selected_sessions = [s for s in sessions if s.id in selected_session_ids]
 
@@ -1098,7 +1125,9 @@ def render_bulk_delete_confirmation_modal(sessions: List[DopeSessionModel], sele
     # Display sessions to be deleted
     st.write("**Sessions to be deleted:**")
     for session in selected_sessions:
-        st.write(f"• **{session.session_name or 'Unnamed Session'}** - {session.start_time.strftime('%Y-%m-%d %H:%M') if session.start_time else 'N/A'}")
+        st.write(
+            f"• **{session.session_name or 'Unnamed Session'}** - {session.start_time.strftime('%Y-%m-%d %H:%M') if session.start_time else 'N/A'}"
+        )
 
     st.divider()
 
@@ -1115,13 +1144,17 @@ def render_bulk_delete_confirmation_modal(sessions: List[DopeSessionModel], sele
         pass
 
     with col3:
-        if st.button(f"🗑️ DELETE {len(selected_sessions)} SESSIONS", type="primary", use_container_width=True):
+        if st.button(
+            f"🗑️ DELETE {len(selected_sessions)} SESSIONS",
+            type="primary",
+            use_container_width=True,
+        ):
             try:
                 # Get service from context
                 url = st.secrets["supabase"]["url"]
                 key = st.secrets["supabase"]["key"]
                 supabase = create_client(url, key)
-                service = DopeService(supabase)
+                service = DopeAPI(supabase)
                 user_id = st.session_state.user.get("id")
 
                 # Perform bulk deletion
@@ -1130,20 +1163,24 @@ def render_bulk_delete_confirmation_modal(sessions: List[DopeSessionModel], sele
 
                 for session in selected_sessions:
                     try:
-                        success = service.delete_session(session.id, user_id)
+                        success = dope_api.delete_session(session.id, user_id)
                         if success:
                             success_count += 1
                         else:
                             failed_sessions.append(session.session_name or "Unnamed")
                     except Exception as e:
-                        failed_sessions.append(f"{session.session_name or 'Unnamed'} (Error: {str(e)})")
+                        failed_sessions.append(
+                            f"{session.session_name or 'Unnamed'} (Error: {str(e)})"
+                        )
 
                 # Show results
                 if success_count > 0:
                     st.success(f"✅ Successfully deleted {success_count} sessions!")
 
                 if failed_sessions:
-                    st.error(f"Failed to delete {len(failed_sessions)} sessions: {', '.join(failed_sessions)}")
+                    st.error(
+                        f"Failed to delete {len(failed_sessions)} sessions: {', '.join(failed_sessions)}"
+                    )
 
                 # Clear states and refresh
                 st.session_state.dope_view["bulk_delete_ids"] = None
@@ -1157,11 +1194,13 @@ def render_bulk_delete_confirmation_modal(sessions: List[DopeSessionModel], sele
                 st.error(f"Error during bulk delete: {str(e)}")
 
 
-def export_single_session_to_csv(session: DopeSessionModel, service: DopeService):
+def export_single_session_to_csv(session: DopeSessionModel, dope_api: DopeAPI):
     """Export a single session to CSV format"""
     try:
         # Get measurements for this session
-        measurements = service.get_measurements_for_dope_session(session.id, session.user_id)
+        measurements = dope_api.get_measurements_for_dope_session(
+            session.id, session.user_id
+        )
 
         # Create session data dictionary
         session_data = session.to_dict()
@@ -1174,7 +1213,9 @@ def export_single_session_to_csv(session: DopeSessionModel, service: DopeService
 
         # Create two DataFrames
         session_df = pd.DataFrame([session_data])
-        measurements_df = pd.DataFrame(measurements_data) if measurements_data else pd.DataFrame()
+        measurements_df = (
+            pd.DataFrame(measurements_data) if measurements_data else pd.DataFrame()
+        )
 
         # Combine both datasets into a single CSV with clear sections
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -1203,7 +1244,9 @@ def export_single_session_to_csv(session: DopeSessionModel, service: DopeService
             help="Download session data and measurements as CSV file",
         )
 
-        st.success(f"✅ Session export prepared: {len(measurements) if measurements else 0} shots included")
+        st.success(
+            f"✅ Session export prepared: {len(measurements) if measurements else 0} shots included"
+        )
 
     except Exception as e:
         st.error(f"Error exporting session: {str(e)}")
@@ -1215,16 +1258,16 @@ def render_session_info_tab(session: DopeSessionModel):
 
     with col1:
         # Required: Session name, start time, end time
-        st.write(
-            "**Session Name:**",
-            session.session_name or "Unnamed Session")
+        st.write("**Session Name:**", session.session_name or "Unnamed Session")
 
         # Prominently display shooting session times
         if session.start_time:
-            st.write(f"**Start Time:** {session.start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+            st.write(
+                f"**Start Time:** {session.start_time.strftime('%Y-%m-%d %H:%M:%S')}"
+            )
         else:
             st.write("**Start Time:** N/A")
-            
+
         if session.end_time:
             st.write(f"**End Time:** {session.end_time.strftime('%Y-%m-%d %H:%M:%S')}")
         else:
@@ -1233,27 +1276,49 @@ def render_session_info_tab(session: DopeSessionModel):
     with col2:
         # Required: Single reference to all data sources
         st.write("**Data Sources:**")
-        
+
         # Chronograph name - show actual session name if available
-        chrono_name = session.chrono_session_name if session.chrono_session_name else ("Linked" if session.chrono_session_id else "Not-linked")
+        chrono_name = (
+            session.chrono_session_name
+            if session.chrono_session_name
+            else ("Linked" if session.chrono_session_id else "Not-linked")
+        )
         st.write(f"    **Chronograph:** {chrono_name}")
-        
+
         # Weather name or "not-linked"
-        weather_name = session.weather_source_name if session.weather_source_name else "Not-linked"
+        weather_name = (
+            session.weather_source_name if session.weather_source_name else "Not-linked"
+        )
         st.write(f"    **Weather:** {weather_name}")
-        
+
         # Range name
         range_name = session.range_name if session.range_name else "Unknown"
         st.write(f"    **Range:** {range_name}")
-        
+
         # Bullet display name
-        bullet_display = session.bullet_display if hasattr(session, 'bullet_display') and session.bullet_display else f"{session.bullet_make} {session.bullet_model}" if session.bullet_make else "Unknown"
+        bullet_display = (
+            session.bullet_display
+            if hasattr(session, "bullet_display") and session.bullet_display
+            else (
+                f"{session.bullet_make} {session.bullet_model}"
+                if session.bullet_make
+                else "Unknown"
+            )
+        )
         st.write(f"    **Bullet:** {bullet_display}")
-        
+
         # Cartridge display name
-        cartridge_display = session.cartridge_display if hasattr(session, 'cartridge_display') and session.cartridge_display else f"{session.cartridge_make} {session.cartridge_model}" if session.cartridge_make else "Unknown"
+        cartridge_display = (
+            session.cartridge_display
+            if hasattr(session, "cartridge_display") and session.cartridge_display
+            else (
+                f"{session.cartridge_make} {session.cartridge_model}"
+                if session.cartridge_make
+                else "Unknown"
+            )
+        )
         st.write(f"    **Cartridge:** {cartridge_display}")
-        
+
         # Rifle name
         rifle_name = session.rifle_name if session.rifle_name else "Unknown"
         st.write(f"    **Rifle:** {rifle_name}")
@@ -1287,7 +1352,9 @@ def render_range_info_tab(session: DopeSessionModel):
 
         # Enhanced Google Maps hyperlink with pushpins and arrow
         if session.location_hyperlink:
-            st.markdown(f"  [🗺️ **View Range on Google Maps**]({session.location_hyperlink})")
+            st.markdown(
+                f"  [🗺️ **View Range on Google Maps**]({session.location_hyperlink})"
+            )
         else:
             st.write("  Map link not available")
 
@@ -1359,9 +1426,7 @@ def render_cartridge_info_tab(session: DopeSessionModel):
         st.write("**Make:**", session.cartridge_make or "Unknown")
         st.write("**Model:**", session.cartridge_model or "Unknown")
         st.write("**Type:**", session.cartridge_type or "Unknown")
-        st.write(
-            "**Lot Number:**",
-            session.cartridge_lot_number or "Not specified")
+        st.write("**Lot Number:**", session.cartridge_lot_number or "Not specified")
 
     with col2:
         st.write("**Display:**", session.cartridge_display)
@@ -1378,10 +1443,9 @@ def render_bullet_info_tab(session: DopeSessionModel):
             "**Weight:**",
             f"{session.bullet_weight}gr" if session.bullet_weight else "Unknown",
         )
-        st.write("**Sectional Density:**",
-                 session.sectional_density or "Unknown")
+        st.write("**Sectional Density:**", session.sectional_density or "Unknown")
         st.write("**Display:**", session.bullet_display)
-        
+
         # Group: Physical Measurements
         st.write("**Physical Measurements:**")
         st.write(
@@ -1416,7 +1480,7 @@ def render_weather_info_tab(session: DopeSessionModel):
     """Render weather information tab"""
     # Get user preferences for unit display
     user_unit_system = st.session_state.get("user", {}).get("unit_system", "Imperial")
-    
+
     col1, col2 = st.columns(2)
 
     with col1:
@@ -1429,7 +1493,7 @@ def render_weather_info_tab(session: DopeSessionModel):
                 st.write(f"**Temperature:** {session.temperature_c_median:.1f}°C")
         else:
             st.write("**Temperature:** Unknown")
-            
+
         # Humidity (always in percentage)
         st.write(
             "**Humidity:**",
@@ -1439,19 +1503,21 @@ def render_weather_info_tab(session: DopeSessionModel):
                 else "Unknown"
             ),
         )
-        
+
         # Pressure with user preferences
         if session.barometric_pressure_hpa_median is not None:
             if user_unit_system == "Imperial":
                 pressure_inhg = hpa_to_inhg(session.barometric_pressure_hpa_median)
                 st.write(f"**Pressure:** {pressure_inhg:.2f} inHg")
             else:
-                st.write(f"**Pressure:** {session.barometric_pressure_hpa_median:.1f} hPa")
+                st.write(
+                    f"**Pressure:** {session.barometric_pressure_hpa_median:.1f} hPa"
+                )
         else:
             st.write("**Pressure:** Unknown")
-            
+
         # Weather source
-        weather_source_name = getattr(session, 'weather_source_name', None)
+        weather_source_name = getattr(session, "weather_source_name", None)
         if weather_source_name:
             st.write("**Weather Source:**", weather_source_name)
         else:
@@ -1460,27 +1526,31 @@ def render_weather_info_tab(session: DopeSessionModel):
     with col2:
         # Group Wind measurements together on the right side
         st.write("**Wind Measurements:**")
-        
+
         # Wind Speed 1 with user preferences
         if session.wind_speed_mps_median is not None:
             if user_unit_system == "Imperial":
                 wind_speed_mph = mps_to_mph(session.wind_speed_mps_median)
                 st.write(f"    **Wind Speed 1:** {wind_speed_mph:.1f} mph")
             else:
-                st.write(f"    **Wind Speed 1:** {session.wind_speed_mps_median:.1f} m/s")
+                st.write(
+                    f"    **Wind Speed 1:** {session.wind_speed_mps_median:.1f} m/s"
+                )
         else:
             st.write("    **Wind Speed 1:** Unknown")
-            
+
         # Wind Speed 2 with user preferences
         if session.wind_speed_2_mps_median is not None:
             if user_unit_system == "Imperial":
                 wind_speed_2_mph = mps_to_mph(session.wind_speed_2_mps_median)
                 st.write(f"    **Wind Speed 2:** {wind_speed_2_mph:.1f} mph")
             else:
-                st.write(f"    **Wind Speed 2:** {session.wind_speed_2_mps_median:.1f} m/s")
+                st.write(
+                    f"    **Wind Speed 2:** {session.wind_speed_2_mps_median:.1f} m/s"
+                )
         else:
             st.write("    **Wind Speed 2:** Unknown")
-            
+
         # Wind Direction (always in degrees)
         st.write(
             "    **Wind Direction:**",
@@ -1525,20 +1595,21 @@ def export_sessions_to_csv(sessions: List[DopeSessionModel]):
         st.error(f"Error exporting sessions: {str(e)}")
 
 
-def render_shots_tab(session: DopeSessionModel, service: DopeService):
+def render_shots_tab(session: DopeSessionModel, dope_api: DopeAPI):
     """Render shots/measurements tab"""
     try:
         # Get measurements for this DOPE session
-        measurements = service.get_measurements_for_dope_session(
-            session.id, session.user_id)
+        measurements = dope_api.get_measurements_for_dope_session(
+            session.id, session.user_id
+        )
 
         if not measurements:
             st.info("📊 No shot measurements found for this session.")
             if session.chrono_session_id:
-                st.write(
-                    f"**Linked Chronograph Session:** {session.chrono_session_id}")
+                st.write(f"**Linked Chronograph Session:** {session.chrono_session_id}")
                 st.info(
-                    "Measurements may be available in the linked chronograph session but not yet copied to DOPE measurements.")
+                    "Measurements may be available in the linked chronograph session but not yet copied to DOPE measurements."
+                )
             return
 
         # Display shot count and summary
@@ -1550,23 +1621,26 @@ def render_shots_tab(session: DopeSessionModel, service: DopeService):
 
         with col2:
             # Calculate average velocity if available - use metric data and convert for display
-            velocities = [m.speed_mps
-                          for m in measurements if m.speed_mps]
-            avg_velocity_mps = sum(velocities) / \
-                len(velocities) if velocities else 0
+            velocities = [m.speed_mps for m in measurements if m.speed_mps]
+            avg_velocity_mps = sum(velocities) / len(velocities) if velocities else 0
 
             # Get user preferences for unit display
-            user_unit_system = st.session_state.get("user", {}).get("unit_system", "Imperial")
-            avg_velocity_display = format_speed(avg_velocity_mps, user_unit_system) if avg_velocity_mps else "N/A"
+            user_unit_system = st.session_state.get("user", {}).get(
+                "unit_system", "Imperial"
+            )
+            avg_velocity_display = (
+                format_speed(avg_velocity_mps, user_unit_system)
+                if avg_velocity_mps
+                else "N/A"
+            )
             st.metric("Avg Velocity", avg_velocity_display)
 
         with col3:
             # Calculate standard deviation if we have velocities
             if len(velocities) > 1:
                 mean = avg_velocity_mps
-                variance = sum(
-                    (v - mean) ** 2 for v in velocities) / len(velocities)
-                std_dev_mps = variance ** 0.5
+                variance = sum((v - mean) ** 2 for v in velocities) / len(velocities)
+                std_dev_mps = variance**0.5
                 std_dev_display = format_speed(std_dev_mps, user_unit_system)
                 st.metric("Std Dev", std_dev_display)
             else:
@@ -1583,88 +1657,169 @@ def render_shots_tab(session: DopeSessionModel, service: DopeService):
         df_data = []
         for measurement in measurements:
             # Use metric data and convert for display based on user preferences (table format - no units)
-            velocity_display = format_speed_for_table(measurement.speed_mps, user_unit_system) if measurement.speed_mps else ''
-            energy_display = format_energy_for_table(measurement.ke_j, user_unit_system) if measurement.ke_j else ''
-            power_factor_display = format_power_factor_for_table(measurement.power_factor_kgms, user_unit_system) if measurement.power_factor_kgms else ''
-            temperature_display = format_temperature_for_table(measurement.temperature_c, user_unit_system) if measurement.temperature_c else ''
-            pressure_display = format_pressure_for_table(measurement.pressure_hpa, user_unit_system) if measurement.pressure_hpa else ''
+            velocity_display = (
+                format_speed_for_table(measurement.speed_mps, user_unit_system)
+                if measurement.speed_mps
+                else ""
+            )
+            energy_display = (
+                format_energy_for_table(measurement.ke_j, user_unit_system)
+                if measurement.ke_j
+                else ""
+            )
+            power_factor_display = (
+                format_power_factor_for_table(
+                    measurement.power_factor_kgms, user_unit_system
+                )
+                if measurement.power_factor_kgms
+                else ""
+            )
+            temperature_display = (
+                format_temperature_for_table(
+                    measurement.temperature_c, user_unit_system
+                )
+                if measurement.temperature_c
+                else ""
+            )
+            pressure_display = (
+                format_pressure_for_table(measurement.pressure_hpa, user_unit_system)
+                if measurement.pressure_hpa
+                else ""
+            )
 
             # Get column headers based on unit system
-            velocity_header = "Velocity (fps)" if user_unit_system == "Imperial" else "Velocity (m/s)"
-            energy_header = "Energy (ft·lb)" if user_unit_system == "Imperial" else "Energy (J)"
-            power_factor_header = "Power Factor" # Always show as text
-            temperature_header = "Temperature (°F)" if user_unit_system == "Imperial" else "Temperature (°C)"
-            pressure_header = "Pressure (inHg)" if user_unit_system == "Imperial" else "Pressure (hPa)"
-            wind_speed_header = "Wind Speed (mph)" if user_unit_system == "Imperial" else "Wind Speed (m/s)"
+            velocity_header = (
+                "Velocity (fps)" if user_unit_system == "Imperial" else "Velocity (m/s)"
+            )
+            energy_header = (
+                "Energy (ft·lb)" if user_unit_system == "Imperial" else "Energy (J)"
+            )
+            power_factor_header = "Power Factor"  # Always show as text
+            temperature_header = (
+                "Temperature (°F)"
+                if user_unit_system == "Imperial"
+                else "Temperature (°C)"
+            )
+            pressure_header = (
+                "Pressure (inHg)"
+                if user_unit_system == "Imperial"
+                else "Pressure (hPa)"
+            )
+            wind_speed_header = (
+                "Wind Speed (mph)"
+                if user_unit_system == "Imperial"
+                else "Wind Speed (m/s)"
+            )
 
             # Handle wind data - check if fields exist in measurement object
-            wind_speed_display = ''
-            wind_direction_display = ''
-            
-            if hasattr(measurement, 'wind_speed_mps') and measurement.wind_speed_mps is not None:
+            wind_speed_display = ""
+            wind_direction_display = ""
+
+            if (
+                hasattr(measurement, "wind_speed_mps")
+                and measurement.wind_speed_mps is not None
+            ):
                 if user_unit_system == "Imperial":
                     wind_speed_display = f"{mps_to_mph(measurement.wind_speed_mps):.1f}"
                 else:
                     wind_speed_display = f"{measurement.wind_speed_mps:.1f}"
-            
-            if hasattr(measurement, 'wind_direction_deg') and measurement.wind_direction_deg is not None:
+
+            if (
+                hasattr(measurement, "wind_direction_deg")
+                and measurement.wind_direction_deg is not None
+            ):
                 wind_direction_display = f"{measurement.wind_direction_deg:.0f}"
 
             row = {
-                "Shot #": measurement.shot_number or '',
-                "Time": measurement.datetime_shot or '',
+                "Shot #": measurement.shot_number or "",
+                "Time": measurement.datetime_shot or "",
                 velocity_header: velocity_display,
-                "Distance (m)": measurement.distance_m or '',
-                "Elevation Offset": measurement.elevation_adjustment or '',
-                "Windage Offset": measurement.windage_adjustment or '',
+                "Distance (m)": measurement.distance_m or "",
+                "Elevation Offset": measurement.elevation_adjustment or "",
+                "Windage Offset": measurement.windage_adjustment or "",
                 wind_speed_header: wind_speed_display,
                 "Wind Direction (°)": wind_direction_display,
                 temperature_header: temperature_display,
                 pressure_header: pressure_display,
-                "Humidity (%)": measurement.humidity_pct or '',
-                "Notes": measurement.shot_notes or ''
+                "Humidity (%)": measurement.humidity_pct or "",
+                "Notes": measurement.shot_notes or "",
             }
             df_data.append(row)
 
         # Convert to DataFrame
         import pandas as pd
+
         df = pd.DataFrame(df_data)
 
         # Format timestamp column if present
-        if 'Time' in df.columns and not df['Time'].empty:
+        if "Time" in df.columns and not df["Time"].empty:
             try:
-                df['Time'] = pd.to_datetime(df['Time']).dt.strftime('%H:%M:%S')
+                df["Time"] = pd.to_datetime(df["Time"]).dt.strftime("%H:%M:%S")
             except BaseException:
                 pass  # Keep original format if conversion fails
 
         # Replace empty/None values with empty strings for better display
-        df = df.fillna('')
+        df = df.fillna("")
 
         # Configure column display dynamically based on user preferences
-        velocity_header = "Velocity (fps)" if user_unit_system == "Imperial" else "Velocity (m/s)"
-        energy_header = "Energy (ft·lb)" if user_unit_system == "Imperial" else "Energy (J)"
-        temperature_header = "Temperature (°F)" if user_unit_system == "Imperial" else "Temperature (°C)"
-        pressure_header = "Pressure (inHg)" if user_unit_system == "Imperial" else "Pressure (hPa)"
-        wind_speed_header = "Wind Speed (mph)" if user_unit_system == "Imperial" else "Wind Speed (m/s)"
+        velocity_header = (
+            "Velocity (fps)" if user_unit_system == "Imperial" else "Velocity (m/s)"
+        )
+        energy_header = (
+            "Energy (ft·lb)" if user_unit_system == "Imperial" else "Energy (J)"
+        )
+        temperature_header = (
+            "Temperature (°F)" if user_unit_system == "Imperial" else "Temperature (°C)"
+        )
+        pressure_header = (
+            "Pressure (inHg)" if user_unit_system == "Imperial" else "Pressure (hPa)"
+        )
+        wind_speed_header = (
+            "Wind Speed (mph)" if user_unit_system == "Imperial" else "Wind Speed (m/s)"
+        )
 
         column_config = {
-            "Shot #": st.column_config.NumberColumn("Shot #", width="small", disabled=True),  # Don't allow editing shot numbers
-            "Time": st.column_config.TextColumn("Time", width="small", disabled=True),  # Don't allow editing timestamps
-            velocity_header: st.column_config.NumberColumn(velocity_header, width="medium", format="%.1f"),
-            "Distance (m)": st.column_config.NumberColumn("Distance (m)", width="small", format="%.1f"),
-            "Elevation Offset": st.column_config.NumberColumn("Elevation Offset", width="small", format="%.2f"),
-            "Windage Offset": st.column_config.NumberColumn("Windage Offset", width="small", format="%.2f"),
-            wind_speed_header: st.column_config.NumberColumn(wind_speed_header, width="small", format="%.1f"),
-            "Wind Direction (°)": st.column_config.NumberColumn("Wind Direction (°)", width="small", format="%.0f"),
-            temperature_header: st.column_config.NumberColumn(temperature_header, width="small", format="%.1f"),
-            pressure_header: st.column_config.NumberColumn(pressure_header, width="small", format="%.1f"),
-            "Humidity (%)": st.column_config.NumberColumn("Humidity (%)", width="small", format="%.1f"),
-            "Notes": st.column_config.TextColumn("Notes", width="large")
+            "Shot #": st.column_config.NumberColumn(
+                "Shot #", width="small", disabled=True
+            ),  # Don't allow editing shot numbers
+            "Time": st.column_config.TextColumn(
+                "Time", width="small", disabled=True
+            ),  # Don't allow editing timestamps
+            velocity_header: st.column_config.NumberColumn(
+                velocity_header, width="medium", format="%.1f"
+            ),
+            "Distance (m)": st.column_config.NumberColumn(
+                "Distance (m)", width="small", format="%.1f"
+            ),
+            "Elevation Offset": st.column_config.NumberColumn(
+                "Elevation Offset", width="small", format="%.2f"
+            ),
+            "Windage Offset": st.column_config.NumberColumn(
+                "Windage Offset", width="small", format="%.2f"
+            ),
+            wind_speed_header: st.column_config.NumberColumn(
+                wind_speed_header, width="small", format="%.1f"
+            ),
+            "Wind Direction (°)": st.column_config.NumberColumn(
+                "Wind Direction (°)", width="small", format="%.0f"
+            ),
+            temperature_header: st.column_config.NumberColumn(
+                temperature_header, width="small", format="%.1f"
+            ),
+            pressure_header: st.column_config.NumberColumn(
+                pressure_header, width="small", format="%.1f"
+            ),
+            "Humidity (%)": st.column_config.NumberColumn(
+                "Humidity (%)", width="small", format="%.1f"
+            ),
+            "Notes": st.column_config.TextColumn("Notes", width="large"),
         }
 
         # Display the measurements table
         st.subheader("📊 Shot Measurements")
-        st.info("💡 **Shot Selection:** Click on a row in the table below to select and edit shot details.")
+        st.info(
+            "💡 **Shot Selection:** Click on a row in the table below to select and edit shot details."
+        )
 
         # Create selectable table (read-only display)
         selected_data = st.dataframe(
@@ -1674,7 +1829,7 @@ def render_shots_tab(session: DopeSessionModel, service: DopeService):
             hide_index=True,
             selection_mode="single-row",
             key=f"shots_selector_{session.id}",
-            on_select="rerun"
+            on_select="rerun",
         )
 
         # Display editable form for selected row
@@ -1691,8 +1846,16 @@ def render_shots_tab(session: DopeSessionModel, service: DopeService):
                 with col1:
                     st.write("**Basic Info**")
                     # Read-only fields
-                    st.text_input("Shot Number", value=str(selected_measurement.shot_number or ''), disabled=True)
-                    st.text_input("Time", value=str(selected_measurement.datetime_shot or ''), disabled=True)
+                    st.text_input(
+                        "Shot Number",
+                        value=str(selected_measurement.shot_number or ""),
+                        disabled=True,
+                    )
+                    st.text_input(
+                        "Time",
+                        value=str(selected_measurement.datetime_shot or ""),
+                        disabled=True,
+                    )
 
                     # Editable distance
                     distance_val = selected_measurement.distance_m or 0.0
@@ -1702,7 +1865,9 @@ def render_shots_tab(session: DopeSessionModel, service: DopeService):
                     else:
                         distance_display = distance_val
                         distance_label = "Distance (m)"
-                    new_distance = st.number_input(distance_label, value=float(distance_display), step=1.0)
+                    new_distance = st.number_input(
+                        distance_label, value=float(distance_display), step=1.0
+                    )
 
                 with col2:
                     st.write("**Ballistic Data**")
@@ -1715,7 +1880,9 @@ def render_shots_tab(session: DopeSessionModel, service: DopeService):
                     else:
                         velocity_display = velocity_val
                         velocity_label = "Velocity (m/s)"
-                    new_velocity = st.number_input(velocity_label, value=float(velocity_display), step=0.1)
+                    new_velocity = st.number_input(
+                        velocity_label, value=float(velocity_display), step=0.1
+                    )
 
                     # Energy (optional)
                     energy_val = selected_measurement.ke_j or 0.0
@@ -1725,7 +1892,9 @@ def render_shots_tab(session: DopeSessionModel, service: DopeService):
                     else:
                         energy_display = energy_val
                         energy_label = "Energy (J)"
-                    new_energy = st.number_input(energy_label, value=float(energy_display), step=0.1)
+                    new_energy = st.number_input(
+                        energy_label, value=float(energy_display), step=0.1
+                    )
 
                     # Power Factor (optional)
                     pf_val = selected_measurement.power_factor_kgms or 0.0
@@ -1735,7 +1904,9 @@ def render_shots_tab(session: DopeSessionModel, service: DopeService):
                     else:
                         pf_display = pf_val
                         pf_label = "Power Factor (kg⋅m/s)"
-                    new_power_factor = st.number_input(pf_label, value=float(pf_display), step=0.1)
+                    new_power_factor = st.number_input(
+                        pf_label, value=float(pf_display), step=0.1
+                    )
 
                 with col3:
                     st.write("**Adjustments & Environment**")
@@ -1744,7 +1915,9 @@ def render_shots_tab(session: DopeSessionModel, service: DopeService):
                     elevation_val = 0.0
                     try:
                         if selected_measurement.elevation_adjustment:
-                            elevation_val = float(selected_measurement.elevation_adjustment)
+                            elevation_val = float(
+                                selected_measurement.elevation_adjustment
+                            )
                     except (ValueError, TypeError):
                         elevation_val = 0.0
 
@@ -1755,71 +1928,116 @@ def render_shots_tab(session: DopeSessionModel, service: DopeService):
                     except (ValueError, TypeError):
                         windage_val = 0.0
 
-                    new_elevation_adj = st.number_input("Elevation Adjustment",
-                                                       value=elevation_val,
-                                                       step=0.01, format="%.3f")
-                    new_windage_adj = st.number_input("Windage Adjustment",
-                                                     value=windage_val,
-                                                     step=0.01, format="%.3f")
+                    new_elevation_adj = st.number_input(
+                        "Elevation Adjustment",
+                        value=elevation_val,
+                        step=0.01,
+                        format="%.3f",
+                    )
+                    new_windage_adj = st.number_input(
+                        "Windage Adjustment",
+                        value=windage_val,
+                        step=0.01,
+                        format="%.3f",
+                    )
 
                     # Temperature
                     temp_val = selected_measurement.temperature_c or 0.0
                     if user_unit_system == "Imperial":
-                        temp_display = (temp_val * 9/5) + 32  # Convert C to F
+                        temp_display = (temp_val * 9 / 5) + 32  # Convert C to F
                         temp_label = "Temperature (°F)"
                     else:
                         temp_display = temp_val
                         temp_label = "Temperature (°C)"
-                    new_temperature = st.number_input(temp_label, value=float(temp_display), step=0.1)
+                    new_temperature = st.number_input(
+                        temp_label, value=float(temp_display), step=0.1
+                    )
 
                     # Wind Speed
-                    wind_speed_val = getattr(selected_measurement, 'wind_speed_mps', None) or 0.0
+                    wind_speed_val = (
+                        getattr(selected_measurement, "wind_speed_mps", None) or 0.0
+                    )
                     if user_unit_system == "Imperial":
                         wind_display = wind_speed_val * 2.237  # Convert m/s to mph
                         wind_label = "Wind Speed (mph)"
                     else:
                         wind_display = wind_speed_val
                         wind_label = "Wind Speed (m/s)"
-                    new_wind_speed = st.number_input(wind_label, value=float(wind_display), step=0.1)
+                    new_wind_speed = st.number_input(
+                        wind_label, value=float(wind_display), step=0.1
+                    )
 
                     # Wind Direction
-                    new_wind_direction = st.number_input("Wind Direction (°)",
-                                                        value=float(getattr(selected_measurement, 'wind_direction_deg', None) or 0.0),
-                                                        step=1.0, min_value=0.0, max_value=360.0)
+                    new_wind_direction = st.number_input(
+                        "Wind Direction (°)",
+                        value=float(
+                            getattr(selected_measurement, "wind_direction_deg", None)
+                            or 0.0
+                        ),
+                        step=1.0,
+                        min_value=0.0,
+                        max_value=360.0,
+                    )
 
                     # Pressure
-                    pressure_val = getattr(selected_measurement, 'pressure_hpa', None) or 0.0
+                    pressure_val = (
+                        getattr(selected_measurement, "pressure_hpa", None) or 0.0
+                    )
                     if user_unit_system == "Imperial":
                         pressure_display = pressure_val * 0.02953  # Convert hPa to inHg
                         pressure_label = "Pressure (inHg)"
                     else:
                         pressure_display = pressure_val
                         pressure_label = "Pressure (hPa)"
-                    new_pressure = st.number_input(pressure_label, value=float(pressure_display), step=0.1)
+                    new_pressure = st.number_input(
+                        pressure_label, value=float(pressure_display), step=0.1
+                    )
 
                     # Humidity
-                    new_humidity = st.number_input("Humidity (%)",
-                                                  value=float(getattr(selected_measurement, 'humidity_pct', None) or 0.0),
-                                                  step=0.1, min_value=0.0, max_value=100.0)
+                    new_humidity = st.number_input(
+                        "Humidity (%)",
+                        value=float(
+                            getattr(selected_measurement, "humidity_pct", None) or 0.0
+                        ),
+                        step=0.1,
+                        min_value=0.0,
+                        max_value=100.0,
+                    )
 
                 # Full width for notes and flags
                 st.write("**Additional Info**")
                 col_notes, col_flags = st.columns([2, 1])
 
                 with col_notes:
-                    new_notes = st.text_area("Notes", value=selected_measurement.shot_notes or "", height=100)
+                    new_notes = st.text_area(
+                        "Notes", value=selected_measurement.shot_notes or "", height=100
+                    )
 
                 with col_flags:
                     # Boolean flags
-                    current_clean_bore = getattr(selected_measurement, 'clean_bore', None)
+                    current_clean_bore = getattr(
+                        selected_measurement, "clean_bore", None
+                    )
                     clean_bore_options = ["yes", "no", "fouled"]
-                    clean_bore_index = clean_bore_options.index(current_clean_bore) if current_clean_bore in clean_bore_options else 1
-                    new_clean_bore = st.selectbox("Clean Bore", options=clean_bore_options, index=clean_bore_index)
+                    clean_bore_index = (
+                        clean_bore_options.index(current_clean_bore)
+                        if current_clean_bore in clean_bore_options
+                        else 1
+                    )
+                    new_clean_bore = st.selectbox(
+                        "Clean Bore", options=clean_bore_options, index=clean_bore_index
+                    )
 
-                    current_cold_bore = getattr(selected_measurement, 'cold_bore', None)
+                    current_cold_bore = getattr(selected_measurement, "cold_bore", None)
                     cold_bore_options = ["yes", "no"]
-                    cold_bore_index = cold_bore_options.index(current_cold_bore) if current_cold_bore in cold_bore_options else 1
-                    new_cold_bore = st.selectbox("Cold Bore", options=cold_bore_options, index=cold_bore_index)
+                    cold_bore_index = (
+                        cold_bore_options.index(current_cold_bore)
+                        if current_cold_bore in cold_bore_options
+                        else 1
+                    )
+                    new_cold_bore = st.selectbox(
+                        "Cold Bore", options=cold_bore_options, index=cold_bore_index
+                    )
 
                 # Save button
                 if st.form_submit_button("💾 Save Changes", type="primary"):
@@ -1829,13 +2047,17 @@ def render_shots_tab(session: DopeSessionModel, service: DopeService):
 
                         # Distance
                         if user_unit_system == "Imperial":
-                            update_data["distance_m"] = new_distance / 3.28084  # ft to m
+                            update_data["distance_m"] = (
+                                new_distance / 3.28084
+                            )  # ft to m
                         else:
                             update_data["distance_m"] = new_distance
 
                         # Velocity
                         if user_unit_system == "Imperial":
-                            update_data["speed_mps"] = new_velocity / 3.28084  # fps to m/s
+                            update_data["speed_mps"] = (
+                                new_velocity / 3.28084
+                            )  # fps to m/s
                         else:
                             update_data["speed_mps"] = new_velocity
 
@@ -1847,25 +2069,33 @@ def render_shots_tab(session: DopeSessionModel, service: DopeService):
 
                         # Power Factor
                         if user_unit_system == "Imperial":
-                            update_data["power_factor_kgms"] = new_power_factor / 15432.4  # grain⋅ft/s to kg⋅m/s
+                            update_data["power_factor_kgms"] = (
+                                new_power_factor / 15432.4
+                            )  # grain⋅ft/s to kg⋅m/s
                         else:
                             update_data["power_factor_kgms"] = new_power_factor
 
                         # Temperature
                         if user_unit_system == "Imperial":
-                            update_data["temperature_c"] = (new_temperature - 32) * 5/9  # F to C
+                            update_data["temperature_c"] = (
+                                (new_temperature - 32) * 5 / 9
+                            )  # F to C
                         else:
                             update_data["temperature_c"] = new_temperature
 
                         # Wind Speed
                         if user_unit_system == "Imperial":
-                            update_data["wind_speed_mps"] = new_wind_speed / 2.237  # mph to m/s
+                            update_data["wind_speed_mps"] = (
+                                new_wind_speed / 2.237
+                            )  # mph to m/s
                         else:
                             update_data["wind_speed_mps"] = new_wind_speed
 
                         # Pressure
                         if user_unit_system == "Imperial":
-                            update_data["pressure_hpa"] = new_pressure / 0.02953  # inHg to hPa
+                            update_data["pressure_hpa"] = (
+                                new_pressure / 0.02953
+                            )  # inHg to hPa
                         else:
                             update_data["pressure_hpa"] = new_pressure
 
@@ -1879,8 +2109,14 @@ def render_shots_tab(session: DopeSessionModel, service: DopeService):
                         update_data["cold_bore"] = new_cold_bore
 
                         # Save to database
-                        service.update_measurement(selected_measurement.id, update_data, selected_measurement.user_id)
-                        st.success(f"✅ Shot #{selected_measurement.shot_number} updated successfully!")
+                        dope_api.update_measurement(
+                            selected_measurement.id,
+                            update_data,
+                            selected_measurement.user_id,
+                        )
+                        st.success(
+                            f"✅ Shot #{selected_measurement.shot_number} updated successfully!"
+                        )
                         st.rerun()
 
                     except Exception as e:
@@ -1896,15 +2132,19 @@ def render_shots_tab(session: DopeSessionModel, service: DopeService):
                 data=csv,
                 file_name=f"dope_shots_{session.id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
                 mime="text/csv",
-                help="Download shot measurements as CSV file")
+                help="Download shot measurements as CSV file",
+            )
 
     except Exception as e:
         st.error(f"Error loading shot measurements: {str(e)}")
         st.info(
-            "Unable to load shot data. This may be due to database connectivity issues.")
+            "Unable to load shot data. This may be due to database connectivity issues."
+        )
 
 
-def _save_measurement_changes(original_df, edited_df, measurements, service: DopeService, user_unit_system: str):
+def _save_measurement_changes(
+    original_df, edited_df, measurements, dope_api: DopeAPI, user_unit_system: str
+):
     """
     Save changes made to measurement data back to the database.
 
@@ -1912,14 +2152,16 @@ def _save_measurement_changes(original_df, edited_df, measurements, service: Dop
         original_df: Original DataFrame before edits
         edited_df: Modified DataFrame with user edits
         measurements: List of DopeMeasurementModel objects
-        service: DopeService instance for database operations
+        dope_api: DopeAPI instance for database operations
         user_unit_system: "Imperial" or "Metric" for unit conversions
     """
     try:
         # Find which rows have changed
         changes_made = []
 
-        for index, (orig_row, edited_row) in enumerate(zip(original_df.itertuples(), edited_df.itertuples())):
+        for index, (orig_row, edited_row) in enumerate(
+            zip(original_df.itertuples(), edited_df.itertuples())
+        ):
             # Compare each row to find changes
             if orig_row != edited_row:
                 # Get the corresponding measurement
@@ -1944,12 +2186,14 @@ def _save_measurement_changes(original_df, edited_df, measurements, service: Dop
                     if changed_fields:
                         # Save changes to database
                         try:
-                            service.update_measurement(
+                            dope_api.update_measurement(
                                 measurement.id, changed_fields, measurement.user_id
                             )
                             changes_made.append(f"Shot #{measurement.shot_number}")
                         except Exception as e:
-                            st.error(f"Failed to save changes for Shot #{measurement.shot_number}: {str(e)}")
+                            st.error(
+                                f"Failed to save changes for Shot #{measurement.shot_number}: {str(e)}"
+                            )
 
         if changes_made:
             st.success(f"✅ Saved changes for: {', '.join(changes_made)}")
@@ -1960,7 +2204,9 @@ def _save_measurement_changes(original_df, edited_df, measurements, service: Dop
         st.error(f"Error saving measurement changes: {str(e)}")
 
 
-def _convert_edited_row_to_metric(edited_row, column_names, user_unit_system: str) -> dict:
+def _convert_edited_row_to_metric(
+    edited_row, column_names, user_unit_system: str
+) -> dict:
     """
     Convert edited row values from display units back to metric units for database storage.
 
@@ -1981,7 +2227,9 @@ def _convert_edited_row_to_metric(edited_row, column_names, user_unit_system: st
             row_data[col_name] = edited_row[i + 1]
 
     # Convert velocity
-    velocity_col = "Velocity (fps)" if user_unit_system == "Imperial" else "Velocity (m/s)"
+    velocity_col = (
+        "Velocity (fps)" if user_unit_system == "Imperial" else "Velocity (m/s)"
+    )
     if velocity_col in row_data and row_data[velocity_col]:
         try:
             velocity_val = float(row_data[velocity_col])
@@ -2017,7 +2265,9 @@ def _convert_edited_row_to_metric(edited_row, column_names, user_unit_system: st
             pass
 
     # Convert temperature
-    temp_col = "Temperature (°F)" if user_unit_system == "Imperial" else "Temperature (°C)"
+    temp_col = (
+        "Temperature (°F)" if user_unit_system == "Imperial" else "Temperature (°C)"
+    )
     if temp_col in row_data and row_data[temp_col]:
         try:
             temp_val = float(row_data[temp_col])
@@ -2029,7 +2279,9 @@ def _convert_edited_row_to_metric(edited_row, column_names, user_unit_system: st
             pass
 
     # Convert pressure
-    pressure_col = "Pressure (inHg)" if user_unit_system == "Imperial" else "Pressure (hPa)"
+    pressure_col = (
+        "Pressure (inHg)" if user_unit_system == "Imperial" else "Pressure (hPa)"
+    )
     if pressure_col in row_data and row_data[pressure_col]:
         try:
             pressure_val = float(row_data[pressure_col])
@@ -2049,14 +2301,20 @@ def _convert_edited_row_to_metric(edited_row, column_names, user_unit_system: st
         "Humidity (%)": "humidity_pct",
         "Clean Bore": "clean_bore",
         "Cold Bore": "cold_bore",
-        "Notes": "shot_notes"
+        "Notes": "shot_notes",
     }
 
     for display_name, field_name in direct_fields.items():
-        if display_name in row_data and row_data[display_name] != '':
+        if display_name in row_data and row_data[display_name] != "":
             value = row_data[display_name]
             # Convert numeric fields to appropriate types
-            if field_name in ["shot_number", "distance_m", "elevation_adjustment", "windage_adjustment", "humidity_pct"]:
+            if field_name in [
+                "shot_number",
+                "distance_m",
+                "elevation_adjustment",
+                "windage_adjustment",
+                "humidity_pct",
+            ]:
                 try:
                     update_data[field_name] = float(value) if value else None
                 except (ValueError, TypeError):
@@ -2079,14 +2337,16 @@ def _values_different(orig_value, new_value) -> bool:
         True if values are different and should be updated
     """
     # Handle None values
-    if orig_value is None and (new_value is None or new_value == '' or new_value == 0):
+    if orig_value is None and (new_value is None or new_value == "" or new_value == 0):
         return False
 
-    if new_value is None and (orig_value is None or orig_value == '' or orig_value == 0):
+    if new_value is None and (
+        orig_value is None or orig_value == "" or orig_value == 0
+    ):
         return False
 
     # Handle empty strings
-    if orig_value == '' and (new_value == '' or new_value is None):
+    if orig_value == "" and (new_value == "" or new_value is None):
         return False
 
     # Handle numeric comparisons with tolerance for floating point
@@ -2112,18 +2372,34 @@ def _values_different(orig_value, new_value) -> bool:
 def _get_default_visible_columns() -> List[str]:
     """Get default visible columns for the table per requirements: Selector, Start Time, Session Name, Range Name, Rifle, Cartridge Type, Bullet, Bullet Weight"""
     return [
-        "Start Time", "Session Name", "Range", "Rifle", "Cartridge Type",
-        "Bullet", "Bullet Weight (gr)"
+        "Start Time",
+        "Session Name",
+        "Range",
+        "Rifle",
+        "Cartridge Type",
+        "Bullet",
+        "Bullet Weight (gr)",
     ]
 
 
 def _get_all_available_columns() -> List[str]:
     """Get all available columns for visibility toggle"""
     return [
-        "Session Name", "Start Time", "End Time", "Duration",
-        "Rifle", "Cartridge", "Cartridge Type", "Bullet", "Bullet Weight (gr)",
-        "Distance (m)", "Range", "Temperature (°C)", "Humidity (%)",
-        "Wind Speed (m/s)", "Notes"
+        "Session Name",
+        "Start Time",
+        "End Time",
+        "Duration",
+        "Rifle",
+        "Cartridge",
+        "Cartridge Type",
+        "Bullet",
+        "Bullet Weight (gr)",
+        "Distance (m)",
+        "Range",
+        "Temperature (°C)",
+        "Humidity (%)",
+        "Wind Speed (m/s)",
+        "Notes",
     ]
 
 
@@ -2143,10 +2419,13 @@ def _render_table_controls(total_sessions: int):
             sort_column = st.selectbox(
                 "Column",
                 options=_get_all_available_columns(),
-                index=_get_all_available_columns().index(settings["sort_column"])
-                    if settings["sort_column"] in _get_all_available_columns() else 0,
+                index=(
+                    _get_all_available_columns().index(settings["sort_column"])
+                    if settings["sort_column"] in _get_all_available_columns()
+                    else 0
+                ),
                 key="sort_column_select",
-                label_visibility="collapsed"
+                label_visibility="collapsed",
             )
             settings["sort_column"] = sort_column
 
@@ -2156,9 +2435,9 @@ def _render_table_controls(total_sessions: int):
                 options=["Asc", "Desc"],
                 index=0 if settings["sort_ascending"] else 1,
                 key="sort_order_select",
-                label_visibility="collapsed"
+                label_visibility="collapsed",
             )
-            settings["sort_ascending"] = (sort_ascending == "Asc")
+            settings["sort_ascending"] = sort_ascending == "Asc"
 
     with control_col2:
         # Column visibility toggle
@@ -2168,7 +2447,12 @@ def _render_table_controls(total_sessions: int):
 
             # High priority columns (always visible)
             st.write("*Essential Columns:*")
-            high_priority = ["Session Name", "Start Time", "Cartridge Type", "Bullet Weight (gr)"]
+            high_priority = [
+                "Session Name",
+                "Start Time",
+                "Cartridge Type",
+                "Bullet Weight (gr)",
+            ]
             for col in high_priority:
                 st.checkbox(col, value=True, disabled=True, key=f"col_high_{col}")
 
@@ -2183,7 +2467,9 @@ def _render_table_controls(total_sessions: int):
             new_visible = high_priority.copy()  # Always include high priority
 
             for col in optional_columns:
-                if st.checkbox(col, value=(col in visible_columns), key=f"col_opt_{col}"):
+                if st.checkbox(
+                    col, value=(col in visible_columns), key=f"col_opt_{col}"
+                ):
                     new_visible.append(col)
 
             settings["visible_columns"] = new_visible
@@ -2199,7 +2485,7 @@ def _render_table_controls(total_sessions: int):
                 options=[25, 50, 100, 200],
                 index=[25, 50, 100, 200].index(settings["page_size"]),
                 key="page_size_select",
-                label_visibility="collapsed"
+                label_visibility="collapsed",
             )
             settings["page_size"] = page_size
 
@@ -2209,14 +2495,17 @@ def _render_table_controls(total_sessions: int):
             current_page = min(settings["current_page"], total_pages - 1)
 
             if total_pages > 1:
-                new_page = st.number_input(
-                    f"Page (1-{total_pages})",
-                    min_value=1,
-                    max_value=total_pages,
-                    value=current_page + 1,
-                    key="page_number_input",
-                    label_visibility="collapsed"
-                ) - 1
+                new_page = (
+                    st.number_input(
+                        f"Page (1-{total_pages})",
+                        min_value=1,
+                        max_value=total_pages,
+                        value=current_page + 1,
+                        key="page_number_input",
+                        label_visibility="collapsed",
+                    )
+                    - 1
+                )
                 settings["current_page"] = new_page
             else:
                 settings["current_page"] = 0
@@ -2234,7 +2523,9 @@ def _render_table_controls(total_sessions: int):
                     st.rerun()
 
             with nav_col2:
-                if st.button("▶️", disabled=(current_page >= total_pages - 1), key="next_page"):
+                if st.button(
+                    "▶️", disabled=(current_page >= total_pages - 1), key="next_page"
+                ):
                     settings["current_page"] = min(total_pages - 1, current_page + 1)
                     st.rerun()
 
@@ -2252,8 +2543,7 @@ def _apply_table_sorting_and_pagination(df: pd.DataFrame) -> pd.DataFrame:
     # Apply sorting
     if settings["sort_column"] in df.columns:
         df = df.sort_values(
-            by=settings["sort_column"],
-            ascending=settings["sort_ascending"]
+            by=settings["sort_column"], ascending=settings["sort_ascending"]
         ).reset_index(drop=True)
 
     # Apply column visibility
