@@ -1,0 +1,4 @@
+manufacturer,model,weight_grains,bullet_diameter_groove_mm,bore_diameter_land_mm,bullet_length_mm,ballistic_coefficient_g1,ballistic_coefficient_g7,sectional_density,min_req_twist_rate_in_per_rev,pref_twist_rate_in_per_rev,data_source_name,data_source_url
+TEST_Sierra,TEST_MatchKing,168.0,7.82,7.62,31.5,0.462,0.243,0.253,10.0,9.0,TEST_SOURCE,https://test.example.com
+TEST_Hornady,TEST_ELD-M,147.0,6.71,6.5,33.3,0.697,0.351,0.301,8.0,7.5,TEST_SOURCE,https://test.example.com
+TEST_Berger,TEST_Hybrid,185.0,7.82,7.62,35.1,0.549,0.283,0.279,11.0,10.0,TEST_SOURCE,https://test.example.com

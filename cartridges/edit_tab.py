@@ -1,6 +1,10 @@
 import pandas as pd
 import streamlit as st
 
+from bullets.api import BulletsAPI
+
+from .api import CartridgesAPI
+
 
 def render_edit_cartridges_tab(user, supabase):
     """Render the Create/Edit Cartridges tab"""
@@ -8,6 +12,10 @@ def render_edit_cartridges_tab(user, supabase):
     st.markdown(
         "Create a new cartridge specification by first selecting a bullet and then providing details."
     )
+
+    # Initialize APIs
+    cartridges_api = CartridgesAPI(supabase)
+    bullets_api = BulletsAPI(supabase)
 
     try:
         # Get available cartridge types
@@ -21,19 +29,12 @@ def render_edit_cartridges_tab(user, supabase):
             )
             return
 
-        cartridge_type_options = [ct["name"]
-                                  for ct in cartridge_types_response.data]
+        cartridge_type_options = [ct["name"] for ct in cartridge_types_response.data]
 
-        # Get available bullets
-        bullets_response = (
-            supabase.table("bullets")
-            .select(
-                "id, manufacturer, model, weight_grains, ballistic_coefficient_g1, ballistic_coefficient_g7"
-            )
-            .execute()
-        )
+        # Get available bullets using API
+        bullets = bullets_api.get_all_bullets()
 
-        if not bullets_response.data:
+        if not bullets:
             st.error(
                 "No bullets found. Please ensure bullets are loaded in the database."
             )
@@ -43,12 +44,12 @@ def render_edit_cartridges_tab(user, supabase):
         bullet_options = {}
         bullet_lookup = {}
 
-        for bullet in bullets_response.data:
-            description = f"{bullet['manufacturer']} {bullet['model']} {bullet['weight_grains']}gr"
-            if bullet.get("ballistic_coefficient_g1"):
-                description += f" (BC G1: {bullet['ballistic_coefficient_g1']})"
-            bullet_options[description] = bullet["id"]
-            bullet_lookup[bullet["id"]] = bullet
+        for bullet in bullets:
+            description = bullet.display_name
+            if bullet.ballistic_coefficient_g1:
+                description += f" (BC G1: {bullet.ballistic_coefficient_g1})"
+            bullet_options[description] = bullet.id
+            bullet_lookup[bullet.id] = bullet
 
         # Form for creating new cartridge
         with st.form("create_cartridge_form", clear_on_submit=True):
@@ -105,22 +106,20 @@ def render_edit_cartridges_tab(user, supabase):
                 col1, col2, col3 = st.columns(3)
 
                 with col1:
-                    st.write(
-                        f"**Manufacturer:** {selected_bullet['manufacturer']}")
-                    st.write(f"**Model:** {selected_bullet['model']}")
+                    st.write(f"**Manufacturer:** {selected_bullet.manufacturer}")
+                    st.write(f"**Model:** {selected_bullet.model}")
 
                 with col2:
-                    st.write(
-                        f"**Weight:** {selected_bullet['weight_grains']} grains")
-                    if selected_bullet.get("ballistic_coefficient_g1"):
+                    st.write(f"**Weight:** {selected_bullet.weight_grains} grains")
+                    if selected_bullet.ballistic_coefficient_g1:
                         st.write(
-                            f"**BC G1:** {selected_bullet['ballistic_coefficient_g1']}"
+                            f"**BC G1:** {selected_bullet.ballistic_coefficient_g1}"
                         )
 
                 with col3:
-                    if selected_bullet.get("ballistic_coefficient_g7"):
+                    if selected_bullet.ballistic_coefficient_g7:
                         st.write(
-                            f"**BC G7:** {selected_bullet['ballistic_coefficient_g7']}"
+                            f"**BC G7:** {selected_bullet.ballistic_coefficient_g7}"
                         )
 
             # Form submission
@@ -143,9 +142,9 @@ def render_edit_cartridges_tab(user, supabase):
 
                 # Validate URL format if provided
                 if data_source_link.strip() and not data_source_link.startswith(
-                        ("http://", "https://")):
-                    errors.append(
-                        "Data Source URL must start with http:// or https://")
+                    ("http://", "https://")
+                ):
+                    errors.append("Data Source URL must start with http:// or https://")
 
                 if errors:
                     st.error("Please fix the following errors:")
@@ -173,58 +172,53 @@ def render_edit_cartridges_tab(user, supabase):
                         ),
                     }
 
-                    # Insert the cartridge
-                    response = (
-                        supabase.table("cartridges").insert(cartridge_data).execute())
+                    # Create the cartridge using API
+                    cartridges_api.create_user_cartridge(cartridge_data, user["id"])
 
-                    if response.data:
-                        st.success("✅ Cartridge created successfully!")
-                        st.info(
-                            "The new cartridge will appear in the View tab after refresh."
-                        )
-                    else:
-                        st.error(
-                            "Failed to create cartridge. Please try again.")
+                    st.success("✅ Cartridge created successfully!")
+                    st.info(
+                        "The new cartridge will appear in the View tab after refresh."
+                    )
 
                 except Exception as e:
                     st.error(f"Error creating cartridge: {str(e)}")
-                    if "duplicate key value violates unique constraint" in str(
-                            e):
-                        st.info(
-                            "A cartridge with this combination already exists.")
+                    if "duplicate key value violates unique constraint" in str(e):
+                        st.info("A cartridge with this combination already exists.")
 
         # Show existing user cartridges
         st.subheader(" Your Cartridges")
-        user_cartridges_response = (
-            supabase.table("cartridges")
-            .select(
-                """
-                *,
-                bullets:bullet_id (
-                    manufacturer,
-                    model,
-                    weight_grains
-                )
-            """
-            )
-            .eq("owner_id", user["id"])
-            .execute()
-        )
+        all_cartridges = cartridges_api.get_all_cartridges(user["id"])
+        # Filter for user-owned cartridges only
+        user_cartridges_models = [c for c in all_cartridges if c.owner_id == user["id"]]
 
-        if user_cartridges_response.data:
+        if user_cartridges_models:
             # Process and display user cartridges
             user_cartridges = []
-            for cartridge in user_cartridges_response.data:
-                bullet_info = cartridge.get("bullets", {}) or {}
+            for cartridge in user_cartridges_models:
+                # Build bullet display name from flattened fields
+                bullet_name = "Unknown"
+                if (
+                    cartridge.bullet_manufacturer
+                    and cartridge.bullet_model
+                    and cartridge.bullet_weight_grains
+                ):
+                    weight = cartridge.bullet_weight_grains
+                    weight_str = (
+                        f"{weight:.0f}" if weight == int(weight) else f"{weight}"
+                    )
+                    bore = cartridge.bore_diameter_land_mm or ""
+                    groove = cartridge.bullet_diameter_groove_mm or ""
+                    bullet_name = f"{cartridge.bullet_manufacturer} {cartridge.bullet_model} {weight_str}gr {bore}mm/{groove}mm"
+
                 user_cartridges.append(
                     {
-                        "Manufacturer": cartridge.get("make", ""),
-                        "Model": cartridge.get("model", ""),
-                        "Cartridge Type": cartridge.get("cartridge_type", ""),
-                        "Bullet": f"{bullet_info.get('manufacturer', '')} {bullet_info.get('model', '')} {bullet_info.get('weight_grains', '')}gr".strip(),
+                        "Manufacturer": cartridge.make,
+                        "Model": cartridge.model,
+                        "Cartridge Type": cartridge.cartridge_type,
+                        "Bullet": bullet_name,
                         "Created": (
-                            cartridge.get("created_at", "")[:10]
-                            if cartridge.get("created_at")
+                            str(cartridge.created_at)[:10]
+                            if cartridge.created_at
                             else ""
                         ),
                     }
@@ -237,8 +231,7 @@ def render_edit_cartridges_tab(user, supabase):
                     use_container_width=True,
                     hide_index=True,
                 )
-                st.info(
-                    f"You have created {len(user_cartridges)} custom cartridge(s).")
+                st.info(f"You have created {len(user_cartridges)} custom cartridge(s).")
             else:
                 st.info("You haven't created any custom cartridges yet.")
         else:

@@ -66,7 +66,7 @@ class TestBulletModel(unittest.TestCase):
     def test_bullet_model_display_name(self):
         """Test display_name property"""
         bullet = BulletModel.from_supabase_record(self.sample_record)
-        expected = "Hornady ELD-M - 147gr - 6.5mm"
+        expected = "Hornady ELD-M 147.0gr 6.35mm/6.5mm"
         self.assertEqual(bullet.display_name, expected)
 
     def test_bullet_model_with_optional_none_values(self):
@@ -94,7 +94,7 @@ class TestBulletModel(unittest.TestCase):
         self.assertIsNone(bullet.ballistic_coefficient_g1)
         self.assertEqual(
             bullet.display_name,
-            "Federal Gold Medal - 168gr - 7.82mm")
+            "Federal Gold Medal 168.0gr 7.62mm/7.82mm")
 
     def test_bullet_model_display_name_variations(self):
         """Test display name with various formats"""
@@ -104,7 +104,7 @@ class TestBulletModel(unittest.TestCase):
         bullet = BulletModel.from_supabase_record(record)
         self.assertEqual(
             bullet.display_name,
-            "Hornady ELD-M - 147.5gr - 6.5mm")
+            "Hornady ELD-M 147.5gr 6.35mm/6.5mm")
 
         # Test with very long manufacturer name
         record["manufacturer"] = "Very Long Manufacturer Name"
@@ -623,16 +623,16 @@ class TestBulletsPageStructure(unittest.TestCase):
         with open(create_tab_path, "r") as f:
             content = f.read()
 
-        self.assertIn("from .service import BulletsService", content)
+        self.assertIn("from .api import BulletsAPI", content)
 
     def test_bullets_view_tab_has_service_import(self):
-        """Test that bullets view_tab imports the service and models"""
+        """Test that bullets view_tab imports the API"""
         view_tab_path = os.path.join(os.path.dirname(__file__), "view_tab.py")
 
         with open(view_tab_path, "r") as f:
             content = f.read()
 
-        self.assertIn("from .service import BulletsService", content)
+        self.assertIn("from .api import BulletsAPI", content)
 
 
 class TestBulletsIntegration(unittest.TestCase):
@@ -693,7 +693,7 @@ class TestBulletsIntegration(unittest.TestCase):
         self.assertIsNone(bullet.pref_twist_rate_in_per_rev)
         self.assertEqual(
             bullet.display_name,
-            "Sierra MatchKing - 123.0gr - 6.71mm")
+            "Sierra MatchKing 123.0gr 6.5mm/6.71mm")
 
     def test_bulk_bullet_creation_workflow(self):
         """Test creating multiple bullets in a batch workflow"""
@@ -796,7 +796,7 @@ class TestBulletsIntegration(unittest.TestCase):
         self.assertEqual(hornady_bullet.manufacturer, "Hornady")
         self.assertEqual(
             hornady_bullet.display_name,
-            "Hornady ELD-M - 147gr - 6.5mm")
+            "Hornady ELD-M 147.0gr 6.35mm/6.5mm")
 
         # Test bullet model to_dict works correctly
         hornady_dict = hornady_bullet.to_dict()
@@ -809,7 +809,7 @@ class TestBulletsIntegration(unittest.TestCase):
         self.assertIsNone(federal_bullet.ballistic_coefficient_g1)
         self.assertEqual(
             federal_bullet.display_name,
-            "Federal Gold Medal - 168gr - 7.82mm")
+            "Federal Gold Medal 168.0gr 7.62mm/7.82mm")
 
     def test_filter_and_unique_values_integration(self):
         """Test integration of filtering and unique value extraction"""
@@ -993,7 +993,7 @@ class TestBulletsIntegration(unittest.TestCase):
         self.assertEqual(bullet.data_source_name, "Sierra Official")
 
         # Test display formatting
-        expected_display = "Sierra MatchKing - 123gr - 6.71mm"
+        expected_display = "Sierra MatchKing 123.0gr 6.5mm/6.71mm"
         self.assertEqual(bullet.display_name, expected_display)
 
         # Test to_dict doesn't include id but includes all other fields
@@ -1019,16 +1019,16 @@ class TestBulletsTabIntegration(unittest.TestCase):
             "user_metadata": {"is_admin": False}
         }
 
-    @patch('bullets.create_tab.BulletsService')
+    @patch('bullets.create_tab.BulletsAPI')
     @patch('streamlit.form')
     @patch('streamlit.header')
     def test_create_tab_admin_access_integration(
-            self, mock_header, mock_form, mock_service_class):
+            self, mock_header, mock_form, mock_api_class):
         """Test that create tab properly integrates with admin access control"""
         from bullets.create_tab import render_create_bullets_tab
 
-        mock_service = Mock()
-        mock_service_class.return_value = mock_service
+        mock_api = Mock()
+        mock_api_class.return_value = mock_api
 
         # Mock form context manager
         mock_form_context = MagicMock()
@@ -1045,15 +1045,15 @@ class TestBulletsTabIntegration(unittest.TestCase):
             mock_warning.assert_not_called()
             # Info might be called for help text, but not for access denied
 
-            # Should initialize service
-            mock_service_class.assert_called_once_with(self.mock_supabase)
+            # Should initialize API
+            mock_api_class.assert_called_once_with(self.mock_supabase)
 
-    @patch('bullets.create_tab.BulletsService')
+    @patch('bullets.create_tab.BulletsAPI')
     @patch('streamlit.warning')
     @patch('streamlit.info')
     @patch('streamlit.header')
     def test_create_tab_non_admin_access_integration(
-            self, mock_header, mock_info, mock_warning, mock_service_class):
+            self, mock_header, mock_info, mock_warning, mock_api_class):
         """Test that create tab blocks non-admin users"""
         from bullets.create_tab import render_create_bullets_tab
 
@@ -1065,8 +1065,8 @@ class TestBulletsTabIntegration(unittest.TestCase):
         mock_info.assert_called_with(
             "This global bullet database is maintained by administrators to ensure data quality and consistency.")
 
-        # Should not initialize service for non-admin
-        mock_service_class.assert_not_called()
+        # Should not initialize API for non-admin
+        mock_api_class.assert_not_called()
 
 
 if __name__ == "__main__":

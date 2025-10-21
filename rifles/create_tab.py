@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 import streamlit as st
 
-from .service import RifleService
+from .api import RiflesAPI
 
 
 @st.cache_data
@@ -26,7 +26,8 @@ def render_create_rifle_tab(user, supabase):
     cartridge_options = get_cartridge_types(supabase)
     if not cartridge_options:
         st.error(
-            "❌ Unable to load cartridge types. Please check your database connection.")
+            "❌ Unable to load cartridge types. Please check your database connection."
+        )
         return
 
     # Create form for rifle entry
@@ -123,9 +124,9 @@ def render_create_rifle_tab(user, supabase):
                     "updated_at": datetime.now(timezone.utc).isoformat(),
                 }
 
-                # Insert into database using service
-                rifle_service = RifleService(supabase)
-                rifle_id = rifle_service.create_rifle(rifle_data)
+                # Insert into database using API
+                rifles_api = RiflesAPI(supabase)
+                rifle = rifles_api.create_rifle(rifle_data, user["id"])
 
                 st.success(f"✅ Rifle entry '{name}' created successfully!")
 

@@ -677,6 +677,9 @@ class TestDopeService(unittest.TestCase):
 
     def test_create_session(self):
         """Test creating a new session"""
+        from datetime import datetime
+        import uuid
+
         session_data = {
             "session_name": "New Test Session",
             "cartridge_id": "new_cartridge",
@@ -688,6 +691,33 @@ class TestDopeService(unittest.TestCase):
             "bullet_model": "New BModel",
             "bullet_weight": "200",
         }
+
+        # Mock the insert response
+        new_id = str(uuid.uuid4())
+        mock_insert_response = MagicMock()
+        mock_insert_response.data = [{
+            "id": new_id,
+            "user_id": self.test_user_id,
+            "datetime_local": datetime.now().isoformat(),
+            **session_data,
+            "created_at": datetime.now().isoformat(),
+            "updated_at": datetime.now().isoformat()
+        }]
+
+        # Mock the fetch response for get_session_by_id
+        mock_fetch_response = MagicMock()
+        mock_fetch_response.data = {
+            "id": new_id,
+            "user_id": self.test_user_id,
+            "datetime_local": datetime.now().isoformat(),
+            **session_data,
+            "created_at": datetime.now().isoformat(),
+            "updated_at": datetime.now().isoformat()
+        }
+
+        # Configure the mock to return these responses
+        self.mock_supabase.table.return_value.insert.return_value.execute.return_value = mock_insert_response
+        self.mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.single.return_value.execute.return_value = mock_fetch_response
 
         new_session = self.service.create_session(
             session_data, self.test_user_id)

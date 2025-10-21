@@ -30,15 +30,15 @@ class BulletModel:
             user_id=record["user_id"],
             manufacturer=record["manufacturer"],
             model=record["model"],
-            weight_grains=record["weight_grains"],
-            bullet_diameter_groove_mm=record["bullet_diameter_groove_mm"],
-            bore_diameter_land_mm=record["bore_diameter_land_mm"],
-            bullet_length_mm=record.get("bullet_length_mm"),
-            ballistic_coefficient_g1=record.get("ballistic_coefficient_g1"),
-            ballistic_coefficient_g7=record.get("ballistic_coefficient_g7"),
-            sectional_density=record.get("sectional_density"),
-            min_req_twist_rate_in_per_rev=record.get("min_req_twist_rate_in_per_rev"),
-            pref_twist_rate_in_per_rev=record.get("pref_twist_rate_in_per_rev"),
+            weight_grains=float(record["weight_grains"]),
+            bullet_diameter_groove_mm=float(record["bullet_diameter_groove_mm"]),
+            bore_diameter_land_mm=float(record["bore_diameter_land_mm"]),
+            bullet_length_mm=float(record["bullet_length_mm"]) if record.get("bullet_length_mm") is not None else None,
+            ballistic_coefficient_g1=float(record["ballistic_coefficient_g1"]) if record.get("ballistic_coefficient_g1") is not None else None,
+            ballistic_coefficient_g7=float(record["ballistic_coefficient_g7"]) if record.get("ballistic_coefficient_g7") is not None else None,
+            sectional_density=float(record["sectional_density"]) if record.get("sectional_density") is not None else None,
+            min_req_twist_rate_in_per_rev=float(record["min_req_twist_rate_in_per_rev"]) if record.get("min_req_twist_rate_in_per_rev") is not None else None,
+            pref_twist_rate_in_per_rev=float(record["pref_twist_rate_in_per_rev"]) if record.get("pref_twist_rate_in_per_rev") is not None else None,
             data_source_name=record.get("data_source_name"),
             data_source_url=record.get("data_source_url"),
         )
@@ -70,4 +70,4 @@ class BulletModel:
     @property
     def display_name(self) -> str:
         """Get a friendly display name for the bullet"""
-        return f"{self.manufacturer} {self.model} - {self.weight_grains}gr - {self.bullet_diameter_groove_mm}mm"
+        return f"{self.manufacturer} {self.model} {self.weight_grains}gr {self.bore_diameter_land_mm}mm/{self.bullet_diameter_groove_mm}mm"

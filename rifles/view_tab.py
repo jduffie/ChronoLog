@@ -3,7 +3,7 @@ from datetime import datetime
 import pandas as pd
 import streamlit as st
 
-from .service import RifleService
+from .api import RiflesAPI
 
 
 @st.cache_data
@@ -19,12 +19,12 @@ def get_cartridge_types(_supabase):
 def render_view_rifle_tab(user, supabase):
     """Render the View Rifles tab"""
 
-    # Initialize rifle service
-    rifle_service = RifleService(supabase)
+    # Initialize rifles API
+    rifles_api = RiflesAPI(supabase)
 
     try:
-        # Get all rifle entries for the user using service
-        rifles = rifle_service.get_rifles_for_user(user["id"])
+        # Get all rifle entries for the user using API
+        rifles = rifles_api.get_all_rifles(user["id"])
 
         if not rifles:
             st.info(
@@ -33,18 +33,23 @@ def render_view_rifle_tab(user, supabase):
             return
 
         # Convert to DataFrame for better display
-        df = pd.DataFrame([{
-            'id': rifle.id,
-            'name': rifle.name,
-            'cartridge_type': rifle.cartridge_type,
-            'barrel_twist_ratio': rifle.barrel_twist_ratio,
-            'barrel_length': rifle.barrel_length,
-            'sight_offset': rifle.sight_offset,
-            'trigger': rifle.trigger,
-            'scope': rifle.scope,
-            'created_at': rifle.created_at,
-            'updated_at': rifle.updated_at
-        } for rifle in rifles])
+        df = pd.DataFrame(
+            [
+                {
+                    "id": rifle.id,
+                    "name": rifle.name,
+                    "cartridge_type": rifle.cartridge_type,
+                    "barrel_twist_ratio": rifle.barrel_twist_ratio,
+                    "barrel_length": rifle.barrel_length,
+                    "sight_offset": rifle.sight_offset,
+                    "trigger": rifle.trigger,
+                    "scope": rifle.scope,
+                    "created_at": rifle.created_at,
+                    "updated_at": rifle.updated_at,
+                }
+                for rifle in rifles
+            ]
+        )
 
         # Display summary stats
         col1, col2, col3, col4 = st.columns(4)
@@ -74,18 +79,16 @@ def render_view_rifle_tab(user, supabase):
             with col1:
                 # Filter by cartridge type
                 cartridge_types = df["cartridge_type"].dropna().unique()
-                cartridge_options = ["All"] + \
-                    sorted([c for c in cartridge_types if c])
+                cartridge_options = ["All"] + sorted([c for c in cartridge_types if c])
                 selected_cartridge = st.selectbox(
-                    "Filter by Cartridge Type:", cartridge_options)
+                    "Filter by Cartridge Type:", cartridge_options
+                )
 
             with col2:
                 # Filter by twist ratio
                 twist_ratios = df["barrel_twist_ratio"].dropna().unique()
-                twist_options = ["All"] + \
-                    sorted([t for t in twist_ratios if t])
-                selected_twist = st.selectbox(
-                    "Filter by Twist Ratio:", twist_options)
+                twist_options = ["All"] + sorted([t for t in twist_ratios if t])
+                selected_twist = st.selectbox("Filter by Twist Ratio:", twist_options)
 
         # Apply filters
         filtered_df = df.copy()
@@ -112,10 +115,12 @@ def render_view_rifle_tab(user, supabase):
         display_df = filtered_df.copy()
 
         # Format dates for display
-        display_df["created_at"] = pd.to_datetime(
-            display_df["created_at"]).dt.strftime("%Y-%m-%d %H:%M")
-        display_df["updated_at"] = pd.to_datetime(
-            display_df["updated_at"]).dt.strftime("%Y-%m-%d %H:%M")
+        display_df["created_at"] = pd.to_datetime(display_df["created_at"]).dt.strftime(
+            "%Y-%m-%d %H:%M"
+        )
+        display_df["updated_at"] = pd.to_datetime(display_df["updated_at"]).dt.strftime(
+            "%Y-%m-%d %H:%M"
+        )
 
         # Replace NaN values with empty strings for better display
         display_df = display_df.fillna("")
@@ -155,33 +160,23 @@ def render_view_rifle_tab(user, supabase):
             on_select="rerun",
             selection_mode="single-row",
             column_config={
-                "Rifle Name": st.column_config.TextColumn(
-                    "Rifle Name",
-                    width="medium"),
+                "Rifle Name": st.column_config.TextColumn("Rifle Name", width="medium"),
                 "Cartridge Type": st.column_config.TextColumn(
-                    "Cartridge Type",
-                    width="medium"),
+                    "Cartridge Type", width="medium"
+                ),
                 "Twist Ratio": st.column_config.TextColumn(
-                    "Twist Ratio",
-                    width="small"),
+                    "Twist Ratio", width="small"
+                ),
                 "Barrel Length": st.column_config.TextColumn(
-                    "Barrel Length",
-                    width="small"),
+                    "Barrel Length", width="small"
+                ),
                 "Sight Offset": st.column_config.TextColumn(
-                    "Sight Offset",
-                    width="small"),
-                "Trigger": st.column_config.TextColumn(
-                    "Trigger",
-                    width="medium"),
-                "Scope": st.column_config.TextColumn(
-                    "Scope",
-                    width="large"),
-                "Created": st.column_config.TextColumn(
-                    "Created",
-                    width="medium"),
-                "Updated": st.column_config.TextColumn(
-                    "Updated",
-                    width="medium"),
+                    "Sight Offset", width="small"
+                ),
+                "Trigger": st.column_config.TextColumn("Trigger", width="medium"),
+                "Scope": st.column_config.TextColumn("Scope", width="large"),
+                "Created": st.column_config.TextColumn("Created", width="medium"),
+                "Updated": st.column_config.TextColumn("Updated", width="medium"),
             },
         )
 
@@ -207,8 +202,7 @@ def render_view_rifle_tab(user, supabase):
             with col1:
                 st.markdown("**Basic Information**")
                 st.write(f"**Name:** {selected_rifle_data['name']}")
-                st.write(
-                    f"**Cartridge Type:** {selected_rifle_data['cartridge_type']}")
+                st.write(f"**Cartridge Type:** {selected_rifle_data['cartridge_type']}")
                 st.write(
                     f"**Twist Ratio:** {selected_rifle_data['barrel_twist_ratio'] or 'Not specified'}"
                 )
@@ -222,9 +216,11 @@ def render_view_rifle_tab(user, supabase):
             with col2:
                 st.markdown("**Components**")
                 st.write(
-                    f"**Trigger:** {selected_rifle_data['trigger'] or 'Not specified'}")
+                    f"**Trigger:** {selected_rifle_data['trigger'] or 'Not specified'}"
+                )
                 st.write(
-                    f"**Scope:** {selected_rifle_data['scope'] or 'Not specified'}")
+                    f"**Scope:** {selected_rifle_data['scope'] or 'Not specified'}"
+                )
                 st.write(
                     f"**Created:** {pd.to_datetime(selected_rifle_data['created_at']).strftime('%Y-%m-%d %H:%M')}"
                 )
@@ -235,22 +231,17 @@ def render_view_rifle_tab(user, supabase):
             with col3:
                 st.markdown("**Actions**")
                 # Edit button
-                if st.button(
-                    "✏️ Edit",
-                    type="secondary",
-                        use_container_width=True):
-                    st.session_state.editing_rifle_id = selected_rifle_data['id']
+                if st.button("✏️ Edit", type="secondary", use_container_width=True):
+                    st.session_state.editing_rifle_id = selected_rifle_data["id"]
 
                 # Delete button
-                if st.button(
-                    "🗑️ Delete",
-                    type="secondary",
-                        use_container_width=True):
-                    st.session_state.deleting_rifle_id = selected_rifle_data['id']
+                if st.button("🗑️ Delete", type="secondary", use_container_width=True):
+                    st.session_state.deleting_rifle_id = selected_rifle_data["id"]
 
         else:
             st.info(
-                " Click on a rifle in the table above to view details and access Edit/Delete options")
+                " Click on a rifle in the table above to view details and access Edit/Delete options"
+            )
 
         # Export option
         if st.button(" Download as CSV"):
@@ -263,17 +254,26 @@ def render_view_rifle_tab(user, supabase):
             )
 
         # Handle Edit Modal
-        if hasattr(
-                st.session_state,
-                'editing_rifle_id') and st.session_state.editing_rifle_id:
+        if (
+            hasattr(st.session_state, "editing_rifle_id")
+            and st.session_state.editing_rifle_id
+        ):
             # Get the rifle data for editing
-            rifle_to_edit = filtered_df[filtered_df["id"] == st.session_state.editing_rifle_id].iloc[
-                0] if not filtered_df[filtered_df["id"] == st.session_state.editing_rifle_id].empty else None
+            rifle_to_edit = (
+                filtered_df[
+                    filtered_df["id"] == st.session_state.editing_rifle_id
+                ].iloc[0]
+                if not filtered_df[
+                    filtered_df["id"] == st.session_state.editing_rifle_id
+                ].empty
+                else None
+            )
 
             if rifle_to_edit is not None:
                 st.subheader(f"✏️ Edit {rifle_to_edit['name']}")
                 st.info(
-                    "ℹ️ You can only edit optional attributes. Name and cartridge type cannot be changed.")
+                    "ℹ️ You can only edit optional attributes. Name and cartridge type cannot be changed."
+                )
 
                 # Create edit form with only nullable fields
                 with st.form(f"edit_rifle_form_{st.session_state.editing_rifle_id}"):
@@ -322,10 +322,12 @@ def render_view_rifle_tab(user, supabase):
                     col1, col2 = st.columns([1, 1])
                     with col1:
                         submitted = st.form_submit_button(
-                            "💾 Update Rifle", type="primary", use_container_width=True)
+                            "💾 Update Rifle", type="primary", use_container_width=True
+                        )
                     with col2:
                         cancelled = st.form_submit_button(
-                            "❌ Cancel", use_container_width=True)
+                            "❌ Cancel", use_container_width=True
+                        )
 
                     if cancelled:
                         del st.session_state.editing_rifle_id
@@ -335,20 +337,36 @@ def render_view_rifle_tab(user, supabase):
                         try:
                             # Prepare update data (only nullable fields)
                             update_data = {
-                                "barrel_twist_ratio": new_barrel_twist_ratio.strip() if new_barrel_twist_ratio.strip() else None,
-                                "barrel_length": new_barrel_length.strip() if new_barrel_length.strip() else None,
-                                "sight_offset": new_sight_offset.strip() if new_sight_offset.strip() else None,
-                                "trigger": new_trigger.strip() if new_trigger.strip() else None,
-                                "scope": new_scope.strip() if new_scope.strip() else None,
+                                "barrel_twist_ratio": (
+                                    new_barrel_twist_ratio.strip()
+                                    if new_barrel_twist_ratio.strip()
+                                    else None
+                                ),
+                                "barrel_length": (
+                                    new_barrel_length.strip()
+                                    if new_barrel_length.strip()
+                                    else None
+                                ),
+                                "sight_offset": (
+                                    new_sight_offset.strip()
+                                    if new_sight_offset.strip()
+                                    else None
+                                ),
+                                "trigger": (
+                                    new_trigger.strip() if new_trigger.strip() else None
+                                ),
+                                "scope": (
+                                    new_scope.strip() if new_scope.strip() else None
+                                ),
                                 "updated_at": datetime.now().isoformat(),
                             }
 
                             # Update the rifle
                             try:
-                                rifle_service.update_rifle(
+                                rifles_api.update_rifle(
                                     st.session_state.editing_rifle_id,
+                                    update_data,
                                     user["id"],
-                                    update_data
                                 )
                                 update_success = True
                             except Exception as e:
@@ -357,25 +375,40 @@ def render_view_rifle_tab(user, supabase):
 
                             if update_success:
                                 st.success(
-                                    f"✅ Successfully updated: {rifle_to_edit['name']}")
+                                    f"✅ Successfully updated: {rifle_to_edit['name']}"
+                                )
 
                                 # Show what changed
                                 changes = []
-                                if rifle_to_edit["barrel_twist_ratio"] != update_data["barrel_twist_ratio"]:
+                                if (
+                                    rifle_to_edit["barrel_twist_ratio"]
+                                    != update_data["barrel_twist_ratio"]
+                                ):
                                     changes.append(
-                                        f"Twist Ratio: '{rifle_to_edit['barrel_twist_ratio'] or 'None'}' → '{update_data['barrel_twist_ratio'] or 'None'}'")
-                                if rifle_to_edit["barrel_length"] != update_data["barrel_length"]:
+                                        f"Twist Ratio: '{rifle_to_edit['barrel_twist_ratio'] or 'None'}' → '{update_data['barrel_twist_ratio'] or 'None'}'"
+                                    )
+                                if (
+                                    rifle_to_edit["barrel_length"]
+                                    != update_data["barrel_length"]
+                                ):
                                     changes.append(
-                                        f"Barrel Length: '{rifle_to_edit['barrel_length'] or 'None'}' → '{update_data['barrel_length'] or 'None'}'")
-                                if rifle_to_edit["sight_offset"] != update_data["sight_offset"]:
+                                        f"Barrel Length: '{rifle_to_edit['barrel_length'] or 'None'}' → '{update_data['barrel_length'] or 'None'}'"
+                                    )
+                                if (
+                                    rifle_to_edit["sight_offset"]
+                                    != update_data["sight_offset"]
+                                ):
                                     changes.append(
-                                        f"Sight Offset: '{rifle_to_edit['sight_offset'] or 'None'}' → '{update_data['sight_offset'] or 'None'}'")
+                                        f"Sight Offset: '{rifle_to_edit['sight_offset'] or 'None'}' → '{update_data['sight_offset'] or 'None'}'"
+                                    )
                                 if rifle_to_edit["trigger"] != update_data["trigger"]:
                                     changes.append(
-                                        f"Trigger: '{rifle_to_edit['trigger'] or 'None'}' → '{update_data['trigger'] or 'None'}'")
+                                        f"Trigger: '{rifle_to_edit['trigger'] or 'None'}' → '{update_data['trigger'] or 'None'}'"
+                                    )
                                 if rifle_to_edit["scope"] != update_data["scope"]:
                                     changes.append(
-                                        f"Scope: '{rifle_to_edit['scope'] or 'None'}' → '{update_data['scope'] or 'None'}'")
+                                        f"Scope: '{rifle_to_edit['scope'] or 'None'}' → '{update_data['scope'] or 'None'}'"
+                                    )
 
                                 if changes:
                                     with st.expander("📝 Changes Made"):
@@ -396,31 +429,38 @@ def render_view_rifle_tab(user, supabase):
                 st.rerun()
 
         # Handle Delete Confirmation
-        if hasattr(
-                st.session_state,
-                'deleting_rifle_id') and st.session_state.deleting_rifle_id:
+        if (
+            hasattr(st.session_state, "deleting_rifle_id")
+            and st.session_state.deleting_rifle_id
+        ):
             # Get the rifle data for deletion
-            rifle_to_delete = filtered_df[filtered_df["id"] == st.session_state.deleting_rifle_id].iloc[
-                0] if not filtered_df[filtered_df["id"] == st.session_state.deleting_rifle_id].empty else None
+            rifle_to_delete = (
+                filtered_df[
+                    filtered_df["id"] == st.session_state.deleting_rifle_id
+                ].iloc[0]
+                if not filtered_df[
+                    filtered_df["id"] == st.session_state.deleting_rifle_id
+                ].empty
+                else None
+            )
 
             if rifle_to_delete is not None:
                 st.subheader(f"🗑️ Delete {rifle_to_delete['name']}")
                 st.warning("⚠️ This action cannot be undone!")
                 st.write(
-                    f"Are you sure you want to delete **{rifle_to_delete['name']}** ({rifle_to_delete['cartridge_type']})?")
+                    f"Are you sure you want to delete **{rifle_to_delete['name']}** ({rifle_to_delete['cartridge_type']})?"
+                )
 
                 col1, col2 = st.columns([1, 1])
                 with col1:
                     if st.button(
-                        "🗑️ Yes, Delete",
-                        type="primary",
-                            use_container_width=True):
+                        "🗑️ Yes, Delete", type="primary", use_container_width=True
+                    ):
                         try:
                             # Delete the rifle
                             try:
-                                rifle_service.delete_rifle(
-                                    st.session_state.deleting_rifle_id,
-                                    user["id"]
+                                rifles_api.delete_rifle(
+                                    st.session_state.deleting_rifle_id, user["id"]
                                 )
                                 delete_success = True
                             except Exception as e:
@@ -428,8 +468,7 @@ def render_view_rifle_tab(user, supabase):
                                 st.error(f"❌ Error deleting rifle: {str(e)}")
 
                             if delete_success:
-                                st.success(
-                                    f"✅ Deleted: {rifle_to_delete['name']}")
+                                st.success(f"✅ Deleted: {rifle_to_delete['name']}")
                                 del st.session_state.deleting_rifle_id
                                 st.rerun()
                             else:

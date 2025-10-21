@@ -58,12 +58,12 @@ class DopeSessionModel:
     bullet_make: str = ""  # NOT NULL
     bullet_model: str = ""  # NOT NULL
     bullet_weight: str = ""  # NOT NULL (text type)
+    bore_diameter_land_mm: str = ""  # NOT NULL (text type)
     bullet_length_mm: Optional[str] = None  # text type
     ballistic_coefficient_g1: Optional[str] = None  # text type
     ballistic_coefficient_g7: Optional[str] = None  # text type
     sectional_density: Optional[str] = None  # text type
     bullet_diameter_groove_mm: Optional[str] = None  # text type
-    bore_diameter_land_mm: Optional[str] = None  # text type
 
     # Median weather fields from weather association (all metric)
     temperature_c_median: Optional[float] = None
@@ -155,12 +155,12 @@ class DopeSessionModel:
             bullet_make=record.get("bullet_make", ""),
             bullet_model=record.get("bullet_model", ""),
             bullet_weight=record.get("bullet_weight", ""),
+            bore_diameter_land_mm=record.get("bore_diameter_land_mm", ""),
             bullet_length_mm=record.get("bullet_length_mm"),
             ballistic_coefficient_g1=record.get("ballistic_coefficient_g1"),
             ballistic_coefficient_g7=record.get("ballistic_coefficient_g7"),
             sectional_density=record.get("sectional_density"),
             bullet_diameter_groove_mm=record.get("bullet_diameter_groove_mm"),
-            bore_diameter_land_mm=record.get("bore_diameter_land_mm"),
             temperature_c_median=record.get("temperature_c_median"),
             relative_humidity_pct_median=record.get("relative_humidity_pct_median"),
             barometric_pressure_hpa_median=record.get("barometric_pressure_hpa_median"),
