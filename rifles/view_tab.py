@@ -3,7 +3,7 @@ from datetime import datetime
 import pandas as pd
 import streamlit as st
 
-from .service import RifleService
+from .api import RiflesAPI
 
 
 @st.cache_data
@@ -19,12 +19,12 @@ def get_cartridge_types(_supabase):
 def render_view_rifle_tab(user, supabase):
     """Render the View Rifles tab"""
 
-    # Initialize rifle service
-    rifle_service = RifleService(supabase)
+    # Initialize rifles API
+    rifles_api = RiflesAPI(supabase)
 
     try:
-        # Get all rifle entries for the user using service
-        rifles = rifle_service.get_rifles_for_user(user["id"])
+        # Get all rifle entries for the user using API
+        rifles = rifles_api.get_all_rifles(user["id"])
 
         if not rifles:
             st.info(
@@ -345,10 +345,10 @@ def render_view_rifle_tab(user, supabase):
 
                             # Update the rifle
                             try:
-                                rifle_service.update_rifle(
+                                rifles_api.update_rifle(
                                     st.session_state.editing_rifle_id,
-                                    user["id"],
-                                    update_data
+                                    update_data,
+                                    user["id"]
                                 )
                                 update_success = True
                             except Exception as e:
@@ -418,7 +418,7 @@ def render_view_rifle_tab(user, supabase):
                         try:
                             # Delete the rifle
                             try:
-                                rifle_service.delete_rifle(
+                                rifles_api.delete_rifle(
                                     st.session_state.deleting_rifle_id,
                                     user["id"]
                                 )

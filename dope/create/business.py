@@ -17,7 +17,7 @@ from dope.models import DopeSessionModel
 from dope.service import DopeService
 from dope.weather_associator import WeatherSessionAssociator
 from mapping.submission.submission_model import SubmissionModel
-from rifles.models import Rifle
+from rifles.models import RifleModel
 from rifles.service import RifleService
 from weather.models import WeatherSource
 from weather.service import WeatherService
@@ -59,7 +59,7 @@ class DopeCreateBusiness:
         except Exception as e:
             raise Exception(f"Error loading chronograph sessions: {str(e)}")
     
-    def get_rifles_for_user(self, user_id: str)-> List[Rifle]:
+    def get_rifles_for_user(self, user_id: str)-> List[RifleModel]:
         """Get rifles for user"""
         try:
             return self.rifle_service.get_rifles_for_user(user_id)
