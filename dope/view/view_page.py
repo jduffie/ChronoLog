@@ -82,11 +82,11 @@ def render_view_page():
         url = st.secrets["supabase"]["url"]
         key = st.secrets["supabase"]["key"]
         supabase = create_client(url, key)
-        service = DopeAPI(supabase)
+        dope_api = DopeAPI(supabase)
     except Exception as e:
         st.error(f"Error connecting to database: {str(e)}")
         st.info("Using mock data for development")
-        service = DopeAPI(None)
+        dope_api = DopeAPI(None)
 
     try:
         # Initialize private session state for DOPE view page
@@ -115,7 +115,7 @@ def render_view_page():
 
         # Get filtered sessions
         sessions = get_filtered_sessions(
-            service, user_id, st.session_state.dope_view["filters"]
+            dope_api, user_id, st.session_state.dope_view["filters"]
         )
 
         if not sessions:
@@ -144,7 +144,7 @@ def render_view_page():
                 None,
             )
             if selected_session:
-                render_session_details(selected_session, service, user_id)
+                render_session_details(selected_session, dope_api, user_id)
 
     except Exception as e:
         st.error(f"Error loading DOPE sessions: {str(e)}")
@@ -762,12 +762,12 @@ def render_session_details(session: DopeSessionModel, dope_api: DopeAPI, user_id
 
     # Handle delete confirmation modal
     if st.session_state.dope_view.get("delete_confirm") == session.id:
-        render_delete_confirmation_modal(session, service, user_id)
+        render_delete_confirmation_modal(session, dope_api, user_id)
         return
 
     # Handle edit mode
     if st.session_state.dope_view.get("edit_session") == session.id:
-        render_edit_session_modal(session, service, user_id)
+        render_edit_session_modal(session, dope_api, user_id)
         return
 
     # Action buttons
@@ -809,7 +809,7 @@ def render_session_details(session: DopeSessionModel, dope_api: DopeAPI, user_id
         render_weather_info_tab(session)
 
     with tab7:
-        render_shots_tab(session, service)
+        render_shots_tab(session, dope_api)
 
 
 def render_edit_session_modal(
@@ -1150,11 +1150,11 @@ def render_bulk_delete_confirmation_modal(
             use_container_width=True,
         ):
             try:
-                # Get service from context
+                # Get dope_api from context
                 url = st.secrets["supabase"]["url"]
                 key = st.secrets["supabase"]["key"]
                 supabase = create_client(url, key)
-                service = DopeAPI(supabase)
+                dope_api = DopeAPI(supabase)
                 user_id = st.session_state.user.get("id")
 
                 # Perform bulk deletion
