@@ -1,8 +1,9 @@
 import pandas as pd
 import streamlit as st
 
-from .api import CartridgesAPI
 from bullets.api import BulletsAPI
+
+from .api import CartridgesAPI
 
 
 def render_edit_cartridges_tab(user, supabase):
@@ -28,8 +29,7 @@ def render_edit_cartridges_tab(user, supabase):
             )
             return
 
-        cartridge_type_options = [ct["name"]
-                                  for ct in cartridge_types_response.data]
+        cartridge_type_options = [ct["name"] for ct in cartridge_types_response.data]
 
         # Get available bullets using API
         bullets = bullets_api.get_all_bullets()
@@ -106,13 +106,11 @@ def render_edit_cartridges_tab(user, supabase):
                 col1, col2, col3 = st.columns(3)
 
                 with col1:
-                    st.write(
-                        f"**Manufacturer:** {selected_bullet.manufacturer}")
+                    st.write(f"**Manufacturer:** {selected_bullet.manufacturer}")
                     st.write(f"**Model:** {selected_bullet.model}")
 
                 with col2:
-                    st.write(
-                        f"**Weight:** {selected_bullet.weight_grains} grains")
+                    st.write(f"**Weight:** {selected_bullet.weight_grains} grains")
                     if selected_bullet.ballistic_coefficient_g1:
                         st.write(
                             f"**BC G1:** {selected_bullet.ballistic_coefficient_g1}"
@@ -144,9 +142,9 @@ def render_edit_cartridges_tab(user, supabase):
 
                 # Validate URL format if provided
                 if data_source_link.strip() and not data_source_link.startswith(
-                        ("http://", "https://")):
-                    errors.append(
-                        "Data Source URL must start with http:// or https://")
+                    ("http://", "https://")
+                ):
+                    errors.append("Data Source URL must start with http:// or https://")
 
                 if errors:
                     st.error("Please fix the following errors:")
@@ -184,10 +182,8 @@ def render_edit_cartridges_tab(user, supabase):
 
                 except Exception as e:
                     st.error(f"Error creating cartridge: {str(e)}")
-                    if "duplicate key value violates unique constraint" in str(
-                            e):
-                        st.info(
-                            "A cartridge with this combination already exists.")
+                    if "duplicate key value violates unique constraint" in str(e):
+                        st.info("A cartridge with this combination already exists.")
 
         # Show existing user cartridges
         st.subheader(" Your Cartridges")
@@ -201,9 +197,15 @@ def render_edit_cartridges_tab(user, supabase):
             for cartridge in user_cartridges_models:
                 # Build bullet display name from flattened fields
                 bullet_name = "Unknown"
-                if cartridge.bullet_manufacturer and cartridge.bullet_model and cartridge.bullet_weight_grains:
+                if (
+                    cartridge.bullet_manufacturer
+                    and cartridge.bullet_model
+                    and cartridge.bullet_weight_grains
+                ):
                     weight = cartridge.bullet_weight_grains
-                    weight_str = f"{weight:.0f}" if weight == int(weight) else f"{weight}"
+                    weight_str = (
+                        f"{weight:.0f}" if weight == int(weight) else f"{weight}"
+                    )
                     bore = cartridge.bore_diameter_land_mm or ""
                     groove = cartridge.bullet_diameter_groove_mm or ""
                     bullet_name = f"{cartridge.bullet_manufacturer} {cartridge.bullet_model} {weight_str}gr {bore}mm/{groove}mm"
@@ -229,8 +231,7 @@ def render_edit_cartridges_tab(user, supabase):
                     use_container_width=True,
                     hide_index=True,
                 )
-                st.info(
-                    f"You have created {len(user_cartridges)} custom cartridge(s).")
+                st.info(f"You have created {len(user_cartridges)} custom cartridge(s).")
             else:
                 st.info("You haven't created any custom cartridges yet.")
         else:

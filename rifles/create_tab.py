@@ -26,7 +26,8 @@ def render_create_rifle_tab(user, supabase):
     cartridge_options = get_cartridge_types(supabase)
     if not cartridge_options:
         st.error(
-            "❌ Unable to load cartridge types. Please check your database connection.")
+            "❌ Unable to load cartridge types. Please check your database connection."
+        )
         return
 
     # Create form for rifle entry
