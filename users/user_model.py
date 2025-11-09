@@ -15,9 +15,21 @@ class UserModel:
     def _get_supabase_client(self):
         """Get Supabase client."""
         if not self.supabase:
-            url = st.secrets["supabase"]["url"]
-            key = st.secrets["supabase"]["key"]
-            self.supabase = create_client(url, key)
+            try:
+                url = st.secrets["supabase"]["url"]
+                key = st.secrets["supabase"]["key"]
+
+                # Validate URL and key are not empty
+                if not url or not key:
+                    raise ValueError("Supabase URL or key is missing from secrets")
+
+                self.supabase = create_client(url, key)
+            except KeyError as e:
+                st.error(f"Missing Supabase configuration in secrets.toml: {str(e)}")
+                raise
+            except Exception as e:
+                st.error(f"Error initializing Supabase client: {str(e)}")
+                raise
         return self.supabase
 
     def get_user_profile(self, email: str) -> Optional[Dict[str, Any]]:

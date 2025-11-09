@@ -9,16 +9,17 @@ This test validates that the cartridges module API works end-to-end:
 - Dual ownership model (global + user-owned) works correctly
 """
 
-import pytest
-from unittest.mock import Mock, MagicMock
 from typing import List
+from unittest.mock import MagicMock, Mock
+
+import pytest
 
 # Test imports work correctly
 from cartridges import (
-    CartridgesAPI,
     CartridgeModel,
-    CartridgeTypeModel,
+    CartridgesAPI,
     CartridgesAPIProtocol,
+    CartridgeTypeModel,
 )
 
 
@@ -28,10 +29,10 @@ class TestCartridgesAPIImports:
     def test_can_import_from_cartridges_module(self):
         """Verify clean imports from cartridges module."""
         from cartridges import (
-            CartridgesAPI,
             CartridgeModel,
-            CartridgeTypeModel,
+            CartridgesAPI,
             CartridgesAPIProtocol,
+            CartridgeTypeModel,
         )
 
         assert CartridgesAPI is not None
@@ -369,8 +370,9 @@ class TestTypeSafety:
 
     def test_api_type_hints_are_correct(self):
         """Verify API method type hints match protocol."""
-        from cartridges.api import CartridgesAPI
         import inspect
+
+        from cartridges.api import CartridgesAPI
 
         # Check get_all_cartridges return type
         sig = inspect.signature(CartridgesAPI.get_all_cartridges)

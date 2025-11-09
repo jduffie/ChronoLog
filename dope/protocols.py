@@ -12,9 +12,10 @@ DOPE is the convergence point that aggregates data from all other modules:
 - Ranges (location and distance)
 """
 
-from typing import Dict, List, Optional, Protocol, Any
-from .models import DopeSessionModel, DopeMeasurementModel
+from typing import Any, Dict, List, Optional, Protocol
+
 from .filters import DopeSessionFilter
+from .models import DopeMeasurementModel, DopeSessionModel
 
 
 class DopeAPIProtocol(Protocol):

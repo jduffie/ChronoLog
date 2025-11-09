@@ -10,16 +10,19 @@ They catch issues like:
 These are NOT full UI tests - they just verify API method calls work.
 """
 
-import sys
 import os
+import sys
 import unittest
-from unittest.mock import MagicMock
 from datetime import datetime
+from unittest.mock import MagicMock
 
 # Add root directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from chronograph.chronograph_session_models import ChronographSession, ChronographMeasurement
+from chronograph.chronograph_session_models import (
+    ChronographMeasurement,
+    ChronographSession,
+)
 from chronograph.chronograph_source_models import ChronographSource
 from chronograph.client_api import ChronographAPI
 

@@ -71,8 +71,8 @@ jobs:
         
     - name: Run tests with pytest and coverage
       run: |
-        echo "Running pytest with coverage..."
-        pytest --cov=. --cov-report=xml --cov-report=html --cov-report=term-missing \
+        echo "Running pytest with coverage (excluding integration tests)..."
+        pytest -m "not integration" --cov=. --cov-report=xml --cov-report=html --cov-report=term-missing \
                --html=test-report.html --self-contained-html \
                chronograph/test_chronograph.py \
                weather/test_weather.py \
@@ -81,6 +81,7 @@ jobs:
                mapping/test_mapping.py \
                test_all_pages.py \
                -v
+        echo "NOTE: Integration tests are excluded from CI and only run locally with real Supabase credentials"
                
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4

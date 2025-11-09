@@ -5,7 +5,8 @@ This module defines the type contract for the bullets module API.
 All implementations of the bullets API must conform to this protocol.
 """
 
-from typing import Protocol, List, Optional
+from typing import List, Optional, Protocol
+
 from .models import BulletModel
 
 

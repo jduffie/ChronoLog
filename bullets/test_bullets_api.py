@@ -8,12 +8,13 @@ This test validates that the bullets module API works end-to-end:
 - Module exports are correct
 """
 
-import pytest
-from unittest.mock import Mock, MagicMock
 from typing import List
+from unittest.mock import MagicMock, Mock
+
+import pytest
 
 # Test imports work correctly
-from bullets import BulletsAPI, BulletModel, BulletsAPIProtocol
+from bullets import BulletModel, BulletsAPI, BulletsAPIProtocol
 
 
 class TestBulletsAPIImports:
@@ -21,7 +22,7 @@ class TestBulletsAPIImports:
 
     def test_can_import_from_bullets_module(self):
         """Verify clean imports from bullets module."""
-        from bullets import BulletsAPI, BulletModel, BulletsAPIProtocol
+        from bullets import BulletModel, BulletsAPI, BulletsAPIProtocol
 
         assert BulletsAPI is not None
         assert BulletModel is not None
@@ -276,8 +277,9 @@ class TestTypeSafety:
 
     def test_api_type_hints_are_correct(self):
         """Verify API method type hints match protocol."""
-        from bullets.api import BulletsAPI
         import inspect
+
+        from bullets.api import BulletsAPI
 
         # Check get_all_bullets return type
         sig = inspect.signature(BulletsAPI.get_all_bullets)

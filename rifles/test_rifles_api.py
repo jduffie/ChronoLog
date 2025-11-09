@@ -8,15 +8,16 @@ This test validates that the rifles module API works end-to-end:
 - Module exports are correct
 """
 
-import pytest
 from datetime import datetime
-from unittest.mock import Mock, MagicMock
 from typing import List
+from unittest.mock import MagicMock, Mock
+
+import pytest
 
 # Test imports work correctly
 from rifles import (
-    RiflesAPI,
     RifleModel,
+    RiflesAPI,
     RiflesAPIProtocol,
 )
 
@@ -27,8 +28,8 @@ class TestRiflesAPIImports:
     def test_can_import_from_rifles_module(self):
         """Verify clean imports from rifles module."""
         from rifles import (
-            RiflesAPI,
             RifleModel,
+            RiflesAPI,
             RiflesAPIProtocol,
         )
 
@@ -455,8 +456,9 @@ class TestTypeSafety:
 
     def test_api_type_hints_are_correct(self):
         """Verify API method type hints match protocol."""
-        from rifles.api import RiflesAPI
         import inspect
+
+        from rifles.api import RiflesAPI
 
         # Check get_all_rifles return type
         sig = inspect.signature(RiflesAPI.get_all_rifles)

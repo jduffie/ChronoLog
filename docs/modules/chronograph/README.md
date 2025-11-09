@@ -547,10 +547,106 @@ CREATE TABLE chronograph_measurements (
 );
 ```
 
+## Duplicate File Handling
+
+The chronograph module implements two-tier duplicate detection for file imports.
+
+### File Storage Level
+
+When uploading a Garmin Excel file with a name that already exists in storage:
+
+1. **Detection**: System checks if filename exists in user's storage directory
+2. **User Prompt**: Warning displayed with checkbox confirmation
+   - Warning message: "File '{filename}' already exists in storage."
+   - Checkbox: "I want to replace the existing file and re-import the data"
+3. **User Decision**:
+   - **Unchecked**: Upload cancelled with info message
+   - **Checked**: Existing file deleted, new file uploaded
+
+**Implementation**: `chronograph/garmin_ui.py` lines 27-54
+
+### Session/Database Level
+
+After file upload, each Excel sheet is processed for import:
+
+1. **Duplicate Detection**: Sessions identified by unique key `(user_id, tab_name, datetime_local)`
+2. **Duplicate Behavior**: Session skipped with warning message
+3. **Non-duplicate Behavior**: Session and measurements imported normally
+
+**Implementation**: `chronograph/garmin_import.py` lines 52-61
+
+### Re-upload Workflow
+
+Complete flow when user re-uploads an existing file:
+
+1. User selects file for upload
+2. System detects filename already exists
+3. Warning displayed with checkbox to confirm replacement
+4. If user confirms:
+   - Existing file deleted from storage
+   - New file uploaded to storage
+   - Excel sheets processed
+5. For each sheet:
+   - Check if session already exists (same user, tab name, timestamp)
+   - If exists: Skip with warning
+   - If new: Import session and measurements
+
+**Result**: Only new or modified session data is added to database. Unchanged sessions remain untouched, preventing data duplication.
+
+### Example Scenarios
+
+**Scenario 1: Re-upload with Same Data**
+```
+1. Upload "Sessions_Jun_2025.xlsx" → Creates sessions A, B, C
+2. Re-upload "Sessions_Jun_2025.xlsx" (no changes)
+   - User confirms file replacement
+   - File replaced in storage
+   - Sessions A, B, C skipped (duplicates detected)
+   - No new database entries
+```
+
+**Scenario 2: Re-upload with New Sheet**
+```
+1. Upload "Sessions_Jun_2025.xlsx" → Creates sessions A, B, C
+2. Edit Excel file, add sheet D
+3. Re-upload "Sessions_Jun_2025.xlsx"
+   - User confirms file replacement
+   - File replaced in storage
+   - Sessions A, B, C skipped (duplicates)
+   - Session D imported (new)
+```
+
+**Scenario 3: Re-upload with Modified Timestamp**
+```
+1. Upload "Sessions_Jun_2025.xlsx" → Creates session A with timestamp T1
+2. Edit Excel file, change session timestamp to T2
+3. Re-upload "Sessions_Jun_2025.xlsx"
+   - User confirms file replacement
+   - File replaced in storage
+   - Session A imported as new (different timestamp)
+   - Original session A remains in database
+```
+
+### Testing Duplicate Handling
+
+Integration tests validate duplicate file behavior:
+
+```bash
+# Run duplicate handling tests
+python -m pytest chronograph/test_garmin_import_integration.py -v -m integration
+```
+
+Tests verify:
+- File existence detection
+- Session duplicate detection (same user/tab/timestamp)
+- Measurement counts unchanged on re-import
+- No data duplication in database
+
 ## Testing
 
-The chronograph module includes 36 unit tests covering:
+The chronograph module includes comprehensive test coverage:
 
+**Unit Tests** (`test_chronograph.py`):
 - Model creation and display methods
 - Source CRUD operations
 - Session CRUD operations with statistics
@@ -560,10 +656,19 @@ The chronograph module includes 36 unit tests covering:
 - Error handling
 - Device identification logic
 
+**Integration Tests** (`test_garmin_import_integration.py`):
+- File import accuracy validation
+- Duplicate file/session handling
+- Statistics calculation verification
+
 Run tests:
 
 ```bash
+# Unit tests
 python -m pytest chronograph/test_chronograph.py -v
+
+# Integration tests (requires Supabase connection)
+python -m pytest chronograph/test_garmin_import_integration.py -v -m integration
 ```
 
 ## See Also

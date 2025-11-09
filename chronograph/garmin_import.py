@@ -55,9 +55,12 @@ class GarminExcelProcessor:
                 sheet_name,
                 ingest_result.session.session_timestamp.isoformat()
             ):
-                st.warning(
-                    f"Session already exists for {ingest_result.session.session_timestamp.strftime('%Y-%m-%d %H:%M')} - skipping sheet '{sheet_name}'"
-                )
+                try:
+                    st.warning(
+                        f"Session already exists for {ingest_result.session.session_timestamp.strftime('%Y-%m-%d %H:%M')} - skipping sheet '{sheet_name}'"
+                    )
+                except Exception:
+                    pass  # Silently ignore if not in Streamlit context
                 continue
 
             # Convert entities to models and save
@@ -111,8 +114,11 @@ class GarminExcelProcessor:
                 valid_measurements += 1
 
             except Exception as e:
-                st.warning(
-                    f"Skipped measurement {measurement_entity.shot_number}: {e}")
+                try:
+                    st.warning(
+                        f"Skipped measurement {measurement_entity.shot_number}: {e}")
+                except Exception:
+                    pass  # Silently ignore if not in Streamlit context
                 skipped_measurements += 1
 
         # Calculate and update session statistics
@@ -120,14 +126,18 @@ class GarminExcelProcessor:
             self.chrono_service.calculate_and_update_session_stats(
                 user_id, session_id)
 
-        # Show processing summary
-        if skipped_measurements > 0:
-            st.warning(
-                f"Processed {valid_measurements} measurements, skipped {skipped_measurements} rows with missing data"
-            )
-        else:
-            st.success(
-                f"Successfully processed {valid_measurements} measurements")
+        # Show processing summary (only if running in Streamlit context)
+        try:
+            if skipped_measurements > 0:
+                st.warning(
+                    f"Processed {valid_measurements} measurements, skipped {skipped_measurements} rows with missing data"
+                )
+            else:
+                st.success(
+                    f"Successfully processed {valid_measurements} measurements")
+        except Exception:
+            # Silently ignore Streamlit errors when running outside Streamlit context (e.g., in tests)
+            pass
 
     def process_excel_sheet(self,
                             excel_file: pd.ExcelFile,

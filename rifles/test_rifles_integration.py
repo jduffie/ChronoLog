@@ -19,12 +19,13 @@ from typing import List
 from unittest.mock import Mock
 
 import pytest
+
 from supabase import create_client
 
 # Add root directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from rifles import RiflesAPI, RifleModel
+from rifles import RifleModel, RiflesAPI
 
 
 class BaseRiflesIntegrationTest(unittest.TestCase):

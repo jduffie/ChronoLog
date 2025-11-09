@@ -677,8 +677,8 @@ class TestDopeService(unittest.TestCase):
 
     def test_create_session(self):
         """Test creating a new session"""
-        from datetime import datetime
         import uuid
+        from datetime import datetime
 
         session_data = {
             "session_name": "New Test Session",
@@ -1033,9 +1033,10 @@ class TestDopeViewPage(unittest.TestCase):
         """Test sessions table rendering with mock data"""
         from datetime import datetime
 
+        import streamlit as st
+
         from dope.models import DopeSessionModel
         from dope.view.view_page import render_sessions_table
-        import streamlit as st
 
         # Initialize session state for DOPE view
         if "dope_view" not in st.session_state:
@@ -1668,6 +1669,7 @@ class TestDopeSessionCreationFlow(unittest.TestCase):
     def setUp(self):
         """Set up test data"""
         from datetime import datetime, timezone
+
         from dope.service import DopeService
 
         self.mock_supabase = MagicMock()

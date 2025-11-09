@@ -8,9 +8,10 @@ The bullets catalog is admin-maintained and globally accessible to all users.
 """
 
 from typing import List, Optional
+
 from .models import BulletModel
-from .service import BulletsService
 from .protocols import BulletsAPIProtocol
+from .service import BulletsService
 
 
 class BulletsAPI:

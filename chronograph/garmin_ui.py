@@ -24,21 +24,43 @@ class GarminImportUI:
             file_bytes = uploaded_file.getvalue()
             file_name = f"{user['email']}/garmin/{uploaded_file.name}"
 
-            # Upload file to storage
+            # Check if file already exists in storage
+            try:
+                existing_files = supabase.storage.from_(bucket).list(f"{user['email']}/garmin/")
+                file_exists = any(f['name'] == uploaded_file.name for f in existing_files)
+            except Exception as e:
+                st.error(f"Error checking existing files: {e}")
+                return
+
+            if file_exists:
+                st.warning(f"File '{uploaded_file.name}' already exists in storage.")
+
+                # Checkbox confirmation to proceed with replacement
+                overwrite_confirm = st.checkbox(
+                    "I want to replace the existing file and re-import the data",
+                    key=f"overwrite_{uploaded_file.name}"
+                )
+
+                if not overwrite_confirm:
+                    st.info("Upload cancelled. Check the box above to proceed with replacement.")
+                    return
+
+                # User confirmed - delete existing file before re-upload
+                st.info("Replacing existing file...")
+                try:
+                    supabase.storage.from_(bucket).remove([file_name])
+                except Exception as e:
+                    st.error(f"Error removing existing file: {e}")
+                    return
+
+            # Upload file to storage (either new or replacement)
             try:
                 supabase.storage.from_(bucket).upload(
                     file_name, file_bytes, {"content-type": uploaded_file.type}
                 )
             except Exception as e:
-                if "already exists" in str(e) or "409" in str(e):
-                    st.error(
-                        f"File '{uploaded_file.name}' already exists in storage.")
-                    st.info(
-                        "Go to the 'My Files' tab to delete the existing file if you want to re-upload it.")
-                    return
-                else:
-                    st.error(f"Error uploading file: {e}")
-                    return
+                st.error(f"Error uploading file: {e}")
+                return
 
             # Process the Excel file using Garmin processor
             self.garmin_processor.process_garmin_excel(

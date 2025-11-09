@@ -10,16 +10,16 @@ They catch issues like:
 These are NOT full UI tests - they just verify API method calls work.
 """
 
-import sys
 import os
+import sys
 import unittest
 from unittest.mock import MagicMock
 
 # Add root directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from bullets.models import BulletModel
 from bullets.api import BulletsAPI
+from bullets.models import BulletModel
 
 
 class TestBulletsUIIntegration(unittest.TestCase):
