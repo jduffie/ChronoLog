@@ -13,7 +13,7 @@ from chronograph.chronograph_session_models import (
     ChronographSession,
 )
 from chronograph.client_api import ChronographAPI
-from dope.api import DopeAPI
+from dope.service import DopeService
 from dope.models import DopeSessionModel
 from dope.weather_associator import WeatherSessionAssociator
 from mapping.submission.submission_model import SubmissionModel
@@ -29,7 +29,7 @@ class DopeCreateBusiness:
     def __init__(self, supabase):
         self.supabase = supabase
         self.chrono_api = ChronographAPI(supabase)
-        self.dope_api = DopeAPI(supabase)
+        self.dope_service = DopeService(supabase)
         self.cartridge_api = CartridgesAPI(supabase)
         self.rifle_api = RiflesAPI(supabase)
         self.weather_api = WeatherAPI(supabase)
@@ -40,10 +40,10 @@ class DopeCreateBusiness:
         """Get chronograph sessions not yet used in any DOPE session"""
         try:
             # Get all chrono sessions for user
-            all_chrono_sessions = self.chrono_api.get_sessions_for_user(user_id)
+            all_chrono_sessions = self.chrono_api.get_all_sessions(user_id)
 
             # Get all DOPE sessions to find used chrono session IDs
-            all_dope_sessions = self.dope_api.get_sessions_for_user(user_id)
+            all_dope_sessions = self.dope_service.get_sessions_for_user(user_id)
             used_chrono_ids = {
                 session.chrono_session_id
                 for session in all_dope_sessions
@@ -162,7 +162,7 @@ class DopeCreateBusiness:
     def create_dope_session(self, session_data: dict, user_id: str):
         """Create a new DOPE session"""
         try:
-            return self.dope_api.create_session(session_data, user_id)
+            return self.dope_service.create_session(session_data, user_id)
         except Exception as e:
             raise Exception(f"Error creating DOPE session: {str(e)}")
 

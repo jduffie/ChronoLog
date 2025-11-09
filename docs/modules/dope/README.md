@@ -106,20 +106,63 @@ Helper class for filtering DOPE sessions by multiple criteria.
 - Environmental conditions (temperature, humidity, wind)
 - Date range
 
+## Three-Layer Architecture
+
+The DOPE module follows ChronoLog's standard three-layer architecture pattern.
+
+**See [architecture-layers.md](architecture-layers.md) for complete documentation.**
+
+### Quick Reference
+
+```
+Business Layer (Workflow Orchestration)
+├─> DopeService         ✅ OWN MODULE: call Service directly
+├─> ChronographAPI      ✅ CROSS-MODULE: call API
+├─> CartridgesAPI       ✅ CROSS-MODULE: call API
+└─> RiflesAPI           ✅ CROSS-MODULE: call API
+
+❌ Business → DopeAPI    WRONG: Creates circular dependency!
+```
+
+**Key Layers:**
+
+1. **Service** (`service.py`): Database operations, complex 6-table JOINs
+2. **API** (`api.py`, `protocols.py`): Public facade wrapping Service
+3. **Business** (`create/business.py`): Workflow orchestration
+   - Calls Service directly for own module (avoids circular dependency)
+   - Calls API for cross-module operations
+4. **UI** (`view/view_page.py`, `create/create_page.py`): Streamlit pages
+
+**Critical Rule**: Business layer NEVER calls own module's API - that creates circular dependency. Business → Service (direct) for own module, Business → API for cross-module.
+
 ## Module Structure
 
 ```
 dope/
-├── models.py              # DopeSessionModel, DopeMeasurementModel
-├── service.py             # DopeService (complex JOINs and business logic)
-├── filters.py             # DopeSessionFilter (session filtering)
-├── protocols.py           # DopeAPIProtocol (type contract)
-├── api.py                 # DopeAPI facade (public interface)
-├── __init__.py            # Module exports
-├── view_tab.py            # Streamlit UI for viewing sessions
-├── create_edit_tab.py     # Streamlit UI for creating/editing sessions
-├── test_dope.py           # Unit tests
-└── test_dope_integration.py  # Integration tests
+├── models.py                    # DopeSessionModel, DopeMeasurementModel
+├── service.py                   # DopeService (database operations, complex JOINs)
+├── filters.py                   # DopeSessionFilter (session filtering)
+├── protocols.py                 # DopeAPIProtocol (type contract)
+├── api.py                       # DopeAPI facade (public interface)
+├── weather_associator.py        # Weather-DOPE association logic
+├── __init__.py                  # Module exports
+│
+├── create/
+│   ├── business.py              # DopeCreateBusiness (create workflow orchestration)
+│   ├── create_page.py           # Streamlit UI for creating sessions
+│   └── view.py                  # UI components for create workflow
+│
+├── view/
+│   ├── view_page.py             # Streamlit UI for viewing sessions
+│   └── requirements.md          # View page requirements
+│
+├── analytics/
+│   └── plan.md                  # Analytics features planning
+│
+├── tools/                       # Utilities and helpers
+│
+├── test_dope_modules.py         # Comprehensive unit tests
+└── test_dope_ui_integration.py  # UI integration tests
 ```
 
 ## API
