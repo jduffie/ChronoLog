@@ -643,22 +643,78 @@ class TestDopeService(unittest.TestCase):
         self.test_user_id = "google-oauth2|111273793361054745867"
 
     def test_get_sessions_for_user(self):
-        """Test getting sessions for a user returns mock data"""
+        """Test getting sessions for a user with properly mocked Supabase"""
+        # Mock the Supabase response
+        mock_response = MagicMock()
+        mock_response.data = [{
+            "id": "session_001",
+            "user_id": self.test_user_id,
+            "session_name": "Test Session",
+            "cartridge_id": "cartridge_001",
+            "rifle_id": "rifle_001",
+            "cartridges": {
+                "make": "Federal",
+                "model": "GMM",
+                "cartridge_type": "308 Winchester",
+                "bullets": {
+                    "manufacturer": "Sierra",
+                    "model": "MatchKing",
+                    "weight_grains": 175,
+                }
+            },
+            "rifles": {
+                "name": "Test Rifle",
+                "barrel_length": 16.0,
+                "barrel_twist_ratio": 7.0
+            },
+            "ranges_submissions": None,
+            "weather_source": None,
+            "chrono_sessions": None,
+        }]
+
+        # Setup the mock chain: table().select().eq().order().execute()
+        self.mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = mock_response
+
         sessions = self.service.get_sessions_for_user(self.test_user_id)
 
         self.assertIsInstance(sessions, list)
-        self.assertGreater(len(sessions), 0)
+        self.assertEqual(len(sessions), 1)
 
         # Check first session has expected structure
         first_session = sessions[0]
         self.assertEqual(first_session.user_id, self.test_user_id)
-        self.assertIsNotNone(first_session.session_name)
-        self.assertIsNotNone(first_session.cartridge_id)
+        self.assertEqual(first_session.session_name, "Test Session")
+        self.assertEqual(first_session.cartridge_id, "cartridge_001")
 
     def test_get_session_by_id(self):
         """Test getting a specific session by ID"""
-        sessions = self.service.get_sessions_for_user(self.test_user_id)
-        target_session_id = sessions[0].id
+        target_session_id = "test_session_123"
+
+        # Mock the Supabase response for get_session_by_id
+        mock_response = MagicMock()
+        mock_response.data = {
+            "id": target_session_id,
+            "user_id": self.test_user_id,
+            "session_name": "Test Session",
+            "cartridge_id": "cartridge_001",
+            "cartridges": {
+                "make": "Federal",
+                "model": "GMM",
+                "cartridge_type": "308 Winchester",
+                "bullets": {
+                    "manufacturer": "Sierra",
+                    "model": "MatchKing",
+                    "weight_grains": 175,
+                }
+            },
+            "rifles": None,
+            "ranges_submissions": None,
+            "weather_source": None,
+            "chrono_sessions": None,
+        }
+
+        # Setup mock chain: table().select().eq().eq().single().execute()
+        self.mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.single.return_value.execute.return_value = mock_response
 
         found_session = self.service.get_session_by_id(
             target_session_id, self.test_user_id
@@ -670,6 +726,9 @@ class TestDopeService(unittest.TestCase):
 
     def test_get_session_by_id_not_found(self):
         """Test getting a non-existent session returns None"""
+        # Mock the Supabase response to raise an exception (not found)
+        self.mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.single.return_value.execute.side_effect = Exception("Not found")
+
         found_session = self.service.get_session_by_id(
             "nonexistent_id", self.test_user_id
         )
@@ -729,16 +788,46 @@ class TestDopeService(unittest.TestCase):
 
     def test_search_sessions(self):
         """Test searching sessions by text"""
+        # Mock the complex search query with joins and or_ clause
+        mock_response = MagicMock()
+        mock_response.data = [{
+            "id": "session_001",
+            "user_id": self.test_user_id,
+            "session_name": "Range Session",
+            "cartridge_id": "cartridge_001",
+            "cartridges": {
+                "make": "Federal",
+                "model": "GMM",
+                "cartridge_type": "223 Remington",
+                "bullets": {
+                    "manufacturer": "Sierra",
+                    "model": "MatchKing",
+                    "weight_grains": 175,
+                }
+            },
+            "rifles": None,
+            "ranges_submissions": None,
+            "weather_source": None,
+        }]
+
+        # Mock the chain: table().select().eq().or_().order().execute()
+        self.mock_supabase.table.return_value.select.return_value.eq.return_value.or_.return_value.order.return_value.execute.return_value = mock_response
+
         # Test search that should find results
         sessions = self.service.search_sessions(self.test_user_id, "Range")
         self.assertGreater(len(sessions), 0)
 
-        # Test search that should find no results
+        # Test search that should find no results (return empty data)
+        mock_empty_response = MagicMock()
+        mock_empty_response.data = []
+        self.mock_supabase.table.return_value.select.return_value.eq.return_value.or_.return_value.order.return_value.execute.return_value = mock_empty_response
+
         sessions = self.service.search_sessions(
             self.test_user_id, "NonexistentTerm")
         self.assertEqual(len(sessions), 0)
 
-        # Test case-insensitive search
+        # Test case-insensitive search (restore mock data)
+        self.mock_supabase.table.return_value.select.return_value.eq.return_value.or_.return_value.order.return_value.execute.return_value = mock_response
         sessions = self.service.search_sessions(self.test_user_id, "federal")
         self.assertGreater(len(sessions), 0)
 
@@ -773,6 +862,34 @@ class TestDopeService(unittest.TestCase):
 
     def test_get_unique_values(self):
         """Test getting unique values for autocomplete"""
+        # Mock get_sessions_for_user to return sessions with test data
+        mock_response = MagicMock()
+        mock_response.data = [
+            {
+                "id": "session_001",
+                "user_id": self.test_user_id,
+                "session_name": "Test Session 1",
+                "cartridge_type": "223 Remington",
+                "rifle_name": "AR-15 SPR",
+                "cartridges": None,
+                "rifles": None,
+                "ranges_submissions": None,
+                "weather_source": None,
+            },
+            {
+                "id": "session_002",
+                "user_id": self.test_user_id,
+                "session_name": "Test Session 2",
+                "cartridge_type": "308 Winchester",
+                "rifle_name": "Precision .308",
+                "cartridges": None,
+                "rifles": None,
+                "ranges_submissions": None,
+                "weather_source": None,
+            },
+        ]
+        self.mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = mock_response
+
         # Test getting unique cartridge types
         cartridge_types = self.service.get_unique_values(
             self.test_user_id, "cartridge_type"
@@ -808,15 +925,70 @@ class TestDopeService(unittest.TestCase):
 
     def test_delete_session(self):
         """Test deleting a session (mocked)"""
+        # Mock the delete response
+        mock_response = MagicMock()
+        mock_response.data = [{"id": "test_session_id"}]
+        self.mock_supabase.table.return_value.delete.return_value.eq.return_value.eq.return_value.execute.return_value = mock_response
+
         result = self.service.delete_session(
             "test_session_id", self.test_user_id)
-        self.assertTrue(result)  # Mock always returns True
+        self.assertTrue(result)  # Mock returns True
 
     def test_update_session(self):
         """Test updating a session"""
+        # Mock get_sessions_for_user to return sessions
+        mock_get_response = MagicMock()
+        mock_get_response.data = [{
+            "id": "session_to_update",
+            "user_id": self.test_user_id,
+            "session_name": "Original Session",
+            "cartridge_id": "cartridge_001",
+            "cartridges": {
+                "make": "Federal",
+                "model": "GMM",
+                "cartridge_type": "308 Winchester",
+                "bullets": {"manufacturer": "Sierra", "model": "MatchKing", "weight_grains": 175}
+            },
+            "rifles": None,
+            "ranges_submissions": None,
+            "weather_source": None,
+        }]
+        self.mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = mock_get_response
+
         # Get an existing session
         sessions = self.service.get_sessions_for_user(self.test_user_id)
         session_to_update = sessions[0]
+
+        # Mock the update response
+        mock_update_response = MagicMock()
+        mock_update_response.data = [{
+            "id": "session_to_update",
+            "user_id": self.test_user_id,
+            "session_name": "Updated Session Name",
+            "notes": "Updated notes",
+            "cartridge_id": "cartridge_001",
+        }]
+        self.mock_supabase.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = mock_update_response
+
+        # Mock get_session_by_id for the retrieve after update
+        mock_fetch_response = MagicMock()
+        mock_fetch_response.data = {
+            "id": "session_to_update",
+            "user_id": self.test_user_id,
+            "session_name": "Updated Session Name",
+            "notes": "Updated notes",
+            "cartridge_id": "cartridge_001",
+            "cartridges": {
+                "make": "Federal",
+                "model": "GMM",
+                "cartridge_type": "308 Winchester",
+                "bullets": {"manufacturer": "Sierra", "model": "MatchKing", "weight_grains": 175}
+            },
+            "rifles": None,
+            "ranges_submissions": None,
+            "weather_source": None,
+        }
+        self.mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.single.return_value.execute.return_value = mock_fetch_response
 
         # Update data
         update_data = {
@@ -845,57 +1017,109 @@ class TestDopeService(unittest.TestCase):
         """Test getting measurements for a DOPE session returns DopeMeasurementModel list"""
         from dope.models import DopeMeasurementModel
 
-        # Test with known session ID that has mock data
+        # Mock the database response
+        mock_response = MagicMock()
+        mock_response.data = [
+            {
+                "id": "measurement_001",
+                "dope_session_id": "session_001",
+                "user_id": self.test_user_id,
+                "shot_number": 1,
+                "speed_mps": 838.4,
+                "ke_j": 1742.8,
+            },
+            {
+                "id": "measurement_002",
+                "dope_session_id": "session_001",
+                "user_id": self.test_user_id,
+                "shot_number": 2,
+                "speed_mps": 840.2,
+                "ke_j": 1750.0,
+            },
+        ]
+
+        # Mock the chain: table().select().eq().eq().order().execute()
+        self.mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.order.return_value.execute.return_value = mock_response
+
+        # Test with known session ID
         measurements = self.service.get_measurements_for_dope_session(
             "session_001", self.test_user_id
         )
 
         self.assertIsInstance(measurements, list)
-        if measurements:  # Should have mock data for session_001
-            self.assertGreater(len(measurements), 0)
-            # Check that all returned items are DopeMeasurementModel instances
-            for measurement in measurements:
-                self.assertIsInstance(measurement, DopeMeasurementModel)
-                self.assertEqual(measurement.dope_session_id, "session_001")
-                self.assertEqual(measurement.user_id, self.test_user_id)
+        self.assertGreater(len(measurements), 0)
+        # Check that all returned items are DopeMeasurementModel instances
+        for measurement in measurements:
+            self.assertIsInstance(measurement, DopeMeasurementModel)
+            self.assertEqual(measurement.dope_session_id, "session_001")
+            self.assertEqual(measurement.user_id, self.test_user_id)
 
     def test_get_measurements_for_unknown_session(self):
         """Test getting measurements for unknown session returns empty list"""
+        # Mock empty response for unknown session
+        mock_response = MagicMock()
+        mock_response.data = []
+        self.mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.order.return_value.execute.return_value = mock_response
+
         measurements = self.service.get_measurements_for_dope_session(
             "unknown_session", self.test_user_id
         )
-        
+
         self.assertIsInstance(measurements, list)
         self.assertEqual(len(measurements), 0)
 
     def test_get_measurements_for_different_user(self):
         """Test getting measurements for different user returns empty list"""
+        # Mock empty response for different user
+        mock_response = MagicMock()
+        mock_response.data = []
+        self.mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.order.return_value.execute.return_value = mock_response
+
         measurements = self.service.get_measurements_for_dope_session(
             "session_001", "different_user_id"
         )
-        
+
         self.assertIsInstance(measurements, list)
         self.assertEqual(len(measurements), 0)
 
     def test_measurements_data_consistency(self):
         """Test that measurement data is consistent and realistic"""
-        
+        # Mock measurements with realistic data
+        mock_response = MagicMock()
+        mock_response.data = [
+            {
+                "id": "measurement_001",
+                "dope_session_id": "session_001",
+                "user_id": self.test_user_id,
+                "shot_number": 1,
+                "speed_mps": 838.4,
+            },
+            {
+                "id": "measurement_002",
+                "dope_session_id": "session_001",
+                "user_id": self.test_user_id,
+                "shot_number": 2,
+                "speed_mps": 842.0,
+            },
+        ]
+        self.mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.order.return_value.execute.return_value = mock_response
+
         measurements = self.service.get_measurements_for_dope_session(
             "session_001", self.test_user_id
         )
-        
+
         if measurements:
             for measurement in measurements:
                 # Check shot numbers are sequential and positive
                 self.assertIsInstance(measurement.shot_number, int)
                 self.assertGreater(measurement.shot_number, 0)
-                
+
                 # Check ballistic data consistency (if present)
                 if measurement.speed_mps:
                     # Check that speed is in realistic range (200-1200 m/s for small arms)
                     self.assertGreater(measurement.speed_mps, 200)
                     self.assertLess(measurement.speed_mps, 1200)
-                
+
                 # Check that required fields are present
                 self.assertEqual(measurement.dope_session_id, "session_001")
                 self.assertEqual(measurement.user_id, self.test_user_id)
@@ -976,7 +1200,8 @@ class TestDopeViewPage(unittest.TestCase):
         from dope.view.view_page import render_main_page_filters
 
         # Mock service and user ID
-        service = DopeService(None)
+        mock_supabase = MagicMock()
+        service = DopeService(mock_supabase)
         user_id = "google-oauth2|111273793361054745867"
 
         with patch("streamlit.expander") as mock_expander, patch(
@@ -1011,7 +1236,8 @@ class TestDopeViewPage(unittest.TestCase):
         from dope.service import DopeService
         from dope.view.view_page import get_filtered_sessions
 
-        service = DopeService(None)
+        mock_supabase = MagicMock()
+        service = DopeService(mock_supabase)
         user_id = "google-oauth2|111273793361054745867"
         filters = {"search": "Federal"}
 
@@ -1177,7 +1403,8 @@ class TestDopeViewPage(unittest.TestCase):
         from dope.service import DopeService
         from dope.view.view_page import render_main_page_filters
 
-        service = DopeService(None)
+        mock_supabase = MagicMock()
+        service = DopeService(mock_supabase)
         user_id = "google-oauth2|111273793361054745867"
 
         with patch("streamlit.expander") as mock_expander, patch(
@@ -1358,12 +1585,29 @@ class TestDopeServiceAdvanced(unittest.TestCase):
 
     def test_get_measurements_for_dope_session(self):
         """Test getting DOPE measurements for a session"""
-        # Test with mocked supabase (should return empty list)
-        # The service method checks for MagicMock by name and returns [] for
-        # mocks
+        # Mock the database response with measurement data
+        mock_response = MagicMock()
+        mock_response.data = [
+            {
+                "id": "measurement_001",
+                "dope_session_id": "session_001",
+                "user_id": self.test_user_id,
+                "shot_number": 1,
+                "speed_mps": 838.4,
+            },
+            {
+                "id": "measurement_002",
+                "dope_session_id": "session_001",
+                "user_id": self.test_user_id,
+                "shot_number": 2,
+                "speed_mps": 842.0,
+            },
+        ]
+        self.mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.order.return_value.execute.return_value = mock_response
+
         measurements = self.service.get_measurements_for_dope_session(
             "session_001", self.test_user_id)
-        # Mock implementation should return empty list since mock is detected
+
         # Should have mock measurements for session_001
         self.assertGreater(len(measurements), 0)
 
@@ -1447,6 +1691,8 @@ class TestDopeServiceAdvanced(unittest.TestCase):
 
     def test_create_session_with_chrono_data(self):
         """Test creating session with chronograph data"""
+        from datetime import datetime, timezone
+
         session_data = {
             "session_name": "Chrono Integration Test",
             "chrono_session_id": "chrono_001",
@@ -1459,12 +1705,53 @@ class TestDopeServiceAdvanced(unittest.TestCase):
             "bullet_weight": "150"
         }
 
-        new_session = self.service.create_session(
-            session_data, self.test_user_id)
+        # Mock chronograph time window
+        start_time = datetime(2024, 8, 20, 12, 0, 0, tzinfo=timezone.utc)
+        end_time = datetime(2024, 8, 20, 12, 30, 0, tzinfo=timezone.utc)
 
-        self.assertIsNotNone(new_session.id)
-        self.assertEqual(new_session.chrono_session_id, "chrono_001")
-        self.assertEqual(new_session.session_name, "Chrono Integration Test")
+        # Mock insert response
+        mock_response = MagicMock()
+        mock_response.data = [{
+            "id": "new_session_001",
+            "user_id": self.test_user_id,
+            "session_name": "Chrono Integration Test",
+            "chrono_session_id": "chrono_001",
+            "start_time": start_time.isoformat(),
+            "end_time": end_time.isoformat(),
+            "speed_mps_min": 835.0,
+            "speed_mps_max": 850.0,
+            "speed_mps_avg": 842.5,
+            "speed_mps_std_dev": 5.2,
+        }]
+
+        mock_table = MagicMock()
+        mock_insert = MagicMock()
+        mock_insert.execute.return_value = mock_response
+        mock_table.insert.return_value = mock_insert
+        self.mock_supabase.table.return_value = mock_table
+
+        # Mock get_session_by_id to return the created session
+        with patch.object(self.service, 'get_session_by_id') as mock_get_session:
+            from dope.models import DopeSessionModel
+            mock_get_session.return_value = DopeSessionModel.from_supabase_record(
+                mock_response.data[0]
+            )
+
+            # Mock ChronographService
+            with patch('dope.service.ChronographService') as mock_chrono_service_class:
+                mock_chrono_service = MagicMock()
+                mock_chrono_service.get_time_window.return_value = (start_time, end_time)
+                mock_chrono_service.get_measurements_for_stats.return_value = [
+                    835.0, 842.0, 845.0, 850.0, 838.0
+                ]
+                mock_chrono_service_class.return_value = mock_chrono_service
+
+                new_session = self.service.create_session(
+                    session_data, self.test_user_id)
+
+                self.assertIsNotNone(new_session.id)
+                self.assertEqual(new_session.chrono_session_id, "chrono_001")
+                self.assertEqual(new_session.session_name, "Chrono Integration Test")
 
     def test_service_error_handling(self):
         """Test service error handling"""
@@ -1493,7 +1780,8 @@ class TestDopeIntegration(unittest.TestCase):
 
     def test_service_model_integration(self):
         """Test service and model integration"""
-        service = self.DopeService(None)  # Mock supabase
+        mock_supabase = MagicMock()
+        service = self.DopeService(mock_supabase)  # Mock supabase
 
         # Get sessions from service
         sessions = service.get_sessions_for_user(self.test_user_id)
@@ -1509,7 +1797,10 @@ class TestDopeIntegration(unittest.TestCase):
 
     def test_create_and_retrieve_workflow(self):
         """Test complete create and retrieve workflow"""
-        service = self.DopeService(None)  # Mock supabase
+        from datetime import datetime, timezone
+
+        mock_supabase = MagicMock()
+        service = self.DopeService(mock_supabase)  # Mock supabase
 
         # Create new session
         session_data = {
@@ -1526,12 +1817,67 @@ class TestDopeIntegration(unittest.TestCase):
             "notes": "Integration test notes"
         }
 
-        new_session = service.create_session(session_data, self.test_user_id)
+        # Mock chronograph time window
+        start_time = datetime(2024, 8, 20, 12, 0, 0, tzinfo=timezone.utc)
+        end_time = datetime(2024, 8, 20, 12, 30, 0, tzinfo=timezone.utc)
 
-        # Verify creation
-        self.assertIsInstance(new_session, self.DopeSessionModel)
-        self.assertIsNotNone(new_session.id)
-        self.assertEqual(new_session.session_name, "Integration Test Session")
+        # Mock insert response
+        mock_response = MagicMock()
+        mock_response.data = [{
+            "id": "new_session_001",
+            "user_id": self.test_user_id,
+            "session_name": "Integration Test Session",
+            "start_time": start_time.isoformat(),
+            "end_time": end_time.isoformat(),
+            "speed_mps_min": 835.0,
+            "speed_mps_max": 850.0,
+            "speed_mps_avg": 842.5,
+            "speed_mps_std_dev": 5.2,
+        }]
+
+        mock_table = MagicMock()
+        mock_insert = MagicMock()
+        mock_insert.execute.return_value = mock_response
+        mock_table.insert.return_value = mock_insert
+        mock_supabase.table.return_value = mock_table
+
+        # Mock the retrieval query to return None (not found)
+        mock_select = MagicMock()
+        mock_eq_id = MagicMock()
+        mock_eq_user = MagicMock()
+        mock_single = MagicMock()
+
+        # Return empty response (not found)
+        mock_single.execute.return_value = MagicMock(data=None)
+
+        # Chain the mocks
+        mock_eq_user.single.return_value = mock_single
+        mock_eq_id.eq.return_value = mock_eq_user
+        mock_select.eq.return_value = mock_eq_id
+        mock_table.select.return_value = mock_select
+
+        # Mock get_session_by_id to return the created session
+        with patch.object(service, 'get_session_by_id') as mock_get_session:
+            from dope.models import DopeSessionModel
+            mock_get_session.return_value = DopeSessionModel.from_supabase_record(
+                mock_response.data[0]
+            )
+
+            # Mock ChronographService
+            with patch('dope.service.ChronographService') as mock_chrono_service_class:
+                mock_chrono_service = MagicMock()
+                mock_chrono_service.get_time_window.return_value = (start_time, end_time)
+                mock_chrono_service.get_measurements_for_stats.return_value = [
+                    835.0, 842.0, 845.0, 850.0, 838.0
+                ]
+                mock_chrono_service_class.return_value = mock_chrono_service
+
+                new_session = service.create_session(session_data, self.test_user_id)
+
+                # Verify creation
+                self.assertIsInstance(new_session, self.DopeSessionModel)
+                self.assertIsNotNone(new_session.id)
+                self.assertEqual(new_session.session_name, "Integration Test Session")
 
         # Try to retrieve by ID (mock will return None for non-existing)
         retrieved_session = service.get_session_by_id(
@@ -1541,7 +1887,8 @@ class TestDopeIntegration(unittest.TestCase):
 
     def test_search_and_filter_integration(self):
         """Test search and filter integration"""
-        service = self.DopeService(None)  # Mock supabase
+        mock_supabase = MagicMock()
+        service = self.DopeService(mock_supabase)  # Mock supabase
 
         # Get all sessions
         all_sessions = service.get_sessions_for_user(self.test_user_id)
@@ -1564,7 +1911,8 @@ class TestDopeIntegration(unittest.TestCase):
 
     def test_statistics_calculation_integration(self):
         """Test statistics calculation with model data"""
-        service = self.DopeService(None)  # Mock supabase
+        mock_supabase = MagicMock()
+        service = self.DopeService(mock_supabase)  # Mock supabase
 
         # Get statistics
         stats = service.get_session_statistics(self.test_user_id)
@@ -1588,7 +1936,8 @@ class TestDopeIntegration(unittest.TestCase):
 
     def test_bulk_operations_workflow(self):
         """Test bulk operations workflow"""
-        service = self.DopeService(None)  # Mock supabase
+        mock_supabase = MagicMock()
+        service = self.DopeService(mock_supabase)  # Mock supabase
 
         # Get multiple sessions
         sessions = service.get_sessions_for_user(self.test_user_id)
@@ -1612,7 +1961,10 @@ class TestDopeIntegration(unittest.TestCase):
 
     def test_error_handling_integration(self):
         """Test error handling across service and model layers"""
-        service = self.DopeService(None)  # Mock supabase
+        from datetime import datetime, timezone
+
+        mock_supabase = MagicMock()
+        service = self.DopeService(mock_supabase)  # Mock supabase
 
         # Test with invalid data
         invalid_session_data = {
@@ -1620,19 +1972,61 @@ class TestDopeIntegration(unittest.TestCase):
             "rifle_name": "",    # Empty required field
         }
 
-        # Create session should still work (validation is in model)
-        new_session = service.create_session(
-            invalid_session_data, self.test_user_id)
-        self.assertIsInstance(new_session, self.DopeSessionModel)
+        # Mock chronograph time window
+        start_time = datetime(2024, 8, 20, 12, 0, 0, tzinfo=timezone.utc)
+        end_time = datetime(2024, 8, 20, 12, 30, 0, tzinfo=timezone.utc)
 
-        # But model should report as incomplete
-        self.assertFalse(new_session.is_complete())
-        missing_fields = new_session.get_missing_mandatory_fields()
-        self.assertGreater(len(missing_fields), 0)
+        # Mock insert response
+        mock_response = MagicMock()
+        mock_response.data = [{
+            "id": "new_session_001",
+            "user_id": self.test_user_id,
+            "session_name": "",
+            "rifle_name": "",
+            "start_time": start_time.isoformat(),
+            "end_time": end_time.isoformat(),
+            "speed_mps_min": 835.0,
+            "speed_mps_max": 850.0,
+            "speed_mps_avg": 842.5,
+            "speed_mps_std_dev": 5.2,
+        }]
+
+        mock_table = MagicMock()
+        mock_insert = MagicMock()
+        mock_insert.execute.return_value = mock_response
+        mock_table.insert.return_value = mock_insert
+        mock_supabase.table.return_value = mock_table
+
+        # Mock get_session_by_id to return the created session
+        with patch.object(service, 'get_session_by_id') as mock_get_session:
+            from dope.models import DopeSessionModel
+            mock_get_session.return_value = DopeSessionModel.from_supabase_record(
+                mock_response.data[0]
+            )
+
+            # Mock ChronographService
+            with patch('dope.service.ChronographService') as mock_chrono_service_class:
+                mock_chrono_service = MagicMock()
+                mock_chrono_service.get_time_window.return_value = (start_time, end_time)
+                mock_chrono_service.get_measurements_for_stats.return_value = [
+                    835.0, 842.0, 845.0, 850.0, 838.0
+                ]
+                mock_chrono_service_class.return_value = mock_chrono_service
+
+                # Create session should still work (validation is in model)
+                new_session = service.create_session(
+                    invalid_session_data, self.test_user_id)
+                self.assertIsInstance(new_session, self.DopeSessionModel)
+
+                # But model should report as incomplete
+                self.assertFalse(new_session.is_complete())
+                missing_fields = new_session.get_missing_mandatory_fields()
+                self.assertGreater(len(missing_fields), 0)
 
     def test_model_service_data_consistency(self):
         """Test data consistency between model and service"""
-        service = self.DopeService(None)  # Mock supabase
+        mock_supabase = MagicMock()
+        service = self.DopeService(mock_supabase)  # Mock supabase
 
         # Get sessions from service
         sessions = service.get_sessions_for_user(self.test_user_id)
@@ -1802,33 +2196,40 @@ class TestDopeSessionCreationFlow(unittest.TestCase):
         mock_table.insert.return_value = mock_insert
         self.mock_supabase.table.return_value = mock_table
 
-        # Mock ChronographService
-        with patch('dope.service.ChronographService') as mock_chrono_service_class:
-            mock_chrono_service = MagicMock()
-            mock_chrono_service.get_time_window.return_value = (
-                self.start_time, self.end_time
-            )
-            # Mock velocity measurements for statistics calculation
-            mock_chrono_service.get_measurements_for_stats.return_value = [
-                835.0, 842.0, 845.0, 850.0, 838.0
-            ]
-            mock_chrono_service_class.return_value = mock_chrono_service
-
-            new_session = self.service.create_session(
-                session_data, self.test_user_id
+        # Mock get_session_by_id to return the created session
+        with patch.object(self.service, 'get_session_by_id') as mock_get_session:
+            from dope.models import DopeSessionModel
+            mock_get_session.return_value = DopeSessionModel.from_supabase_record(
+                mock_response.data[0]
             )
 
-            # Verify time window was retrieved from chronograph service
-            mock_chrono_service.get_time_window.assert_called_once_with(
-                self.test_user_id, "chrono_002"
-            )
+            # Mock ChronographService
+            with patch('dope.service.ChronographService') as mock_chrono_service_class:
+                mock_chrono_service = MagicMock()
+                mock_chrono_service.get_time_window.return_value = (
+                    self.start_time, self.end_time
+                )
+                # Mock velocity measurements for statistics calculation
+                mock_chrono_service.get_measurements_for_stats.return_value = [
+                    835.0, 842.0, 845.0, 850.0, 838.0
+                ]
+                mock_chrono_service_class.return_value = mock_chrono_service
 
-            # Verify start_time and end_time are set from chronograph
-            self.assertIsNotNone(new_session.start_time)
-            self.assertIsNotNone(new_session.end_time)
+                new_session = self.service.create_session(
+                    session_data, self.test_user_id
+                )
+
+                # Verify time window was retrieved from chronograph service
+                mock_chrono_service.get_time_window.assert_called_once_with(
+                    self.test_user_id, "chrono_002"
+                )
+
+                # Verify start_time and end_time are set from chronograph
+                self.assertIsNotNone(new_session.start_time)
+                self.assertIsNotNone(new_session.end_time)
 
     def test_create_dope_session_validates_required_foreign_keys(self):
-        """Test that session creation validates required foreign keys"""
+        """Test that session creation raises exception when database insert fails"""
         # Missing required foreign keys
         incomplete_session_data = {
             "session_name": "Incomplete Session",
@@ -1836,7 +2237,7 @@ class TestDopeSessionCreationFlow(unittest.TestCase):
             # cartridge_id, bullet_id
         }
 
-        # Mock the insert to fail (empty response), triggering fallback
+        # Mock the insert to fail (empty response)
         mock_response = MagicMock()
         mock_response.data = []  # Empty response triggers "Failed to create session" exception
         mock_table = MagicMock()
@@ -1845,15 +2246,15 @@ class TestDopeSessionCreationFlow(unittest.TestCase):
         mock_table.insert.return_value = mock_insert
         self.mock_supabase.table.return_value = mock_table
 
-        # For mocked service, this will still create a session via fallback
-        # (real validation happens in database constraints)
-        new_session = self.service.create_session(
-            incomplete_session_data, self.test_user_id
-        )
+        # Service should raise exception when database returns empty response
+        # (Database validation enforces foreign key constraints)
+        with self.assertRaises(Exception) as context:
+            self.service.create_session(
+                incomplete_session_data, self.test_user_id
+            )
 
-        # With mock, session is created via fallback but would fail in real database
-        self.assertIsNotNone(new_session)
-        self.assertEqual(new_session.session_name, "Incomplete Session")
+        # Verify the exception message
+        self.assertIn("Failed to create session", str(context.exception))
 
     def test_create_dope_session_optional_weather_source(self):
         """Test that weather_source_id is optional"""
@@ -1889,20 +2290,31 @@ class TestDopeSessionCreationFlow(unittest.TestCase):
         mock_table.insert.return_value = mock_insert
         self.mock_supabase.table.return_value = mock_table
 
-        with patch('dope.service.ChronographService') as mock_chrono_service_class:
-            mock_chrono_service = MagicMock()
-            mock_chrono_service.get_time_window.return_value = (
-                self.start_time, self.end_time
-            )
-            mock_chrono_service_class.return_value = mock_chrono_service
-
-            new_session = self.service.create_session(
-                session_data, self.test_user_id
+        # Mock get_session_by_id to return the created session
+        with patch.object(self.service, 'get_session_by_id') as mock_get_session:
+            from dope.models import DopeSessionModel
+            mock_get_session.return_value = DopeSessionModel.from_supabase_record(
+                mock_response.data[0]
             )
 
-            # Verify session created successfully without weather source
-            self.assertIsNotNone(new_session)
-            self.assertIsNone(new_session.weather_source_id)
+            with patch('dope.service.ChronographService') as mock_chrono_service_class:
+                mock_chrono_service = MagicMock()
+                mock_chrono_service.get_time_window.return_value = (
+                    self.start_time, self.end_time
+                )
+                # Mock velocity measurements for statistics calculation
+                mock_chrono_service.get_measurements_for_stats.return_value = [
+                    835.0, 842.0, 845.0, 850.0, 838.0
+                ]
+                mock_chrono_service_class.return_value = mock_chrono_service
+
+                new_session = self.service.create_session(
+                    session_data, self.test_user_id
+                )
+
+                # Verify session created successfully without weather source
+                self.assertIsNotNone(new_session)
+                self.assertIsNone(new_session.weather_source_id)
 
     def test_create_dope_session_user_isolation(self):
         """Test that user_id is properly set for data isolation"""
@@ -1937,19 +2349,30 @@ class TestDopeSessionCreationFlow(unittest.TestCase):
         mock_table.insert.return_value = mock_insert
         self.mock_supabase.table.return_value = mock_table
 
-        with patch('dope.service.ChronographService') as mock_chrono_service_class:
-            mock_chrono_service = MagicMock()
-            mock_chrono_service.get_time_window.return_value = (
-                self.start_time, self.end_time
-            )
-            mock_chrono_service_class.return_value = mock_chrono_service
-
-            new_session = self.service.create_session(
-                session_data, different_user_id
+        # Mock get_session_by_id to return the created session
+        with patch.object(self.service, 'get_session_by_id') as mock_get_session:
+            from dope.models import DopeSessionModel
+            mock_get_session.return_value = DopeSessionModel.from_supabase_record(
+                mock_response.data[0]
             )
 
-            # Verify user_id matches the one provided
-            self.assertEqual(new_session.user_id, different_user_id)
+            with patch('dope.service.ChronographService') as mock_chrono_service_class:
+                mock_chrono_service = MagicMock()
+                mock_chrono_service.get_time_window.return_value = (
+                    self.start_time, self.end_time
+                )
+                # Mock velocity measurements for statistics calculation
+                mock_chrono_service.get_measurements_for_stats.return_value = [
+                    835.0, 842.0, 845.0, 850.0, 838.0
+                ]
+                mock_chrono_service_class.return_value = mock_chrono_service
+
+                new_session = self.service.create_session(
+                    session_data, different_user_id
+                )
+
+                # Verify user_id matches the one provided
+                self.assertEqual(new_session.user_id, different_user_id)
 
     def test_create_dope_session_calculates_velocity_statistics(self):
         """Test that velocity statistics are calculated from chronograph data"""

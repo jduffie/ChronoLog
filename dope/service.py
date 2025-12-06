@@ -12,14 +12,12 @@ class DopeService:
     """Service class for DOPE sessions database operations"""
 
     def __init__(self, supabase_client):
+        if not supabase_client:
+            raise ValueError("DopeService requires a valid Supabase client")
         self.supabase = supabase_client
 
     def get_sessions_for_user(self, user_id: str) -> List[DopeSessionModel]:
         """Get all DOPE sessions for a specific user with joined data"""
-        if not self.supabase or str(
-                type(self.supabase).__name__) == "MagicMock":
-            return self._get_mock_sessions(user_id)
-
         try:
             # Query dope_sessions with joins to get related data
             response = (
@@ -85,9 +83,17 @@ class DopeService:
             return sessions
 
         except Exception as e:
-            print(f"Error fetching DOPE sessions: {e}")
-            # Fallback to mock data for development
-            return self._get_mock_sessions(user_id)
+            error_msg = str(e).lower()
+
+            # "Not found" or no data = legitimate empty list (not an error)
+            if "not found" in error_msg or "no rows" in error_msg:
+                print(f"No DOPE sessions found for user {user_id}")
+                return []
+
+            # System errors = raise (network, auth, DB down)
+            else:
+                print(f"Error fetching DOPE sessions: {e}")
+                raise
 
     def get_session_by_id(
         self, session_id: str, user_id: str
@@ -154,21 +160,22 @@ class DopeService:
             return None
 
         except Exception as e:
-            print(f"Error fetching DOPE session {session_id}: {e}")
-            # Fallback to mock data
-            mock_sessions = self._get_mock_sessions(user_id)
-            return next(
-                (session for session in mock_sessions if session.id == session_id),
-                None)
+            error_msg = str(e).lower()
+
+            # "Not found" = legitimate None (not an error)
+            if "not found" in error_msg or "no rows" in error_msg:
+                print(f"DOPE session {session_id} not found for user {user_id}")
+                return None
+
+            # System errors = raise (network, auth, DB down)
+            else:
+                print(f"Error fetching DOPE session {session_id}: {e}")
+                raise
 
     def get_measurements_for_dope_session(
             self, dope_session_id: str, user_id: str) -> List[DopeMeasurementModel]:
         """Get all measurements for a specific DOPE session"""
         try:
-            if not self.supabase or str(
-                    type(self.supabase).__name__) == "MagicMock":
-                return self._get_mock_measurements(dope_session_id, user_id)
-
             response = (
                 self.supabase.table("dope_measurements")
                 .select("*")
@@ -186,19 +193,10 @@ class DopeService:
         except Exception as e:
             print(
                 f"Error fetching DOPE measurements for session {dope_session_id}: {e}")
-            return self._get_mock_measurements(dope_session_id, user_id)
+            raise
 
     def create_measurement(self, measurement_data: Dict[str, Any], user_id: str) -> DopeMeasurementModel:
         """Create a new DOPE measurement"""
-        if not self.supabase or str(type(self.supabase).__name__) == "MagicMock":
-            # Mock implementation
-            new_measurement = DopeMeasurementModel(
-                id=str(uuid.uuid4()),
-                user_id=user_id,
-                **measurement_data,
-            )
-            return new_measurement
-
         try:
             # Prepare data for insertion
             insert_data = measurement_data.copy()
@@ -226,26 +224,12 @@ class DopeService:
 
         except Exception as e:
             print(f"Error creating DOPE measurement: {e}")
-            # Fallback to mock implementation
-            new_measurement = DopeMeasurementModel(
-                id=str(uuid.uuid4()),
-                user_id=user_id,
-                **measurement_data,
-            )
-            return new_measurement
+            raise
 
     def update_measurement(
         self, measurement_id: str, measurement_data: Dict[str, Any], user_id: str
     ) -> DopeMeasurementModel:
         """Update an existing DOPE measurement"""
-        if not self.supabase or str(type(self.supabase).__name__) == "MagicMock":
-            # Mock implementation - just return a measurement with updated data
-            return DopeMeasurementModel(
-                id=measurement_id,
-                user_id=user_id,
-                **measurement_data,
-            )
-
         try:
             # Prepare data for update
             update_data = measurement_data.copy()
@@ -273,10 +257,6 @@ class DopeService:
 
     def delete_measurement(self, measurement_id: str, user_id: str) -> bool:
         """Delete a DOPE measurement"""
-        if not self.supabase or str(type(self.supabase).__name__) == "MagicMock":
-            # Mock implementation
-            return True
-
         try:
             response = (
                 self.supabase.table("dope_measurements")
@@ -356,30 +336,12 @@ class DopeService:
 
         except Exception as e:
             print(f"Error creating DOPE session: {e}")
-            # Fallback to mock implementation
-            new_session = DopeSessionModel(
-                id=str(uuid.uuid4()),
-                user_id=user_id,
-                datetime_local=datetime.now(),
-                **session_data,
-            )
-            return new_session
+            raise
 
     def update_session(
         self, session_id: str, session_data: Dict[str, Any], user_id: str
     ) -> DopeSessionModel:
         """Update an existing DOPE session"""
-        if not self.supabase or str(type(self.supabase).__name__) == "MagicMock":
-            # Mock implementation
-            existing_session = self.get_session_by_id(session_id, user_id)
-            if existing_session:
-                # Update fields
-                for key, value in session_data.items():
-                    if hasattr(existing_session, key):
-                        setattr(existing_session, key, value)
-                return existing_session
-            raise Exception(f"Session {session_id} not found")
-
         try:
             # Prepare data for update
             update_data = session_data.copy()
@@ -434,10 +396,6 @@ class DopeService:
 
     def delete_session(self, session_id: str, user_id: str) -> bool:
         """Delete a DOPE session and all associated measurements"""
-        if not self.supabase or str(type(self.supabase).__name__) == "MagicMock":
-            # Mock implementation
-            return True
-
         try:
             # First, delete all associated DOPE measurements
             # This is important for data integrity - cascade delete
@@ -467,10 +425,6 @@ class DopeService:
 
     def delete_sessions_bulk(self, session_ids: List[str], user_id: str) -> Dict[str, Any]:
         """Delete multiple DOPE sessions and all associated measurements"""
-        if not self.supabase or str(type(self.supabase).__name__) == "MagicMock":
-            # Mock implementation
-            return {"deleted_count": len(session_ids), "failed_sessions": []}
-
         deleted_count = 0
         failed_sessions = []
 
@@ -495,30 +449,6 @@ class DopeService:
             user_id: str,
             search_term: str) -> List[DopeSessionModel]:
         """Search DOPE sessions by text across multiple fields"""
-        if not self.supabase or str(
-                type(self.supabase).__name__) == "MagicMock":
-            # Mock implementation
-            all_sessions = self._get_mock_sessions(user_id)
-            search_lower = search_term.lower()
-            filtered_sessions = []
-
-            for session in all_sessions:
-                if (
-                    search_lower in session.session_name.lower()
-                    or search_lower in session.cartridge_make.lower()
-                    or search_lower in session.cartridge_model.lower()
-                    or search_lower in session.bullet_make.lower()
-                    or search_lower in session.bullet_model.lower()
-                    or (
-                        session.range_name
-                        and search_lower in session.range_name.lower()
-                    )
-                    or (session.notes and search_lower in session.notes.lower())
-                ):
-                    filtered_sessions.append(session)
-
-            return filtered_sessions
-
         try:
             # Use text search with PostgreSQL's ilike operator across joined
             # tables
@@ -609,49 +539,22 @@ class DopeService:
 
         except Exception as e:
             print(f"Error searching DOPE sessions: {e}")
-            # Fallback to mock data
-            all_sessions = self._get_mock_sessions(user_id)
-            search_lower = search_term.lower()
-            filtered_sessions = []
-
-            for session in all_sessions:
-                if (
-                    search_lower in session.session_name.lower()
-                    or search_lower in session.cartridge_make.lower()
-                    or search_lower in session.cartridge_model.lower()
-                    or search_lower in session.bullet_make.lower()
-                    or search_lower in session.bullet_model.lower()
-                    or (
-                        session.range_name
-                        and search_lower in session.range_name.lower()
-                    )
-                    or (session.notes and search_lower in session.notes.lower())
-                ):
-                    filtered_sessions.append(session)
-
-            return filtered_sessions
+            raise
 
     def filter_sessions(
         self, user_id: str, filters: Dict[str, Any]
     ) -> List[DopeSessionModel]:
         """Filter DOPE sessions based on various criteria"""
-        if not self.supabase or str(type(self.supabase).__name__) == "MagicMock":
-            # Mock implementation using filter helper
-            all_sessions = self._get_mock_sessions(user_id)
-            return DopeSessionFilter(all_sessions).apply_all_filters(filters).get_results()
-
         try:
             # Get all sessions with database-level filtering where possible
             sessions = self._get_sessions_with_db_filters(user_id, filters)
-            
+
             # Apply remaining filters using the filter helper
             return DopeSessionFilter(sessions).apply_all_filters(filters).get_results()
 
         except Exception as e:
             print(f"Error filtering DOPE sessions: {e}")
-            # Fallback to mock implementation
-            all_sessions = self._get_mock_sessions(user_id)
-            return DopeSessionFilter(all_sessions).apply_all_filters(filters).get_results()
+            raise
 
     def _get_sessions_with_db_filters(self, user_id: str, filters: Dict[str, Any]) -> List[DopeSessionModel]:
         """Get sessions with database-level filtering applied"""
@@ -707,24 +610,11 @@ class DopeService:
                 session_data = self._flatten_joined_record(record)
                 sessions.append(DopeSessionModel.from_supabase_record(session_data))
             return sessions
-        
+
         return []
 
     def get_unique_values(self, user_id: str, field_name: str) -> List[str]:
         """Get unique values for a specific field for autocomplete filters"""
-        if not self.supabase or str(
-                type(self.supabase).__name__) == "MagicMock":
-            # Mock implementation
-            all_sessions = self._get_mock_sessions(user_id)
-            values = set()
-
-            for session in all_sessions:
-                value = getattr(session, field_name, None)
-                if value and isinstance(value, str) and value.strip():
-                    values.add(value)
-
-            return sorted(list(values))
-
         try:
             # Get all sessions and extract unique values from the flattened data
             # This is more efficient than querying each field separately since
@@ -741,49 +631,42 @@ class DopeService:
 
         except Exception as e:
             print(f"Error getting unique values for {field_name}: {e}")
-            # Fallback to mock implementation
-            all_sessions = self._get_mock_sessions(user_id)
-            values = set()
-
-            for session in all_sessions:
-                value = getattr(session, field_name, None)
-                if value and isinstance(value, str) and value.strip():
-                    values.add(value)
-
-            return sorted(list(values))
+            raise
 
     def get_session_statistics(self, user_id: str) -> Dict[str, Any]:
         """Get statistics about user's DOPE sessions"""
-        # TODO: Replace with actual Supabase aggregation queries
+        try:
+            sessions = self.get_sessions_for_user(user_id)
 
-        # Mock implementation
-        sessions = self._get_mock_sessions(user_id)
+            total_sessions = len(sessions)
+            active_sessions = len(sessions)  # No status field in new schema
 
-        total_sessions = len(sessions)
-        active_sessions = len(sessions)  # No status field in new schema
+            cartridge_types = set(
+                s.cartridge_type for s in sessions if s.cartridge_type)
+            bullet_makes = set(s.bullet_make for s in sessions if s.bullet_make)
+            ranges = set(s.range_name for s in sessions if s.range_name)
 
-        cartridge_types = set(
-            s.cartridge_type for s in sessions if s.cartridge_type)
-        bullet_makes = set(s.bullet_make for s in sessions if s.bullet_make)
-        ranges = set(s.range_name for s in sessions if s.range_name)
+            distances = [s.range_distance_m for s in sessions if s.range_distance_m]
+            avg_distance = sum(distances) / len(distances) if distances else 0
 
-        distances = [s.range_distance_m for s in sessions if s.range_distance_m]
-        avg_distance = sum(distances) / len(distances) if distances else 0
+            return {
+                "total_sessions": total_sessions,
+                "active_sessions": active_sessions,
+                "archived_sessions": total_sessions -
+                active_sessions,
+                "unique_cartridge_types": len(cartridge_types),
+                "unique_bullet_makes": len(bullet_makes),
+                "unique_ranges": len(ranges),
+                "average_distance_m": round(
+                    avg_distance,
+                    1),
+                "distance_range": (
+                    f"{min(distances)}-{max(distances)}m" if distances else "No data"),
+            }
 
-        return {
-            "total_sessions": total_sessions,
-            "active_sessions": active_sessions,
-            "archived_sessions": total_sessions -
-            active_sessions,
-            "unique_cartridge_types": len(cartridge_types),
-            "unique_bullet_makes": len(bullet_makes),
-            "unique_ranges": len(ranges),
-            "average_distance_m": round(
-                avg_distance,
-                1),
-            "distance_range": (
-                f"{min(distances)}-{max(distances)}m" if distances else "No data"),
-        }
+        except Exception as e:
+            print(f"Error getting session statistics: {e}")
+            raise
 
     def get_edit_dropdown_options(self, user_id: str) -> Dict[str, List[Dict[str, Any]]]:
         """Get all dropdown options needed for editing a DOPE session"""
@@ -834,150 +717,6 @@ class DopeService:
                 for r in ranges
             ]
         }
-
-    def _get_mock_sessions(self, user_id: str) -> List[DopeSessionModel]:
-        """Generate mock DOPE sessions for development/testing"""
-        base_date = datetime.now()
-
-        # Only return mock data for the specific user ID, otherwise return
-        # empty list
-        if user_id != "google-oauth2|111273793361054745867":
-            return []
-
-        mock_sessions = [
-            DopeSessionModel(
-                id="session_001",
-                user_id="google-oauth2|111273793361054745867",
-                session_name="Morning Range Session",
-                datetime_local=base_date - timedelta(days=1),
-                cartridge_id="cartridge_001",
-                # status field removed from schema
-                rifle_name="AR-15 SPR",
-                rifle_barrel_length_cm=50.8,
-                rifle_barrel_twist_in_per_rev=8.0,
-                cartridge_make="Federal",
-                cartridge_model="Gold Medal Match",
-                cartridge_type="223 Remington",
-                cartridge_lot_number="LT2024001",
-                bullet_make="Sierra",
-                bullet_model="MatchKing",
-                bullet_weight="77",
-                bullet_length_mm="23.1",
-                ballistic_coefficient_g1="0.372",
-                ballistic_coefficient_g7="0.190",
-                sectional_density="0.220",
-                bullet_diameter_groove_mm="5.69",
-                bore_diameter_land_mm="5.56",
-                range_name="Pine Valley Range",
-                range_distance_m=100.0,
-                temperature_c_median=22.0,
-                start_time=base_date - timedelta(days=1),
-                end_time=base_date - timedelta(days=1) + timedelta(hours=2),
-                relative_humidity_pct_median=65.0,
-                barometric_pressure_hpa_median=1020.1,  # Store in metric (hPa)
-                wind_speed_mps_median=2.2,
-                wind_speed_2_mps_median=2.4,
-                wind_direction_deg_median=270.0,
-                notes="Excellent conditions, consistent groups",
-            ),
-            DopeSessionModel(
-                id="session_002",
-                user_id="google-oauth2|111273793361054745867",
-                session_name="Long Range Practice",
-                datetime_local=base_date - timedelta(days=3),
-                cartridge_id="cartridge_002",
-                # status field removed from schema
-                rifle_name="Precision .308",
-                rifle_barrel_length_cm=61.0,
-                rifle_barrel_twist_in_per_rev=10.0,
-                cartridge_make="Hornady",
-                cartridge_model="Match",
-                cartridge_type="308 Winchester",
-                bullet_make="Hornady",
-                bullet_model="ELD Match",
-                bullet_weight="168",
-                ballistic_coefficient_g1="0.523",
-                ballistic_coefficient_g7="0.268",
-                range_name="Mountain Ridge Range",
-                range_distance_m=300.0,
-                temperature_c_median=18.0,
-                start_time=base_date - timedelta(days=3),
-                end_time=base_date - timedelta(days=3) + timedelta(hours=2),
-                relative_humidity_pct_median=45.0,
-                barometric_pressure_hpa_median=1013.2,  # Store in metric (hPa)
-                wind_speed_mps_median=3.3,
-                wind_speed_2_mps_median=3.8,
-                wind_direction_deg_median=135.0,
-                notes="Windy conditions, good for practice",
-            ),
-            DopeSessionModel(
-                id="session_003",
-                user_id="google-oauth2|111273793361054745867",
-                session_name="Competition Prep",
-                datetime_local=base_date - timedelta(days=7),
-                cartridge_id="cartridge_003",
-                # status field removed from schema
-                rifle_name="Match AR-15",
-                cartridge_make="Black Hills",
-                cartridge_model="Match",
-                cartridge_type="223 Remington",
-                bullet_make="Sierra",
-                bullet_model="MatchKing",
-                bullet_weight="69",
-                range_name="Competition Range",
-                range_distance_m=200.0,
-                temperature_c_median=25.0,
-                start_time=base_date - timedelta(days=7),
-                end_time=base_date - timedelta(days=7) + timedelta(hours=2),
-                notes="Final preparation before match",
-            ),
-            DopeSessionModel(
-                id="session_004",
-                user_id="google-oauth2|111273793361054745867",
-                session_name="Cold Weather Test",
-                datetime_local=base_date - timedelta(days=14),
-                cartridge_id="cartridge_004",
-                # status field removed from schema
-                rifle_name="AR-15 SPR",
-                cartridge_make="Federal",
-                cartridge_model="Gold Medal Match",
-                cartridge_type="223 Remington",
-                bullet_make="Sierra",
-                bullet_model="MatchKing",
-                bullet_weight="77",
-                range_name="Winter Range",
-                range_distance_m=100.0,
-                temperature_c_median=-5.0,
-                start_time=base_date - timedelta(days=14),
-                end_time=base_date - timedelta(days=14) + timedelta(hours=2),
-                relative_humidity_pct_median=80.0,
-                wind_speed_mps_median=4.2,
-                notes="Testing cold weather performance",
-            ),
-            DopeSessionModel(
-                id="session_005",
-                user_id="google-oauth2|111273793361054745867",
-                session_name="New Load Development",
-                datetime_local=base_date - timedelta(days=21),
-                cartridge_id="cartridge_005",
-                # status field removed from schema
-                rifle_name="Custom .300 WM",
-                cartridge_make="Custom",
-                cartridge_model="Handload",
-                cartridge_type="300 Winchester Magnum",
-                bullet_make="Berger",
-                bullet_model="VLD Target",
-                bullet_weight="210",
-                range_name="Private Range",
-                range_distance_m=600.0,
-                temperature_c_median=20.0,
-                start_time=base_date - timedelta(days=21),
-                end_time=base_date - timedelta(days=21) + timedelta(hours=2),
-                notes="Load development session",
-            ),
-        ]
-
-        return mock_sessions
 
     def _flatten_joined_record(self, record: Dict[str, Any]) -> Dict[str, Any]:
         """Flatten a joined Supabase record into a format compatible with DopeSessionModel"""
@@ -1170,113 +909,3 @@ class DopeService:
         except Exception as e:
             raise Exception(
                 f"Error creating DOPE measurements from chronograph: {str(e)}")
-
-    def _get_mock_measurements(self, dope_session_id: str, user_id: str) -> List[DopeMeasurementModel]:
-        """Generate mock DOPE measurements for development/testing"""
-        # Only return mock data for the specific user ID, otherwise return empty list
-        if user_id != "google-oauth2|111273793361054745867":
-            return []
-
-        # Return mock measurements only for known session IDs
-        if dope_session_id not in ["session_001", "session_002", "session_003"]:
-            return []
-
-        base_datetime = datetime.now() - timedelta(hours=2)
-        
-        mock_measurements = []
-        
-        # Create different mock data based on session ID
-        if dope_session_id == "session_001":
-            # AR-15 .223 Remington measurements - 10 shots
-            for i in range(1, 11):
-                measurement = DopeMeasurementModel(
-                    id=f"measurement_{dope_session_id}_{i:03d}",
-                    dope_session_id=dope_session_id,
-                    user_id=user_id,
-                    shot_number=i,
-                    datetime_shot=base_datetime + timedelta(minutes=i * 2),
-                    # Metric ballistic data only
-                    speed_mps=838.2 + (i * 1.5) + ((-1) ** i) * 3.0,  # Varying speeds around 838 m/s (~2750 fps)
-                    ke_j=1742 + (i * 3) + ((-1) ** i) * 11,
-                    power_factor_kgms=0.0646 + (i * 0.0001) + ((-1) ** i) * 0.0002,
-                    # Environmental conditions in metric
-                    temperature_c=22.2,
-                    pressure_hpa=1021.0,
-                    humidity_pct=65.0,
-                    # Bore conditions
-                    clean_bore="yes" if i == 1 else "no",
-                    cold_bore="yes" if i == 1 else "no",
-                    # Targeting data in metric
-                    distance_m=91.44,  # 100 yards converted to meters
-                    elevation_adjustment=0.0 if i <= 3 else 0.072,  # 0.25 MOA ≈ 0.072 mrad
-                    windage_adjustment=0.0 if i <= 5 else -0.036,  # 0.125 MOA left ≈ -0.036 mrad
-                    shot_notes=f"Good shot, tight group" if i % 3 == 0 else None,
-                    created_at=base_datetime + timedelta(minutes=i * 2),
-                    updated_at=base_datetime + timedelta(minutes=i * 2),
-                )
-                mock_measurements.append(measurement)
-                
-        elif dope_session_id == "session_002":
-            # .308 Winchester measurements - 8 shots
-            for i in range(1, 9):
-                measurement = DopeMeasurementModel(
-                    id=f"measurement_{dope_session_id}_{i:03d}",
-                    dope_session_id=dope_session_id,
-                    user_id=user_id,
-                    shot_number=i,
-                    datetime_shot=base_datetime + timedelta(minutes=i * 3),
-                    # Metric ballistic data only
-                    speed_mps=807.7 + (i * 0.9) + ((-1) ** i) * 3.7,  # Varying speeds around 808 m/s (~2650 fps)
-                    ke_j=3549 + (i * 7) + ((-1) ** i) * 20,
-                    power_factor_kgms=0.1356 + (i * 0.0002) + ((-1) ** i) * 0.0006,
-                    # Environmental conditions in metric
-                    temperature_c=18.0,
-                    pressure_hpa=1013.0,
-                    humidity_pct=45.0,
-                    # Targeting data
-                    azimuth_deg=90.0 + (i * 0.1),
-                    elevation_angle_deg=2.5 + (i * 0.05),
-                    # Bore conditions
-                    clean_bore="yes" if i == 1 else "no",
-                    cold_bore="yes" if i == 1 else "no",
-                    # Range data in metric
-                    distance_m=274.32,  # 300 yards converted to meters
-                    elevation_adjustment=0.726 if i <= 2 else 0.799,  # 2.5-2.75 MOA ≈ 0.726-0.799 mrad
-                    windage_adjustment=0.145 if i <= 4 else 0.218,  # 0.5-0.75 MOA right ≈ 0.145-0.218 mrad
-                    shot_notes=f"Wind effect visible" if i > 5 else None,
-                    created_at=base_datetime + timedelta(minutes=i * 3),
-                    updated_at=base_datetime + timedelta(minutes=i * 3),
-                )
-                mock_measurements.append(measurement)
-                
-        elif dope_session_id == "session_003":
-            # Competition prep measurements - 15 shots
-            for i in range(1, 16):
-                measurement = DopeMeasurementModel(
-                    id=f"measurement_{dope_session_id}_{i:03d}",
-                    dope_session_id=dope_session_id,
-                    user_id=user_id,
-                    shot_number=i,
-                    datetime_shot=base_datetime + timedelta(minutes=i * 1.5),
-                    # Metric ballistic data only
-                    speed_mps=847.3 + (i * 0.6) + ((-1) ** i) * 2.4,  # Very consistent speeds around 847 m/s (~2780 fps)
-                    ke_j=1570 + (i * 1.4) + ((-1) ** i) * 5.4,
-                    power_factor_kgms=0.0584 + (i * 0.00003) + ((-1) ** i) * 0.0001,
-                    # Environmental conditions in metric
-                    temperature_c=25.0,
-                    pressure_hpa=1017.7,
-                    humidity_pct=55.0,
-                    # Bore conditions
-                    clean_bore="fouled" if i > 3 else ("yes" if i == 1 else "no"),
-                    cold_bore="yes" if i == 1 else "no",
-                    # Range data in metric
-                    distance_m=182.88,  # 200 yards converted to meters
-                    elevation_adjustment=0.436,  # 1.5 MOA ≈ 0.436 mrad
-                    windage_adjustment=0.0,
-                    shot_notes=f"Competition simulation shot {i}" if i % 5 == 0 else None,
-                    created_at=base_datetime + timedelta(minutes=i * 1.5),
-                    updated_at=base_datetime + timedelta(minutes=i * 1.5),
-                )
-                mock_measurements.append(measurement)
-                
-        return mock_measurements

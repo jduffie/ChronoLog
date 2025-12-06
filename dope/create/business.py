@@ -13,8 +13,8 @@ from chronograph.chronograph_session_models import (
     ChronographSession,
 )
 from chronograph.client_api import ChronographAPI
-from dope.service import DopeService
 from dope.models import DopeSessionModel
+from dope.service import DopeService
 from dope.weather_associator import WeatherSessionAssociator
 from mapping.submission.submission_model import SubmissionModel
 from rifles.api import RiflesAPI

@@ -97,7 +97,6 @@ class DopeAPIProtocol(Protocol):
         self,
         session_data: Dict[str, Any],
         user_id: str,
-        auto_create_measurements: bool = True
     ) -> DopeSessionModel:
         """
         Create a new DOPE session.
@@ -113,8 +112,6 @@ class DopeAPIProtocol(Protocol):
                 - weather_source_id: str (FK to weather_source)
                 - notes: str
             user_id: Auth0 user ID (owner of session)
-            auto_create_measurements: If True, automatically create dope_measurements
-                from chronograph measurements
 
         Returns:
             DopeSessionModel: Created session with generated ID and joined data

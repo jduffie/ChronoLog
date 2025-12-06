@@ -109,7 +109,6 @@ class DopeAPI:
         self,
         session_data: Dict[str, Any],
         user_id: str,
-        auto_create_measurements: bool = True,
     ) -> DopeSessionModel:
         """
         Create a new DOPE session.
@@ -125,8 +124,6 @@ class DopeAPI:
                 - weather_source_id: str (FK to weather_source)
                 - notes: str
             user_id: Auth0 user ID (owner of session)
-            auto_create_measurements: If True, automatically create dope_measurements
-                from chronograph measurements
 
         Returns:
             DopeSessionModel: Created session with generated ID and joined data
@@ -149,7 +146,7 @@ class DopeAPI:
             '123e4567-e89b-12d3-a456-426614174000'
         """
         return self._service.create_session(
-            session_data, user_id, auto_create_measurements
+            session_data, user_id
         )
 
     def update_session(

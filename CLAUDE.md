@@ -217,6 +217,62 @@ results = service.get_sessions_for_user(user["id"])
 results = supabase.table("sessions").select("*").execute()
 ```
 
+### Error Handling Pattern (Service Layer)
+
+**STANDARD PATTERN**: Service layer methods must discriminate between "not found" (legitimate) and "system errors" (critical).
+
+```python
+def get_session_by_id(self, session_id: str, user_id: str) -> Optional[SessionModel]:
+    """Get a specific session by ID
+
+    Returns:
+        SessionModel if found, None if not found
+
+    Raises:
+        Exception for system errors (network, auth, database down)
+    """
+    try:
+        response = (
+            self.supabase.table("sessions")
+            .select("*")
+            .eq("id", session_id)
+            .eq("user_id", user_id)
+            .single()
+            .execute()
+        )
+
+        if response.data:
+            return SessionModel.from_supabase_record(response.data)
+        return None
+
+    except Exception as e:
+        error_msg = str(e).lower()
+
+        # "Not found" = legitimate None (not an error)
+        if "not found" in error_msg or "no rows" in error_msg:
+            print(f"Session {session_id} not found for user {user_id}")
+            return None
+
+        # System errors = raise (network, auth, DB down)
+        else:
+            print(f"Error fetching session {session_id}: {e}")
+            raise
+```
+
+**Key Principles:**
+- ✅ **"Not found" / "No rows"** → Return `None` or empty list (expected behavior)
+- ✅ **Network errors** → Raise exception (user must know)
+- ✅ **Auth errors** → Raise exception (user must know)
+- ✅ **Database down** → Raise exception (user must know)
+- ✅ **Unknown errors** → Raise exception (fail safe)
+- ✅ Always log errors before returning `None` or raising
+
+**Apply this pattern to:**
+- `get_*_by_id()` methods → Return `Optional[Model]`
+- `get_*_for_user()` methods → Return `List[Model]` (empty if none found)
+- `search_*()` methods → Return `List[Model]` (empty if none found)
+- Any method where "no data" is a valid state
+
 ### Unit System
 
 - **Internal storage**: Metric only (meters, kilograms, Celsius)
