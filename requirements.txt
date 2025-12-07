@@ -13,6 +13,11 @@ geopy==2.4.1
 matplotlib
 plotly
 
+# Statistical analysis
+scipy>=1.11.0
+numpy>=1.24.0
+outlier-utils>=0.0.4
+
 # API framework and dependencies
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
