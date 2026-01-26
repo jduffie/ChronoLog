@@ -18,7 +18,7 @@ fastapi==0.104.1
 uvicorn[standard]==0.24.0
 pydantic==2.5.0
 python-jose[cryptography]==3.4.0
-python-multipart==0.0.18
+python-multipart==0.0.22
 
 # Development and testing
 pytest==8.4.1
